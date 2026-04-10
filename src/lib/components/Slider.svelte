@@ -1,34 +1,35 @@
 <script>
   import { onMount } from 'svelte';
-  let current = 0;
+  import { fade } from 'svelte/transition';
+
+  let currentSlide = 0;
   const slides = [
-    { title: "Today's Booking", msg: "12 Verified Sessions. No Conflicts.", icon: "fa-calendar-check" },
-    { title: "K3 Security", msg: "NVIDIA Neural Scan Active.", icon: "fa-robot" },
-    { title: "System Status", msg: "All Systems Operational. Bismillah.", icon: "fa-microchip" }
+    { id: 1, title: "Assalamualaikum", content: "Aura Glow Lembut - Digital Greeting", type: "greeting" },
+    { id: 2, title: "Real Booking Data", content: "Reminder: Jadwal Esok Hari Terverifikasi", type: "booking" },
+    { id: 3, title: "K3 Intel Routing", content: "Maint | Sekuriti | Janitor - Progress Active", type: "k3" },
+    { id: 4, title: "AI Weather & Lalin", content: "Status: SIAGA HUJAN - Divisi Persiapan Posisi!", type: "weather" },
+    { id: 5, title: "CC Management", content: "Data Internal & High-Level Overview", type: "management" },
+    { id: 6, title: "CC Umum", content: "Informasi Operasional Bagian Umum", type: "umum" },
+    { id: 7, title: "CC Team Message", content: "The Power Soul of Shalawat - Semangat Team!", type: "team" }
   ];
+
   onMount(() => {
-    const s = setInterval(() => { current = (current + 1) % slides.length; }, 7000);
-    return () => clearInterval(s);
+    const interval = setInterval(() => {
+      currentSlide = (currentSlide + 1) % slides.length;
+    }, 7000); // LOCK 7 DETIK
+    return () => clearInterval(interval);
   });
 </script>
-<div class="s-panel">
-  <div class="s-head"><i class="fas {slides[current].icon}"></i> <span>{slides[current].title}</span></div>
-  <div class="s-body">
-    <i class="fas fa-chevron-left ar"></i>
-    <p>{slides[current].msg}</p>
-    <i class="fas fa-chevron-right ar"></i>
-  </div>
-  <div class="s-dots">
-    {#each slides as _, i}<div class="dot {i === current ? 'active' : ''}"></div>{/each}
-  </div>
+
+<div class="relative h-40 w-full overflow-hidden rounded-xl bg-slate-900/50 border border-emerald-500/30 p-4 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+  {#key currentSlide}
+    <div in:fade={{ duration: 800 }} class="flex flex-col items-center justify-center h-full text-center">
+      <h2 class="text-xs uppercase tracking-widest text-emerald-400 mb-2">NEURAL_SLIDE_0{currentSlide + 1}</h2>
+      <h1 class="text-xl font-bold text-white mb-1 shadow-emerald-500">{slides[currentSlide].title}</h1>
+      <p class="text-xs text-slate-400">{slides[currentSlide].content}</p>
+      <div class="mt-4 w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+        <div class="bg-emerald-500 h-full transition-all duration-[7000ms] linear" style="width: 100%"></div>
+      </div>
+    </div>
+  {/key}
 </div>
-<style>
-  .s-panel { background: white; padding: 20px; border-radius: 28px; margin-bottom: 15px; text-align: center; border: 1px solid #e2e8f0; }
-  .s-head { color: #10b981; font-size: 0.9rem; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .s-body { display: flex; align-items: center; justify-content: space-between; }
-  .s-body p { font-size: 0.85rem; color: #64748b; flex: 1; margin: 0 10px; }
-  .ar { color: #cbd5e1; font-size: 0.8rem; }
-  .s-dots { display: flex; justify-content: center; gap: 6px; margin-top: 15px; }
-  .dot { width: 6px; height: 6px; background: #e2e8f0; border-radius: 50%; transition: 0.3s; }
-  .dot.active { background: #10b981; width: 20px; border-radius: 10px; }
-</style>
