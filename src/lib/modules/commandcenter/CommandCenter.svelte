@@ -1,9 +1,6 @@
 <script>
   import { onMount } from 'svelte';
   
-  export let config = {};
-  export let utils = {};
-  export let supabase = null;
   export let currentUser = null;
   
   let systemStatus = {
@@ -49,8 +46,8 @@
 <a href="#main-content" class="skip-link">Skip to content</a>
 <div id="a11y-announcer" role="status" aria-live="polite" class="sr-only"></div>
 
-<main id="main-content" role="main" class="container mx-auto px-4 py-6 max-w-md">
-  <header role="banner" class="mb-6 text-center">
+<main id="main-content" class="container mx-auto px-4 py-6 max-w-md">
+  <header class="mb-6 text-center">
     <div class="mb-3 flex justify-center">
       <div class="crystal-icon p-4 bg-gradient-to-br from-emerald-100 to-cyan-100" style="width:80px;height:80px;border-radius:24px;">
         <img src="/logo-sultan.png" alt="Dream OS Logo" class="w-full h-full object-contain" />
@@ -97,7 +94,7 @@
     <p class="text-[10px] text-tertiary text-center mt-3">Last update: {systemStatus.lastUpdate}</p>
   </section>
 
-  <nav role="navigation" aria-label="Main modules" class="mb-6">
+  <nav aria-label="Main modules" class="mb-6">
     <div class="grid grid-cols-3 gap-3">
       {#each modules as mod}
       <button aria-label={mod.label} class="crystal-card p-3 flex flex-col items-center gap-2" on:click={() => navigateToModule(mod.label)}>
