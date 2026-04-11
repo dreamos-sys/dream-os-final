@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>AI Test</title></head>
+<body style="font-family:sans-serif;padding:20px">
+  <h2>🧠 Ollama Browser Test</h2>
+  <textarea id="prompt" rows="3" style="width:100%" placeholder="Ketik pertanyaan...">Halo, siapa kamu?</textarea>
+  <button onclick="send()" style="margin:10px 0;padding:10px 20px">Kirim</button>
+  <div id="response" style="background:#f0f0f0;padding:10px;border-radius:8px;min-height:50px"></div>
+  <script>
+  async function send() {
+    const prompt = document.getElementById('prompt').value;
+    const out = document.getElementById('response');
+    out.innerHTML = '⏳ Memproses...';
+    try {
+      const res = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: 'tinyllama', prompt: prompt, stream: false})
+      });
+      const data = await res.json();
+      out.innerHTML = data.response || 'No response';
+    } catch(e) {
+      out.innerHTML = '❌ Error: ' + e.message + '<br><small>Try: disable CORS extension or use HTTP site</small>';
+    }
+  }
+  </script>
+</body></html>
