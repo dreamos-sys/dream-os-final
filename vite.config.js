@@ -2,13 +2,12 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 export default defineConfig({
-  base: '/',  // Absolute path for Vercel root deploy
+  base: '/',  // Absolute base for Vercel root
   plugins: [svelte()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     assetsDir: 'assets',
-    // Force absolute paths for assets
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
@@ -17,8 +16,14 @@ export default defineConfig({
       }
     }
   },
-  // Prevent SSR issues for static deploy
-  ssr: {
-    noExternal: true
-  }
+  // 🔥 FORCE ABSOLUTE PATHS IN HTML OUTPUT
+  renderBuiltUrl(filename, { hostType, type, ssr }) {
+    if (hostType === 'html') {
+      // Force absolute path for HTML references
+      return '/' + filename.replace(/^\.\//, '')
+    }
+    return filename
+  },
+  // Prevent SSR issues
+  ssr: { noExternal: true }
 })
