@@ -1,44 +1,27 @@
 <script>
   import { onMount } from 'svelte';
-  import CommandCenter from './lib/modules/commandcenter/CommandCenter.svelte';
+  import GhostAuth from '$lib/components/GhostAuth.svelte';
   
-  let currentUser = { 
-    name: 'My Bro', 
-    role: 'admin',
-    avatar: '/dream/logo-sultan.png'
-  };
-
-  function handleLogoError(e) {
-    console.warn('⚠️ Logo failed to load');
-    e.target.style.display = 'none';
-    if(e.target.parentElement) {
-        e.target.parentElement.innerHTML = '🖼️'; 
-    }
-  }
-
+  let authenticated = false;
+  
   onMount(() => {
-    console.log('✅✅✅ DREAM OS MOUNTED SUCCESSFULLY! ✅✅✅');
-    console.log('User:', currentUser.name);
-    console.log('Eruda should be active (check top-right corner)');
+    if (sessionStorage.getItem('dreamos_immunity') === 'true') {
+      authenticated = true;
+    }
   });
 </script>
 
-<main style="min-height:100vh; background: linear-gradient(135deg, #f0f9ff, #f0fdf4); font-family: sans-serif;">
-  <header style="text-align:center; padding: 1rem;">
-    <div style="width:80px; height:80px; margin:0 auto; background:rgba(255,255,255,0.7); backdrop-filter:blur(12px); border-radius:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-      <img 
-        src="/dream/logo-sultan.png" 
-        alt="Dream OS Logo" 
-        style="width:60px; height:60px; object-fit:contain;" 
-        onerror={handleLogoError} 
-      />
-    </div>
-    
-    <h1 style="background:linear-gradient(135deg,#10b981,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:1.5rem; font-weight:700; margin:0.5rem 0;">
-      Dream OS Neural Link
-    </h1>
-    <p style="color:#64748b; font-size:0.875rem;">Crystal Glassmorphism UI + Eruda Debugging</p>
-  </header>
+{#if authenticated}
+  <main class="dashboard">
+    <h1>🎉 Dream OS Dashboard</h1>
+    <p>✅ Immunity Mode Active</p>
+    <!-- Tambahkan modul lain di sini -->
+  </main>
+{:else}
+  <GhostAuth on:authenticated={() => authenticated = true} />
+{/if}
 
-  <CommandCenter {currentUser} />
-</main>
+<style>
+  .dashboard { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg,#f0f9ff,#f0fdf4); }
+  h1 { background:linear-gradient(135deg,#10b981,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+</style>
