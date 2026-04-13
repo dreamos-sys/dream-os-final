@@ -2,28 +2,18 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 export default defineConfig({
-  base: '/',  // Absolute base for Vercel root
+  base: '/', 
   plugins: [svelte()],
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
     assetsDir: 'assets',
-    rollupOptions: {
-      output: {
-        assetFileNames: 'assets/[name]-[hash][extname]',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-      }
-    }
+    // Memaksa Vite tidak menggunakan relative paths sama sekali
+    assetsInlineLimit: 0, 
   },
-  // 🔥 FORCE ABSOLUTE PATHS IN HTML OUTPUT
-  renderBuiltUrl(filename, { hostType, type, ssr }) {
-    if (hostType === 'html') {
-      // Force absolute path for HTML references
-      return '/' + filename.replace(/^\.\//, '')
+  experimental: {
+    // Cara terbaru untuk force absolute paths di Vite modern
+    renderBuiltUrl(filename) {
+      return '/' + filename
     }
-    return filename
-  },
-  // Prevent SSR issues
-  ssr: { noExternal: true }
+  }
 })
