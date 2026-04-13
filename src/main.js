@@ -1,38 +1,22 @@
-console.log('🚀 Dream OS v21 Pro - main.js executing');
+console.log('🚀 main.js: Starting Dream OS v21 Pro');
 
-// Debug: Cek apakah DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ DOMContentLoaded fired');
-  const appDiv = document.getElementById('app');
-  console.log('🔍 #app element:', appDiv ? 'FOUND' : 'NOT FOUND');
-});
+import App from './App.svelte';
 
-// Debug: Try-catch Svelte mount
-try {
-  console.log('🔧 Importing App.svelte...');
-  import('./App.svelte').then(({ default: App }) => {
-    console.log('✅ App.svelte loaded');
-    
-    const target = document.getElementById('app');
-    if (!target) {
-      console.error('❌ #app element not found!');
-      document.body.innerHTML = '<h1 style="color:red">ERROR: #app not found</h1>';
-      return;
-    }
-    
-    console.log('🎯 Mounting App to #app...');
+const target = document.getElementById('app');
+
+if (!target) {
+  console.error('❌ #app element not found!');
+  document.body.innerHTML = '<h1 style="color:red;padding:2rem">ERROR: #app not found</h1>';
+} else {
+  console.log('✅ #app found, mounting Svelte app...');
+  try {
     const app = new App({ target });
-    console.log('✅ App mounted successfully!');
-    
-    // Expose app globally for debug
-    window.__DREAM_OS_APP__ = app;
-  }).catch(err => {
-    console.error('❌ Failed to load App.svelte:', err);
-    document.body.innerHTML = `<h1 style="color:red">ERROR: ${err.message}</h1><pre>${err.stack}</pre>`;
-  });
-} catch (e) {
-  console.error('❌ Critical error in main.js:', e);
-  document.body.innerHTML = `<h1 style="color:red">CRITICAL: ${e.message}</h1>`;
+    console.log('✅ Svelte app mounted successfully!');
+    window.__DREAM_OS__ = app; // Expose for debug
+  } catch (e) {
+    console.error('❌ Mount error:', e);
+    target.innerHTML = `<pre style="color:red">${e.message}\n${e.stack}</pre>`;
+  }
 }
 
-console.log('🏁 main.js execution complete');
+console.log('🏁 main.js: Execution complete');
