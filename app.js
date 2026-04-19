@@ -39,3 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ✨ MODUL ASMAUL HUSNA (Global Spiritual)
+async function loadAsmaulHusna() {
+    const randomNum = Math.floor(Math.random() * 99) + 1;
+    try {
+        const res = await fetch(`https://api.aladhan.com/v1/asmaAlHusna/${randomNum}`);
+        const json = await res.json();
+        const data = json.data[0];
+        console.log(`✨ Zikir: ${data.name} (${data.transliteration})`);
+    } catch (e) { console.log('Zikir Offline'); }
+}
