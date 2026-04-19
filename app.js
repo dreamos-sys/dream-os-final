@@ -1,52 +1,35 @@
-// DREAM OS v2.1.1 — SMART LOGIC ENGINE
 document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('loginBtn');
     const pwInput = document.getElementById('accessKey');
-    const eyeIcon = document.getElementById('eyeIcon');
-    
-    // 1. Toggle Mata (Fungsi Show/Hide)
-    eyeIcon.addEventListener('click', () => {
-        const isPw = pwInput.type === 'password';
-        pwInput.type = isPw ? 'text' : 'password';
-        eyeIcon.className = isPw ? 'fas fa-eye-slash eye-toggle' : 'fas fa-eye eye-toggle';
-    });
 
-    // 2. Akses Masuk (The "Door Opener")
-    loginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const key = pwInput.value;
+    async function loadData() {
+        try {
+            const [prayRes, zikirRes, locRes] = await Promise.all([
+                fetch('./data/prayer.json'),
+                fetch('./data/zikir.json'),
+                fetch('./data/location.json')
+            ]);
+            
+            const pray = await prayRes.json();
+            const zikir = await zikirRes.json();
+            const loc = await locRes.json();
 
-        if (key === 'Mr.M_Architect_2025') {
+            // Update Dashboard UI
+            document.getElementById('zikir-display').innerText = `${zikir.name} (${zikir.trans})`;
+            document.getElementById('location-display').innerText = `${loc.city} • Maghrib: ${pray.data.timings.Maghrib}`;
+        } catch (err) {
+            console.log("Satelit Belum Update Data.");
+        }
+    }
+
+    loginBtn.addEventListener('click', () => {
+        if (pwInput.value === 'Mr.M_Architect_2025') {
             alert('🤲 Bismillah! Akses Diterima. Thuma\'ninah Mode Active.');
-            
-            // 🚩 INI SOLUSINYA: Sembunyikan Login, Munculkan Dashboard
-            const loginScreen = document.getElementById('login-screen');
-            const dashboardScreen = document.getElementById('dashboard-screen');
-            
-            if (loginScreen && dashboardScreen) {
-                loginScreen.style.display = 'none';
-                dashboardScreen.style.display = 'block';
-                dashboardScreen.classList.add('active');
-                console.log('✅ Berhasil Masuk ke Dashboard');
-            } else {
-                // Fallback jika ID dashboard belum ada di HTML
-                window.location.reload(); 
-            }
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('dashboard-screen').classList.add('active');
+            loadData(); // Jalankan sinkronisasi data
         } else {
-            alert('❌ Kode Salah. Ingat Amanah!');
-            pwInput.value = '';
-            pwInput.focus();
+            alert('❌ Kode Salah, Sultan!');
         }
     });
 });
-
-// ✨ MODUL ASMAUL HUSNA (Global Spiritual)
-async function loadAsmaulHusna() {
-    const randomNum = Math.floor(Math.random() * 99) + 1;
-    try {
-        const res = await fetch(`https://api.aladhan.com/v1/asmaAlHusna/${randomNum}`);
-        const json = await res.json();
-        const data = json.data[0];
-        console.log(`✨ Zikir: ${data.name} (${data.transliteration})`);
-    } catch (e) { console.log('Zikir Offline'); }
-}
