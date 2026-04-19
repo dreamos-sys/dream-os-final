@@ -8,10 +8,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btn.addEventListener('click', async () => {
         if (Auth.check(input.value)) {
-            alert('🤲 Bismillah! Akses Diterima.');
+            alert('🤲 Bismillah! Akses Diterima. Thuma\'ninah Active.');
+            
+            // 1. Ganti Layar
             UI.showDashboard();
+            
+            // 2. Render Skeleton (Biar ga kosong pas loading)
+            UI.renderDashboard(null); 
+            
+            // 3. Tarik Data & Update Interior
             const data = await State.sync();
-            UI.renderData(data);
+            UI.renderDashboard(data);
+            
         } else {
             alert('❌ Gagal, Sultan! Cek Integritas.');
         }
