@@ -1,12 +1,12 @@
 export const UI = {
     slides: [
         "Assalamualaikum, selamat datang...<br>Silahkan di isi formnya sesuai kebutuhan, terimakasih.",
-        "📊 Info Real Booking:<br>Ruang Rapat Utama - Available",
-        "🛠️ Progress K3:<br>Cleaning Janitor Indoor - 80% Complete",
-        "🌤️ Weather: 29°C - Cerah<br>🚦 Lalin: Lancar | Ai: Aman",
-        "💼 Command Center:<br>Rapat Management Jam 14:00 WIB",
-        "📦 Bagian Umum:<br>Update Stok Inventaris Selesai",
-        "✨ Spirit of Dream OS:<br>Thuma'ninah dalam bekerja, Barakah dalam hasil."
+        "📊 Info Real Booking:<br>Status: Ruang Rapat Utama (In-Use)",
+        "🛠️ Progress Maintenance & K3:<br>Semua laporan sedang diproses oleh tim.",
+        "🌤️ Real Weather & Lalin:<br>Cerah Berawan | Lalin Lancar | Ai: Aman",
+        "💼 Command Center Management:<br>Update kebijakan fasilitas April 2026",
+        "📦 Info Bagian Umum:<br>Stok kebutuhan Janitor telah diperbarui",
+        "✨ Spirit of Shalawat:<br>Bekerja dengan hati, Thuma'ninah dalam bakti."
     ],
     initCarousel: () => {
         const box = document.getElementById('carousel-box');
