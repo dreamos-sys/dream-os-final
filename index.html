@@ -1,144 +1,314 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS Sovereign</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Reem+Kufi+Fun:wght@400..700&display=swap" rel="stylesheet">
-    <style>
-        :root { --emerald: #10b981; --gold: #d97706; --bg: #fcfdfd; --text: #1e293b; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: system-ui, sans-serif; 
-            background: var(--bg); 
-            margin: 0; overflow: hidden; color: var(--text); 
-        }
-
-        /* 🎨 THE STANDARD BACKGROUND: Ghaib Nano-Pattern + Mesh Glow */
-        .batik-overlay {
-            position: fixed; inset: 0; z-index: -1; pointer-events: none;
-            /* Layer 1: Soft Mesh Glow */
-            background: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.08), transparent),
-                        radial-gradient(circle at 0% 100%, rgba(217, 119, 6, 0.05), transparent);
-        }
-        
-        /* Layer 2: Nano-Pattern (Kecil, Smart, Ghaib) - Low Contrast */
-        .batik-overlay::after {
-            content: ""; position: absolute; inset: 0; opacity: 0.15;
-            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2310b981' fill-opacity='0.4' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Cpath d='M10 10l2-2-2-2-2 2z'/%3E%3C/g%3E%3C/svg%3E");
-            mask-image: radial-gradient(circle, black, transparent 80%);
-        }
-
-        .screen { display: none; height: 100vh; flex-direction: column; align-items: center; padding: 15px; }
-        .active { display: flex !important; }
-
-        /* 👁️ Login Area */
-        .card { 
-            background: rgba(255, 255, 255, 0.9); 
-            backdrop-filter: blur(10px);
-            padding: 35px 25px; border-radius: 40px; 
-            box-shadow: 0 20px 60px rgba(0,0,0,0.03); 
-            text-align: center; width: 100%; max-width: 340px; 
-            margin-top: 12vh; border: 1px solid rgba(255,255,255,0.8); 
-        }
-        .bismillah-static { font-family: 'Reem Kufi Fun', sans-serif; font-size: 1.6rem; color: var(--gold); font-weight: 700; margin-bottom: 15px; }
-
-        /* 🏛️ Dashboard Header */
-        .header-container { display: flex; align-items: center; width: 100%; padding: 10px 5px; }
-        .header-logo { width: 55px; height: 55px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.05)); }
-        .header-text { flex: 1; text-align: center; margin-right: 55px; }
-
-        .bismillah-dashboard { font-family: 'Reem Kufi Fun', sans-serif; font-size: 1.5rem; color: var(--gold); font-weight: 700; }
-        /* Shalawat font & color consistent with v2.1.7 */
-        .shalawat-dashboard { font-family: 'Amiri', serif; font-size: 0.9rem; color: var(--emerald); font-weight: 600; line-height: 1.4; margin-top: 4px; }
-        /* Verbatim Jikir badge consistent with v2.1.7 */
-        .zikir-badge { font-size: 0.6rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-top: 6px; letter-spacing: 1px; background: #f1f5f9; padding: 2px 10px; border-radius: 20px; display: inline-block; }
-
-        /* 7 Slide Carousel (Accepted) */
-        .carousel { 
-            width: 100%; height: 110px; 
-            background: rgba(255, 255, 255, 0.6); 
-            backdrop-filter: blur(5px);
-            border-radius: 28px; margin: 15px 0; 
-            border: 1px solid rgba(16, 185, 129, 0.1); 
-            overflow: hidden; display: flex; align-items: center; justify-content: center; 
-        }
-        .slide { display: none; padding: 15px; text-align: center; font-size: 0.82rem; font-weight: 600; animation: fadeIn 0.8s; }
-        .slide.active { display: block; }
-
-        /* 9 Grid */
-        .grid-9 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
-        .mod { 
-            background: #fff; padding: 18px 5px; border-radius: 26px; text-align: center; 
-            border: 1px solid #f1f5f9; box-shadow: 0 8px 20px rgba(0,0,0,0.02); 
-            transition: 0.3s;
-        }
-        .mod:active { transform: scale(0.9); background: #f0fdf4; }
-        .mod i { font-size: 1.6rem; color: var(--emerald); margin-bottom: 7px; display: block; }
-        .mod span { font-size: 0.6rem; font-weight: 800; color: #475569; text-transform: uppercase; }
-
-        /* 5 Nav */
-        .nav-5 { 
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; 
-            background: rgba(255,255,255,0.9); backdrop-filter: blur(10px);
-            display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid #f1f5f9; 
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #cbd5e1; font-size: 1.3rem; }
-        .nav-item.active { color: var(--emerald); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#10b981">
+  <meta name="description" content="Dream OS v2.1.1 — Smart Facility Management • Sultan Edition">
+  
+  <title>Dream OS v2.1.1</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json?v=2.1.1">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png?v=2.1.1">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png?v=2.1.1">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  
+  <!-- Critical CSS (Inline for Fast Load) -->
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-pattern: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      --glass-bg: rgba(255, 255, 255, 0.9);
+      --glass-border: rgba(16, 185, 129, 0.25);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent-emerald: #10b981;
+      --accent-gold: #d97706;
+      --shadow-soft: 0 8px 32px rgba(16, 185, 129, 0.08);
+    }
+    
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-primary);
+      background-image: var(--bg-pattern);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* RTL Support for Arabic */
+    [dir="rtl"] { direction: rtl; }    
+    /* Glassmorphism Card */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 28px 24px;
+      box-shadow: var(--shadow-soft);
+      max-width: 420px;
+      margin: 24px auto;
+    }
+    
+    /* Logo Glow */
+    .logo-glow { text-align: center; margin-bottom: 20px; }
+    .logo-glow img {
+      width: 100px;
+      height: 100px;
+      filter: drop-shadow(0 0 16px rgba(217, 119, 6, 0.35));
+      transition: transform 0.3s ease;
+    }
+    .logo-glow img:hover { transform: scale(1.03); }
+    
+    /* Typography */
+    h1 {
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 8px 0 4px;
+      color: var(--text-primary);
+    }
+    h1 span { color: var(--accent-gold); font-size: 0.9em; }
+    
+    .bismillah {
+      font-family: 'Amiri', serif;
+      font-size: 1.6rem;
+      color: var(--accent-gold);
+      text-align: center;
+      margin: 16px 0 24px;
+      direction: rtl;
+      line-height: 1.4;
+    }
+    
+    /* Form Elements */
+    .input-group { position: relative; margin: 20px 0; }
+    .input-group input {
+      width: 100%;
+      padding: 14px 44px 14px 18px;
+      border: 2px solid var(--glass-border);      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--accent-emerald);
+    }
+    .input-group button {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+    }
+    
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent-emerald), #059669);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 2px; }
+    
+    /* Error Message */
+    .error-msg {
+      color: #dc2626;
+      font-size: 0.9rem;
+      text-align: center;
+      margin: 12px 0;
+      min-height: 1.2em;
+    }
+    .error-msg.show { animation: shake 0.3s; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }      75% { transform: translateX(4px); }
+    }
+    
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 28px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    
+    /* Dashboard Header */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: var(--glass-bg);
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-icon { width: 36px; height: 36px; }
+    
+    .bismillah-shalawat {
+      font-family: 'Amiri', serif;
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      line-height: 1.5;
+    }
+    .shalawat { color: var(--accent-emerald); font-size: 0.9rem; margin-top: 2px; }
+    
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 16px;
+      background: var(--glass-bg);
+      border-top: 1px solid var(--glass-border);
+      z-index: 20;
+    }
+    .nav-btn {
+      display: flex;
+      flex-direction: column;      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 8px 4px;
+      transition: color 0.2s;
+    }
+    .nav-btn i { font-size: 1.2rem; }
+    .nav-btn.active, .nav-btn:hover { color: var(--accent-emerald); }
+    .nav-btn.center { font-size: 1.6rem; color: var(--accent-gold); }
+    
+    /* Screen Visibility */
+    .screen { display: none; min-height: 100vh; padding-bottom: 90px; }
+    .screen.active { display: block; }
+    .content-area { padding: 20px; }
+    
+    /* Loading State */
+    .loading { text-align: center; color: var(--text-secondary); padding: 40px; }
+    
+    /* Responsive */
+    @media (max-width: 380px) {
+      .glass-card { margin: 16px; padding: 24px 20px; }
+      h1 { font-size: 1.5rem; }
+      .bismillah { font-size: 1.4rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="batik-overlay"></div>
-
-    <section id="login-screen" class="screen active">
-        <div class="card">
-            <img src="logo-sultan.png" width="85" style="margin-bottom:15px">
-            <div class="bismillah-static">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
-            <div style="position:relative; width:100%; margin-bottom:20px">
-                <input type="password" id="accessKey" placeholder="Access Key" style="width:100%; padding:18px; border-radius:20px; border:2px solid #f1f5f9; outline:none; background:#f8fafc">
-                <i class="fas fa-eye" id="togglePass" style="position:absolute; right:18px; top:50%; transform:translateY(-50%); color:#94a3b8; cursor:pointer"></i>
-            </div>
-            <button id="loginBtn" style="width:100%; padding:18px; background:var(--emerald); color:white; border:none; border-radius:22px; font-weight:900;">ACCESS SYSTEM</button>
+  <!-- LOGIN SCREEN -->
+  <section id="login-screen" class="screen active" aria-labelledby="login-title">
+    <div class="glass-card">
+      <div class="logo-glow">
+        <img src="/assets/icons/icon-192.png?v=2.1.1" alt="Dream OS Logo" width="100" height="100" onerror="this.style.display='none'">
+      </div>
+      <h1 id="login-title">Dream OS <span>v2.1.1</span></h1>
+      <div class="bismillah" dir="rtl">بِسْمِ اللَّهِ</div>
+      
+      <form id="login-form" novalidate>
+        <div class="input-group">
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            placeholder="Access Key" 
+            required 
+            autocomplete="current-password"
+            aria-label="Access Key"            minlength="6"
+          >
+          <button type="button" id="toggle-pw" aria-label="Toggle password visibility" aria-pressed="false">
+            <i class="fas fa-eye" aria-hidden="true"></i>
+          </button>
         </div>
-    </section>
+        <div id="login-error" class="error-msg" role="alert" aria-live="polite"></div>
+        <button type="submit" class="btn-primary">ACCESS SYSTEM</button>
+      </form>
+      <footer>Dream Team © 2026 · Bi idznillah</footer>
+    </div>
+  </section>
 
-    <section id="dashboard-screen" class="screen">
-        <header class="header-container">
-            <img src="logo-sultan.png" class="header-logo">
-            <div class="header-text">
-                <div class="bismillah-dashboard">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
-                <div class="shalawat-dashboard">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ وَعَلَى آلِ سَيِّدِنَا مُحَمَّدٍ</div>
-                <div id="zikir-dynamic" class="zikir-badge">ZIKIR: (AS SAMEE')</div>
-            </div>
-        </header>
-
-        <div class="carousel" id="carousel-box"></div>
-
-        <div class="grid-9">
-            <div class="mod"><i class="fas fa-desktop"></i><span>CMD CENTER</span></div>
-            <div class="mod"><i class="fas fa-calendar-check"></i><span>BOOKING</span></div>
-            <div class="mod"><i class="fas fa-biohazard"></i><span>K3 FORM</span></div>
-            <div class="mod"><i class="fas fa-user-shield"></i><span>SEKURITI</span></div>
-            <div class="mod"><i class="fas fa-pump-soap"></i><span>JAN INDOOR</span></div>
-            <div class="mod"><i class="fas fa-leaf"></i><span>JAN OUTDOOR</span></div>
-            <div class="mod"><i class="fas fa-box-open"></i><span>STOK ALAT</span></div>
-            <div class="mod"><i class="fas fa-wrench"></i><span>MAINTENANCE</span></div>
-            <div class="mod"><i class="fas fa-warehouse"></i><span>INVENTARIS</span></div>
+  <!-- DASHBOARD SHELL -->
+  <section id="dashboard-screen" class="screen" aria-labelledby="dashboard-title">
+    <header class="app-header">
+      <div class="header-left">
+        <img src="/assets/icons/icon-192.png?v=2.1.1" alt="" class="header-icon" width="36" height="36" onerror="this.style.display='none'">
+        <div class="bismillah-shalawat" dir="rtl">
+          <p class="bismillah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+          <p class="shalawat">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
         </div>
+      </div>
+      <button id="theme-toggle" class="nav-btn" aria-label="Toggle theme" aria-pressed="false">
+        <i class="fas fa-moon" aria-hidden="true"></i>
+      </button>
+    </header>
+    
+    <main id="module-container" class="content-area" role="main">
+      <div class="loading">Memuat modul...</div>
+    </main>
+    
+    <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+      <button class="nav-btn active" data-route="#home" aria-label="Home" aria-current="page">
+        <i class="fas fa-home" aria-hidden="true"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-btn" data-route="#profile" aria-label="Profile">
+        <i class="fas fa-user" aria-hidden="true"></i>
+        <span>Profile</span>
+      </button>
+      <button class="nav-btn center" data-route="#qr" aria-label="QR Scanner">
+        <i class="fas fa-qrcode" aria-hidden="true"></i>
+        <span>QR</span>
+      </button>
+      <button class="nav-btn" data-route="#about" aria-label="About">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>About</span>
+      </button>
+      <button class="nav-btn" data-route="#settings" aria-label="Settings">        <i class="fas fa-cog" aria-hidden="true"></i>
+        <span>Setting</span>
+      </button>
+    </nav>
+  </section>
 
-        <nav class="nav-5">
-            <div class="nav-item active"><i class="fas fa-home"></i></div>
-            <div class="nav-item"><i class="fas fa-user"></i></div>
-            <div class="nav-item"><i class="fas fa-qrcode" style="font-size:1.8rem; color:var(--emerald)"></i></div>
-            <div class="nav-item"><i class="fas fa-info-circle"></i></div>
-            <div class="nav-item"><i class="fas fa-cog"></i></div>
-        </nav>
-    </section>
+  <!-- Offline Fallback Template (hidden, used by SW) -->
+  <template id="offline-template">
+    <div class="glass-card" style="margin: 40px auto; text-align: center;">
+      <i class="fas fa-wifi" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 16px;"></i>
+      <h2>Anda Offline</h2>
+      <p style="color: var(--text-secondary); margin: 12px 0;">Beberapa fitur mungkin tidak tersedia. Hubungkan ke internet untuk pengalaman terbaik.</p>
+      <button class="btn-primary" onclick="location.reload()">Coba Lagi</button>
+    </div>
+  </template>
 
-    <script type="module" src="src/main.js"></script>
+  <!-- Main App Script (Module) -->
+  <script type="module" src="/src/main.js?v=2.1.1"></script>
 </body>
 </html>
