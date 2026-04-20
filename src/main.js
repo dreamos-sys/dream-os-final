@@ -22,9 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (authResult) {
             UI.showDashboard();
-            if(data) document.getElementById('zikir-title').innerText = data.zikir.name;
+            // Injeksi Zikir ke tempat yang BENAR, bukan nindih Bismillah
+            if(data) {
+                document.getElementById('zikir-dynamic').innerText = `ZIKIR: ${data.zikir.name} (${data.zikir.trans})`;
+            }
         } else {
-            alert('❌ Kunci Tidak Valid!');
+            alert('❌ Kunci Salah, Sultan!');
         }
     });
 });
