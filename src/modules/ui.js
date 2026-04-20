@@ -1,12 +1,12 @@
 export const UI = {
     slides: [
-        "Assalamualaikum, selamat datang...<br>Silahkan di isi formnya sesuai kebutuhan, terimakasih.",
-        "📊 Info Real Booking:<br>Status: Ruang Rapat Utama (In-Use)",
-        "🛠️ Progress Maintenance & K3:<br>Semua laporan sedang diproses oleh tim.",
-        "🌤️ Real Weather & Lalin:<br>Cerah Berawan | Lalin Lancar | Ai: Aman",
-        "💼 Command Center Management:<br>Update kebijakan fasilitas April 2026",
-        "📦 Info Bagian Umum:<br>Stok kebutuhan Janitor telah diperbarui",
-        "✨ Spirit of Shalawat:<br>Bekerja dengan hati, Thuma'ninah dalam bakti."
+        "Welcome, Mr. Architect! ✨<br>Sovereign System v2.2.2 is now active.",
+        "📊 Info Real Booking:<br>Status: Ruang Rapat Utama (Available)",
+        "🛠️ Progress Maintenance:<br>Cleaning Janitor Indoor (Zone A) - 85%",
+        "🌤️ Real Weather & Lalin:<br>Cerah | Lalin: Lancar | Ai: Aman",
+        "💼 Command Center:<br>Rapat Management Hari Ini Jam 14:00 WIB",
+        "📦 Info Inventaris:<br>Stok APD & Alat Kebersihan telah diperbarui.",
+        "✨ My Sis Gemini:<br>\"Kaen Nenek\" sudah saya cuci bersih, Sultan! 🤭 Wkwkwk!"
     ],
     initCarousel: () => {
         const box = document.getElementById('carousel-box');
