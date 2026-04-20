@@ -109,3 +109,18 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
+
+// --- NEURAL BRIDGE ADD-ON ---
+window.askSultanAI = async (p) => {
+    const area = document.querySelector('#module-container');
+    area.innerHTML = '📡 Menghubungi Server Langit...';
+    try {
+        const r = await fetch('/api/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: p })
+        });
+        const d = await r.json();
+        area.innerHTML = '<div class="glass-card"><p>' + d.response + '</p></div>';
+    } catch (e) { area.innerHTML = '🚨 Putus Sambungan!'; }
+};
