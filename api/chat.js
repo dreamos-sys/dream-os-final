@@ -1,27 +1,41 @@
-export const config = { runtime: 'edge' };
-export default async function handler(req) {
-  if (req.method !== 'POST') return new Response('Forbidden', { status: 403 });
-  try {
-    const { prompt } = await req.json();
-    const API_KEY = process.env.AI_GATEWAY_API_KEY;
-    const res = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${API_KEY}`, 
-        'Content-Type': 'application/json' 
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'Asisten Dream OS Sovereign. Jawab dengan hikmah, panggil user Sultan. Akhiri: Bi idznillah.' },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 256
-      })
+// Dream OS v2.1.1 - AI Bridge Engine
+const API_KEY = process.env.OLLAMA_API_KEY;
+
+async function sendChat(message, onStream) {
+    const response = await fetch("https://ollama.com/api/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+            model: "gpt-oss:120b",
+            messages: [{ role: "user", content: message }],
+            stream: true
+        })
     });
-    const data = await res.json();
-    return new Response(JSON.stringify({ response: data.choices[0].message.content }), {
-      status: 200, headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (e) { return new Response('Offline', { status: 500 }); }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        try {
+            // Parsing per baris JSON dari Ollama
+            const json = JSON.parse(chunk);
+            if (json.message && json.message.content) {
+                onStream(json.message.content);
+            }
+        } catch (e) {
+            // Abaikan kalau chunk belum lengkap
+        }
+    }
 }
+
+// Contoh Penggunaan:
+// sendChat("Halo 120B!", (text) => process.stdout.write(text));
+
+module.exports = { sendChat };
