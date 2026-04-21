@@ -1,145 +1,44 @@
-// SovereignCore.js — Event Bus + State Hub for Dream OS
-// Bi idznillah — Modular, Lightweight, Scalable
-
-(() => {
-  const BUS_NAME = 'dreamos-synapse';
-
-  class SovereignCore {
+/**
+ * DREAM OS - SOVEREIGN CORE v2.0
+ * The Heart of 1001 Modules
+ */
+class SovereignCore {
     constructor() {
-      this.modules = new Map();
-      this.state = {};
-      this.localBus = new EventTarget();
-      this.channel = typeof BroadcastChannel !== 'undefined' 
-        ? new BroadcastChannel(BUS_NAME) 
-        : null;
-
-      if (this.channel) {
-        this.channel.onmessage = (e) => this._onChannelMessage(e.data);
-      }
-
-      // Bind methods
-      ['registerModule','emit','on','setState','getState'].forEach(m => {
-        this[m] = this[m].bind(this);
-      });
+        this.modules = new Map();
+        this.bus = new EventTarget();
+        this.state = new Proxy({}, {
+            set: (target, key, value) => {
+                target[key] = value;
+                this.emit('STATE_CHANGED', { [key]: value });
+                return true;
+            }
+        });
+        // Sync antar Tab (Teknologi Ghaib)
+        this.channel = new BroadcastChannel('dream_os_synapse');
+        this.channel.onmessage = (e) => this.localEmit(e.data.event, e.data.data);
     }
 
-    registerModule(name, initFn) {
-      if (this.modules.has(name)) {
-        console.warn(`[Core] Modul "${name}" sudah terdaftar`);
-      }
-      this.modules.set(name, initFn);
-      try { initFn(this); } 
-      catch (e) { console.error(`[Core] Init "${name}" error:`, e); }
+    // Daftar Modul (Sultan bisa panggil ini 1001 kali)
+    register(name, callback) {
+        this.modules.set(name, callback);
+        callback(this); // Langitkan modulnya
+        console.log(`✅ Modul [${name}] Aktif & Terintegrasi!`);
     }
 
-    emit(event, payload = {}) {
-      this.localBus.dispatchEvent(new CustomEvent(event, { detail: payload }));
-      if (this.channel) this.channel.postMessage({ event, payload });
+    // Kirim Perintah ke Seluruh Galaxy
+    emit(event, data) {
+        this.localEmit(event, data);
+        this.channel.postMessage({ event, data }); // Kirim ke tab lain
     }
 
-    on(event, handler) {
-      this.localBus.addEventListener(event, (e) => handler(e.detail));
+    localEmit(event, data) {
+        this.bus.dispatchEvent(new CustomEvent(event, { detail: data }));
     }
 
-    _onChannelMessage({ event, payload }) {
-      this.localBus.dispatchEvent(new CustomEvent(event, { detail: payload }));
+    // Dengerin Bisikan Modul Lain
+    on(event, callback) {
+        this.bus.addEventListener(event, (e) => callback(e.detail));
     }
+}
 
-    setState(partial) {
-      this.state = { ...this.state, ...partial };
-      this.emit('state:update', this.state);
-    }
-
-    getState() {
-      return { ...this.state };
-    }
-  }
-
-  // Expose singleton
-  window.DreamCore = new SovereignCore();
-})();
-// SovereignCore.js — Event Bus + State Hub for Dream OS
-// Bi idznillah — Modular, Lightweight, Scalable
-
-(() => {
-  const BUS_NAME = 'dreamos-synapse';
-
-  class SovereignCore {
-    constructor() {
-      this.modules = new Map();
-      this.state = {};
-      this.localBus = new EventTarget();
-      this.channel = typeof BroadcastChannel !== 'undefined' 
-        ? new BroadcastChannel(BUS_NAME) 
-        : null;
-
-      if (this.channel) {
-        this.channel.onmessage = (e) => this._onChannelMessage(e.data);
-      }
-
-      // Bind methods
-      ['registerModule','emit','on','setState','getState'].forEach(m => {
-        this[m] = this[m].bind(this);
-      });
-    }
-
-    registerModule(name, initFn) {
-      if (this.modules.has(name)) {
-        console.warn(`[Core] Modul "${name}" sudah terdaftar`);
-      }
-      this.modules.set(name, initFn);
-      try { initFn(this); } 
-      catch (e) { console.error(`[Core] Init "${name}" error:`, e); }
-    }
-
-    emit(event, payload = {}) {
-      this.localBus.dispatchEvent(new CustomEvent(event, { detail: payload }));
-      if (this.channel) this.channel.postMessage({ event, payload });
-    }
-
-    on(event, handler) {
-      this.localBus.addEventListener(event, (e) => handler(e.detail));
-    }
-
-    _onChannelMessage({ event, payload }) {
-      this.localBus.dispatchEvent(new CustomEvent(event, { detail: payload }));
-    }
-
-    setState(partial) {
-      this.state = { ...this.state, ...partial };
-      this.emit('state:update', this.state);
-    }
-
-    getState() {
-      return { ...this.state };
-    }
-  }
-
-  // Expose singleton
-  window.DreamCore = new SovereignCore();
-})();
-// main.js — Module Loader
-(async () => {
-  const modules = [
-    '/src/modules/booking.js',
-    '/src/modules/k3.js',
-    '/src/modules/ultraAgent.js'
-  ];
-
-  for (const url of modules) {
-    try {
-      await import(url);
-      console.log(`✅ Loaded: ${url}`);
-    } catch (e) {
-      console.warn(`⚠️ Failed: ${url}`, e);
-    }
-  }
-
-  // Notify core ready
-  if (window.DreamCore) {
-    window.DreamCore.emit('app:ready', { 
-      ts: Date.now(), 
-      count: modules.length 
-    });
-  }
-})();
+window.DreamCore = new SovereignCore();
