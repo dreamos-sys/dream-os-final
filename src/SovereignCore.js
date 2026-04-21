@@ -118,3 +118,28 @@
   // Expose singleton
   window.DreamCore = new SovereignCore();
 })();
+// main.js — Module Loader
+(async () => {
+  const modules = [
+    '/src/modules/booking.js',
+    '/src/modules/k3.js',
+    '/src/modules/ultraAgent.js'
+  ];
+
+  for (const url of modules) {
+    try {
+      await import(url);
+      console.log(`✅ Loaded: ${url}`);
+    } catch (e) {
+      console.warn(`⚠️ Failed: ${url}`, e);
+    }
+  }
+
+  // Notify core ready
+  if (window.DreamCore) {
+    window.DreamCore.emit('app:ready', { 
+      ts: Date.now(), 
+      count: modules.length 
+    });
+  }
+})();
