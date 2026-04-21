@@ -11,9 +11,9 @@ export default async function handler(req) {
         'Content-Type': 'application/json' 
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'meta-llama/llama-3-70b-instruct',
         messages: [
-          { role: 'system', content: 'Asisten Dream OS Sovereign. Jawab dengan hikmah, panggil user Sultan. Akhiri: Bi idznillah.' },
+          { role: 'system', content: 'Dream OS Ultra-Smart Agent v2.1.1. Jawab dengan hikmah, panggil user Sultan. Akhiri: Bi idznillah.' },
           { role: 'user', content: prompt }
         ],
         max_tokens: 256
