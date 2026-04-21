@@ -1,1 +1,0 @@
-DIALAGRAM_API_KEY="dgr_live_reKBDNeSOkZBOeGOYOvJsUspFIqM7pUaLuGd1zELaPKNTwvxpl"
