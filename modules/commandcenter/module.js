@@ -1,78 +1,75 @@
 /**
- * Dream OS v2.1 — Command Center ACTIVE ENGINE
- * Fix: Clickable Buttons & Real-time Routing
+ * Dream OS v2.1 — Command Center (FIXED LINKS)
+ * Status: Bi idznillah, Clickable & Integrated!
  */
 
 export default async function initModule(config, utils, supabase, currentUser, showToast, showModal, loader) {
     
-    // 1. Definisikan UI dengan Tombol yang punya ID/Class Klik
     const shell = `
-    <div id="cc-main" class="p-4 bg-slate-950 min-h-screen font-['Urbanist']">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-white tracking-widest">COMMAND <span class="text-emerald-500">CENTER</span></h1>
-            <div class="cc3-badge bg-emerald-500/20 text-emerald-500 text-[10px] px-2 py-1 rounded">SYSTEM LIVE</div>
+    <div id="cc-active" class="p-4 bg-slate-950 min-h-screen font-['Urbanist'] text-white">
+        <div class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+            <h1 class="text-xl font-bold tracking-widest text-emerald-500">SOVEREIGN HUB <span class="text-white">v2.1</span></h1>
+            <div class="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded border border-emerald-500/20">AGENT READY</div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <button id="btn-booking" class="cc-btn p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:border-emerald-500 transition-all group">
-                <i class="fa-solid fa-calendar-check text-2xl text-emerald-500 group-hover:scale-110 transition"></i>
-                <p class="text-xs text-slate-400 mt-2 font-bold">BOOKING</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <button id="nav-k3" class="p-6 bg-slate-900 border border-slate-800 rounded-3xl hover:bg-orange-500/10 hover:border-orange-500 transition-all group text-center">
+                <i class="fa-solid fa-triangle-exclamation text-3xl text-orange-500 group-hover:scale-110 transition"></i>
+                <p class="text-[10px] font-bold mt-3 opacity-60">K3 REPORT</p>
             </button>
-            <button id="btn-k3" class="cc-btn p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:border-orange-500 transition-all group">
-                <i class="fa-solid fa-triangle-exclamation text-2xl text-orange-500 group-hover:scale-110 transition"></i>
-                <p class="text-xs text-slate-400 mt-2 font-bold">K3 REPORT</p>
+            <button id="nav-maint" class="p-6 bg-slate-900 border border-slate-800 rounded-3xl hover:bg-blue-500/10 hover:border-blue-500 transition-all group text-center">
+                <i class="fa-solid fa-tools text-3xl text-blue-500 group-hover:scale-110 transition"></i>
+                <p class="text-[10px] font-bold mt-3 opacity-60">MAINTENANCE</p>
             </button>
-            <button id="btn-maintenance" class="cc-btn p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:border-blue-500 transition-all group">
-                <i class="fa-solid fa-tools text-2xl text-blue-500 group-hover:scale-110 transition"></i>
-                <p class="text-xs text-slate-400 mt-2 font-bold">MAINTENANCE</p>
+            <button id="nav-booking" class="p-6 bg-slate-900 border border-slate-800 rounded-3xl hover:bg-emerald-500/10 hover:border-emerald-500 transition-all group text-center">
+                <i class="fa-solid fa-calendar-check text-3xl text-emerald-500 group-hover:scale-110 transition"></i>
+                <p class="text-[10px] font-bold mt-3 opacity-60">BOOKING</p>
             </button>
-            <button id="btn-security" class="cc-btn p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:border-purple-500 transition-all group">
-                <i class="fa-solid fa-shield-halved text-2xl text-purple-500 group-hover:scale-110 transition"></i>
-                <p class="text-xs text-slate-400 mt-2 font-bold">SECURITY</p>
+            <button id="nav-stock" class="p-6 bg-slate-900 border border-slate-800 rounded-3xl hover:bg-yellow-500/10 hover:border-yellow-500 transition-all group text-center">
+                <i class="fa-solid fa-boxes-stacked text-3xl text-yellow-500 group-hover:scale-110 transition"></i>
+                <p class="text-[10px] font-bold mt-3 opacity-60">STOCK</p>
             </button>
         </div>
 
-        <div id="cc-display" class="cc3-panel bg-slate-900/50 p-6 rounded-3xl border border-slate-800 min-h-[300px] flex items-center justify-center text-center">
-            <div id="welcome-msg">
-                <h2 class="text-3xl font-bold text-white mb-2">Assalamualaikum, Jenderal</h2>
-                <p class="text-slate-500">Pilih modul di atas untuk mulai memantau kedaulatan.</p>
+        <div id="module-viewport" class="relative bg-slate-900/30 rounded-3xl border border-slate-800 p-8 min-h-[400px] flex items-center justify-center">
+            <div id="greeting-box" class="text-center animate-pulse">
+                <h2 class="text-3xl font-bold mb-2">Assalamualaikum</h2>
+                <p class="text-slate-500 text-sm italic">Silakan pilih modul untuk mulai bekerja, Jenderal.</p>
             </div>
         </div>
     </div>`;
 
-    // 2. Logika "Menghidupkan" Tombol (Event Listeners)
     setTimeout(() => {
-        const display = document.getElementById('cc-display');
+        const viewport = document.getElementById('module-viewport');
 
-        // Fungsi Ganti Konten Display
-        const updateDisplay = (title, icon, color) => {
-            display.innerHTML = `
-                <div class="animate-fadeIn w-full">
-                    <i class="fa-solid ${icon} text-5xl mb-4" style="color: ${color}"></i>
-                    <h3 class="text-xl font-bold text-white mb-4">${title}</h3>
-                    <div class="p-4 bg-slate-800 rounded-xl border border-slate-700">
-                        <p class="text-sm text-slate-300">Menghubungkan ke database Sovereign ${title}...</p>
-                        <div class="mt-4 h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-                            <div class="h-full animate-progress" style="background-color: ${color}; width: 100%"></div>
-                        </div>
-                    </div>
-                    <button id="btn-back" class="mt-6 text-xs text-slate-500 underline">Kembali ke Greeting</button>
-                </div>
-            `;
+        // FUNGSI LOAD MODUL DINAMIS
+        const runModule = async (path, name) => {
+            viewport.innerHTML = `<div class="text-center"><i class="fas fa-spinner fa-spin text-3xl text-emerald-500 mb-4"></i><p class="text-xs">Memanggil Modul ${name}...</p></div>`;
             
-            // Tombol Balik
-            document.getElementById('btn-back').onclick = () => {
-                location.reload(); // Simple way to reset
-            };
+            try {
+                // Trik memanggil file modul yang sudah kita buat tadi
+                const mod = await import(`${path}?v=${Date.now()}`);
+                viewport.innerHTML = ''; // Bersihkan loading
+                
+                // Jalankan initModule milik modul tersebut
+                await mod.default(config, utils, supabase, currentUser, showToast, showModal, loader);
+                showToast(`Modul ${name} Aktif!`, 'success');
+            } catch (err) {
+                console.error(err);
+                viewport.innerHTML = `<div class="text-center text-red-500"><i class="fas fa-exclamation-triangle mb-2"></i><p class="text-xs">Gagal: ${err.message}</p></div>`;
+            }
         };
 
-        // Pasang Klik ke masing-masing ID
-        document.getElementById('btn-booking').onclick = () => updateDisplay('BOOKING SYSTEM', 'fa-calendar-check', '#10b981');
-        document.getElementById('btn-k3').onclick = () => updateDisplay('K3 REAL-TIME', 'fa-triangle-exclamation', '#f97316');
-        document.getElementById('btn-maintenance').onclick = () => updateDisplay('MAINTENANCE HUB', 'fa-tools', '#3b82f6');
-        document.getElementById('btn-security').onclick = () => updateDisplay('SECURITY LOGS', 'fa-shield-halved', '#a855f7');
+        // PASANG LISTENER KLIK KE JALUR FILE ASLI
+        document.getElementById('nav-k3').onclick = () => 
+            runModule('../../workspaces/kabag_umum/modules/k3/module.js', 'K3');
+            
+        document.getElementById('nav-maint').onclick = () => 
+            runModule('../../workspaces/kabag_umum/modules/maintenance/module.js', 'Maintenance');
 
-        showToast('Command Center v2.1: Semua tombol diaktifkan!', 'success');
+        // Booking & Stock (Jika sudah ada filenya)
+        document.getElementById('nav-booking').onclick = () => showToast('Modul Booking menyusul!', 'info');
+        document.getElementById('nav-stock').onclick = () => showToast('Modul Stock menyusul!', 'info');
 
     }, 100);
 
