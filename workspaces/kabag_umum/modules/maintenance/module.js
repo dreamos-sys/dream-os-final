@@ -1,74 +1,38 @@
-/**
- * Dream OS v2.1 — Maintenance Master Form (ISO 41001 Standard)
- * Fokus: AC, Sound System, & Kelistrikan Saung
- */
-
 export default async function initModule(config, utils, supabase, currentUser, showToast) {
-    const shell = `
-    <div class="p-4 bg-slate-900 rounded-2xl border border-blue-500/30">
-        <h2 class="text-xl font-bold text-blue-400 mb-4 tracking-tighter">🛠️ MAINTENANCE CHECKLIST (ISO)</h2>
-        
-        <form id="maint-form" class="space-y-4">
-            <div class="p-3 bg-slate-800/50 rounded-lg border-l-4 border-emerald-500">
-                <p class="text-[10px] text-emerald-500 font-bold uppercase mb-2">Harian (Daily)</p>
-                <label class="flex items-center gap-3 text-sm text-slate-300">
-                    <input type="checkbox" id="check-ac" class="rounded border-slate-700"> Drainase AC & Freon (Suhu 18-22°C)
-                </label>
-            </div>
-
-            <div class="p-3 bg-slate-800/50 rounded-lg border-l-4 border-blue-500">
-                <p class="text-[10px] text-blue-500 font-bold uppercase mb-2">Mingguan (Weekly)</p>
-                <div class="space-y-2">
-                    <label class="flex items-center gap-3 text-sm text-slate-300">
-                        <input type="checkbox" id="check-mic" class="rounded border-slate-700"> Mic Wireless & Receiver (Signal OK)
-                    </label>
-                    <label class="flex items-center gap-3 text-sm text-slate-300">
-                        <input type="checkbox" id="check-audio" class="rounded border-slate-700"> Tweeter & Subwoofer Saung Besar
-                    </label>
+    const render = `
+    <div class="animate-fadeIn">
+        <h3 class="text-blue-500 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-tools"></i> MAINTENANCE CHECKLIST (ISO)
+        </h3>
+        <div class="space-y-3">
+            <div class="p-3 bg-slate-950 rounded-lg border-l-4 border-blue-500">
+                <p class="text-[10px] text-slate-500 uppercase mb-2">Pengecekan Rutin</p>
+                <div class="grid gap-2">
+                    <label class="flex items-center gap-2 text-xs text-slate-300"><input type="checkbox"> AC & Drainase</label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300"><input type="checkbox"> Sound System Saung</label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300"><input type="checkbox"> Lampu Area</label>
                 </div>
             </div>
-
-            <div class="pt-4 border-t border-slate-800">
-                <select id="maint-status" class="w-full p-2 bg-slate-950 rounded border border-slate-700 text-xs text-white mb-2">
-                    <option value="NORMAL">✅ NORMAL / SELESAI</option>
-                    <option value="REPAIR">🔧 PERLU PERBAIKAN</option>
-                    <option value="REPLACE">📦 BUTUH GANTI PART</option>
-                </select>
-                <textarea id="maint-note" placeholder="Catatan kerusakan (misal: Tweeter jebol/AC bocor)" class="w-full p-2 bg-slate-950 rounded border border-slate-700 text-xs text-white h-20"></textarea>
-                
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl mt-3 transition">
-                    UPDATE STATUS ISO
-                </button>
-            </div>
-        </form>
+            <textarea id="maint-note" placeholder="Catatan perbaikan..." class="w-full p-3 bg-slate-950 rounded-xl border border-slate-800 text-white text-sm h-20"></textarea>
+            <button id="maint-submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">UPDATE STATUS</button>
+        </div>
     </div>`;
 
+    const viewport = document.getElementById('module-viewport');
+    if(viewport) viewport.innerHTML = render;
+
     setTimeout(() => {
-        document.getElementById('maint-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const status = document.getElementById('maint-status').value;
+        document.getElementById('maint-submit')?.addEventListener('click', async () => {
             const note = document.getElementById('maint-note').value;
-
             if(supabase) {
-                // 1. Catat ke Audit Log agar Slide CC Update
                 await supabase.from('audit_logs').insert([{
-                    action: 'MAINTENANCE_REPORT',
-                    detail: `Status: ${status} | Note: ${note}`,
-                    user: currentUser?.name || 'Kabag'
+                    action: 'MAINTENANCE_UPDATE',
+                    detail: note || 'Pengecekan rutin selesai',
+                    user: currentUser?.name || 'Maintenance'
                 }]);
-                
-                // 2. Jika butuh ganti part, lempar ke modul stok
-                if(status === 'REPLACE') {
-                    await supabase.from('audit_logs').insert([{
-                        action: 'STOCK_REQUIRED',
-                        detail: `Kebutuhan part: ${note}`
-                    }]);
-                }
-
-                utils.showToast(`Sovereign Report: ${status} Recorded!`, 'success');
+                showToast('✅ Maintenance Updated!', 'success');
+                document.getElementById('maint-note').value = '';
             }
         });
     }, 100);
-
-    return shell;
 }
