@@ -1,25 +1,32 @@
-const CACHE_NAME = 'dreamos-v2.1.2';
+const CACHE_NAME = 'dreamos-v2.1.7-rebel'; // GANTI VERSION TIAP DEPLOY!
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/src/main.js',
-  '/neural_core.wasm',
-  '/assets/icons/icon-192.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600&display=swap'
+  './',
+  './index.html',
+  './manifest.json',
+  './app.js',
+  './neural_core.wasm'
 ];
 
+// Install: Simpan aset dasar
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(STATIC_ASSETS)));
+  self.skipWaiting(); // Paksa SW baru langsung aktif!
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((c) => c.addAll(STATIC_ASSETS))
+  );
 });
 
+// Activate: Hancurkan gudang lama (Kaen Nenek)
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(
-    ks.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-  )));
+  e.waitUntil(
+    caches.keys().then((ks) => Promise.all(
+      ks.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+    ))
+  );
 });
 
+// Fetch Strategy: NETWORK FIRST (Biar update Sultan langsung muncul)
 self.addEventListener('fetch', (e) => {
-  e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
 });
