@@ -1,8 +1,5 @@
-const CACHE_NAME = 'dreamos-v3.1-final';
-self.addEventListener('install', (e) => {
-    self.skipWaiting();
-    console.log("💀 Satpam Lama Dipecat!");
-});
+const CACHE_NAME = 'dreamos-v3.2-nuclear';
+self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => {
     e.waitUntil(caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))));
 });
