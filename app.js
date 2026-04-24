@@ -1,61 +1,68 @@
+// Dream OS v2.1.2 - Anti-Budek & Neural Bridge
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const pwInput = document.getElementById('password');
     const rakaatInput = document.getElementById('rakaat-input');
     const ghostContainer = document.getElementById('ghost-container');
-    const logo = document.querySelector('.dream-logo');
+    const logo = document.querySelector('.logo-glow img');
     const moduleContainer = document.getElementById('module-container');
     
     let wasm;
     let currentAccessLevel = 99;
 
-    WebAssembly.instantiateStreaming(fetch('/neural_core.wasm'), {})
-        .then(obj => { wasm = obj.instance; });
+    // 1. LOAD NEURAL CORE (Bi idznillah)
+    WebAssembly.instantiateStreaming(fetch('./neural_core.wasm'), {})
+        .then(obj => { wasm = obj.instance; console.log("🧠 Neural Core Online"); })
+        .catch(() => console.warn("⚠️ WASM Offline, bypass mode active for Jenderal."));
 
-    if (logo) {
-        logo.addEventListener('click', () => {
-            if (wasm && wasm.exports.trigger_icon_click() === 7) {
-                ghostContainer.style.display = 'block';
-                rakaatInput.focus();
-            }
-        });
-    }
-
+    // 2. LOGIKA RENDER GRID DENGAN LISTENER
     function renderGrid() {
         const modules = [
-            { id: 1, name: 'Command Center', icon: 'fa-tower-broadcast' },
-            { id: 2, name: 'Booking', icon: 'fa-calendar-check' },
-            { id: 3, name: 'K3', icon: 'fa-hard-hat' },
-            { id: 4, name: 'Sekuriti', icon: 'fa-shield-halved' },
-            { id: 5, name: 'Janitor Indoor', icon: 'fa-broom' },
-            { id: 6, name: 'Janitor Outdoor', icon: 'fa-shrub' },
-            { id: 7, name: 'Stok', icon: 'fa-boxes-stacked' },
-            { id: 8, name: 'Maintenance', icon: 'fa-screwdriver-wrench' },
-            { id: 9, name: 'Asset', icon: 'fa-file-invoice' }
+            { id: 'k3', name: 'K3 REPORT', icon: 'fa-hard-hat' },
+            { id: 'maintenance', name: 'MAINTENANCE', icon: 'fa-screwdriver-wrench' },
+            { id: 'booking', name: 'BOOKING', icon: 'fa-calendar-check' },
+            { id: 'stok', name: 'STOK', icon: 'fa-boxes-stacked' }
         ];
 
-        let html = '<div class="grid-container" style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; padding:10px;">';
+        let html = '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px; padding:10px;">';
         modules.forEach(m => {
             html += `
-                <div class="grid-item" style="background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:15px; padding:15px; text-align:center; cursor:pointer;">
-                    <i class="fas ${m.icon}" style="color:var(--accent-emerald); font-size:1.2rem; display:block; margin-bottom:5px;"></i>
-                    <span style="font-size:0.65rem; font-weight:bold; color:var(--text-primary);">${m.name.toUpperCase()}</span>
-                </div>`;
+                <button class="mod-btn" data-folder="${m.id}" style="background:white; border:2px solid #10b98120; border-radius:20px; padding:20px; transition:all 0.2s;">
+                    <i class="fas ${m.icon}" style="color:#10b981; font-size:1.5rem; display:block; margin-bottom:8px;"></i>
+                    <span style="font-size:0.7rem; font-weight:900;">${m.name}</span>
+                </button>`;
         });
-        html += '</div>';
+        html += '</div><div id="module-viewport" class="mt-4"></div>';
         moduleContainer.innerHTML = html;
+
+        // 3. PASANG LISTENER (THE ANTI-BUDEK INJECTION)
+        document.querySelectorAll('.mod-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const folder = btn.getAttribute('data-folder');
+                const viewport = document.getElementById('module-viewport');
+                viewport.innerHTML = '<p style="text-align:center; padding:20px;">⚡ Memanggil Kedaulatan...</p>';
+                
+                try {
+                    // JALUR SAKTI SULTAN
+                    const path = `./workspaces/kabag_umum/modules/${folder}/module.js?v=${Date.now()}`;
+                    const mod = await import(path);
+                    viewport.innerHTML = '';
+                    // Jalankan initModule bawaan Sultan
+                    await mod.default({}, {}, {}, {}, (msg) => alert(msg));
+                } catch (err) {
+                    console.error(err);
+                    viewport.innerHTML = `<p style="color:red; font-size:10px; text-align:center;">❌ Kabel Putus: ${folder}</p>`;
+                }
+            };
+        });
     }
 
+    // 4. LOGIN HANDLER
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        if (!wasm) return;
-        currentAccessLevel = wasm.exports.get_access_level(pwInput.value);
-        let ghostValid = (ghostContainer.style.display === 'block') ? 
-            wasm.exports.validate_ghost_stealth(new Date().getHours(), new Date().getMinutes(), parseInt(rakaatInput.value)) : false;
-        if (currentAccessLevel <= 2 || ghostValid) {
-            document.getElementById('login-screen').classList.remove('active');
-            document.getElementById('dashboard-screen').classList.add('active');
-            renderGrid();
-        } else { alert('❌ Akses Ditolak!'); }
+        // Bypass logika buat Jenderal biar cepet ngetes
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('dashboard-screen').classList.add('active');
+        renderGrid();
     });
 });
