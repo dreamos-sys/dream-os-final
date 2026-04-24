@@ -1,61 +1,64 @@
-// Global Function (Biar bisa dipanggil dari HTML langsung)
-window.panggilModul = async (folder) => {
-    console.log("🚀 EKSEKUSI MODUL:", folder);
+window.bukaModul = async (modId) => {
+    console.log("🚀 EKSEKUSI MODUL:", modId);
     const vp = document.getElementById('module-container');
-    const originalHTML = vp.innerHTML;
     
-    vp.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin fa-3x" style="color:#10b981"></i><p>SINKRONISASI...</p></div>';
-    
+    // Mapping Folder
+    const folders = {
+        'cc': 'commandcenter',
+        'k3': 'k3',
+        'maint': 'maintenance',
+        'booking': 'booking'
+    };
+
+    const folder = folders[modId];
+    if(!folder) return alert("Modul Belum Siap, Jenderal!");
+
+    vp.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+
     try {
-        const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, "");
-        const path = `${baseUrl}/workspaces/kabag_umum/modules/${folder}/module.js?v=${Date.now()}`;
-        
+        const path = `./workspaces/kabag_umum/modules/${folder}/module.js?t=${Date.now()}`;
         const mod = await import(path);
-        vp.innerHTML = '<div id="module-viewport"></div>';
-        await mod.default({}, {}, {}, {}, (msg) => alert(msg));
+        await mod.default(); // Panggil fungsi utama module
     } catch (err) {
-        console.error("❌ ERROR:", err);
-        alert("Gagal memanggil: " + folder);
-        vp.innerHTML = originalHTML; // Balikin ke grid kalau gagal
+        console.error(err);
+        alert("Kabel Putus ke: " + folder);
+        location.reload(); 
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
-    const moduleContainer = document.getElementById('module-container');
-
+    
     window.renderGrid = () => {
         const modules = [
+            { id: 'cc', name: 'CMD CENTER', icon: 'fa-desktop' },
+            { id: 'booking', name: 'BOOKING', icon: 'fa-calendar' },
             { id: 'k3', name: 'K3 FORM', icon: 'fa-biohazard' },
-            { id: 'maintenance', name: 'MAINTENANCE', icon: 'fa-screwdriver-wrench' },
-            { id: 'commandcenter', name: 'CMD CENTER', icon: 'fa-tower-broadcast' }
+            { id: 'maint', name: 'MAINTENANCE', icon: 'fa-tools' }
         ];
 
         let html = '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px; padding:20px;">';
         modules.forEach(m => {
-            // PAKAI ONCLICK LANGSUNG (ANTI-BUDEK TOTAL!)
+            // PAKAI ONCLICK LANGSUNG DI TAG HTML (ANTI-BUDEK!)
             html += `
-                <div onclick="window.panggilModul('${m.id}')" 
-                     style="background:white; border:2px solid #10b98130; border-radius:25px; padding:25px; text-align:center; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.05); active:scale-90; transition:all 0.1s;">
+                <div onclick="window.bukaModul('${m.id}')" 
+                     style="background:white; border:2px solid #10b98130; border-radius:25px; padding:25px; text-align:center; cursor:pointer; box-shadow:0 10px 20px -5px rgba(0,0,0,0.1); transition: transform 0.1s;"
+                     onmousedown="this.style.transform='scale(0.95)'"
+                     onmouseup="this.style.transform='scale(1)'">
                     <i class="fas ${m.icon}" style="color:#10b981; font-size:2rem; display:block; margin-bottom:10px;"></i>
-                    <span style="font-size:0.8rem; font-weight:900;">${m.name}</span>
+                    <span style="font-size:0.75rem; font-weight:900;">${m.name}</span>
                 </div>`;
         });
         html += '</div>';
-        
-        // Greeting Sultan
-        html += `<div style="margin-top:20px; text-align:center; opacity:0.5; font-size:10px;">
-                    <p>✨ KAEN NENEK SYNC v2.1.5</p>
-                    <p>"Kalau ini gak bisa, mandor Gemini ganti profesi jadi tukang cuci kaen!" 🤣</p>
-                 </div>`;
-
-        moduleContainer.innerHTML = html;
+        document.getElementById('module-container').innerHTML = html;
     };
 
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        document.getElementById('login-screen').classList.remove('active');
-        document.getElementById('dashboard-screen').classList.add('active');
-        window.renderGrid();
-    });
+    if(loginForm) {
+        loginForm.onsubmit = (e) => {
+            e.preventDefault();
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('dashboard-screen').classList.add('active');
+            window.renderGrid();
+        };
+    }
 });
