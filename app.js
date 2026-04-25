@@ -5,41 +5,39 @@ import { panggilMrM } from './scripts/helpers/ui-agent.js';
 const d=document, g=i=>d.getElementById(i);
 let count = 0;
 
+// FUNGSI GLOBAL BIAR BISA DIPANGGIL DI MANA AJA
 window.bukaModul = async i => {
     const c = g('module-container');
     c.innerHTML = '<div id="module-viewport" class="p-4"></div>';
     try {
         const m = await import(getPath(i));
         await m.default();
-    } catch(e) {
-        c.innerHTML = '<p class="text-red-500">Kabel Putus!</p>';
-    }
+    } catch(e) { console.error(e); }
 };
 
 d.addEventListener('DOMContentLoaded', () => {
     window.renderGrid = renderGrid;
-    
-    // CARI LOGO DENGAN BERBAGAI CARA
-    const logo = d.querySelector('.logo-glow') || d.querySelector('img[alt*="Logo"]');
-    
-    if(logo) {
-        logo.style.cursor = 'pointer'; // Biar gak kaku!
-        logo.style.pointerEvents = 'auto';
-        logo.style.transition = 'transform 0.1s';
 
-        logo.onclick = () => {
+    // 🕵️‍♂️ UNIVERSAL CLICK TRACKER (Buat nyari siapa yang menghalangi)
+    d.addEventListener('touchstart', (e) => {
+        const el = e.target;
+        console.log("👉 ANDA MENYENTUH:", el.tagName, "Class:", el.className);
+        
+        // Cek apakah elemen yang disentuh adalah LOGO atau didalam LOGO
+        if (el.closest('.logo-glow') || el.closest('.logo-container') || el.tagName === 'IMG') {
             count++;
-            // Efek visual pas diklik (biar kerasa "hidup")
-            logo.style.transform = 'scale(0.9)';
-            setTimeout(() => logo.style.transform = 'scale(1)', 100);
             
-            console.log("Ketukan Logo:", count);
+            // EFEK VISUAL RADIKAL: Bikin logo kedip merah pas diklik
+            el.style.filter = 'brightness(2) sepia(1) saturate(10) hue-rotate(0deg)';
+            setTimeout(() => el.style.filter = '', 150);
+            
             if(count === 7) {
                 panggilMrM();
                 count = 0;
+                alert("🕶️ MR. M: 'SIAP JENDERAL, SAYA MASUK!'");
             }
-        };
-    }
+        }
+    }, {passive: true});
 
     const f = g('login-form');
     if(f) f.onsubmit = e => {
