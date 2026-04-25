@@ -5,7 +5,7 @@
 set -e
 
 # ── CONFIG ────────────────────────────────────────
-MODEL="${DREAMOS_MODEL:-tinyllama:latest}"  # Rekomendasi: tinyllama (lebih ringan)
+MODEL="${DREAMOS_MODEL:-phi3:mini}"  # Rekomendasi: tinyllama (lebih ringan)
 OUTPUT_FILE="/sdcard/Download/ollama_response.txt"
 OLLAMA_URL="http://localhost:11434/api/generate"
 TIMEOUT=120  # detik, maks waktu tunggu inferensi
