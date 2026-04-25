@@ -3,7 +3,7 @@ import { renderGrid } from './scripts/helpers/ui.js';
 import { panggilMrM } from './scripts/helpers/ui-agent.js';
 
 const d=document, g=i=>d.getElementById(i);
-let clickCount = 0;
+let count = 0;
 
 window.bukaModul = async i => {
     const c = g('module-container');
@@ -18,20 +18,30 @@ window.bukaModul = async i => {
 
 d.addEventListener('DOMContentLoaded', () => {
     window.renderGrid = renderGrid;
-    const f = g('login-form');
-    const logo = d.querySelector('.logo-glow img');
-
-    // EASTER EGG: 7x Klik Logo buat panggil Mr. M
+    
+    // CARI LOGO DENGAN BERBAGAI CARA
+    const logo = d.querySelector('.logo-glow') || d.querySelector('img[alt*="Logo"]');
+    
     if(logo) {
-        logo.addEventListener('click', () => {
-            clickCount++;
-            if(clickCount === 7) {
+        logo.style.cursor = 'pointer'; // Biar gak kaku!
+        logo.style.pointerEvents = 'auto';
+        logo.style.transition = 'transform 0.1s';
+
+        logo.onclick = () => {
+            count++;
+            // Efek visual pas diklik (biar kerasa "hidup")
+            logo.style.transform = 'scale(0.9)';
+            setTimeout(() => logo.style.transform = 'scale(1)', 100);
+            
+            console.log("Ketukan Logo:", count);
+            if(count === 7) {
                 panggilMrM();
-                clickCount = 0;
+                count = 0;
             }
-        });
+        };
     }
 
+    const f = g('login-form');
     if(f) f.onsubmit = e => {
         e.preventDefault();
         g('login-screen').style.display = 'none';
