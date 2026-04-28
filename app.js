@@ -1,48 +1,36 @@
-// TEST PERTAMA: APAKAH FILE INI DIBACA?
-alert("🚨 SIAGA 1: SCRIPT DREAM-OS AKTIF!");
-
-import { getPath } from './scripts/helpers/router.js';
-import { renderGrid } from './scripts/helpers/ui.js';
-import * as Agent from './scripts/helpers/ui-agent.js';
-
-const d=document, g=i=>d.getElementById(i);
-let ct = 0;
-
-console.log("Sovereign Engine Started...");
-
-// FORCE CLICK PADA WINDOW (Gak peduli logo-nya di mana)
-window.addEventListener('touchstart', (e) => {
-    const target = e.target;
-    // Log di konsol buat kita intip
-    console.log("Sentuhan pada:", target.tagName, "Class:", target.className);
+/**
+ * Dream OS v3.2.3 - Global Module Handler
+ * Principles: Addy Osmani (Fast UI) & Karpathy (Logic Flow)
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('module-grid');
     
-    if (target.closest('.logo-glow') || target.closest('#logo') || target.tagName === 'IMG') {
-        ct++;
-        // Ganti lapor pake alert biar gak bisa bohong
-        if(ct < 7) {
-            alert("Ketukan ke-" + ct + " Masuk, Jenderal!");
-        }
+    if (!grid) {
+        console.error('[DREAM-OS] Fatal: module-grid not found!');
+        return;
+    }
 
-        if(ct === 7) {
-            alert("MISI BERHASIL: MEMANGGIL MR. M!");
-            try {
-                if (typeof Agent.panggilMrM === 'function') Agent.panggilMrM();
-                else Agent.default(); // Coba panggil default export
-            } catch(err) {
-                alert("Mr. M Mogok: " + err.message);
+    grid.addEventListener('click', (e) => {
+        // Cari element terdekat dengan class .mod (untuk menangani klik pada icon/span)
+        const btn = e.target.closest('.mod');
+        
+        if (btn) {
+            const moduleName = btn.getAttribute('data-modul');
+            console.log(`%c[DREAM-OS] %cActivating: ${moduleName}`, "color: #3b82f6; font-weight: bold", "color: #fff");
+
+            // Efek Visual Feedback (Active Scale)
+            btn.classList.add('scale-90');
+            setTimeout(() => btn.classList.remove('scale-90'), 100);
+
+            // Logika Integrasi Modular Brain
+            if (typeof window.triggerModularBrain === 'function') {
+                window.triggerModularBrain(moduleName);
+            } else {
+                // Fallback jika global function belum load
+                alert(`Modul ${moduleName.toUpperCase()} Bi idznillah siap dieksekusi!`);
             }
-            ct = 0;
         }
-    }
-}, {passive: false}); // Kita set false biar bisa stop propagation kalau perlu
+    });
 
-d.addEventListener('DOMContentLoaded', () => {
-    window.renderGrid = renderGrid;
-    const f=g('login-form');
-    if(f) f.onsubmit=e=>{
-        e.preventDefault();
-        g('login-screen').style.display='none';
-        g('dashboard-screen').classList.add('active');
-        renderGrid();
-    }
+    console.log('[DREAM-OS] Core UI v3.2.3 Linked bi idznillah.');
 });
