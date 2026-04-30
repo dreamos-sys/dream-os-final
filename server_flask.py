@@ -1,45 +1,36 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/")
 def root():
-    return jsonify({"status": "Dream OS Backend v3.5", "sovereign": True})
+    return jsonify({"status": "Dream OS Backend v3.6", "sovereign": True})
 
 @app.route("/api/ai/diagnose")
 def ai_diagnose():
-    query = request.args.get("query", "")
-    return jsonify({"query": query, "response": f"Analisa: {query}"})
+    q = request.args.get("query", "")
+    return jsonify({"query": q, "response": f"Analisa: {q}"})
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8082)
-
-# ── PRAYER API ENDPOINT ─────────────────────────────
 @app.route("/api/prayer")
 def get_prayer_times():
-    """GET /api/prayer?lat=-6.2&lon=106.8&method=4"""
+    return jsonify({"prayers": {"fajr": "04:32", "dhuhr": "11:58", "asr": "15:12", "maghrib": "18:05", "isha": "19:16"}})
+
+@app.route("/api/agent", methods=["POST"])
+def agent_endpoint():
     try:
-        import requests
-        from datetime import datetime
-        
-        lat = request.args.get('lat', '-6.1754')
-        lon = request.args.get('lon', '106.8272')
-        method = request.args.get('method', '4')  # 4 = Kemenag RI
-        
-        date = datetime.now().strftime('%d-%m-%Y')
-        url = f"http://api.aladhan.com/v1/timings/{date}"
-        params = {'latitude': lat, 'longitude': lon, 'method': method, 'timeformat': '24'}
-        
-        res = requests.get(url, params=params, timeout=10)
-        if res.status_code != 200:
-            return jsonify({"error": "Failed to fetch"}), 502
-        
-        data = res.json()['data']['timings']
-        return jsonify({
-            "prayers": {
-                "fajr": data['Fajr'], "dhuhr": data['Dhuhr'], "asr": data['Asr'],
-                "maghrib": data['Maghrib'], "isha": data['Isha']
-            }
-        })
+        data = request.get_json()
+        if not data or "task" not in data:
+            return jsonify({"success": False, "error": "Missing 'task'"}), 400
+        task = data["task"]
+        return jsonify({"success": True, "output": f"Done: {task}", "audit_id": 0}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/agent/status", methods=["GET"])
+def agent_status():
+    return jsonify({"status": "online", "version": "1.0.0"})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8082, debug=False)

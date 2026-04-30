@@ -1,32 +1,61 @@
 #!/data/data/com.termux/files/usr/bin/bash
-DREAM_ROOT="$HOME/dream-live"
-API_BASE="http://localhost:8082"
+# Smart Mr. M v3.6 - Hard-coded API Base (No Env Dependency)
 
-ask_ai() {
-  local prompt="$1"
-  local clean_prompt=$(echo "$prompt" | jq -aRs .)
+DREAM_ROOT="${HOME}/dream-live"
+# 🔥 HARD-CODED: Langsung ke localhost Flask, nggak pake env var
+API_BASE="http://127.0.0.1:8082"
+
+# Cek backend (ping root endpoint)
+check_backend() {
+  curl -s --max-time 2 "$API_BASE/" >/dev/null 2>&1 && echo "yes" || echo "no"
+}
+
+# Agent query function
+agent_query() {
+  local task="$1"
+  echo "🤖 Agent: $task" >&2
   
-  # Kirim dan tangkap respon lengkap untuk diagnosa jika gagal
-  local response=$(curl -s -X POST "$API_BASE/v1/messages" \
-    -H "Content-Type: application/json" \
-    -d "{\"model\":\"nvidia/nemo-120b-chat\",\"messages\":[{\"role\":\"user\",\"content\":$clean_prompt}],\"max_tokens\":1024}")
-  
-  # Filter cerdas: Coba baca format Anthropic, lalu OpenAI, lalu mentah
-  local output=$(echo "$response" | jq -r '.content[0].text // .choices[0].message.content // .response // .error // empty')
-  
-  if [ -z "$output" ]; then
-    echo "❌ Server Error: $(echo "$response" | jq -c .)"
+  if [ "$(check_backend)" = "yes" ]; then
+    # Call API + capture response
+    local resp
+    resp=$(curl -s -X POST "$API_BASE/api/agent" \
+      -H "Content-Type: application/json" \
+      -d "{\"task\":\"$task\"}" 2>/dev/null)
+    
+    # Parse JSON output field dengan sed (no jq dependency)
+    if echo "$resp" | grep -q '"output"'; then
+      echo "$resp" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+    else
+      # Fallback: tampilkan raw response
+      echo "$resp"
+    fi
   else
-    echo "$output"
+    echo "⚠️ Backend offline at $API_BASE" >&2
   fi
 }
 
+# Simple review command
+cmd_review() {
+  echo "🔍 Review: $1" >&2
+  [ -f "$1" ] && wc -l "$1" || echo "File not found"
+}
+
+# Simple spec command  
+cmd_spec() {
+  echo "📋 Spec: $1" >&2
+  mkdir -p "$DREAM_ROOT/docs/specs"
+  echo "# Spec: $1" > "$DREAM_ROOT/docs/specs/$(echo "$1" | tr ' ' '-').md"
+}
+
+# Main router
 case "$1" in
-  "/review")
-    target="${2:-app.js}"
-    echo "🧠 Analyzing $target..."
-    content=$(cat "$target")
-    ask_ai "Review this code for Dream OS standards: $content"
+  "/agent") agent_query "$2" ;;
+  "/review") cmd_review "$2" ;;
+  "/spec") cmd_spec "$2" ;;
+  *)
+    echo "╔════════════════╗"
+    echo "║ 🕶️ Mr. M v3.6 ║"
+    echo "╚════════════════╝" >&2
+    echo "Usage: $0 {/agent|/review|/spec} [args]" >&2
     ;;
-  *) echo "Usage: ./m-120b /review [file]";;
 esac
