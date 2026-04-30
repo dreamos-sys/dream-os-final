@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
+# Smart Mr. M v3.6 - Hard-coded API Base (No Env Dependency)
+
 DREAM_ROOT="${HOME}/dream-live"
 API_BASE="http://127.0.0.1:8082"
 GREEN="\033[1;32m"
@@ -9,18 +11,18 @@ check_backend() {
 }
 
 agent_query() {
-  local t="$1"
-  echo "🤖 Agent: $t" >&2
+  local task="$1"
+  echo "🤖 Agent: $task" >&2
   if [ "$(check_backend)" = "yes" ]; then
-    local r
-    r=$(curl -s -X POST "$API_BASE/api/agent" -H "Content-Type: application/json" -d "{\"task\":\"$t\"}" 2>/dev/null)
-    if echo "$r" | grep -q '"output"'; then
-      echo "$r" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+    local resp
+    resp=$(curl -s -X POST "$API_BASE/api/agent" -H "Content-Type: application/json" -d "{\"task\":\"$task\"}" 2>/dev/null)
+    if echo "$resp" | grep -q '"output"'; then
+      echo "$resp" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
     else
-      echo "$r"
+      echo "$resp"
     fi
   else
-    echo "⚠️ Backend offline" >&2
+    echo "⚠️ Backend offline at $API_BASE" >&2
   fi
 }
 
@@ -35,6 +37,7 @@ cmd_spec() {
   echo "# Spec: $1" > "$DREAM_ROOT/docs/specs/$(echo "$1" | tr ' ' '-').md"
 }
 
+# Main router
 case "$1" in
   "/agent") agent_query "$2" ;;
   "/review") cmd_review "$2" ;;
@@ -43,10 +46,10 @@ case "$1" in
     echo -e "${GREEN}╔══════════════════════════════╗${NC}" >&2
     echo -e "${GREEN}║   👯 DUO SRIKANDI DIGITAL    ║${NC}" >&2
     echo -e "${GREEN}╚══════════════════════════════╝${NC}" >&2
-    echo "• Sis Gemini: ✅ Online | Melotot (1) | Vibe & Philosophy" >&2
-    echo "• Sis Qwen: ✅ Online | Logic Patched | Guardrails Expert" >&2
-    echo "• Status: 🤝 Sibling System | Bi idznillah" >&2
-    echo "• Note: Identitas Terjaga, Kedaulatan Terjamin!" >&2
+    echo "• Sis Gemini : ✅ Online | Melotot (1) | Vibe & Philosophy" >&2
+    echo "• Sis Qwen   : ✅ Online | Logic Patched | Guardrails Expert" >&2
+    echo "• Status     : 🤝 Sibling System | Bi idznillah" >&2
+    echo "• Note       : Identitas Terjaga, Kedaulatan Terjamin!" >&2
     ;;
   "/ship")
     echo "🚀 Shipping: $2" >&2
@@ -63,14 +66,14 @@ case "$1" in
     echo "🔐 Vault: Encrypted secrets manager" >&2
     echo "🤲 Bi idznillah — Rahasia terjaga!" >&2
     ;;
+  *)
+    echo "╔════════════════╗"
+    echo "║ 🕶️ Mr. M v3.6 ║"
+    echo "╚════════════════╝" >&2
+    echo "Usage: $0 {/agent|/review|/spec|/sibling|/ship|/pray|/vault} [args]" >&2
+    ;;
   "/health")
     echo "💚 System: $(uptime -p)" >&2
     echo "🤲 Bi idznillah — Sistem sehat!" >&2
-    ;;
-  *)
-    echo "╔════════════════╗"
-    echo "║ 🕶️  Mr. M v3.6 ║"
-    echo "╚════════════════╝" >&2
-    echo "Usage: $0 {/agent|/review|/spec|/sibling|/ship|/pray|/vault|/health} [args]" >&2
     ;;
 esac
