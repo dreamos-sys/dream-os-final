@@ -2,41 +2,15 @@
 # Smart Mr. M v3.6 - Hard-coded API Base (No Env Dependency)
 
 DREAM_ROOT="${HOME}/dream-live"
+# 🔥 HARD-CODED: Langsung ke localhost Flask, nggak pake env var
 API_BASE="http://127.0.0.1:8082"
-GREEN="\033[1;32m"
-NC="\033[0m"
 
+# Cek backend (ping root endpoint)
 check_backend() {
   curl -s --max-time 2 "$API_BASE/" >/dev/null 2>&1 && echo "yes" || echo "no"
 }
 
-agent_query() {
-  local task="$1"
-  echo "🤖 Agent: $task" >&2
-  if [ "$(check_backend)" = "yes" ]; then
-    local resp
-    resp=$(curl -s -X POST "$API_BASE/api/agent" -H "Content-Type: application/json" -d "{\"task\":\"$task\"}" 2>/dev/null)
-    if echo "$resp" | grep -q '"output"'; then
-      echo "$resp" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
-    else
-      echo "$resp"
-    fi
-  else
-    echo "⚠️ Backend offline at $API_BASE" >&2
-  fi
-}
-
-cmd_review() {
-  echo "🔍 Review: $1" >&2
-  [ -f "$1" ] && wc -l "$1" || echo "File not found"
-}
-
-cmd_spec() {
-  echo "📋 Spec: $1" >&2
-  mkdir -p "$DREAM_ROOT/docs/specs"
-  echo "# Spec: $1" > "$DREAM_ROOT/docs/specs/$(echo "$1" | tr ' ' '-').md"
-}
-
+# Agent query function
 # Main router
 case "$1" in
   "/agent") agent_query "$2" ;;
@@ -62,14 +36,51 @@ case "$1" in
     echo "🕌 Waktu shalat: $(date +%H:%M)" >&2
     echo "🤲 Bi idznillah — Shalat dulu, Bro!" >&2
     ;;
-  "/vault")
-    echo "🔐 Vault: Encrypted secrets manager" >&2
-    echo "🤲 Bi idznillah — Rahasia terjaga!" >&2
-    ;;
   *)
     echo "╔════════════════╗"
     echo "║ 🕶️ Mr. M v3.6 ║"
     echo "╚════════════════╝" >&2
-    echo "Usage: $0 {/agent|/review|/spec|/sibling|/ship|/pray|/vault} [args]" >&2
+    echo "Usage: $0 {/agent|/review|/spec|/sibling|/ship|/pray} [args]" >&2
+    ;;
+  "/vault")
+    echo "🔐 Vault: Encrypted secrets manager" >&2
+    echo "🤲 Bi idznillah — Rahasia terjaga!" >&2
+    ;;
+  "/vault")
+    echo "🔐 Vault: Encrypted secrets manager" >&2
+    echo "🤲 Bi idznillah — Rahasia terjaga!" >&2
     ;;
 esac
+
+agent_query() {
+  local task="$1"
+  echo "🤖 Agent: $task" >&2
+  
+  if [ "$(check_backend)" = "yes" ]; then
+    # Call API + capture response
+    local resp
+    resp=$(curl -s -X POST "$API_BASE/api/agent" \
+      -H "Content-Type: application/json" \
+      -d "{\"task\":\"$task\"}" 2>/dev/null)
+    
+    # Parse JSON output field dengan sed (no jq dependency)
+    if echo "$resp" | grep -q '"output"'; then
+      echo "$resp" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+    else
+      # Fallback: tampilkan raw response
+      echo "$resp"
+    fi
+  else
+    echo "⚠️ Backend offline at $API_BASE" >&2
+  fi
+}
+
+# Simple review command
+cmd_review() {
+  echo "🔍 Review: $1" >&2
+  [ -f "$1" ] && wc -l "$1" || echo "File not found"
+}
+
+# Main router
+# Main router
+
