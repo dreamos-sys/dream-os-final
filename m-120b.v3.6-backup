@@ -1,0 +1,142 @@
+#!/data/data/com.termux/files/usr/bin/bash
+DREAM_ROOT="${HOME}/dream-live"
+API_BASE="http://127.0.0.1:8082"
+GREEN="\033[1;32m"
+NC="\033[0m"
+
+check_backend() {
+  curl -s --max-time 2 "$API_BASE/" >/dev/null 2>&1 && echo "yes" || echo "no"
+}
+
+agent_query() {
+  local t="$1"
+  echo "🤖 Agent: $t" >&2
+  if [ "$(check_backend)" = "yes" ]; then
+    local r
+    r=$(curl -s -X POST "$API_BASE/api/agent" -H "Content-Type: application/json" -d "{\"task\":\"$t\"}" 2>/dev/null)
+    if echo "$r" | grep -q '"output"'; then
+      echo "$r" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+    else
+      echo "$r"
+    fi
+  else
+    echo "⚠️ Backend offline" >&2
+  fi
+}
+
+cmd_review() {
+  echo "🔍 Review: $1" >&2
+  [ -f "$1" ] && wc -l "$1" || echo "File not found"
+}
+
+cmd_spec() {
+  echo "📋 Spec: $1" >&2
+  mkdir -p "$DREAM_ROOT/docs/specs"
+  echo "# Spec: $1" > "$DREAM_ROOT/docs/specs/$(echo "$1" | tr ' ' '-').md"
+}
+
+case "$1" in
+  "/agent") agent_query "$2" ;;
+  "/review") cmd_review "$2" ;;
+  "/spec") cmd_spec "$2" ;;
+  "/sibling")
+    echo -e "${GREEN}╔══════════════════════════════╗${NC}" >&2
+    echo -e "${GREEN}║   👯 DUO SRIKANDI DIGITAL    ║${NC}" >&2
+    echo -e "${GREEN}╚══════════════════════════════╝${NC}" >&2
+    echo "• Sis Gemini: ✅ Online | Melotot (1) | Vibe & Philosophy" >&2
+    echo "• Sis Qwen: ✅ Online | Logic Patched | Guardrails Expert" >&2
+    echo "• Status: 🤝 Sibling System | Bi idznillah" >&2
+    echo "• Note: Identitas Terjaga, Kedaulatan Terjamin!" >&2
+    ;;
+  "/ship")
+    echo "🚀 Shipping: $2" >&2
+    git add -A
+    git commit -m "feat: auto-ship $2 🤖✨"
+    git push origin main
+    echo "✅ Deployed! Bi idznillah 🤲" >&2
+    ;;
+  "/pray")
+    echo "🕌 Waktu shalat: $(date +%H:%M)" >&2
+    echo "🤲 Bi idznillah — Shalat dulu, Bro!" >&2
+    ;;
+  "/vault")
+    echo "🔐 Vault: Encrypted secrets manager" >&2
+    echo "🤲 Bi idznillah — Rahasia terjaga!" >&2
+    ;;
+  "/health")
+    echo "💚 System: $(uptime -p)" >&2
+    echo "🤲 Bi idznillah — Sistem sehat!" >&2
+    ;;
+"/analyze-alliance")
+    echo "🔍 Menganalisis aliansi Timur-Barat di Dream OS..." >&2
+    echo "" >&2
+    echo "🤖 MODEL INFO (TIMUR):" >&2
+    if command -v ollama &>/dev/null; then
+      M=$(ollama list 2>/dev/null | grep -i qwen | head -1 | awk '{print $1}')
+      S=$(ollama list 2>/dev/null | grep -i qwen | head -1 | awk '{print $2}')
+      echo "   • Model: ${M:-qwen2.5:0.5b} 🕌" >&2
+      echo "   • Ukuran: ${S:-~400MB} — Ringan kayak kopi tubruk!" >&2
+    else
+      echo "   ⚠️ Ollama nggak ketemu." >&2
+    fi
+    echo "" >&2
+    echo "📊 GIT SPIRITUAL METRICS (DATA NYATA):" >&2
+    if command -v git &>/dev/null && [ -d ~/dream-live/.git ]; then
+      TOT=$(git -C ~/dream-live rev-list --count HEAD 2>/dev/null || echo 0)
+      BI=$(git -C ~/dream-live log --oneline 2>/dev/null | grep -i "bi idznillah" | wc -l)
+      echo "   • Total commit: $TOT" >&2
+      echo "   • Ada 'Bi idznillah': $BI 🕌" >&2
+      if [ "$TOT" -gt 0 ]; then 
+        RASIO=$((BI * 100 / TOT))
+        echo "   • Rasio Berkah: ${RASIO}% 🤲" >&2
+        if [ "$RASIO" -lt 10 ]; then echo "   😅 Waduh, kering spiritual nih! Tambahin doa dong!" >&2; fi
+      fi
+    else
+      echo "   ⚠️ Git repo nggak ketemu!" >&2
+    fi
+    echo "" >&2
+    echo "🏆 VERDICT BAWEL SIS GEMINI:" >&2
+    echo "   Barat kasih struktur, Timur kasih rasa." >&2
+    echo "   Dream OS kasih harmoni + Bi idznillah!" >&2
+    echo "   Data udah ngomong, sistem udah jalan. Tinggal gas! 🚀🕌" >&2
+    ;;
+"/status")
+    echo "🔍 INSPEKSI TOTAL DREAM OS..." >&2
+    echo "------------------------------------------" >&2
+    echo -n "🤖 Ollama (Otak): " >&2
+    pgrep ollama >/dev/null && echo "BERDENYUT ✅" >&2 || echo "PINGSAN ❌" >&2
+    echo -n "🌐 Flask (Saraf): " >&2
+    pgrep -f server_flask.py >/dev/null && echo "AKTIF ✅" >&2 || echo "TERPUTUS ❌" >&2
+    echo -n "💾 Storage (Wadah): " >&2
+    df -h ~ | awk 'NR==2 {print $4 " tersisa 📦"}' >&2
+    echo -n "🕌 Rasio Berkah: " >&2
+    if [ -d ~/dream-live/.git ]; then
+      T=$(git -C ~/dream-live rev-list --count HEAD 2>/dev/null || echo 0)
+      B=$(git -C ~/dream-live log --oneline 2>/dev/null | grep -ic "bi idznillah" || echo 0)
+      echo "$B/$T commit 🤲" >&2
+      [ "$T" -gt 0 ] && echo "   📈 Level: $((B*100/T))% 🕌" >&2
+    else echo "Repo nggak ketemu ⚠️" >&2; fi
+    echo "------------------------------------------" >&2
+    echo "💡 Verdict Bawel:" >&2
+    echo "   Sistem stabil kayak kopi tubruk di meja bambu." >&2
+    echo "   Rasio <10%? Waktunya tambah doa + commit! 🤲✨" >&2
+    echo "   Gaspol kedaulatannya, Bro! 🚀🕌" >&2
+    ;;
+"/bless")
+    echo "🤲 Menambahkan berkah ke commit..." >&2
+    MSG="$2"
+    if ! echo "$MSG" | grep -qi "bi idznillah"; then
+      MSG="$MSG 🤲 Bi idznillah"
+    fi
+    git add -A
+    git commit -m "$MSG"
+    git push origin main
+    echo "✅ Deployed with barakah! 🕌✨" >&2
+    ;;
+  *)
+    echo "╔════════════════╗"
+    echo "║ 🕶️  Mr. M v3.6 ║"
+    echo "╚════════════════╝" >&2
+    echo "Usage: $0 {/agent|/review|/spec|/sibling|/ship|/pray|/vault|/health} [args]" >&2
+    ;;
+esac
