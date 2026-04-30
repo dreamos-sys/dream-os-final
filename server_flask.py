@@ -39,7 +39,15 @@ def ag():
   d=request.get_json()
   if not d or"task"not in d:return jsonify({"success":False,"error":"Missing task"}),400
   t=d["task"];print(f"Processing:{t}");ctx=qc(t)
-  pr=f"You are Mr. M.Jawab singkat Indonesian.Akhiri Bi idznillah.Context:{ctx}Task:{t}"
+  tools_list = "
+".join([f"- {cmd}: {info['desc']}" for cmd, info in TOOLS.items()])
+  pr=f"You are Mr. M.Jawab singkat Indonesian.Akhiri Bi idznillah.Context:{ctx}
+Available tools:
+{tools_list}
+
+Gunakan CALL /command jika user minta aksi.
+Jawab Indonesian santai. Akhiri \'Bi idznillah\' 🤲
+Task:{t}"
   print("Thinking...");lr=cq(pr);o=lr.strip()if lr else"No response";la(t,pr,lr,"raw")
   return jsonify({"success":True,"output":o,"audit_id":0}),200
  except Exception as e:print(f"Error:{e}");return jsonify({"success":False,"error":str(e)}),500
