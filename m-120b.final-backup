@@ -1,0 +1,77 @@
+#!/data/data/com.termux/files/usr/bin/bash
+DREAM_ROOT="$HOME/dream-live"
+API_BASE="http://localhost:8082"
+
+ask_ai() {
+  local prompt="$1"
+  local clean_prompt=$(echo "$prompt" | jq -aRs .)
+  
+  # Kirim dan tangkap respon lengkap untuk diagnosa jika gagal
+  local response=$(curl -s -X POST "$API_BASE/v1/messages" \
+    -H "Content-Type: application/json" \
+    -d "{\"model\":\"nvidia/nemo-120b-chat\",\"messages\":[{\"role\":\"user\",\"content\":$clean_prompt}],\"max_tokens\":1024}")
+  
+  # Filter cerdas: Coba baca format Anthropic, lalu OpenAI, lalu mentah
+  local output=$(echo "$response" | jq -r '.content[0].text // .choices[0].message.content // .response // .error // empty')
+  
+  if [ -z "$output" ]; then
+    echo "❌ Server Error: $(echo "$response" | jq -c .)"
+  else
+    echo "$output"
+  fi
+}
+
+case "$1" in
+  "/review")
+    target="${2:-app.js}"
+    echo "🧠 Analyzing $target..."
+    content=$(cat "$target")
+    ask_ai "Review this code for Dream OS standards: $content"
+    ;;
+  "/agent")
+    agent_query "$@"
+    ;;
+
+  *) echo "Usage: ./m-120b /review [file]";;
+esac
+
+# ── AI AGENT MODE ─────────────────────────────────
+agent_query() {
+  local task="$1"
+  
+  echo -e "${GREEN}╔════════════════════════════╗${NC}"
+  echo -e "${GREEN}║  🤖 Mr. M: Agent Mode      ║${NC}"
+  echo -e "${GREEN}╚════════════════════════════╝${NC}" >&2
+  
+  if [ "$(check_backend)" = "✅" ]; then
+    # Call Flask agent endpoint
+    curl -s -X POST "$API_BASE/api/agent" \
+      -H "Content-Type: application/json" \
+      -d "{\"task\":\"$task\"}" \
+      | jq -r '.output // .error // "❌ No response"'
+  else
+    # Fallback ke core.py langsung
+    python -m agents.core "$task"
+  fi
+}
+
+# Tambah command router
+
+# ── AGENT QUERY FUNCTION ───────────────────
+agent_query() {
+  local task="$1"
+  echo -e "${GREEN}🤖 Agent: $task${NC}" >&2
+  if [ "$(check_backend)" = "✅" ]; then
+    curl -s -X POST "$API_BASE/api/agent" 
+      -H "Content-Type: application/json" 
+      -d "{"task":"$task"}" | jq -r ".output // .error // "❌ No response""
+  else
+    echo "⚠️ Backend offline" >&2
+  fi
+}
+# ───────────────────────────────────────────
+
+case "$cmd" in
+  "/agent") agent_query "$@";;
+  # ... existing commands
+esac

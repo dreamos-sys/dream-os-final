@@ -1,135 +1,47 @@
 #!/usr/bin/env python3
-"""
-🛠️ Dream OS Agent Tools — Safe, Audited, Sovereign
-Tool wrapper untuk eksekusi aman: CLI, file I/O, Ollama call
-"""
-
-import subprocess
-import json
-import os
+"""Dream OS Tools - Minimal & Quote-Safe"""
+import subprocess,json,requests
 from pathlib import Path
 
-# ── CONFIG ────────────────────────────────────────
-DREAM_ROOT = Path.home() / "dream-live"
-OLLAMA_URL = "http://localhost:11434/api/generate"
-ALLOWED_COMMANDS = {
-    "ls", "cat", "grep", "find", "wc", "git", "curl", "echo"
-}
-# ──────────────────────────────────────────────────
+DREAM_ROOT=Path.home()/ "dream-live"
+OLLAMA_URL="http://127.0.0.1:11434/api/generate"
+ALLOWED={"ls","cat","grep","find","wc","git","curl","echo"}
 
-def call_ollama(prompt: str, model: str = "tinyllama:latest") -> str:
-    """Panggil Ollama local dengan timeout"""
+def call_qwen(prompt:str,model:str="qwen2.5:0.5b")->str:
     try:
-        import requests
-        res = requests.post(
-            OLLAMA_URL,
-            json={"model": model, "prompt": prompt, "stream": False},
-            timeout=30
-        )
-        if res.status_code == 200:
-            return res.json().get("response", "")
-        return f"❌ Ollama error: HTTP {res.status_code}"
-    except Exception as e:
-        return f"❌ Connection error: {str(e)}"
+        for _ in range(3):
+            try:
+                r=requests.post(OLLAMA_URL,json={"model":model,"prompt":prompt,"stream":False},timeout=45)
+                if r.status_code==200: return r.json().get("response","").strip()
+                break
+            except: continue
+        return "Timeout"
+    except Exception as e: return f"Error:{e}"
 
-def run_cli(command: str, args: list = None) -> dict:
-    """
-    Jalankan CLI command yang aman (whitelist only)
-    Return: {"success": bool, "output": str, "error": str}
-    """
-    if command not in ALLOWED_COMMANDS:
-        return {"success": False, "output": "", "error": f"Command '{command}' not allowed"}
-    
+def run_cli(cmd:str,args:list=None)->dict:
+    if cmd not in ALLOWED: return {"success":False,"error":f"{cmd} not allowed"}
     try:
-        cmd = [command] + (args or [])
-        result = subprocess.run(
-            cmd,
-            cwd=str(DREAM_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        return {
-            "success": result.returncode == 0,
-            "output": result.stdout,
-            "error": result.stderr
-        }
-    except Exception as e:
-        return {"success": False, "output": "", "error": str(e)}
+        res=subprocess.run([cmd]+(args or[]),cwd=str(DREAM_ROOT),capture_output=True,text=True,timeout=10)
+        return {"success":res.returncode==0,"output":res.stdout,"error":res.stderr}
+    except Exception as e: return {"success":False,"error":str(e)}
 
-def read_file(filepath: str) -> dict:
-    """Baca file dengan path validation"""
+def read_file(fp:str)->dict:
     try:
-        full_path = (DREAM_ROOT / filepath).resolve()
-        if not str(full_path).startswith(str(DREAM_ROOT)):
-            return {"success": False, "content": "", "error": "Path traversal detected"}
-        
-        with open(full_path, 'r', encoding='utf-8') as f:
-            return {"success": True, "content": f.read(), "error": ""}
-    except Exception as e:
-        return {"success": False, "content": "", "error": str(e)}
+        p=(DREAM_ROOT/fp).resolve()
+        if not str(p).startswith(str(DREAM_ROOT)): return {"success":False,"error":"Path traversal"}
+        return {"success":True,"content":p.read_text(encoding="utf-8"),"error":""}
+    except Exception as e: return {"success":False,"content":"","error":str(e)}
 
-def parse_json_response(text: str) -> dict:
-    """Parse JSON dari LLM response (tolerant)"""
+def parse_json_response(text:str)->dict:
+    """Always return clean dict with string result"""
+    default={"result":"No response"}
+    if not text: return default
     try:
-        # Cari blok JSON dalam text
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            return json.loads(text[start:end])
-        return {"error": "No JSON found"}
-    except json.JSONDecodeError as e:
-        return {"error": f"JSON parse error: {str(e)}", "raw": text}
-
-# Test tools
-if __name__ == "__main__":
-    print("🧪 Testing tools...")
-    print("1. Ollama call:", call_ollama("Hi")[:50] + "...")
-    print("2. CLI ls:", run_cli("ls", ["-la"])["success"])
-    print("3. Read file:", read_file("app.js")["success"])
-    print("✅ Tools ready!")
-#!/usr/bin/env python3
-"""Dream OS Agent Tools — Safe Wrapper"""
-import subprocess, json, os
-from pathlib import Path
-
-DREAM_ROOT = Path.home() / "dream-live"
-OLLAMA_URL = "http://localhost:11434/api/generate"
-ALLOWED_COMMANDS = {"ls", "cat", "grep", "find", "wc", "git", "curl", "echo"}
-
-def call_ollama(prompt: str, model: str = "tinyllama:latest") -> str:
-    try:
-        import requests
-        res = requests.post(OLLAMA_URL, json={"model": model, "prompt": prompt, "stream": False}, timeout=30)
-        return res.json().get("response", "") if res.status_code == 200 else f"❌ HTTP {res.status_code}"
-    except Exception as e:
-        return f"❌ {e}"
-
-def run_cli(command: str, args: list = None) -> dict:
-    if command not in ALLOWED_COMMANDS:
-        return {"success": False, "error": f"Command '{command}' not allowed"}
-    try:
-        result = subprocess.run([command] + (args or []), cwd=str(DREAM_ROOT), capture_output=True, text=True, timeout=10)
-        return {"success": result.returncode == 0, "output": result.stdout, "error": result.stderr}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-def read_file(filepath: str) -> dict:
-    try:
-        full_path = (DREAM_ROOT / filepath).resolve()
-        if not str(full_path).startswith(str(DREAM_ROOT)):
-            return {"success": False, "error": "Path traversal detected"}
-        with open(full_path, 'r', encoding='utf-8') as f:
-            return {"success": True, "content": f.read()}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-def parse_json_response(text: str) -> dict:
-    try:
-        start, end = text.find("{"), text.rfind("}") + 1
-        return json.loads(text[start:end]) if start >= 0 and end > start else {"error": "No JSON"}
-    except:
-        return {"error": "JSON parse failed", "raw": text}
-
-if __name__ == "__main__":
-    print("✅ Tools loaded")
+        s,e=text.find("{"),text.rfind("}")+1
+        if s>=0 and e>s:
+            p=json.loads(text[s:e])
+            if isinstance(p,dict):
+                r=p.get("result")
+                return {"result":r if isinstance(r,str) else str(r)}
+    except: pass
+    return {"result":text.strip()}

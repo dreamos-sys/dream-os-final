@@ -1,129 +1,65 @@
 #!/usr/bin/env python3
-"""
-💾 Dream OS Agent Memory — SQLite + JSON Context
-Lightweight RAG (Retrieval-Augmented Generation) tanpa vector DB berat
-"""
-
-import sqlite3
-import json
+"""Dream OS Agent Memory - AUTO-INIT & ROBUST"""
+import sqlite3, os
 from pathlib import Path
-from datetime import datetime
 
-# ── CONFIG ───────────────────────────────────────
 DREAM_ROOT = Path.home() / "dream-live"
 DB_PATH = DREAM_ROOT / "logs" / "agent_memory.db"
 DOCS_DIR = DREAM_ROOT / "docs"
-# ──────────────────────────────────────────────────
 
-def init_db():
-    """Inisialisasi SQLite database"""
+def _get_conn():
+    """Helper: get connection + ensure tables exist"""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
-    cursor = conn.cursor()
-    
-    # Tabel context (cache dokumen)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS context (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            path TEXT UNIQUE,
-            content TEXT,
-            keywords TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
-    # Tabel audit (log aktivitas agent)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS audit (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            task TEXT,
-            prompt TEXT,
-            response TEXT,
-            action TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
+    c = conn.cursor()
+    # Create tables if not exist (idempotent)
+    c.execute("CREATE TABLE IF NOT EXISTS context (id INTEGER PRIMARY KEY, path TEXT UNIQUE, content TEXT, keywords TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, task TEXT, prompt TEXT, response TEXT, action TEXT)")
     conn.commit()
-    conn.close()
-    print(f"✅ Database initialized: {DB_PATH}")
+    return conn
+
 def index_docs():
-    """Index semua file di docs/ folder"""
-    if not DOCS_DIR.exists():
-        print("⚠️ docs/ folder not found")
-        return
-    
-    conn = sqlite3.connect(str(DB_PATH))
-    cursor = conn.cursor()
-    count = 0
-    
-    for file_path in DOCS_DIR.rglob("*.md"):
+    """Index docs folder (safe, idempotent)"""
+    if not DOCS_DIR.exists(): return
+    conn = _get_conn()
+    c = conn.cursor()
+    for f in DOCS_DIR.rglob("*.md"):
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Extract keywords sederhana (first 10 words)
-            keywords = " ".join(content.split()[:10]).lower()
-            
-            cursor.execute("""
-                INSERT OR REPLACE INTO context (path, content, keywords)
-                VALUES (?, ?, ?)
-            """, (str(file_path.relative_to(DREAM_ROOT)), content, keywords))
-            count += 1
-        except Exception as e:
-            print(f"⚠️ Skip {file_path}: {e}")
-    
+            txt = f.read_text(encoding="utf-8")[:5000]  # Limit size
+            kw = " ".join(txt.split()[:10]).lower()
+            c.execute("INSERT OR REPLACE INTO context (path,content,keywords) VALUES (?,?,?)", 
+                     (str(f.relative_to(DREAM_ROOT)), txt, kw))
+        except: pass
     conn.commit()
     conn.close()
-    print(f"✅ Indexed {count} documents")
 
 def query_context(query: str, limit: int = 3) -> str:
-    """Cari konteks relevan dari database"""
-    conn = sqlite3.connect(str(DB_PATH))
-    cursor = conn.cursor()
-    
-    # Simple keyword search (bisa upgrade ke BM25 nanti)
-    keywords = query.lower().split()
+    """Query context (AUTO-INIT: calls _get_conn which creates tables)"""
+    conn = _get_conn()  # ✅ This ensures tables exist!
+    c = conn.cursor()
     results = []
-    
-    for keyword in keywords:
-        if len(keyword) < 3:
-            continue
-        cursor.execute("""
-            SELECT path, content FROM context 
-            WHERE keywords LIKE ?
-            LIMIT ?
-        """, (f"%{keyword}%", limit))
-        results.extend(cursor.fetchall())
-        conn.close()
-    
-    if not results:
-        return "No relevant context found."
-    
-    # Format hasil
-    context_text = "Relevant documentation:\n"
-    for path, content in results[:3]:  # Max 3 results
-        context_text += f"\n📄 {path}:\n{content[:300]}...\n"
-    
-    return context_text
+    for kw in query.lower().split():
+        if len(kw) < 3: continue
+        c.execute("SELECT path,content FROM context WHERE keywords LIKE ? LIMIT ?", (f"%{kw}%", limit))
+        results.extend(c.fetchall())
+    conn.close()
+    if not results: return "No context found."
+    out = "Context:\n"
+    for p, txt in results[:3]:
+        out += f"📄 {p}: {txt[:200]}...\n"
+    return out
 
-def log_audit(task: str, prompt: str, response: str, action: str):
-    """Log aktivitas agent untuk transparansi"""
-    conn = sqlite3.connect(str(DB_PATH))
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO audit (task, prompt, response, action)
-        VALUES (?, ?, ?, ?)
-    """, (task, prompt[:500], response[:500], action))
+def log_audit(task, prompt, resp, action):
+    conn = _get_conn()
+    c = conn.cursor()
+    c.execute("INSERT INTO audit (task,prompt,response,action) VALUES (?,?,?,?)", 
+             (task, prompt[:300], resp[:300], action))
     conn.commit()
     conn.close()
 
-# Initialize on import
-init_db()
-index_docs()
+# ✅ AUTO-INIT: Run once when module is imported
+if not DB_PATH.exists() or os.path.getsize(DB_PATH) == 0:
+    index_docs()  # This calls _get_conn() which creates tables
 
-# Test
 if __name__ == "__main__":
-    print("\n🧪 Testing memory...")
-    print("Query 'spec':", query_context("spec")[:100])
-    print("✅ Memory ready!")
+    print("✅ Memory ready:", query_context("Dream")[:80])

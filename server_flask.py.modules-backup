@@ -1,0 +1,41 @@
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route("/")
+def root():
+    return jsonify({"status": "Dream OS Backend v3.6", "sovereign": True})
+
+@app.route("/api/ai/diagnose")
+def ai_diagnose():
+    query = request.args.get("query", "")
+    return jsonify({"query": query, "response": f"Analisa: {query}"})
+
+@app.route("/api/prayer")
+def get_prayer_times():
+    return jsonify({"prayers": {"fajr": "04:32", "dhuhr": "11:58", "asr": "15:12", "maghrib": "18:05", "isha": "19:16"}})
+
+@app.route("/api/agent", methods=["POST"])
+def agent_endpoint():
+    """POST /api/agent — Integrasi dengan agents/core.py"""
+    try:
+        from agents.core import process_task
+        data = request.get_json()
+        if not data or "task" not in data:
+            return jsonify({"success": False, "error": "Missing 'task'"}), 400
+        task = data["task"]
+        result = process_task(task)
+        return jsonify(result), 200 if result["success"] else 400
+    except ImportError as e:
+        return jsonify({"success": False, "error": f"Agent core not found: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/agent/status", methods=["GET"])
+def agent_status():
+    return jsonify({"status": "online", "version": "1.0.0", "model": "qwen2.5:0.5b"})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8082, debug=False)

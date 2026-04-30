@@ -1,0 +1,23 @@
+agent_query() {
+  local task="$1"
+  echo -e "${GREEN}🤖 Agent: $task${NC}" >&2
+  
+  if [ "$(check_backend)" = "✅" ]; then
+    # Debug: simpan respon mentah dulu
+    local response
+    response=$(curl -s -X POST "$API_BASE/api/agent" \
+      -H "Content-Type: application/json" \
+      -d "{\"task\":\"$task\"}")
+    
+    # Tampilkan raw response untuk debug
+    echo -e "${YELLOW}🔍 Raw response: $response${NC}" >&2
+    
+    # Coba parse dengan jq
+    echo "$response" | jq -r '.output // .error // "❌ No response"' 2>/dev/null || {
+      echo -e "${RED}❌ jq failed. Response might not be JSON.${NC}" >&2
+      echo "$response"  # Tampilkan apa adanya
+    }
+  else
+    echo -e "${YELLOW}⚠️ Backend offline${NC}" >&2
+  fi
+}
