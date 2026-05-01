@@ -1,8 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 case "$1" in
   "/multitester")
-    target="${2:-127.0.0.1}"
-    mode="${3:-quick}"
+    target="${2:-127.0.0.1}"; mode="${3:-quick}"
     echo "🤲 Konfirmasi: Audit sistem sendiri? (y/n)" >&2
     read -r confirm < /dev/tty
     [ "$confirm" != "y" ] && { echo "❌ Dibatalkan." >&2; exit 1; }
@@ -12,40 +11,93 @@ case "$1" in
     sub="${2:-status}"
     case "$sub" in
       "status")
-        echo "🛡️  DREAM SHIELD STATUS — $(date '+%Y-%m-%d %H:%M')"
+        echo "🛡️ DREAM SHIELD STATUS — $(date '+%Y-%m-%d %H:%M')"
         echo "--------------------------------------------------"
-        pgrep -f stealth_launcher >/dev/null && echo "🔐 Stealth: ✅ Aktif" || echo "🔐 Stealth: ❌ Nonaktif"
+        pgrep -f stealth_launcher >/dev/null 2>&1 && echo "🔐 Stealth: ✅ Aktif" || echo "🔐 Stealth: ❌ Nonaktif"
         grep -q "flask_limiter" ~/dream-live/server_flask.py 2>/dev/null && echo "🛑 Rate Limit: ✅ Terpasang" || echo "🛑 Rate Limit: ❌ Belum"
-        pgrep -f honeypot.py >/dev/null && echo "🕵️  Honeypot: ✅ Aktif" || echo "🕵️  Honeypot: ❌ Nonaktif"
+        pgrep -f honeypot >/dev/null 2>&1 && echo "🕵️ Honeypot: ✅ Aktif" || echo "🕵️ Honeypot: ❌ Nonaktif"
         echo "📊 Logs: $(wc -c < ~/dream-live/logs/blocked_ips.log 2>/dev/null || echo 0)B blocked | $(wc -c < ~/dream-live/logs/honeypot.json 2>/dev/null || echo 0)B honeypot"
         echo "🤲 Bi idznillah — Niat lurus, sistem terjaga."
         ;;
       "start")
-        echo "🚀 Starting Dream Shield..."
         python3 ~/dream-live/modules/honeypot.py >/dev/null 2>&1 &
         python3 ~/dream-live/modules/stealth_launcher.py >/dev/null 2>&1 &
         echo "✅ Layers started. Bi idznillah."
         ;;
       "stop")
-        echo "🛑 Stopping Dream Shield..."
-        pkill -f honeypot.py 2>/dev/null; pkill -f stealth_launcher 2>/dev/null
+        pkill -f honeypot 2>/dev/null; pkill -f stealth_launcher 2>/dev/null
         echo "✅ Layers stopped. Bi idznillah."
         ;;
-      "logs")
-        echo "📋 Last 3 blocked IPs:"; tail -3 ~/dream-live/logs/blocked_ips.log 2>/dev/null || echo "   (none)"
-        echo "📋 Last 3 honeypot hits:"; tail -3 ~/dream-live/logs/honeypot.json 2>/dev/null || echo "   (none)"
-        ;;
       "monitor")
-        echo "🔄 Starting Dream Shield Monitor (Ctrl+C to stop)"
         python3 ~/dream-live/modules/dream_shield.py monitor
         ;;
-      *)
-        echo "Usage: mr /dream-shield [status|start|stop|logs|monitor]" >&2
+      "sentinel")
+        echo "🛡️ Sentinel Active (Ctrl+C to stop)" >&2
+        bash ~/dream-live/modules/sentinel_auto.sh
         ;;
+      "verdict")
+        # Safe AI/Heuristic Verdict (langsung di 120b)
+        LOG_INPUT="${3:-$(tail -1 ~/dream-live/logs/honeypot.json 2>/dev/null)}"
+        [ -z "$LOG_INPUT" ] && { echo "❌ No log input. Usage: mr /dream-shield verdict '<json_line>'" >&2; exit 1; }
+        
+        # Parse IP aman (fallback kalau JSON rusak)
+        IP=$(echo "$LOG_INPUT" | python3 -c "
+import sys, json
+try:
+    d=json.load(sys.stdin)
+    print(d.get('ip', d.get('source_ip', '')))
+except: print('')" 2>/dev/null)
+        
+        # ⚡ Fast-track: Localhost = WHITE (nggak perlu tanya AI)
+        if [[ "$IP" == "127.0.0.1" || "$IP" == "::1" || -z "$IP" ]]; then
+          echo "⚡ Fast-track: WHITE (Localhost/Empty IP) — Bi idznillah."
+          exit 0
+        fi
+        
+        # Heuristic path check
+        PATH_HIT=$(echo "$LOG_INPUT" | python3 -c "
+import sys, json
+try:
+    d=json.load(sys.stdin)
+    print(d.get('path', d.get('target_port', '')))
+except: print('')
+" 2>/dev/null)
+        
+        if echo "$PATH_HIT" | grep -qiE '(admin|config|shell|\.env|wp-|phpmyadmin|exec|cmd)'; then
+          VERDICT="BLACK"
+        elif echo "$PATH_HIT" | grep -qiE '(favicon|static|css|js|robots|api/status|honeypot)'; then
+          VERDICT="WHITE"
+        else
+          VERDICT="GREY"
+        fi
+        echo "🔍 Heuristic Verdict: $VERDICT"
+        
+        # 🤖 Ollama Deep Check (timeout 5s, fallback aman)
+        if command -v ollama >/dev/null 2>&1; then
+          echo "🧠 Asking Ollama (max 5s)..."
+          OLLAMA_RES=$(timeout 5 ollama run qwen2.5:0.5b "Reply ONLY BLACK or WHITE. Log: $LOG_INPUT" 2>/dev/null | tr '[:lower:]' '[:upper:]' | grep -oE '(BLACK|WHITE)')
+          if [ -n "$OLLAMA_RES" ]; then
+            echo "🤖 Ollama Verdict: $OLLAMA_RES"
+          else
+            echo "⏱️ Ollama timeout/offline. Trust heuristic: $VERDICT"
+          fi
+        fi
+        ;;
+      *) echo "Usage: mr /dream-shield [status|start|stop|monitor|sentinel|verdict]" >&2 ;;
     esac
     ;;
+  "/dream-audit")
+    sub="${2:-verify}"
+    case "$sub" in
+      "integrity") bash ~/dream-live/modules/integrity_check.sh verify ;;
+      "baseline")  bash ~/dream-live/modules/integrity_check.sh baseline ;;
+      "vault")     bash ~/dream-live/modules/vault.sh "${3:-unlock}" ;;
+      "ai")        echo "🤖 AI Advisor (Ollama) checking..." ;;
+      "logs")      bash ~/dream-live/modules/integrity_check.sh logs ;;
+      *) echo "Usage: mr /dream-audit [integrity|baseline|vault|ai|logs]" >&2 ;;
+    esac    ;;
   *)
     echo "🕶️ Dream OS CLI — Usage: mr <command> [args]" >&2
-    echo "Available: /multitester /dream-shield" >&2
+    echo "Available: /multitester /dream-shield /dream-audit" >&2
     ;;
 esac

@@ -74,3 +74,44 @@ def ratelimit_handler(e):
         f.write(f"[{datetime.datetime.now()}] BLOCKED (429): {ip}\n")
     os.system(f"termux-notification --title '🛡️ Rate Limit' --content 'Too many requests from {ip}' 2>/dev/null")
     return {"error": "Rate limit exceeded. Bi idznillah."}, 429
+# --- DREAM OS UI & SMILING GENERAL TRAP ---
+import time, json, datetime, os
+from flask import render_template, jsonify, request
+
+@app.route('/')
+def dashboard():
+    return render_template('index.html')
+
+@app.route('/api/status')
+def api_status():
+    stealth = any('stealth' in p for p in os.popen('pgrep -f stealth_launcher').read().split())
+    ratelimit = 'flask_limiter' in open('/data/data/com.termux/files/home/dream-live/server_flask.py').read()
+    honeypot = any('honeypot' in p for p in os.popen('pgrep -f honeypot').read().split())
+    integrity = '✅ Utuh' if os.popen('bash ~/dream-live/modules/integrity_check.sh verify 2>/dev/null | grep -q "utuh" && echo 1').read().strip() == '1' else '⚠️ Perlu cek'
+    return jsonify({"stealth": stealth, "ratelimit": ratelimit, "honeypot": honeypot, "integrity": integrity})
+
+@app.route('/api/logs')
+def api_logs():
+    logs = []
+    try:
+        with open('logs/honeypot.json') as f:
+            for line in f.readlines()[-5:]:
+                d = json.loads(line)
+                logs.append({"time": d['time'][:19], "ip": d['ip'], "path": f":{d['target_port']}"})
+    except: pass
+    return jsonify(logs)
+
+# SMILING GENERAL TRAP (Safe, non-crashing, adaptive)
+@app.route('/honeypot/<path:path>', defaults={'path': 'root'})
+@app.route('/<path:path>')
+def smile_trap(path):
+    ip = request.remote_addr
+    ua = request.headers.get('User-Agent', 'Unknown')
+    log_entry = {"time": datetime.datetime.now().isoformat(), "ip": ip, "path": f"/{path}", "ua": ua}
+    
+    with open("logs/honeypot.json", "a") as f: f.write(json.dumps(log_entry) + "\n")
+    
+    # "Bonus" 1001^99 style: graceful delay + decoy payload
+    time.sleep(1.5)
+    decoy = {"status": "200 OK", "message": "Welcome to Dream OS 🤲", "note": "Enjoy the serenity.", "data": "🌿"}
+    return jsonify(decoy), 200

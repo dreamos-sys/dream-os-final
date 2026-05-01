@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dream OS — Smiling General</title>
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --accent: #10b981; --text: #e2e8f0; --muted: #94a3b8; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+    header { text-align: center; padding: 30px 0; }
+    h1 { font-size: 1.8rem; color: var(--accent); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+    .card { background: var(--card); padding: 16px; border-radius: 12px; border: 1px solid #334155; }
+    .card h3 { color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .status { font-weight: bold; }
+    .log-list { max-height: 120px; overflow-y: auto; font-size: 0.85rem; color: var(--muted); }
+    .log-list div { padding: 4px 0; border-bottom: 1px solid #334155; }
+    footer { text-align: center; margin-top: 30px; color: var(--muted); font-size: 0.9rem; }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛡️ Dream OS — Smiling General</h1>
+    <p>Security through Serenity. Niat lurus, sistem terjaga.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🔐 Shield Status</h3>
+      <div id="shield-status" class="status">Loading...</div>
+    </div>
+    <div class="card">
+      <h3>📊 Integrity</h3>
+      <div id="integrity-status" class="status">Loading...</div>
+    </div>
+    <div class="card">
+      <h3>📜 Recent Logs</h3>
+      <div id="log-list" class="log-list">Loading...</div>
+    </div>
+    <div class="card">
+      <h3>🕳️ Trap Monitor</h3>
+      <div id="trap-status" class="status">Active. Smiling. ☕</div>
+    </div>
+  </div>
+
+  <footer>🤲 Bi idznillah — Kedaulatan digital terjaga.</footer>
+
+  <script>
+    const fetchJSON = async (url) => (await fetch(url)).json();
+    const updateUI = async () => {
+      try {
+        const status = await fetchJSON('/api/status');
+        document.getElementById('shield-status').innerHTML = 
+          `Stealth: ${status.stealth ? '✅' : '❌'} | RateLimit: ${status.ratelimit ? '✅' : '❌'} | Honeypot: ${status.honeypot ? '✅' : '❌'}`;
+        document.getElementById('integrity-status').innerHTML = status.integrity;
+        
+        const logs = await fetchJSON('/api/logs');
+        document.getElementById('log-list').innerHTML = logs.map(l => `<div>${l.time} | ${l.ip} → ${l.path}</div>`).join('');
+      } catch(e) { console.warn('UI update skipped:', e); }
+    };
+    setInterval(updateUI, 5000); updateUI();
+  </script>
+</body>
+</html>
