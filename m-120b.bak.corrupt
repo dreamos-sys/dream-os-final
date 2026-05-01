@@ -1,0 +1,41 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Dream OS CLI Router v4.0 — Modular Architecture
+DREAM_ROOT="${HOME}/dream-live"
+MODULES="${DREAM_ROOT}/modules"
+
+# Auto-load modules
+for mod in "${MODULES}"/*.sh; do [ -f "$mod" ] && source "$mod"; done
+
+# Simple router
+case "$1" in
+  "/ship") deploy_task "$2" ;;
+  "/status") check_status ;;
+  "/chat") chat_mode ;;
+  "/agent")
+    task="$2"
+    echo "🤖 Mr. M: Thinking..." >&2
+    task_json=$(printf '%s' "$task" | sed 's/"/\\\"/g')
+    resp=$(curl -s -X POST "http://127.0.0.1:8082/api/agent" \
+      -H "Content-Type: application/json" \
+      -d "{\"task\":\"$task_json\"}" 2>/dev/null)
+    if echo "$resp" | grep -q '"success":true'; then
+      echo "$resp" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' >&2
+    else
+      echo "⚠️ AI service unavailable" >&2
+    fi
+    ;;
+
+    ;;
+    ;;  "/multitester")
+    target="${2:-127.0.0.1}"
+    mode="${3:-quick}"
+    echo "🤲 Konfirmasi: Audit sistem sendiri? (y/n)" >&2
+    read -r confirm < /dev/tty
+    [ "$confirm" != "y" ] && { echo "❌ Dibatalkan." >&2; exit 1; }
+    python3 ~/dream-live/modules/multitester.py "$target" "$mode"
+    ;;
+
+  *)
+    echo "🕶️ DREAM OS CLI v4.1 — Usage: mr <command> [args]" >&2
+    ;;
+esac

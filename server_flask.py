@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_cors import CORS
 import requests, sqlite3
 from pathlib import Path
 
 app = Flask(__name__)
+limiter = Limiter(get_remote_address, app=app, default_limits=["100 per hour", "20 per minute"], storage_uri="memory://")
 CORS(app)
 DR = Path.home() / "dream-live"
 DB = DR / "logs" / "agent_memory.db"
@@ -62,3 +65,12 @@ def ag():
 
 if __name__ == "__main__":
     print("Dream OS Backend v4.1 starting..."); app.run(host="0.0.0.0", port=8082, debug=False)
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    import datetime, os
+    ip = request.remote_addr
+    with open("logs/blocked_ips.log", "a") as f:
+        f.write(f"[{datetime.datetime.now()}] BLOCKED (429): {ip}\n")
+    os.system(f"termux-notification --title '🛡️ Rate Limit' --content 'Too many requests from {ip}' 2>/dev/null")
+    return {"error": "Rate limit exceeded. Bi idznillah."}, 429

@@ -1,187 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Dream OS CLI Router v4.0 — Modular Architecture
-DREAM_ROOT="${HOME}/dream-live"
-MODULES="${DREAM_ROOT}/modules"
-
-# Auto-load modules
-for mod in "${MODULES}"/*.sh; do [ -f "$mod" ] && source "$mod"; done
-
-# Simple router
 case "$1" in
-  "/ship") deploy_task "$2" ;;
-  "/status") check_status ;;
-  "/chat") chat_mode ;;
-  "/agent")
-    task="$2"
-    echo "🤖 Mr. M: Thinking..." >&2
-    task_json=$(printf '%s' "$task" | sed 's/"/\\\"/g')
-    resp=$(curl -s -X POST "http://127.0.0.1:8082/api/agent" \
-      -H "Content-Type: application/json" \
-      -d "{\"task\":\"$task_json\"}" 2>/dev/null)
-    if echo "$resp" | grep -q '"success":true'; then
-      echo "$resp" | sed -n 's/.*"output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' >&2
-    else
-      echo "⚠️ AI service unavailable" >&2
-    fi
+  "/multitester")
+    target="${2:-127.0.0.1}"
+    mode="${3:-quick}"
+    echo "🤲 Konfirmasi: Audit sistem sendiri? (y/n)" >&2
+    read -r confirm < /dev/tty
+    [ "$confirm" != "y" ] && { echo "❌ Dibatalkan." >&2; exit 1; }
+    python3 ~/dream-live/modules/multitester.py "$target" "$mode"
     ;;
-"/ghost")
-    echo "👻 GHOST MODE — You hold the sword. Niat lurus?" >&2
-    echo "Available tools: nmap, exiftool, theHarvester, shodan" >&2
-    echo "Usage: mr /ghost-exec <command>" >&2
-    echo "Example: mr /ghost-exec 'nmap -sV 127.0.0.1'" >&2
-    echo "🤲 Reminder: Bi idznillah — Niat lurus, sistem terjaga." >&2
+  "/dream-shield")
+    sub="${2:-status}"
+    case "$sub" in
+      "status")
+        echo "🛡️  DREAM SHIELD STATUS — $(date '+%Y-%m-%d %H:%M')"
+        echo "--------------------------------------------------"
+        pgrep -f stealth_launcher >/dev/null && echo "🔐 Stealth: ✅ Aktif" || echo "🔐 Stealth: ❌ Nonaktif"
+        grep -q "flask_limiter" ~/dream-live/server_flask.py 2>/dev/null && echo "🛑 Rate Limit: ✅ Terpasang" || echo "🛑 Rate Limit: ❌ Belum"
+        pgrep -f honeypot.py >/dev/null && echo "🕵️  Honeypot: ✅ Aktif" || echo "🕵️  Honeypot: ❌ Nonaktif"
+        echo "📊 Logs: $(wc -c < ~/dream-live/logs/blocked_ips.log 2>/dev/null || echo 0)B blocked | $(wc -c < ~/dream-live/logs/honeypot.json 2>/dev/null || echo 0)B honeypot"
+        echo "🤲 Bi idznillah — Niat lurus, sistem terjaga."
+        ;;
+      "start")
+        echo "🚀 Starting Dream Shield..."
+        python3 ~/dream-live/modules/honeypot.py >/dev/null 2>&1 &
+        python3 ~/dream-live/modules/stealth_launcher.py >/dev/null 2>&1 &
+        echo "✅ Layers started. Bi idznillah."
+        ;;
+      "stop")
+        echo "🛑 Stopping Dream Shield..."
+        pkill -f honeypot.py 2>/dev/null; pkill -f stealth_launcher 2>/dev/null
+        echo "✅ Layers stopped. Bi idznillah."
+        ;;
+      "logs")
+        echo "📋 Last 3 blocked IPs:"; tail -3 ~/dream-live/logs/blocked_ips.log 2>/dev/null || echo "   (none)"
+        echo "📋 Last 3 honeypot hits:"; tail -3 ~/dream-live/logs/honeypot.json 2>/dev/null || echo "   (none)"
+        ;;
+      *) echo "Usage: mr /dream-shield [status|start|stop|logs]" >&2 ;;
+    esac
     ;;
-  "/ghost-exec")
-    cmd="$2"
-    if [ -z "$cmd" ]; then echo "⚠️ Usage: mr /ghost-exec '<command>'" >&2; exit 1; fi
-    echo "👻 Executing: $cmd" >&2
-    mkdir -p ~/dream-live/logs
-    echo "[$(date)] GHOST: $cmd" >> ~/dream-live/logs/ghost.log
-    eval "$cmd" 2>&1
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/shodan-py")
-    query="$2"
-    if [ -z "$query" ]; then echo "Usage: mr /shodan-py '<query>'" >&2; exit 1; fi
-    echo "🔍 Shodan Python API: $query" >&2
-    python3 -c "
-import shodan, os
-api = shodan.Shodan(os.getenv('SHODAN_API_KEY'))
-try:
-    result = api.host('$query') if '.' in '$query' else api.search('$query')
-    import json; print(json.dumps(result, indent=2) if isinstance(result, dict) else result)
-except Exception as e: print(f'Error: {e}')
-" 2>&1
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/shodan-curl")
-    query="$2"
-    if [ -z "$query" ]; then echo "Usage: mr /shodan-curl '<query>'" >&2; exit 1; fi
-    echo "🌐 Shodan API via curl: $query" >&2
-    curl -s "https://api.shodan.io/shodan/host/$query?key=\$SHODAN_API_KEY" 2>&1 | jq . 2>/dev/null || echo "⚠️ Install jq: pkg install jq"
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/sysmon")
-    echo "📊 DREAM OS SYSTEM MONITOR — btop" >&2
-    echo "🤲 Niat: Audit sistem sendiri, bukan mengintai orang lain" >&2
-    echo "⚡ Tekan 'q' untuk keluar" >&2
-    echo "" >&2
-    btop --preset "dream" 2>/dev/null || btop
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/tshark-lite")
-    iface="${2:-lo}"  # Default: loopback (aman)
-    echo "📡 TShark Lite — Interface: $iface" >&2
-    echo "🤲 Hanya capture traffic lokal/edukasi" >&2
-    echo "⚠️  Tekan Ctrl+C untuk berhenti" >&2
-    echo "" >&2
-    timeout 10 tshark -i "$iface" -c 5 -T fields -e ip.src -e ip.dst -e tcp.port -e http.request.method 2>/dev/null || echo "⚠️  Butuh permission: pkg install tsu + root"
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/nuclei-safe")
-    target="$2"
-    if [ -z "$target" ]; then echo "Usage: mr /nuclei-safe '<local-url>'" >&2; exit 1; fi
-    if [[ ! "$target" =~ ^https?://(localhost|127\.0\.0\.1) ]]; then
-      echo "⚠️  /nuclei-safe hanya untuk localhost/127.0.0.1" >&2
-      echo "🤲 Prinsip: Defensive scan untuk sistem sendiri" >&2
-      exit 1
-    fi
-    echo "🛡️  Nuclei Safe Scan: $target" >&2
-    echo "🤲 Template: only 'info' & 'tech-detect' (non-intrusive)" >&2
-    ~/go/bin/nuclei -u "$target" -t exposures/takeovers,technologies/ -silent -json 2>/dev/null | jq -c . 2>/dev/null || echo "⚠️  Install jq: pkg install jq"
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/ffuf-lite")
-    url="$2"
-    if [ -z "$url" ]; then echo "Usage: mr /ffuf-lite '<local-url>'" >&2; exit 1; fi
-    if [[ ! "$url" =~ ^https?://(localhost|127\.0\.0\.1) ]]; then
-      echo "⚠️  /ffuf-lite hanya untuk localhost/127.0.0.1" >&2
-      echo "🤲 Edukasi: Test directory structure sistem sendiri" >&2
-      exit 1
-    fi
-    echo "🔍 FFuf Lite: $url" >&2
-    echo "🤲 Wordlist: common.txt (edukasi struktur web)" >&2
-    ffuf -u "$url/FUZZ" -w /data/data/com.termux/files/usr/share/wordlists/dirb/common.txt -mc 200,301,403 -t 10 -silent 2>/dev/null | head -20
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/ghost-suite")
-    echo "╔════════════════════════════════╗" >&2
-    echo "║  👻 GHOST MODE — DREAM OS v4.1 ║" >&2
-    echo "╚════════════════════════════════╝" >&2
-    echo "" >&2
-    echo "🔍 OSINT & Recon:" >&2
-    echo "   • mr /ghost-exec 'nmap -sV 127.0.0.1'" >&2
-    echo "   • mr /shodan-curl '8.8.8.8'" >&2
-    echo "" >&2
-    echo "📊 System Audit:" >&2
-    echo "   • mr /sysmon          # Visual monitor" >&2
-    echo "   • mr /strace-me 'cmd' # Debug system calls" >&2
-    echo "" >&2
-    echo "🌐 Network Analysis:" >&2
-    echo "   • mr /tshark-lite lo  # Packet capture (local)" >&2
-    echo "" >&2
-    echo "🛡️ Defensive Security:" >&2
-    echo "   • mr /nuclei-safe 'http://127.0.0.1:8082'" >&2
-    echo "   • mr /ffuf-lite 'http://127.0.0.1:8082'" >&2
-    echo "" >&2
-    echo "🤲 PRINSIP GHOST MODE:" >&2
-    echo "   • Hanya untuk sistem milik sendiri" >&2
-    echo "   • Edukasi & pertahanan defensif" >&2
-    echo "   • Audit log: ~/dream-live/logs/ghost.log" >&2
-    echo "   • Selalu: 'Bi idznillah — Niat lurus, sistem terjaga'" >&2
-    echo "" >&2
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-"/sysmon")
-    echo "📊 DREAM OS SYSTEM MONITOR" >&2
-    echo "🤲 Audit sistem sendiri, bukan mengintai orang lain" >&2
-    echo "⚡ Tekan 'q' untuk keluar" >&2
-    btop --preset "dream" 2>/dev/null || btop
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-  "/strace-me")
-    cmd="$2"
-    [ -z "$cmd" ] && { echo "Usage: mr /strace-me '<cmd>'" >&2; exit 1; }
-    echo "🔍 Tracing: $cmd" >&2
-    strace -c "$cmd" 2>&1 | head -50
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-  "/tshark-lite")
-    iface="${2:-lo}"
-    echo "📡 TShark Lite — Interface: $iface" >&2
-    echo "🤲 Hanya capture traffic lokal/edukasi" >&2
-    timeout 10 tshark -i "$iface" -c 5 -T fields -e ip.src -e ip.dst -e tcp.port 2>/dev/null || echo "⚠️  Butuh root untuk interface lain"
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-  "/nuclei-safe")
-    target="$2"
-    [ -z "$target" ] && { echo "Usage: mr /nuclei-safe '<local-url>'" >&2; exit 1; }
-    [[ ! "$target" =~ ^https?://(localhost|127\.0\.0\.1) ]] && { echo "⚠️  Hanya untuk localhost/127.0.0.1" >&2; exit 1; }
-    echo "🛡️  Nuclei Safe Scan: $target" >&2
-    [ -f ~/go/bin/nuclei ] && ~/go/bin/nuclei -u "$target" -t exposures/takeovers,technologies/ -silent -json 2>/dev/null | jq -c . 2>/dev/null || echo "⚠️  Install nuclei via Go first"
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-  "/ffuf-lite")
-    url="$2"
-    [ -z "$url" ] && { echo "Usage: mr /ffuf-lite '<local-url>'" >&2; exit 1; }
-    [[ ! "$url" =~ ^https?://(localhost|127\.0\.0\.1) ]] && { echo "⚠️  Hanya untuk localhost/127.0.0.1" >&2; exit 1; }
-    echo "🔍 FFuf Lite: $url" >&2
-    ffuf -u "$url/FUZZ" -w /data/data/com.termux/files/usr/share/wordlists/dirb/common.txt -mc 200,301,403 -t 10 -silent 2>/dev/null | head -20
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-  "/ghost-suite")
-    echo "╔════════════════════════════════╗" >&2
-    echo "║  👻 GHOST MODE — DREAM OS v4.1 ║" >&2
-    echo "╚════════════════════════════════╝" >&2
-    echo "🔍 OSINT: /ghost-exec, /shodan-curl" >&2
-    echo "📊 System: /sysmon, /strace-me" >&2
-    echo "🌐 Network: /tshark-lite" >&2
-    echo "🛡️  Security: /nuclei-safe, /ffuf-lite" >&2
-    echo "🤲 Prinsip: Edukasi, defensif, niat lurus" >&2
-    echo "✅ Done. Bi idznillah." >&2
-    ;;
-  *) 
-    echo "╔════════════════╗"; echo "║ 🕶️ Mr. M v4.0 ║"; echo "╚════════════════╝" >&2
-    echo "Usage: $0 {/agent|/ship|/status} [args]" >&2 
+  *)
+    echo "🕶️ Dream OS CLI — Usage: mr <command> [args]" >&2
+    echo "Available: /multitester /dream-shield" >&2
     ;;
 esac
