@@ -90,4 +90,22 @@ if __name__ == "__main__":
     elif cmd == "logs": 
         tail_log("blocked_ips.log")
         tail_log("honeypot.json")
-    else: print(f"Usage: dream_shield.py [status|start|stop|logs]")
+    elif cmd == "monitor": monitor()
+    else: print(f"Usage: dream_shield.py [status|start|stop|logs|monitor]")
+
+def monitor(interval=300):  # Default: check tiap 5 menit
+    import time
+    print(f"🔄 Dream Shield Monitor started — check interval: {interval}s")
+    print("🤲 Bi idznillah — Niat lurus, sistem terjaga.")
+    while True:
+        # Cek stealth_launcher
+        if not check_process("stealth_launcher"):
+            print("⚠️  Stealth launcher mati → restarting...")
+            subprocess.Popen(["python3", str(Path.home()/ "dream-live"/ "modules"/ "stealth_launcher.py")],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Cek honeypot
+        if not check_process("honeypot"):
+            print("⚠️  Honeypot mati → restarting...")
+            subprocess.Popen(["python3", str(Path.home()/ "dream-live"/ "modules"/ "honeypot.py")],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(interval)
