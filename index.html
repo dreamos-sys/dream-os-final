@@ -1,22 +1,28 @@
+cd ~/dream-live
+
+cat > index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="id" dir="ltr" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#020617">
-    <title>Dream OS v1.0 • Genesis</title>
+    <meta name="theme-color" content="#0f172a">
+    <title>Dream OS v1.1 • Modern Glass</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        arabic: ['Scheherazade New', 'Amiri', 'serif'],
+                        sans: ['Inter', 'sans-serif']
+                    },
                     colors: {
-                        teal: { 400: '#2dd4bf', 500: '#14b8a6' },
-                        emerald: { 400: '#34d399', 500: '#10b981' },
-                        slate: { 900: '#0f172a', 950: '#020617' }
+                        teal: { 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488' },
+                        emerald: { 400: '#34d399', 500: '#10b981' }
                     }
                 }
             }
@@ -24,107 +30,581 @@
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; background-color: #020617; }
-        .font-arabic { font-family: 'Amiri', serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); }
+        .font-arabic { font-family: 'Scheherazade New', 'Amiri', serif; }
         .view { display: none; }
         .view.active { display: flex; }
-        .glass-card {
-            background: rgba(15, 23, 42, 0.65);
+        #auth-view.active { display: flex; }
+        
+        /* Modern Glassmorphism */
+        .glass-modern {
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-        .gradient-border {
-            position: relative;
-            border-radius: 1.5rem;
+        
+        /* Arabic Calligraphy Glow */
+        .arabic-glow {
+            text-shadow: 0 0 20px rgba(45, 212, 191, 0.5), 0 0 40px rgba(45, 212, 191, 0.3);            filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.5));
         }
-        .gradient-border::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            background: linear-gradient(135deg, rgba(45,212,191,0.4), rgba(16,185,129,0.1));
-            border-radius: 1.5rem;
-            z-index: -1;
+        
+        /* Card Hover Effects */
+        .menu-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
         }
-        .magnet { transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1); }
-        .magnet:active { transform: scale(0.96); }
-        .ghost-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
-        .ghost-overlay.active { display: flex; }
+        .menu-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(45, 212, 191, 0.3);
+            border-color: rgba(45, 212, 191, 0.5);
+        }
+        
+        /* Statistics Card */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Animated Gradient Background */
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #134e5e);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Pulse Animation for AI Badge */
+        .pulse-badge { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .magnet:active { transform: scale(0.95); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
-<body class="text-slate-200 h-screen overflow-hidden flex flex-col bg-slate-950">
+<body class="text-white h-screen overflow-hidden gradient-bg">
 
-    <div id="app-root" class="h-full w-full flex flex-col"></div>
+    <!-- AUTH SCREEN -->
+    <section id="auth-view" class="view active flex-col items-center justify-center h-full p-6 text-center">
+        <div id="dream-logo" class="mb-8 cursor-pointer select-none magnet">
+            <div class="w-32 h-32 rounded-3xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-[0_0_50px_rgba(45,212,191,0.5)] flex items-center justify-center text-5xl font-bold text-white mb-4">                <span class="font-arabic">د</span>
+            </div>
+            <p class="text-sm text-teal-300 font-semibold tracking-[0.3em]">DREAM OS</p>
+        </div>
+        
+        <!-- Arabic Calligraphy - Bismillah & Shalawat Lengkap -->
+        <div class="mb-8 p-6 rounded-2xl glass-modern">
+            <h1 class="font-arabic text-4xl md:text-5xl text-teal-400 mb-4 arabic-glow leading-relaxed">
+                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+            </h1>
+            <p class="font-arabic text-2xl md:text-3xl text-emerald-400 arabic-glow leading-relaxed">
+                اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى سَيِّدِنَا مُحَمَّدٍ وَعَلَى آلِ سَيِّدِنَا مُحَمَّدٍ
+            </p>
+            <p class="text-xs text-teal-300/60 mt-4 tracking-[0.2em] uppercase">The Power Soul of Shalawat</p>
+        </div>
+        
+        <div class="w-full max-w-xs glass-modern p-6 rounded-3xl">
+            <div class="relative mb-4">
+                <input type="password" id="access-key" placeholder="Access Key" 
+                    class="w-full px-4 py-3.5 bg-white/10 rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-teal-400 text-center tracking-widest text-white placeholder-white/40">
+                <button id="toggle-pw" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-teal-400 p-2">
+                    <i data-lucide="eye" class="w-5 h-5" id="eye-off"></i>
+                    <i data-lucide="eye-off" class="w-5 h-5 hidden" id="eye-on"></i>
+                </button>
+            </div>
+            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-2xl shadow-lg shadow-teal-500/30 magnet">
+                ACCESS SYSTEM
+            </button>
+        </div>
+    </section>
 
-    <script src="core.js"></script>
+    <!-- MAIN APP -->
+    <div id="app-view" class="view flex-col h-full">
+        
+        <!-- MODERN HEADER -->
+        <header id="app-header" class="hidden px-4 py-4 glass-modern border-b border-white/10 shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-2xl font-bold text-white shadow-lg">
+                        <span class="font-arabic">د</span>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold text-white">Dream OS</h1>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="text-[10px] text-teal-300">v1.1 Modern</span>
+                            <span id="ai-status" class="ai-badge px-1.5 py-0.5 rounded text-[9px] bg-orange-500/80 pulse-badge">AI: Fallback</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">                    <span id="role-badge" class="px-3 py-1 bg-teal-500/20 border border-teal-500/50 rounded-lg text-[10px] font-bold text-teal-300">STAFF</span>
+                    <button id="btn-logout" class="p-2 text-white/60 hover:text-red-400 magnet">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-24 space-y-4">
+            
+            <!-- HOME VIEW -->
+            <div id="view-home" class="view-section active space-y-4">
+                
+                <!-- STATISTICS CARD -->
+                <div class="stat-card rounded-3xl p-5 hidden" id="stats-card">
+                    <h3 class="text-sm font-semibold text-white/80 mb-4">Today's Statistics</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-white/60 mb-1">Users</p>
+                            <p class="text-2xl font-bold text-white">1,450 <span class="text-xs text-emerald-400">(+12%)</span></p>
+                            <div class="mt-2 h-8 flex items-end gap-1">
+                                <div class="flex-1 bg-teal-500/30 rounded-t" style="height: 40%"></div>
+                                <div class="flex-1 bg-teal-500/50 rounded-t" style="height: 60%"></div>
+                                <div class="flex-1 bg-teal-500/70 rounded-t" style="height: 80%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-white/60 mb-1">Transactions</p>
+                            <p class="text-2xl font-bold text-white">890</p>
+                            <div class="mt-2 h-8 flex items-end gap-1">
+                                <div class="flex-1 bg-emerald-500/30 rounded-t" style="height: 50%"></div>
+                                <div class="flex-1 bg-emerald-500/50 rounded-t" style="height: 70%"></div>
+                                <div class="flex-1 bg-emerald-500/70 rounded-t" style="height: 90%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-white/60 mb-1">System Uptime</p>
+                            <p class="text-xl font-bold text-teal-400">99.98%</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-white/60 mb-1">Prayer Streak</p>
+                            <p class="text-xl font-bold text-emerald-400">5 Days 🔥</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7-SLIDE CAROUSEL -->
+                <div id="carousel-container" class="glass-modern rounded-3xl overflow-hidden hidden">
+                    <div id="carousel-slides" class="p-5"></div>                    <div class="carousel-dots" id="carousel-dots"></div>
+                </div>
+
+                <!-- 9-GRID MENU (MODERN CARDS) -->
+                <div id="staff-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 hidden"></div>
+            </div>
+
+            <!-- COMMAND CENTER VIEW -->
+            <div id="view-command" class="view-section hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-teal-400">Command Center</h2>
+                    <span id="command-ai-badge" class="ai-badge px-2 py-1 rounded text-[10px] bg-orange-500/80">AI: Fallback</span>
+                </div>
+                <div class="glass-modern p-4 rounded-2xl">
+                    <input type="text" id="command-search" placeholder="🔍 Search data..." 
+                        class="w-full bg-transparent text-white focus:outline-none placeholder-white/40">
+                </div>
+                <div id="command-results" class="hidden space-y-2"></div>
+            </div>
+
+            <!-- OTHER VIEWS -->
+            <div id="view-user" class="view-section hidden space-y-4">
+                <div class="glass-modern p-6 rounded-3xl text-center">
+                    <div class="w-24 h-24 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl font-bold text-white shadow-lg">U</div>
+                    <h3 class="text-xl font-bold text-white mb-2">User Profile</h3>
+                    <p class="text-sm text-white/60">ID: USR-2024-001</p>
+                    <p class="text-sm text-teal-400 mt-2">Role: <span id="profile-role">STAFF</span></p>
+                    <button id="btn-logout-profile" class="mt-6 w-full py-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-bold rounded-2xl magnet flex items-center justify-center gap-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-qr" class="view-section hidden space-y-4">
+                <div class="glass-modern p-6 rounded-3xl text-center">
+                    <i data-lucide="scan-line" class="w-16 h-16 text-teal-400 mx-auto mb-4"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">QR Smart Scanner</h3>
+                    <p class="text-sm text-white/60 mb-6">Scan QRIS, Barcode, QR Code</p>
+                    <button onclick="alert('📷 Camera ready')" class="w-full py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold rounded-2xl magnet">
+                        Open Scanner
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-info" class="view-section hidden space-y-4">
+                <div class="glass-modern p-6 rounded-3xl text-center">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 mx-auto mb-4 flex items-center justify-center text-4xl font-bold text-white shadow-lg">
+                        <span class="font-arabic">د</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-teal-400 mb-2">Dream OS</h3>                    <p class="text-sm text-white/60 mb-4">v1.1 • Modern Glass Edition</p>
+                    <p class="text-xs text-white/40">Sovereign Modular AI Agent<br>Out of The Box Inside</p>
+                </div>
+            </div>
+
+            <div id="view-config" class="view-section hidden space-y-4">
+                <div class="glass-modern p-5 rounded-3xl space-y-4">
+                    <h3 class="text-base font-bold text-teal-400 mb-3">Settings</h3>
+                    <div class="flex justify-between items-center py-3 border-b border-white/10">
+                        <span class="text-sm text-white/80">Dark/Light Mode</span>
+                        <button onclick="document.documentElement.classList.toggle('dark')" class="px-4 py-2 bg-white/10 rounded-xl text-sm">Toggle</button>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-white/10">
+                        <span class="text-sm text-white/80">Language</span>
+                        <select class="bg-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                            <option value="id" class="bg-slate-800">Indonesia</option>
+                            <option value="en" class="bg-slate-800">English</option>
+                            <option value="ar" class="bg-slate-800">العربية</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- BOTTOM NAVIGATION -->
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass-modern border-t border-white/10 flex justify-around items-center h-16 safe-bottom z-50 hidden">
+            <button class="nav-btn active flex flex-col items-center justify-center gap-1 w-full h-full text-teal-400" data-target="home">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">HOME</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="user">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">USER</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="qr">
+                <i data-lucide="scan-line" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">MENU</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="info">
+                <i data-lucide="info" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">INFO</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="config">
+                <i data-lucide="settings" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">CONFIG</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- GHOST MODE OVERLAY -->    <div id="ghost-overlay" class="ghost-overlay" style="background: rgba(15, 32, 39, 0.98);">
+        <div class="ghost-header">
+            <div class="flex items-center gap-2">
+                <i data-lucide="ghost" class="w-6 h-6 text-teal-400"></i>
+                <span class="text-lg font-bold text-teal-300">GHOST MODE</span>
+            </div>
+            <button id="ghost-close" class="p-2 text-white/60 hover:text-white">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <div class="ghost-grid" id="ghost-tools"></div>
+    </div>
+
+    <!-- JAVASCRIPT ENGINE -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            fetch('modules/auth.html')
-                .then(res => res.text())
-                .then(html => {
-                    document.getElementById('app-root').innerHTML = html;
-                    lucide.createIcons();
-                    
-                    document.getElementById('btn-login').onclick = () => {
-                        const key = document.getElementById('access-key').value;
-                        if (!key) return alert('Masukkan Access Key!');
-                        
-                        fetch('modules/dashboard.html')
-                            .then(res => res.text())
-                            .then(dashHtml => {
-                                document.getElementById('app-root').innerHTML = dashHtml;
-                                lucide.createIcons();
-                                
-                                fetch('modules/header.html')
-                                    .then(hRes => hRes.text())
-                                    .then(hHtml => {
-                                        document.getElementById('header-wrapper').innerHTML = hHtml;
-                                        lucide.createIcons();
-                                        document.getElementById('btn-logout').onclick = () => window.location.reload();
-                                    });
+    console.log('✅ Dream OS v1.1 Modern Glass Loading...');
+    const state = { role: 'STAFF', currentView: 'home', ghostTaps: 0, ghostTimer: null, carouselInterval: null, ghostAudit: 0, aiReady: false };
+    
+    // AI Service
+    const aiService = {
+        config: { baseURL: 'http://127.0.0.1:8082', endpoint: '/api/v1/ai-agent', timeout: 8000, model: 'nemo-120b', fallback: true },
+        async isReady() { try { const c = new AbortController(); const t = setTimeout(()=>c.abort(), this.config.timeout); const r = await fetch(`${this.config.baseURL}${this.config.endpoint}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt:'ping', model:this.config.model}), signal:c.signal}); clearTimeout(t); return r.ok; } catch(e){return false;} },
+        async query(prompt, context={}) { const on = await this.isReady(); if(!on && this.config.fallback) return this.fallback(prompt,context); try { const c = new AbortController(); const t = setTimeout(()=>c.abort(), this.config.timeout); const r = await fetch(`${this.config.baseURL}${this.config.endpoint}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, model:this.config.model, context:{role:context.role||'STAFF', time:new Date().toISOString(), ...context}, stream:false}), signal:c.signal}); clearTimeout(t); if(!r.ok) throw new Error(`HTTP ${r.status}`); const d = await r.json(); return {success:true, response: d.response||d.answer||d.text||'', source:'nemo-120b'}; } catch(e){ return this.fallback(prompt,context); } },
+        fallback(prompt, context) { const l = prompt.toLowerCase(); if(l.includes('cuaca')||l.includes('weather')) return {success:true, response:'🌤️ Cerah Berawan - 32°C\n⚠️ AI Offline: Prediksi hujan 15:00\nJanitor Outdoor siap siaga.', source:'fallback'}; if(l.includes('cari')||l.includes('search')) return {success:true, response:'🔍 Hasil Pencarian (Fallback):\n• Booking: Rapat 09:00\n• K3: AC Ruang Rapat (60%)\n• Maintenance: Lampu Lobby (Done)', source:'fallback'}; return {success:true, response:`🤖 Response (Fallback): "${prompt}"\n\n⚠️ Nemo-120B offline.`, source:'fallback'}; },
+        async predictWeather(loc) { return this.query(`Analisis cuaca untuk ${loc} 3 jam ke depan.`, {task:'weather'}); }
+    };
+    if(typeof window!=='undefined') window.aiService = aiService;
 
-                                fetch('modules/stats.html')
-                                    .then(sRes => sRes.text())
-                                    .then(sHtml => {
-                                        document.getElementById('stats-wrapper').innerHTML = sHtml;
-                                        fetch('modules/grid.html')
-                                            .then(gRes => gRes.text())
-                                            .then(gHtml => {
-                                                document.getElementById('grid-wrapper').innerHTML = gHtml;
-                                                window.renderMainGrid();
-                                                lucide.createIcons();
-                                            });
-                                    });
-                                
-                                fetch('modules/nav.html')
-                                    .then(nRes => nRes.text())
-                                    .then(nHtml => {
-                                        document.getElementById('nav-wrapper').innerHTML = nHtml;
-                                        lucide.createIcons();
-                                    });
-                            });
-                    };
+    // UI Data
+    const carouselSlides = [
+        { icon: 'hand', title: 'Selamat Datang', content: '<p class="text-sm text-white/70 mb-2">Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan. Terima kasih.</p>' },
+        { icon: 'calendar', title: 'Jadwal Booking', content: '<div class="space-y-2"><div class="bg-white/5 p-3 rounded-xl border border-white/10"><p class="text-[10px] text-white/50">Hari Ini</p><p class="text-sm font-semibold text-white">Rapat Koordinasi - 09:00 WIB</p></div><div class="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30"><p class="text-[10px] text-emerald-400">Besok</p><p class="text-sm font-semibold text-white">Kunjungan Yayasan - 13:00 WIB</p></div></div>' },
+        { icon: 'activity', title: 'Progress K3', content: '<div class="space-y-3"><div class="bg-white/5 p-3 rounded-xl border border-white/10"><div class="flex justify-between text-xs mb-2"><span class="text-white/80">AC Ruang Rapat</span><span class="text-orange-400">Proses</span></div><div class="w-full bg-white/10 rounded-full h-2"><div class="bg-orange-400 h-2 rounded-full" style="width: 60%"></div></div></div><div class="bg-white/5 p-3 rounded-xl border border-white/10"><div class="flex justify-between text-xs mb-2"><span class="text-white/80">Kebersihan Lobby</span><span class="text-emerald-400">Selesai</span></div><div class="w-full bg-white/10 rounded-full h-2"><div class="bg-emerald-400 h-2 rounded-full" style="width: 100%"></div></div></div></div>' },
+        { icon: 'cloud-rain', title: 'Cuaca & AI Warning', content: '<div id="weather-ai" class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-sm text-white/70">🤖 AI loading...</p></div>' },
+        { icon: 'building-2', title: 'Info Management', content: '<div class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-xs text-white/50 mb-2">Rapat CEO & Yayasan</p><p class="text-sm font-semibold text-white">Pukul 09:00 WIB di Ruang Rapat SMA</p></div>' },
+        { icon: 'users', title: 'Info Team Umum', content: '<div class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-xs text-white/50 mb-2">Rapat Mingguan</p><p class="text-sm font-semibold text-white">Jam 09:00 WIB di R. Koord Bagian Umum</p></div>' },
+        { icon: 'gift', title: 'Ucapan & Info', content: '<div class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-sm text-white/70 mb-2">🎂 Selamat Ulang Tahun</p><p class="text-xs text-white/60">Pak Budi (Komisi 3 Bulan). Semoga berkah!</p></div>' }
+    ];
 
-                    document.getElementById('dream-logo').addEventListener('pointerdown', () => {
-                        state.ghostTaps++;
-                        if (state.ghostTaps === 1) state.ghostTimer = setTimeout(() => state.ghostTaps = 0, 2000);
-                        
-                        if (state.ghostTaps >= 7) {
-                            clearTimeout(state.ghostTimer);
-                            state.ghostTaps = 0;
-                            fetch('modules/ghost.html')
-                                .then(res => res.text())
-                                .then(ghostHtml => {
-                                    document.body.insertAdjacentHTML('beforeend', ghostHtml);
-                                    lucide.createIcons();
-                                    document.getElementById('ghost-close').onclick = () => document.getElementById('ghost-overlay').remove();
-                                });
-                        }
+    // GRID DATA DENGAN ICON MODERN
+    const gridData = [
+        {icon:'shield-check', label:'Command Center', desc:'Manage Operations', color:'from-blue-500/20 to-cyan-500/20', iconColor:'text-blue-400'},
+        {icon:'calendar', label:'Booking', desc:'Reserve Resources', color:'from-teal-500/20 to-emerald-500/20', iconColor:'text-teal-400'},
+        {icon:'alert-triangle', label:'K3', desc:'Safety & Health', color:'from-orange-500/20 to-yellow-500/20', iconColor:'text-orange-400'},
+        {icon:'shield', label:'Security', desc:'Manage Security', color:'from-purple-500/20 to-pink-500/20', iconColor:'text-purple-400'},
+        {icon:'sparkles', label:'Janitor', desc:'Cleaning and Finish', color:'from-cyan-500/20 to-blue-500/20', iconColor:'text-cyan-400'},
+        {icon:'warehouse', label:'Stok', desc:'Safety & Warehouse', color:'from-amber-500/20 to-orange-500/20', iconColor:'text-amber-400'},
+        {icon:'wrench', label:'Maintenance', desc:'Manage Operations', color:'from-indigo-500/20 to-purple-500/20', iconColor:'text-indigo-400'},
+        {icon:'building-2', label:'Asset', desc:'Manage Building', color:'from-emerald-500/20 to-teal-500/20', iconColor:'text-emerald-400'}
+    ];    
+    const commandGridData = [
+        {icon:'bar-chart-3',label:'Kinerja',desc:'Global'},{icon:'wallet',label:'Keuangan',desc:'SPJ'},
+        {icon:'database',label:'Inventaris',desc:'Aset'},{icon:'users',label:'Vendor',desc:'Tracker'},
+        {icon:'user-check',label:'SDM',desc:'Tugas'},{icon:'file-text',label:'Laporan',desc:'Bulanan'},
+        {icon:'search',label:'Audit',desc:'Trail'},{icon:'sliders',label:'Config',desc:'System'}
+    ];
+    
+    const ghostTools = [
+        { id: 'eruda', name: 'Eruda Dev', icon: 'code', desc: 'Mobile DevTools', cmd: 'pkg install nodejs && npm install -g eruda' },
+        { id: 'osint', name: 'OSINT Framework', icon: 'search', desc: 'Reconnaissance', cmd: 'pkg install python git && git clone https://github.com/jivoi/awesome-osint.git' },
+        { id: 'kali', name: 'Kali Tools', icon: 'shield-alert', desc: 'Penetration testing', cmd: 'proot-distro install kali-linux' },
+        { id: 'spider', name: 'Spider Crawler', icon: 'spider', desc: 'Web enumeration', cmd: 'pkg install python && pip install scrapy' },
+        { id: 'nmap', name: 'Nmap Scanner', icon: 'radar', desc: 'Network discovery', cmd: 'pkg install nmap && nmap -sV 127.0.0.1' },
+        { id: 'tshark', name: 'TShark Analyzer', icon: 'wifi', desc: 'Packet analysis', cmd: 'pkg install tshark', requiresRoot: true }
+    ];
+
+    // Render Functions
+    function renderCarousel() {
+        const container = document.getElementById('carousel-slides');
+        const dotsContainer = document.getElementById('carousel-dots');
+        if (!container || !dotsContainer) return;
+        container.innerHTML = carouselSlides.map((slide, i) => `
+            <div class="carousel-slide ${i === 0 ? 'active' : ''}">
+                <div class="flex items-center gap-3 mb-3">
+                    <i data-lucide="${slide.icon}" class="w-6 h-6 text-teal-400"></i>
+                    <h3 class="text-base font-bold text-white">${slide.title}</h3>
+                </div>
+                ${slide.content}
+            </div>`).join('');
+        dotsContainer.innerHTML = carouselSlides.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('');
+        startCarousel();
+        setTimeout(() => lucide.createIcons(), 50);
+        if(window.aiService) loadAIWeather();
+    }
+    
+    let currentSlide = 0;
+    function startCarousel() {
+        if(state.carouselInterval) clearInterval(state.carouselInterval);
+        state.carouselInterval = setInterval(() => { currentSlide = (currentSlide + 1) % carouselSlides.length; showSlide(currentSlide); }, 7000);
+    }
+    function showSlide(index) {
+        document.querySelectorAll('.carousel-slide').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.carousel-slide')[index]?.classList.add('active');
+        document.querySelectorAll('.dot')[index]?.classList.add('active');
+    }
+    function goToSlide(index) { currentSlide = index; showSlide(currentSlide); startCarousel(); }
+    
+    function renderGrid(containerId, data) {        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = data.map(item => `
+            <div class="menu-card glass-modern p-5 rounded-3xl flex flex-col items-center justify-center gap-3 min-h-[140px] cursor-pointer" onclick="handleGridClick('${item.label}', '${item.route || ''}')">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center">
+                    <i data-lucide="${item.icon}" class="w-8 h-8 ${item.iconColor}"></i>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-sm font-bold text-white mb-0.5">${item.label}</h3>
+                    <p class="text-[10px] text-white/50">${item.desc}</p>
+                </div>
+            </div>`).join('');
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+    
+    function handleGridClick(label, route) {
+        if(route === 'command') {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-command').classList.remove('hidden');
+            initCommandSearch();
+            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('active','text-teal-400'); b.classList.add('text-white/60'); });
+            return;
+        }
+        alert(`🔧 Modul ${label}\n\nReady for development di v1.1`);
+    }
+    
+    function renderGhostTools() {
+        const container = document.getElementById('ghost-tools');
+        if (!container) return;
+        container.innerHTML = ghostTools.map(tool => `
+            <div class="glass-modern p-4 rounded-2xl cursor-pointer hover:border-teal-500/50 transition-all" onclick="copyGhostCmd('${tool.id}')">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="${tool.icon}" class="w-5 h-5 text-teal-400"></i>
+                    <span class="text-sm font-bold text-white">${tool.name}</span>
+                    ${tool.requiresRoot ? '<span class="text-[9px] text-red-400 bg-red-500/20 px-2 py-0.5 rounded">root</span>' : ''}
+                </div>
+                <p class="text-xs text-white/60 mb-3">${tool.desc}</p>
+                <button class="w-full py-2 bg-teal-500/20 border border-teal-500/50 rounded-xl text-xs text-teal-300" onclick="event.stopPropagation(); copyToClipboard('${tool.cmd.replace(/'/g, "\\'")}')">📋 Copy Command</button>
+            </div>`).join('');
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            state.ghostAudit++;
+            alert('✓ Command copied to clipboard!\n\nPaste di Termux untuk execute.');
+        }).catch(() => alert('📋 Copy manual:\n\n' + text));
+    }
+    window.copyGhostCmd = function(toolId) {
+        const tool = ghostTools.find(t => t.id === toolId);        if (tool) copyToClipboard(tool.cmd);
+    };
+    
+    async function loadAIWeather() {
+        const container = document.getElementById('weather-ai');
+        if (!container || !window.aiService) return;
+        container.innerHTML = '<p class="text-sm text-white/70">🤖 AI thinking...</p>';
+        const result = await aiService.predictWeather('Depok, Indonesia');
+        if (result.success) {
+            const isFallback = result.source === 'fallback';
+            container.innerHTML = `
+                <p class="text-sm text-white mb-2">${result.response.split('\n')[0]}</p>
+                ${result.response.includes('⚠️') ? `<p class="text-xs text-orange-400 mb-2">${result.response.match(/⚠️.*?(?=\.|$)/)?.[0] || ''}</p>` : ''}
+                <p class="text-xs text-white/70">${result.response.split('\n').slice(1).join('<br>')}</p>
+                ${isFallback ? '<p class="text-[10px] text-orange-400/80 mt-2">⚠️ Fallback mode (AI offline)</p>' : ''}
+            `;
+            const badge = document.getElementById('ai-status');
+            if (badge) {
+                badge.textContent = isFallback ? 'AI: Fallback' : 'AI: Online';
+                badge.className = `ai-badge px-2 py-1 rounded text-[10px] ${isFallback ? 'bg-orange-500/80' : 'bg-emerald-500/80'} pulse-badge`;
+            }
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+    
+    function initCommandSearch() {
+        const input = document.getElementById('command-search');
+        const resultsDiv = document.getElementById('command-results');
+        if (!input || !resultsDiv || !window.aiService) return;
+        input.onkeypress = async (e) => {
+            if (e.key === 'Enter' && input.value.trim()) {
+                const query = input.value.trim();
+                resultsDiv.classList.remove('hidden');
+                resultsDiv.innerHTML = '<p class="text-sm text-white/60 text-center py-4">🤖 AI searching...</p>';
+                const result = await aiService.query(`User search: "${query}". Return relevant data.`, { task: 'command_search' });
+                if (result.success) {
+                    const isFallback = result.source === 'fallback';
+                    resultsDiv.innerHTML = `<div class="space-y-2">${result.response.split('\n').map(line => `<div class="glass-modern p-3 rounded-xl border border-white/10 text-sm text-white/80">${line}</div>`).join('')}</div>${isFallback ? '<p class="text-[10px] text-orange-400/80 text-center mt-3">⚠️ Using fallback data (AI offline)</p>' : ''}`;
+                }
+                setTimeout(() => lucide.createIcons(), 50);
+            }
+        };
+    }
+    
+    function initPasswordToggle() {
+        const toggleBtn = document.getElementById('toggle-pw');
+        const eyeOff = document.getElementById('eye-off');
+        const eyeOn = document.getElementById('eye-on');
+        const input = document.getElementById('access-key');
+        if (toggleBtn && input) {            toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+            const newToggle = document.getElementById('toggle-pw');
+            newToggle.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const isPass = input.type === 'password';
+                input.type = isPass ? 'text' : 'password';
+                eyeOff.classList.toggle('hidden', !isPass);
+                eyeOn.classList.toggle('hidden', isPass);
+            });
+        }
+    }
+    
+    function initLogin() {
+        const loginBtn = document.getElementById('btn-login');
+        const input = document.getElementById('access-key');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                const key = input.value;
+                if (!key) return alert('Masukkan Access Key!');
+                state.role = key.includes('admin') || key.includes('kepala') ? 'KEPALA_BAGIAN' : 'STAFF';
+                document.getElementById('role-badge').textContent = state.role.replace('_', ' ');
+                document.getElementById('profile-role').textContent = state.role.replace('_', ' ');
+                document.getElementById('auth-view').classList.remove('active');
+                document.getElementById('app-view').classList.add('active');
+                document.getElementById('app-header').classList.remove('hidden');
+                document.getElementById('app-header').style.display = 'flex';
+                document.getElementById('bottom-nav').classList.remove('hidden');
+                document.getElementById('carousel-container').classList.remove('hidden');
+                document.getElementById('staff-grid').classList.remove('hidden');
+                document.getElementById('stats-card').classList.remove('hidden');
+                renderCarousel();
+                renderGrid('staff-grid', gridData);
+                if(window.aiService) {
+                    aiService.isReady().then(ready => {
+                        state.aiReady = ready;
+                        const badge = document.getElementById('ai-status');
+                        if(badge) { badge.textContent = ready ? 'AI: Online' : 'AI: Fallback'; badge.className = `ai-badge px-2 py-1 rounded text-[10px] ${ready ? 'bg-emerald-500/80' : 'bg-orange-500/80'} pulse-badge`; }
                     });
-                });
+                }
+            });
+        }
+    }
+    
+    function initGhostMode() {
+        const logo = document.getElementById('dream-logo');
+        if (logo) {
+            logo.addEventListener('pointerdown', () => {
+                state.ghostTaps++;
+                if (state.ghostTaps === 1) state.ghostTimer = setTimeout(() => state.ghostTaps = 0, 2000);
+                if (state.ghostTaps >= 7) { clearTimeout(state.ghostTimer); state.ghostTaps = 0; activateGhostMode(); }            });
+        }
+    }
+    function activateGhostMode() {
+        document.getElementById('ghost-overlay').classList.add('active');
+        renderGhostTools();
+        document.getElementById('ghost-close').onclick = () => { document.getElementById('ghost-overlay').classList.remove('active'); };
+    }
+    
+    function initNavigation() {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('active', 'text-teal-400'); b.classList.add('text-white/60'); });
+                btn.classList.add('active', 'text-teal-400'); btn.classList.remove('text-white/60');
+                const target = btn.dataset.target;
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                if (target === 'home') document.getElementById('view-home').classList.remove('hidden');
+                else if (target === 'command') {
+                    if (state.role === 'KEPALA_BAGIAN') { document.getElementById('view-command').classList.remove('hidden'); initCommandSearch(); }
+                    else { alert('⚠️ Command Center untuk Kepala/Koordinator'); document.getElementById('view-home').classList.remove('hidden'); }
+                } else { const viewEl = document.getElementById(`view-${target}`); if (viewEl) viewEl.classList.remove('hidden'); }
+            });
         });
+    }
+    
+    function initLogout() {
+        const doLogout = () => {
+            document.getElementById('app-view').classList.remove('active');
+            document.getElementById('auth-view').classList.add('active');
+            document.getElementById('access-key').value = '';
+            state.role = 'STAFF';
+        };
+        const logoutBtn = document.getElementById('btn-logout');
+        const logoutProfileBtn = document.getElementById('btn-logout-profile');
+        if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
+        if (logoutProfileBtn) logoutProfileBtn.addEventListener('click', doLogout);
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🔧 Initializing Dream OS v1.1 Modern Glass...');
+        initPasswordToggle();
+        initLogin();
+        initGhostMode();
+        initNavigation();
+        initLogout();
+        console.log('✅ Dream OS v1.1 Ready!');
+    });
     </script>
 </body>
-</html>
+</html>HTMLEOF
+
+git add -A
+git commit -m "feat: Dream OS v1.1 Modern Glass Edition ✨🎨
+
+- ✅ Arabic calligraphy font lengkap (Scheherazade New)
+- ✅ Bismillah & Shalawat dengan glow effect indah
+- ✅ Modern glassmorphism UI (seperti gambar 2)
+- ✅ Statistics dashboard (Users, Transactions, Uptime, Prayer Streak)
+- ✅ Menu cards dengan gradient & hover animation
+- ✅ Animated gradient background
+- ✅ Modern icons & color scheme (Teal/Emerald)
+- ✅ AI badge dengan pulse animation
+- ✅ Ghost Mode tetap berfungsi
+- ✅ Password toggle fixed
+- ✅ Responsive & mobile-optimized
+- Bi idznillah — UI modern & hidup!"
+
+git push origin gh-pages --force
+echo "✅ DREAM OS v1.1 MODERN GLASS DEPLOYED!"
+echo "🎨 Hard refresh browser untuk lihat transformasi total!"
+echo "🕌 Arabic calligraphy font + glassmorphism effects active!"
