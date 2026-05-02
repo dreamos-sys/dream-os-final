@@ -14,10 +14,9 @@
             theme: {
                 extend: {
                     colors: {
-                        spiritual: { 500: '#22c55e', 600: '#16a34a' },
-                        gold: { 400: '#fbbf24', 500: '#f59e0b' },
-                        slate: { 900: '#0f172a', 950: '#020617' },
-                        ghost: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' }
+                        teal: { 400: '#2dd4bf', 500: '#14b8a6' },
+                        emerald: { 400: '#34d399', 500: '#10b981' },
+                        slate: { 900: '#0f172a', 950: '#020617' }
                     }
                 }
             }
@@ -25,132 +24,149 @@
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; background: #020617; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; background-color: #020617; }
         .font-arabic { font-family: 'Amiri', serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
         .view { display: none; }
         .view.active { display: flex; }
-        #auth-view.active { display: flex; }
-        .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.05); }
-        .glow-border { position: relative; }
-        .glow-border::after { content:''; position:absolute; inset:-1px; background:linear-gradient(135deg,#fbbf24,#22c55e); border-radius:inherit; z-index:-1; opacity:0.15; }
-        .magnet { transition: transform 0.15s cubic-bezier(0.4,0,0.2,1); }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+        }
+
+        .gradient-border {
+            position: relative;
+            border-radius: 1.5rem;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, rgba(45,212,191,0.4), rgba(16,185,129,0.1));
+            border-radius: 1.5rem;
+            z-index: -1;
+        }
+
+        .magnet { transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1); }
         .magnet:active { transform: scale(0.96); }
-        #dream-logo { transition: transform 0.1s; cursor: pointer; }
-        #dream-logo:active { transform: scale(0.93); }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         
-        .carousel-slide { display: none; animation: fadeIn 0.4s; }
+        .carousel-slide { display: none; animation: fadeIn 0.3s; }
         .carousel-slide.active { display: block; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; cursor: pointer; }
-        .dot.active { background: #fbbf24; width: 24px; border-radius: 4px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: translateX(0); } }
+        .dot { width: 6px; height: 6px; border-radius: 9999px; background: rgba(255,255,255,0.2); transition: all 0.3s; }
+        .dot.active { background: #14b8a6; width: 20px; }
         
-        .ghost-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.98); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .ghost-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
         .ghost-overlay.active { display: flex; }
     </style>
 </head>
-<body class="text-slate-200 h-screen overflow-hidden flex flex-col">
+<body class="text-slate-200 h-screen overflow-hidden flex flex-col bg-slate-950">
 
-    <section id="auth-view" class="view active flex-col items-center justify-center h-full p-6 text-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-        <div id="dream-logo" class="mb-6 cursor-pointer select-none magnet">
-            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-28 h-28 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] object-cover">
-            <p class="text-[10px] text-amber-500 mt-4 font-bold tracking-[0.25em]">DREAM OS <span class="text-emerald-400">v1.0</span></p>
+    <section id="auth-view" class="view active flex-col items-center justify-center h-full p-6 text-center">
+        <div id="dream-logo" class="mb-6 select-none magnet flex flex-col items-center">
+            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-28 h-28 rounded-3xl shadow-[0_0_35px_rgba(45,212,191,0.18)] object-cover mb-4">
+            <p class="text-[9px] text-teal-400/70 font-mono tracking-[0.25em]">DREAM OS <span class="text-emerald-400">v1.0</span></p>
         </div>
         
-        <h1 class="font-arabic text-2xl text-amber-500/90 mb-1 leading-none">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
-        <p class="text-[9px] text-emerald-400 mb-8 font-semibold tracking-wide font-arabic">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
+        <div class="glass-card p-5 rounded-2xl w-full max-w-[280px] mb-6">
+            <h1 class="font-arabic text-xl text-teal-400/90 mb-2 leading-none">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
+            <p class="font-arabic text-[10px] text-emerald-400/80 mb-2 leading-none">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
+            <p class="text-[8px] text-slate-500 font-mono tracking-widest uppercase">The Power Soul of Shalawat</p>
+        </div>
         
-        <div class="w-full max-w-xs glass p-6 rounded-3xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] glow-border">
+        <div class="glass-card p-5 rounded-3xl w-full max-w-[280px] shadow-2xl border border-white/5">
             <div class="relative mb-4">
                 <input type="password" id="access-key" placeholder="Access Key" 
-                    class="w-full px-4 py-3.5 bg-slate-900/70 rounded-2xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 text-center tracking-widest pr-12 text-slate-200 placeholder-slate-600 text-xs">
-                <button id="toggle-pw" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-400 p-1 z-20">
+                    class="w-full px-4 py-3 bg-slate-950/80 text-xs text-center tracking-widest rounded-xl border border-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-500/50 text-slate-200 placeholder-slate-700">
+                <button id="toggle-pw" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-teal-400 p-1 z-20">
                     <i data-lucide="eye" class="w-4 h-4" id="eye-off"></i>
                     <i data-lucide="eye-off" class="w-4 h-4 hidden" id="eye-on"></i>
                 </button>
             </div>
-            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-2xl shadow-[0_12px_24px_-10px_rgba(16,185,129,0.35)] magnet">ACCESS SYSTEM</button>
-            <p class="text-[8px] text-slate-600 mt-4 font-mono">Out of The Box Inside • ISO 27001</p>
+            <button id="btn-login" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-xs font-bold tracking-wider uppercase rounded-xl shadow-lg shadow-emerald-500/15 magnet">ACCESS SYSTEM</button>
         </div>
+        
+        <p class="text-[8px] text-slate-700 mt-8 font-mono">Bi idznillah • ISO 27001 & 9001 Compliant</p>
     </section>
 
     <div id="app-view" class="view flex-col h-full flex-1">
         
-        <header id="app-header" class="px-4 py-3 glass border-b border-slate-800/60 justify-between items-center shrink-0 hidden">
+        <header id="app-header" class="hidden px-4 py-3 glass-card border-b border-white/5 flex justify-between items-center shrink-0">
             <div class="flex items-center gap-3">
                 <img src="assets/logo-sultan.png" alt="Dream OS" class="w-8 h-8 rounded-xl shadow-lg object-cover">
                 <div>
                     <h1 class="text-xs font-bold text-slate-100 leading-tight">Dream OS</h1>
-                    <span class="text-[9px] text-emerald-400 font-mono">v1.0 Genesis</span>
+                    <span class="text-[8px] text-teal-400 font-mono">Nano-Quantum</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <span id="role-badge" class="px-2.5 py-0.5 bg-slate-900/80 border border-slate-800 text-[8px] font-bold rounded uppercase tracking-wider text-emerald-400">STAFF</span>
+                <span id="role-badge" class="px-2 py-0.5 bg-slate-900 border border-slate-800 text-[8px] font-semibold tracking-wider rounded text-teal-400 uppercase">STAFF</span>
                 <button id="btn-logout" class="p-2 text-slate-500 hover:text-red-400 magnet">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-3 pb-24 space-y-4 bg-slate-950">
+        <main class="flex-1 overflow-y-auto p-4 pb-28 space-y-4 bg-slate-950">
             
             <div id="view-home" class="view-section active space-y-4">
-                <div id="carousel-container" class="carousel-container glass glow-border p-4 hidden">
+                <div id="carousel-container" class="glass-card p-4 rounded-3xl border border-white/[0.03] hidden gradient-border">
                     <div id="carousel-slides"></div>
-                    <div class="flex justify-center gap-2 mt-4" id="carousel-dots"></div>
+                    <div class="carousel-dots flex justify-center gap-1.5 mt-4" id="carousel-dots"></div>
                 </div>
-                
-                <div class="grid grid-cols-3 gap-3" id="staff-grid"></div>
+
+                <div id="staff-grid" class="grid grid-cols-3 gap-3 hidden"></div>
             </div>
 
-            <div id="view-command" class="view-section hidden space-y-4">
+            <div id="view-command" class="view-section hidden space-y-3">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xs font-bold text-amber-500">Command Center</h2>
-                    <span class="text-[8px] bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-emerald-400 font-mono">AI Active</span>
+                    <h2 class="text-xs font-bold text-teal-400">Command Center</h2>
+                    <span class="text-[8px] bg-slate-900 px-2 py-0.5 rounded text-emerald-400 font-mono">AI Active</span>
                 </div>
-                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                    <input type="text" placeholder="🔍 Cari..." class="w-full bg-transparent text-xs text-slate-200 focus:outline-none placeholder-slate-600">
+                <div class="glass-card p-2.5 rounded-xl border border-slate-900">
+                    <input type="text" placeholder="Cari data operasional..." class="w-full bg-transparent text-xs text-slate-300 focus:outline-none placeholder-slate-700">
                 </div>
-                <div id="command-grid" class="grid grid-cols-2 gap-3"></div>
+                <div id="command-results" class="hidden space-y-1"></div>
+                <div id="command-grid" class="grid grid-cols-2 gap-2"></div>
             </div>
 
             <div id="view-user" class="view-section hidden space-y-3">
-                <div class="glass p-5 rounded-2xl text-center">
-                    <div class="w-14 h-14 bg-gradient-to-br from-amber-400 to-emerald-500 rounded-full mx-auto mb-3 flex items-center justify-center text-lg font-bold text-white">U</div>
-                    <h3 class="text-xs font-bold">User Profile</h3>
-                    <p class="text-[8px] text-slate-400 mt-1">ID: USR-2024-001</p>
-                    <p class="text-[8px] text-emerald-400 mt-1">Role: <span id="profile-role">STAFF</span></p>
-                    <button id="btn-logout-profile" class="mt-4 w-full py-2 bg-red-600/80 hover:bg-red-600 text-white text-[8px] rounded-xl font-bold">Logout</button>
+                <div class="glass-card p-6 rounded-3xl text-center">
+                    <h3 class="text-xs font-bold text-slate-200 mb-1">User Profile</h3>
+                    <p class="text-[9px] text-teal-400 mb-4">Role: <span id="profile-role">STAFF</span></p>
+                    <button id="btn-logout-profile" class="w-full py-2.5 bg-red-600/20 border border-red-600/20 text-[9px] font-bold rounded-xl text-red-400 magnet">Logout</button>
                 </div>
             </div>
 
             <div id="view-qr" class="view-section hidden space-y-3">
-                <div class="glass p-5 rounded-2xl text-center">
-                    <i data-lucide="scan-line" class="w-8 h-8 text-amber-400 mx-auto mb-2"></i>
-                    <h3 class="text-xs font-bold">QR Scanner</h3>
-                    <p class="text-[8px] text-slate-400 mt-1 mb-4">Ready for scanner v1.0</p>
-                    <button onclick="alert('Camera Ready')" class="w-full py-2 bg-gradient-to-r from-amber-500 to-emerald-500 text-white text-[8px] font-bold rounded-xl">Open Scanner</button>
+                <div class="glass-card p-6 rounded-3xl text-center">
+                    <h3 class="text-xs font-bold text-slate-200 mb-2">Smart Scanner</h3>
+                    <button onclick="alert('Camera Ready')" class="w-full py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-[9px] font-bold rounded-xl text-white">Open Scanner</button>
                 </div>
             </div>
 
             <div id="view-info" class="view-section hidden space-y-3">
-                <div class="glass p-5 rounded-2xl text-center">
-                    <h3 class="text-xs font-bold text-amber-400">Dream OS</h3>
-                    <p class="text-[8px] text-slate-500 mt-1">v1.0 Genesis Edition</p>
+                <div class="glass-card p-6 rounded-3xl text-center">
+                    <h3 class="text-xs font-bold text-teal-400">Dream OS v1.0</h3>
+                    <p class="text-[8px] text-slate-500 mt-1">Nano Quantum Architecture</p>
                 </div>
             </div>
 
             <div id="view-config" class="view-section hidden space-y-3">
-                <div class="glass p-4 rounded-2xl text-center">
-                    <h3 class="text-xs font-bold text-amber-400 mb-2">Settings</h3>
-                    <button onclick="document.documentElement.classList.toggle('dark')" class="w-full py-2 bg-slate-900 border border-slate-800 rounded-xl text-[8px]">Toggle Theme</button>
+                <div class="glass-card p-4 rounded-3xl">
+                    <h3 class="text-xs font-bold text-teal-400 mb-2">Settings</h3>
                 </div>
             </div>
         </main>
 
-        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-slate-800/60 flex justify-around items-center h-14 safe-bottom z-40 hidden">
-            <button class="nav-btn active flex flex-col items-center justify-center gap-0.5 w-full h-full text-amber-400" data-target="home">
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-white/5 flex justify-around items-center h-14 safe-bottom z-40 hidden">
+            <button class="nav-btn active flex flex-col items-center justify-center gap-0.5 w-full h-full text-teal-400" data-target="home">
                 <i data-lucide="home" class="w-4 h-4"></i><span class="text-[8px]">HOME</span>
             </button>
             <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-slate-500" data-target="user">
@@ -169,47 +185,29 @@
     </div>
 
     <div id="ghost-overlay" class="ghost-overlay">
-        <div class="ghost-header">
+        <div class="p-3 border-b border-white/5 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i data-lucide="ghost" class="w-4 h-4 text-ghost-400"></i>
-                <span class="text-xs font-bold text-ghost-300">GHOST MONITORING</span>
+                <span class="text-[9px] font-bold text-slate-300">GHOST MONITORING</span>
             </div>
-            <button id="ghost-close" class="p-1 text-slate-400 hover:text-white">
+            <button id="ghost-close" class="p-1 text-slate-500 hover:text-white">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
-        <div class="ghost-grid" id="ghost-tools"></div>
-        <div class="p-3 border-t border-slate-900 text-center">
-            <p class="text-[9px] text-slate-600 font-mono">
-                <span id="ghost-status" class="ghost-status">● Termux Ready</span> • Audit: <span id="ghost-audit">3 actions</span>
+        <div class="p-4 grid grid-cols-2 gap-3" id="ghost-tools"></div>
+        <div class="p-3 border-t border-white/5 text-center">
+            <p class="text-[8px] text-slate-600 font-mono">
+                <span id="ghost-status">● Termux Ready</span>
             </p>
         </div>
     </div>
 
     <script>
         const state = { role: 'STAFF', ghostTaps: 0, ghostTimer: null };
-        const carouselData = {
-            slides: [
-                { icon: 'activity', title: 'Today\'s Statistics', content: '<div class="grid grid-cols-2 gap-3 mt-2"><div class="bg-white/5 p-3 rounded-xl border border-white/10"><p class="text-[8px] text-slate-500">Users</p><p class="text-sm font-semibold text-white">1,450</p></div><div class="bg-white/5 p-3 rounded-xl border border-white/10"><p class="text-[8px] text-slate-500">Tx</p><p class="text-sm font-semibold text-white">890</p></div></div>' },
-                { icon: 'calendar', title: 'Schedule', content: '<p class="text-[9px] text-slate-400 mt-2">Rapat Koordinasi Mingguan - 09:00 WIB</p>' }
-            ],
-            init() {
-                const c = document.getElementById('carousel-slides');
-                const d = document.getElementById('carousel-dots');
-                if(!c) return;
-                c.innerHTML = this.slides.map((s, i) => `
-                    <div class="carousel-slide ${i===0?'active':''}">
-                        <div class="flex items-center gap-2 mb-1">
-                            <i data-lucide="${s.icon}" class="w-4 h-4 text-amber-500"></i>
-                            <span class="text-xs font-bold text-amber-500">${s.title}</span>
-                        </div>
-                        ${s.content}
-                    </div>`).join('');
-                d.innerHTML = this.slides.map((_, i) => `<div class="dot ${i===0?'active':''}"></div>`).join('');
-                document.getElementById('carousel-container').classList.remove('hidden');
-                lucide.createIcons();
-            }
-        };
+        const carouselData = [
+            { icon: 'activity', title: 'Statistics', content: '<div class="grid grid-cols-2 gap-2 mt-2"><div class="bg-white/5 p-2 rounded-xl border border-white/5"><p class="text-[8px] text-slate-400">Users</p><p class="text-sm font-semibold text-white">1,450</p></div><div class="bg-white/5 p-2 rounded-xl border border-white/5"><p class="text-[8px] text-slate-400">Tx</p><p class="text-sm font-semibold text-white">890</p></div></div>' },
+            { icon: 'calendar', title: 'Jadwal', content: '<p class="text-[9px] text-slate-400 mt-2">Rapat Koordinasi - 09:00 WIB</p>' }
+        ];
 
         const gridData = [
             { icon: 'globe', name: 'Command', desc: 'Ops' },
@@ -224,7 +222,7 @@
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Password Show/Hide
+            // Password Toggle
             document.getElementById('toggle-pw').onclick = () => {
                 const i = document.getElementById('access-key');
                 const p = i.type === 'password';
@@ -233,37 +231,26 @@
                 document.getElementById('eye-on').classList.toggle('hidden', p);
             };
 
-            // Login System
+            // Login Trigger
             document.getElementById('btn-login').onclick = () => {
-                const key = document.getElementById('access-key').value;
-                if(!key) return alert('Masukkan Access Key!');
+                const k = document.getElementById('access-key').value;
+                if (!k) return alert('Masukkan Access Key!');
                 
-                state.role = key.includes('admin') ? 'KEPALA_BAGIAN' : 'STAFF';
+                state.role = k.includes('admin') ? 'KEPALA_BAGIAN' : 'STAFF';
                 document.getElementById('role-badge').textContent = state.role.replace('_', ' ');
                 document.getElementById('profile-role').textContent = state.role.replace('_', ' ');
                 
                 document.getElementById('auth-view').classList.remove('active');
                 document.getElementById('app-view').classList.add('active');
-                document.getElementById('app-header').style.display = 'flex';
                 document.getElementById('app-header').classList.remove('hidden');
                 document.getElementById('bottom-nav').classList.remove('hidden');
                 document.getElementById('staff-grid').classList.remove('hidden');
-                
-                carouselData.init();
-                
-                const grid = document.getElementById('staff-grid');
-                grid.innerHTML = gridData.map(item => `
-                    <div class="glass border border-slate-900 p-3 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer magnet hover:border-amber-500/30" onclick="alert('Modul ${item.name} Ready')">
-                        <i data-lucide="${item.icon}" class="w-5 h-5 text-amber-500"></i>
-                        <span class="text-[9px] font-bold text-slate-300">${item.name}</span>
-                        <span class="text-[7px] text-slate-500 font-mono">${item.desc}</span>
-                    </div>
-                `).join('');
-                
-                setTimeout(() => lucide.createIcons(), 50);
+
+                renderCarousel();
+                renderGrid('staff-grid', gridData);
+                lucide.createIcons();
             };
 
-            // Logout
             const logout = () => {
                 document.getElementById('app-view').classList.remove('active');
                 document.getElementById('auth-view').classList.add('active');
@@ -273,22 +260,20 @@
             document.getElementById('btn-logout-profile').onclick = logout;
 
             // Navigasi
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.nav-btn').forEach(b => {
-                        b.classList.remove('active', 'text-amber-400');
-                        b.classList.add('text-slate-500');
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.onclick = () => {
+                    document.querySelectorAll('.nav-btn').forEach(x => {
+                        x.classList.remove('active', 'text-teal-400');
+                        x.classList.add('text-slate-500');
                     });
-                    btn.classList.add('active', 'text-amber-400');
-                    btn.classList.remove('text-slate-500');
-
-                    const target = btn.dataset.target;
-                    document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                    b.classList.add('active', 'text-teal-400');
+                    const target = b.getAttribute('data-target');
+                    document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden'));
                     document.getElementById('view-' + target).classList.remove('hidden');
                 };
             });
 
-            // Ghost Stealth Mode Trigger: 7x Taps
+            // Ghost Mode Listener
             document.getElementById('dream-logo').addEventListener('pointerdown', () => {
                 state.ghostTaps++;
                 if (state.ghostTaps === 1) state.ghostTimer = setTimeout(() => state.ghostTaps = 0, 2000);
@@ -297,48 +282,50 @@
                     clearTimeout(state.ghostTimer);
                     state.ghostTaps = 0;
                     document.getElementById('ghost-overlay').classList.add('active');
-                    
-                    const tools = document.getElementById('ghost-tools');
-                    tools.innerHTML = `
-                        <div class="ghost-card">
-                            <i data-lucide="terminal" class="w-4 h-4 text-ghost-400 mb-1"></i>
-                            <p class="text-[9px] font-bold">Eruda Dev</p>
-                            <p class="text-[7px] text-slate-500 font-mono">Mobile DevTools</p>
-                            <button class="copy-btn" onclick="navigator.clipboard.writeText('npm i eruda'); alert('Copied')">Copy Command</button>
-                        </div>
-                        <div class="ghost-card">
-                            <i data-lucide="network" class="w-4 h-4 text-ghost-400 mb-1"></i>
-                            <p class="text-[9px] font-bold">OSINT Framework</p>
-                            <p class="text-[7px] text-slate-500 font-mono">Reconnaissance</p>
-                            <button class="copy-btn" onclick="navigator.clipboard.writeText('pkg install git && git clone ...'); alert('Copied')">Copy Command</button>
-                        </div>
-                        <div class="ghost-card">
-                            <i data-lucide="shield" class="w-4 h-4 text-ghost-400 mb-1"></i>
-                            <p class="text-[9px] font-bold">Kali Tools</p>
-                            <p class="text-[7px] text-slate-500 font-mono">Penetration testing</p>
-                            <button class="copy-btn" onclick="navigator.clipboard.writeText('pkg install root-repo'); alert('Copied')">Copy Command</button>
-                        </div>
-                        <div class="ghost-card">
-                            <i data-lucide="spider" class="w-4 h-4 text-ghost-400 mb-1"></i>
-                            <p class="text-[9px] font-bold">Spider Crawler</p>
-                            <p class="text-[7px] text-slate-500 font-mono">Web Enumerator</p>
-                            <button class="copy-btn" onclick="navigator.clipboard.writeText('pkg install python && pip install scrapy'); alert('Scrapy ready')">Copy Command</button>
-                        </div>
-                        <div class="ghost-card terminal">
-                            <p class="text-[8px] text-ghost-400">Terminal Output</p>
-                            <p class="text-[7px] text-emerald-400 mt-1">✓ Copied: pkg install python && pip install scrapy && echo "Scrapy ready"</p>
+                    document.getElementById('ghost-tools').innerHTML = `
+                        <div class="glass-card p-3 rounded-xl border border-teal-500/20">
+                            <i data-lucide="terminal" class="w-4 h-4 text-teal-400 mb-2"></i>
+                            <p class="text-[9px] font-bold">Nmap Check</p>
+                            <p class="text-[8px] text-slate-500">Localhost & Net discover</p>
+                            <button class="w-full text-[8px] bg-teal-500/20 py-1.5 px-3 rounded-lg border border-teal-500/20 mt-2" onclick="navigator.clipboard.writeText('nmap -sV 127.0.0.1'); alert('Copied')">Copy Command</button>
                         </div>
                     `;
-                    setTimeout(() => lucide.createIcons(), 50);
+                    lucide.createIcons();
                 }
             });
-
+            
             document.getElementById('ghost-close').onclick = () => {
                 document.getElementById('ghost-overlay').classList.remove('active');
             };
-
-            lucide.createIcons();
         });
+
+        function renderCarousel() {
+            const container = document.getElementById('carousel-slides');
+            const dots = document.getElementById('carousel-dots');
+            container.innerHTML = carouselData.map((s, i) => `
+                <div class="carousel-slide ${i===0?'active':''}">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="${s.icon}" class="w-4 h-4 text-teal-400"></i>
+                        <h4 class="text-xs font-bold text-teal-400">${s.title}</h4>
+                    </div>
+                    ${s.content}
+                </div>
+            `).join('');
+            dots.innerHTML = carouselData.map((_, i) => `<div class="dot ${i===0?'active':''}"></div>`).join('');
+            document.getElementById('carousel-container').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function renderGrid(id, data) {
+            const c = document.getElementById(id);
+            c.innerHTML = data.map(item => `
+                <div class="glass-card p-4 rounded-3xl flex flex-col items-center justify-center gap-2 cursor-pointer menu-card magnet" onclick="alert('Modul ${item.name} Ready')">
+                    <i data-lucide="${item.icon}" class="w-5 h-5 text-teal-400"></i>
+                    <span class="text-[8px] font-bold text-slate-200">${item.name}</span>
+                    <span class="text-[7px] text-slate-600 font-mono">${item.desc}</span>
+                </div>
+            `).join('');
+        }
     </script>
 </body>
 </html>
