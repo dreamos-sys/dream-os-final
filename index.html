@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#020617">
-    <title>Dream OS • Genesis</title>
+    <title>Dream OS v1.0 • Genesis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -36,6 +36,18 @@
             border: 1px solid rgba(255, 255, 255, 0.04);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
         }
+        .gradient-border {
+            position: relative;
+            border-radius: 1.5rem;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, rgba(45,212,191,0.4), rgba(16,185,129,0.1));
+            border-radius: 1.5rem;
+            z-index: -1;
+        }
         .magnet { transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1); }
         .magnet:active { transform: scale(0.96); }
         .ghost-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
@@ -43,46 +55,58 @@
     </style>
 </head>
 <body class="text-slate-200 h-screen overflow-hidden flex flex-col bg-slate-950">
+
     <div id="app-root" class="h-full w-full flex flex-col"></div>
+
     <script src="core.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Memuat part Authentication secara asynchronous
             fetch('modules/auth.html')
-                .then(response => response.text())
+                .then(res => res.text())
                 .then(html => {
                     document.getElementById('app-root').innerHTML = html;
                     lucide.createIcons();
                     
-                    // Bind Logic Login yang terpisah
                     document.getElementById('btn-login').onclick = () => {
                         const key = document.getElementById('access-key').value;
                         if (!key) return alert('Masukkan Access Key!');
                         
-                        // Load Dashboard Part
                         fetch('modules/dashboard.html')
                             .then(res => res.text())
                             .then(dashHtml => {
                                 document.getElementById('app-root').innerHTML = dashHtml;
                                 lucide.createIcons();
                                 
-                                // Memuat Grid Part
-                                fetch('modules/grid.html')
-                                    .then(rGrid => rGrid.text())
-                                    .then(gridHtml => {
-                                        document.getElementById('staff-grid-wrapper').innerHTML = gridHtml;
-                                        window.renderMainGrid();
+                                fetch('modules/header.html')
+                                    .then(hRes => hRes.text())
+                                    .then(hHtml => {
+                                        document.getElementById('header-wrapper').innerHTML = hHtml;
+                                        lucide.createIcons();
+                                        document.getElementById('btn-logout').onclick = () => window.location.reload();
+                                    });
+
+                                fetch('modules/stats.html')
+                                    .then(sRes => sRes.text())
+                                    .then(sHtml => {
+                                        document.getElementById('stats-wrapper').innerHTML = sHtml;
+                                        fetch('modules/grid.html')
+                                            .then(gRes => gRes.text())
+                                            .then(gHtml => {
+                                                document.getElementById('grid-wrapper').innerHTML = gHtml;
+                                                window.renderMainGrid();
+                                                lucide.createIcons();
+                                            });
+                                    });
+                                
+                                fetch('modules/nav.html')
+                                    .then(nRes => nRes.text())
+                                    .then(nHtml => {
+                                        document.getElementById('nav-wrapper').innerHTML = nHtml;
                                         lucide.createIcons();
                                     });
-                                    
-                                // Event Logout
-                                document.getElementById('btn-logout').onclick = () => {
-                                    window.location.reload();
-                                };
                             });
                     };
-                    
-                    // Ghost Monitoring 7 Taps Trigger
+
                     document.getElementById('dream-logo').addEventListener('pointerdown', () => {
                         state.ghostTaps++;
                         if (state.ghostTaps === 1) state.ghostTimer = setTimeout(() => state.ghostTaps = 0, 2000);
@@ -94,11 +118,8 @@
                                 .then(res => res.text())
                                 .then(ghostHtml => {
                                     document.body.insertAdjacentHTML('beforeend', ghostHtml);
-                                    document.getElementById('ghost-overlay').classList.add('active');
                                     lucide.createIcons();
-                                    document.getElementById('ghost-close').onclick = () => {
-                                        document.getElementById('ghost-overlay').remove();
-                                    };
+                                    document.getElementById('ghost-close').onclick = () => document.getElementById('ghost-overlay').remove();
                                 });
                         }
                     });
