@@ -16,7 +16,7 @@
                         spiritual: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
                         gold: { 400: '#fbbf24', 500: '#f59e0b' },
                         slate: { 900: '#0f172a', 950: '#020617' },
-                        ghost: { 500: '#7c3aed', 600: '#6d28d9', 700: '#5b21b6' }
+                        ghost: { 500: '#7c3aed', 600: '#6d28d9' }
                     }
                 }
             }
@@ -44,9 +44,9 @@
         .carousel-slide { display: none; animation: fadeIn 0.5s; padding: 1rem; }
         .carousel-slide.active { display: block; }
         .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; cursor: pointer; }        .dot.active { background: #fbbf24; width: 24px; border-radius: 4px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-        .ghost-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.95); backdrop-filter: blur(10px); z-index: 1000; display: none; flex-direction: column; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; cursor: pointer; }
+        .dot.active { background: #fbbf24; width: 24px; border-radius: 4px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }        .ghost-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.95); backdrop-filter: blur(10px); z-index: 1000; display: none; flex-direction: column; }
         .ghost-overlay.active { display: flex; }
         .ghost-header { padding: 1rem; border-bottom: 1px solid rgba(124,58,237,0.3); display: flex; justify-content: space-between; align-items: center; }
         .ghost-grid { padding: 1rem; display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; overflow-y: auto; }
@@ -57,6 +57,8 @@
         .copy-btn:active { background: rgba(124,58,237,0.5); }
         .ghost-status { font-size: 10px; color: #22c55e; }
         .ghost-status.offline { color: #f87171; }
+        .ai-badge { font-size: 9px; background: linear-gradient(135deg, #7c3aed, #22c55e); padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
+        .ai-badge.fallback { background: linear-gradient(135deg, #f59e0b, #f97316); }
     </style>
 </head>
 <body class="text-slate-200 h-screen overflow-hidden">
@@ -84,17 +86,16 @@
 
     <!-- MAIN APP -->
     <div id="app-view" class="view flex-col h-full">
-        <!-- HEADER with Bismillah - NOW VISIBLE ON MOBILE TOO -->
+        <!-- HEADER with Bismillah - VISIBLE ON ALL SCREENS -->
         <header id="app-header" class="px-3 py-2.5 glass border-b border-slate-800/60 flex justify-between items-center shrink-0 hidden">
             <div class="flex items-center gap-2">
                 <img src="assets/logo-sultan.png" alt="Dream OS" class="w-8 h-8 rounded-lg shadow-lg object-cover">
                 <div>
                     <h1 class="text-xs font-bold text-slate-100 leading-tight">Dream OS</h1>
-                    <span class="text-[8px] text-emerald-400 font-mono">v1.0 Genesis</span>
+                    <span class="text-[8px] text-emerald-400 font-mono">v1.0 Genesis <span id="ai-status" class="ai-badge">AI: Checking...</span></span>
                 </div>
             </div>
-            <!-- Bismillah & Shalawat - VISIBLE ON ALL SCREENS -->            <div class="flex flex-col items-end text-right">
-                <span class="text-[8px] text-amber-500 font-arabic leading-none">بِسْمِ اللَّهِ</span>
+            <div class="flex flex-col items-end text-right">                <span class="text-[8px] text-amber-500 font-arabic leading-none">بِسْمِ اللَّهِ</span>
                 <span class="text-[6px] text-emerald-400 font-arabic leading-none mt-0.5">اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ</span>
             </div>
             <div class="flex items-center gap-1.5">
@@ -115,14 +116,15 @@
             </div>
             <div id="view-command" class="view-section hidden space-y-3">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-amber-500">Command Center</h2>
-                    <span class="text-[9px] bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-emerald-400 font-mono">AI Active</span>
+                    <h2 class="text-sm font-bold text-amber-500">Command Center <span id="command-ai-badge" class="ai-badge fallback">AI: Fallback</span></h2>
                 </div>
                 <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                    <input type="text" placeholder="🔍 Cari 'AC 2016'..." class="w-full bg-transparent text-sm text-slate-200 focus:outline-none placeholder-slate-600">
+                    <input type="text" id="command-search" placeholder="🔍 Cari 'AC 2016' atau 'SPJ Maret'..." class="w-full bg-transparent text-sm text-slate-200 focus:outline-none placeholder-slate-600">
                 </div>
+                <div id="command-results" class="hidden space-y-2"></div>
                 <div id="command-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
+            <!-- Other views (user, qr, info, config) same as before -->
             <div id="view-user" class="view-section hidden space-y-3">
                 <div class="glass p-6 rounded-2xl text-center">
                     <div class="w-20 h-20 bg-gradient-to-br from-amber-400 to-emerald-500 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl font-bold text-white">U</div>
@@ -198,74 +200,64 @@
         </div>
     </div>
 
+    <!-- SCRIPTS -->
+    <script src="modules/ai-service.js"></script>
     <script>
-        console.log('✅ Dream OS v1.0 Full Modular + Ghost Arsenal Loading...');
-        const state = { role: 'STAFF', currentView: 'home', ghostTaps: 0, ghostTimer: null, carouselInterval: null, ghostAudit: 0 };
+        console.log('✅ Dream OS v1.0 + Nemo-120B AI Loading...');
+        const state = { role: 'STAFF', currentView: 'home', ghostTaps: 0, ghostTimer: null, carouselInterval: null, ghostAudit: 0, aiReady: false };
         
+        // Carousel data (7 slides)
         const carouselSlides = [
             { icon: 'hand', title: 'Selamat Datang', content: '<p class="text-xs text-slate-300 mb-2">Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan. Terima kasih.</p>' },
             { icon: 'calendar', title: 'Jadwal Booking', content: '<div class="space-y-2"><div class="bg-slate-900/60 p-2 rounded border border-slate-800"><p class="text-[10px] text-slate-400">Hari Ini</p><p class="text-xs font-semibold">Rapat Koordinasi - 09:00 WIB</p></div><div class="bg-slate-900/60 p-2 rounded border border-slate-800"><p class="text-[10px] text-emerald-400">Besok</p><p class="text-xs font-semibold">Kunjungan Yayasan - 13:00 WIB</p></div></div>' },
             { icon: 'activity', title: 'Progress K3', content: '<div class="space-y-2"><div class="bg-slate-900/60 p-2 rounded border border-slate-800"><div class="flex justify-between text-[10px] mb-1"><span>AC Ruang Rapat</span><span class="text-amber-400">Proses</span></div><div class="w-full bg-slate-800 rounded-full h-1.5"><div class="bg-amber-400 h-1.5 rounded-full" style="width: 60%"></div></div></div><div class="bg-slate-900/60 p-2 rounded border border-slate-800"><div class="flex justify-between text-[10px] mb-1"><span>Kebersihan Lobby</span><span class="text-emerald-400">Selesai</span></div><div class="w-full bg-slate-800 rounded-full h-1.5"><div class="bg-emerald-400 h-1.5 rounded-full" style="width: 100%"></div></div></div></div>' },
-            { icon: 'cloud-rain', title: 'Cuaca & AI Warning', content: '<div class="bg-slate-900/60 p-3 rounded border border-slate-800"><p class="text-xs mb-2">🌤️ Cerah Berawan - 32°C</p><p class="text-[10px] text-amber-400 mb-1">⚠️ AI Prediction:</p><p class="text-[10px] text-slate-300">Hujan ringan pukul 15:00. Janitor Outdoor siap siaga.</p></div>' },
+            { icon: 'cloud-rain', title: 'Cuaca & AI Warning', content: '<div id="weather-ai" class="bg-slate-900/60 p-3 rounded border border-slate-800"><p class="text-xs mb-2">🌤️ Loading AI...</p></div>' },
             { icon: 'building-2', title: 'Info Management', content: '<div class="bg-slate-900/60 p-3 rounded border border-slate-800"><p class="text-[10px] text-slate-400 mb-1">Rapat CEO & Yayasan</p><p class="text-xs font-semibold">Pukul 09:00 WIB di Ruang Rapat SMA</p></div>' },
             { icon: 'users', title: 'Info Team Umum', content: '<div class="bg-slate-900/60 p-3 rounded border border-slate-800"><p class="text-[10px] text-slate-400 mb-1">Rapat Mingguan</p><p class="text-xs font-semibold">Jam 09:00 WIB di R. Koord Bagian Umum</p></div>' },
             { icon: 'gift', title: 'Ucapan & Info', content: '<div class="bg-slate-900/60 p-3 rounded border border-slate-800"><p class="text-xs mb-1">🎂 Selamat Ulang Tahun</p><p class="text-[10px] text-slate-300">Pak Budi (Komisi 3 Bulan). Semoga berkah!</p></div>' }
         ];
         
         const gridData = [
-            {icon:'calendar',label:'Booking',desc:'Pemesanan'},
-            {icon:'alert-triangle',label:'K3 Form',desc:'Laporan'},
-            {icon:'wrench',label:'Maintenance',desc:'Perbaikan'},
-            {icon:'shield',label:'Sekuriti',desc:'Keamanan'},
-            {icon:'sparkles',label:'Janitor In',desc:'Indoor'},
-            {icon:'leaf',label:'Janitor Out',desc:'Outdoor'},
-            {icon:'package',label:'Stok Alat',desc:'Inventaris'},
-            {icon:'clipboard-list',label:'Laporan',desc:'Harian'},
+            {icon:'calendar',label:'Booking',desc:'Pemesanan'},{icon:'alert-triangle',label:'K3 Form',desc:'Laporan'},
+            {icon:'wrench',label:'Maintenance',desc:'Perbaikan'},{icon:'shield',label:'Sekuriti',desc:'Keamanan'},
+            {icon:'sparkles',label:'Janitor In',desc:'Indoor'},{icon:'leaf',label:'Janitor Out',desc:'Outdoor'},
+            {icon:'package',label:'Stok Alat',desc:'Inventaris'},{icon:'clipboard-list',label:'Laporan',desc:'Harian'},
             {icon:'building-2',label:'Inventaris',desc:'Aset'}
         ];
-        
         const commandGridData = [
-            {icon:'bar-chart-3',label:'Kinerja',desc:'Global'},
-            {icon:'wallet',label:'Keuangan',desc:'SPJ'},
-            {icon:'database',label:'Inventaris',desc:'Aset'},
-            {icon:'users',label:'Vendor',desc:'Tracker'},
-            {icon:'user-check',label:'SDM',desc:'Tugas'},
-            {icon:'file-text',label:'Laporan',desc:'Bulanan'},
-            {icon:'search',label:'Audit',desc:'Trail'},
-            {icon:'sliders',label:'Config',desc:'System'}
+            {icon:'bar-chart-3',label:'Kinerja',desc:'Global'},{icon:'wallet',label:'Keuangan',desc:'SPJ'},
+            {icon:'database',label:'Inventaris',desc:'Aset'},{icon:'users',label:'Vendor',desc:'Tracker'},
+            {icon:'user-check',label:'SDM',desc:'Tugas'},{icon:'file-text',label:'Laporan',desc:'Bulanan'},
+            {icon:'search',label:'Audit',desc:'Trail'},{icon:'sliders',label:'Config',desc:'System'}
         ];
-        
         const ghostTools = [
             { id: 'eruda', name: 'Eruda Dev', icon: 'code', desc: 'Mobile DevTools', cmd: 'pkg install nodejs && npm install -g eruda' },
             { id: 'osint', name: 'OSINT Framework', icon: 'search', desc: 'Reconnaissance', cmd: 'pkg install python git && git clone https://github.com/jivoi/awesome-osint.git' },
             { id: 'kali', name: 'Kali Tools', icon: 'shield-alert', desc: 'Penetration testing', cmd: 'proot-distro install kali-linux' },
             { id: 'spider', name: 'Spider Crawler', icon: 'spider', desc: 'Web enumeration', cmd: 'pkg install python && pip install scrapy' },
-            { id: 'nmap', name: 'Nmap Scanner', icon: 'radar', desc: 'Network discovery', cmd: 'pkg install nmap && nmap -sV 127.0.0.1' },            { id: 'tshark', name: 'TShark Analyzer', icon: 'wifi', desc: 'Packet analysis', cmd: 'pkg install tshark', requiresRoot: true }
+            { id: 'nmap', name: 'Nmap Scanner', icon: 'radar', desc: 'Network discovery', cmd: 'pkg install nmap && nmap -sV 127.0.0.1' },
+            { id: 'tshark', name: 'TShark Analyzer', icon: 'wifi', desc: 'Packet analysis', cmd: 'pkg install tshark', requiresRoot: true }
         ];
         
+        // Render functions
         function renderCarousel() {
             const container = document.getElementById('carousel-slides');
-            const dotsContainer = document.getElementById('carousel-dots');
-            if (!container || !dotsContainer) return;
+            const dotsContainer = document.getElementById('carousel-dots');            if (!container || !dotsContainer) return;
             container.innerHTML = carouselSlides.map((slide, i) => `
                 <div class="carousel-slide ${i === 0 ? 'active' : ''}">
-                    <div class="flex items-center gap-2 mb-2">
-                        <i data-lucide="${slide.icon}" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="text-sm font-bold text-amber-400">${slide.title}</h3>
-                    </div>${slide.content}</div>
-            `).join('');
+                    <div class="flex items-center gap-2 mb-2"><i data-lucide="${slide.icon}" class="w-5 h-5 text-amber-400"></i><h3 class="text-sm font-bold text-amber-400">${slide.title}</h3></div>
+                    ${slide.content}
+                </div>`).join('');
             dotsContainer.innerHTML = carouselSlides.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('');
             startCarousel();
             setTimeout(() => lucide.createIcons(), 50);
+            // Load AI weather after carousel render
+            if (window.aiService) loadAIWeather();
         }
-        
         let currentSlide = 0;
         function startCarousel() {
             if (state.carouselInterval) clearInterval(state.carouselInterval);
-            state.carouselInterval = setInterval(() => {
-                currentSlide = (currentSlide + 1) % carouselSlides.length;
-                showSlide(currentSlide);
-            }, 7000);
+            state.carouselInterval = setInterval(() => { currentSlide = (currentSlide + 1) % carouselSlides.length; showSlide(currentSlide); }, 7000);
         }
         function showSlide(index) {
             document.querySelectorAll('.carousel-slide').forEach(s => s.classList.remove('active'));
@@ -289,7 +281,8 @@
         
         function renderGhostTools() {
             const container = document.getElementById('ghost-tools');
-            if (!container) return;            container.innerHTML = ghostTools.map(tool => `
+            if (!container) return;
+            container.innerHTML = ghostTools.map(tool => `
                 <div class="ghost-card" onclick="copyGhostCmd('${tool.id}')">
                     <div class="flex items-center gap-2 mb-1">
                         <i data-lucide="${tool.icon}" class="w-4 h-4 text-ghost-400"></i>
@@ -298,8 +291,7 @@
                     </div>
                     <p class="text-[10px] text-slate-400 mb-2">${tool.desc}</p>
                     <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${tool.cmd.replace(/'/g, "\\'")}')">📋 Copy Command</button>
-                </div>`).join('') + `<div class="ghost-card terminal"><p class="text-slate-400 mb-2">📟 Terminal:</p><pre id="ghost-terminal" class="text-emerald-400 whitespace-pre-wrap text-[10px]">Ready...</pre></div>`;
-            setTimeout(() => lucide.createIcons(), 50);
+                </div>`).join('') + `<div class="ghost-card terminal"><p class="text-slate-400 mb-2">📟 Terminal:</p><pre id="ghost-terminal" class="text-emerald-400 whitespace-pre-wrap text-[10px]">Ready...</pre></div>`;            setTimeout(() => lucide.createIcons(), 50);
         }
         
         function copyToClipboard(text) {
@@ -314,35 +306,90 @@
             if (tool) copyToClipboard(tool.cmd);
         };
         
-        // FIX: PASSWORD TOGGLE
+        // AI Weather Prediction
+        async function loadAIWeather() {
+            const container = document.getElementById('weather-ai');
+            if (!container || !window.aiService) return;
+            container.innerHTML = '<p class="text-xs text-slate-400">🤖 AI thinking...</p>';
+            const result = await aiService.predictWeather('Depok, Indonesia');
+            if (result.success) {
+                const isFallback = result.source === 'fallback';
+                container.innerHTML = `
+                    <p class="text-xs mb-2">${result.response.split('\n')[0]}</p>
+                    ${result.response.includes('⚠️') ? `<p class="text-[10px] text-amber-400 mb-1">${result.response.match(/⚠️.*?(?=\.|$)/)?.[0] || ''}</p>` : ''}
+                    <p class="text-[10px] text-slate-300">${result.response.split('\n').slice(1).join('<br>')}</p>
+                    ${isFallback ? '<p class="text-[8px] text-orange-400 mt-1">⚠️ Fallback mode (AI offline)</p>' : ''}
+                `;
+                // Update AI status badge
+                const badge = document.getElementById('ai-status');
+                if (badge) {
+                    badge.textContent = isFallback ? 'AI: Fallback' : 'AI: Online';
+                    badge.className = `ai-badge ${isFallback ? 'fallback' : ''}`;
+                }
+            }
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+        
+        // Command Center AI Search
+        function initCommandSearch() {
+            const input = document.getElementById('command-search');
+            const resultsDiv = document.getElementById('command-results');
+            if (!input || !resultsDiv || !window.aiService) return;
+            
+            input.addEventListener('keypress', async (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    const query = input.value.trim();
+                    resultsDiv.classList.remove('hidden');
+                    resultsDiv.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">🤖 AI searching...</p>';                    
+                    const result = await aiService.query(`User search: "${query}". Return relevant data from booking, k3, maintenance. Format: concise list.`, { task: 'command_search' });
+                    
+                    if (result.success) {
+                        const isFallback = result.source === 'fallback';
+                        resultsDiv.innerHTML = `
+                            <div class="space-y-2">
+                                ${result.response.split('\n').map(line => `<div class="bg-slate-900/60 p-2 rounded border border-slate-800 text-xs">${line}</div>`).join('')}
+                            </div>
+                            ${isFallback ? '<p class="text-[9px] text-orange-400 text-center mt-2">⚠️ Using fallback data (AI offline)</p>' : ''}
+                        `;
+                        // Update badge
+                        const badge = document.getElementById('command-ai-badge');
+                        if (badge) {
+                            badge.textContent = isFallback ? 'AI: Fallback' : 'AI: Online';
+                            badge.className = `ai-badge ${isFallback ? 'fallback' : ''}`;
+                        }
+                    }
+                    setTimeout(() => lucide.createIcons(), 50);
+                }
+            });
+        }
+        
+        // Password Toggle (FIXED)
         function initPasswordToggle() {
             const toggleBtn = document.getElementById('toggle-pw');
             const eyeOff = document.getElementById('eye-off');
             const eyeOn = document.getElementById('eye-on');
             const input = document.getElementById('access-key');
-            
             if (toggleBtn && input) {
                 toggleBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                    e.preventDefault(); e.stopPropagation();
                     const isPass = input.type === 'password';
                     input.type = isPass ? 'text' : 'password';
                     eyeOff.classList.toggle('hidden', !isPass);
                     eyeOn.classList.toggle('hidden', isPass);
-                    console.log('👁️ Password toggle:', input.type);
                 });
             }
         }
         
+        // Login
         function initLogin() {
             const loginBtn = document.getElementById('btn-login');
             const input = document.getElementById('access-key');
             if (loginBtn) {
-                loginBtn.addEventListener('click', () => {                    const key = input.value;
+                loginBtn.addEventListener('click', () => {
+                    const key = input.value;
                     if (!key) return alert('Masukkan Access Key!');
                     state.role = key.includes('admin') || key.includes('kepala') ? 'KEPALA_BAGIAN' : 'STAFF';
-                    document.getElementById('role-badge').textContent = state.role.replace('_', ' ');
-                    document.getElementById('profile-role').textContent = state.role.replace('_', ' ');
+                    document.getElementById('role-badge').textContent = state.role.replace('_', ' ');                    document.getElementById('profile-role').textContent = state.role.replace('_', ' ');
                     document.getElementById('auth-view').classList.remove('active');
                     document.getElementById('app-view').classList.add('active');
                     document.getElementById('app-header').classList.remove('hidden');
@@ -352,10 +399,22 @@
                     renderCarousel();
                     renderGrid('staff-grid', gridData);
                     renderGrid('command-grid', commandGridData);
+                    // Check AI status after login
+                    if (window.aiService) {
+                        aiService.isReady().then(ready => {
+                            state.aiReady = ready;
+                            const badge = document.getElementById('ai-status');
+                            if (badge) {
+                                badge.textContent = ready ? 'AI: Online' : 'AI: Fallback';
+                                badge.className = `ai-badge ${ready ? '' : 'fallback'}`;
+                            }
+                        });
+                    }
                 });
             }
         }
         
+        // Ghost Mode
         function initGhostMode() {
             const logo = document.getElementById('dream-logo');
             if (logo) {
@@ -363,48 +422,36 @@
                     state.ghostTaps++;
                     if (state.ghostTaps === 1) state.ghostTimer = setTimeout(() => state.ghostTaps = 0, 2000);
                     if (state.ghostTaps >= 7) {
-                        clearTimeout(state.ghostTimer);
-                        state.ghostTaps = 0;
+                        clearTimeout(state.ghostTimer); state.ghostTaps = 0;
                         activateGhostMode();
                     }
                 });
             }
         }
-        
         function activateGhostMode() {
             document.getElementById('ghost-overlay').classList.add('active');
             renderGhostTools();
-            const timeInterval = setInterval(() => {
-                document.getElementById('ghost-time').textContent = new Date().toLocaleTimeString('id-ID');
-            }, 1000);
-            document.getElementById('ghost-close').onclick = () => {
-                document.getElementById('ghost-overlay').classList.remove('active');
-                clearInterval(timeInterval);
-            };
+            const timeInterval = setInterval(() => { document.getElementById('ghost-time').textContent = new Date().toLocaleTimeString('id-ID'); }, 1000);
+            document.getElementById('ghost-close').onclick = () => { document.getElementById('ghost-overlay').classList.remove('active'); clearInterval(timeInterval); };
         }
         
+        // Navigation
         function initNavigation() {
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.nav-btn').forEach(b => {
-                        b.classList.remove('active', 'text-amber-400');                        b.classList.add('text-slate-500');
-                    });
-                    btn.classList.add('active', 'text-amber-400');
-                    btn.classList.remove('text-slate-500');
+                btn.addEventListener('click', () => {                    document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('active', 'text-amber-400'); b.classList.add('text-slate-500'); });
+                    btn.classList.add('active', 'text-amber-400'); btn.classList.remove('text-slate-500');
                     const target = btn.dataset.target;
                     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
                     if (target === 'home') document.getElementById('view-home').classList.remove('hidden');
                     else if (target === 'command') {
-                        if (state.role === 'KEPALA_BAGIAN') document.getElementById('view-command').classList.remove('hidden');
+                        if (state.role === 'KEPALA_BAGIAN') { document.getElementById('view-command').classList.remove('hidden'); initCommandSearch(); }
                         else { alert('⚠️ Command Center untuk Kepala/Koordinator'); document.getElementById('view-home').classList.remove('hidden'); }
-                    } else {
-                        const viewEl = document.getElementById(`view-${target}`);
-                        if (viewEl) viewEl.classList.remove('hidden');
-                    }
+                    } else { const viewEl = document.getElementById(`view-${target}`); if (viewEl) viewEl.classList.remove('hidden'); }
                 });
             });
         }
         
+        // Logout
         function initLogout() {
             const doLogout = () => {
                 document.getElementById('app-view').classList.remove('active');
@@ -418,14 +465,15 @@
             if (logoutProfileBtn) logoutProfileBtn.addEventListener('click', doLogout);
         }
         
+        // Init All
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🔧 Initializing all modules...');
+            console.log('🔧 Initializing Dream OS v1.0 + Nemo-120B...');
             initPasswordToggle();
             initLogin();
             initGhostMode();
             initNavigation();
             initLogout();
-            console.log('✅ Dream OS v1.0 Ready!');
+            console.log('✅ Dream OS Ready! Nemo-120B: ' + (window.aiService ? 'Connected' : 'Loading...'));
         });
     </script>
 </body>
