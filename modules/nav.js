@@ -1,21 +1,18 @@
 const navModule = {
-    items: [
-        { id: 'home', icon: 'home', label: 'nav.home' },
-        { id: 'user', icon: 'user', label: 'nav.user' },
-        { id: 'qr', icon: 'scan-line', label: 'nav.menu' },
-        { id: 'info', icon: 'info', label: 'nav.info' },
-        { id: 'config', icon: 'settings', label: 'nav.config' }
-    ],
-    
     init() {
-        const nav = document.getElementById('bottom-nav');
-        nav.innerHTML = this.items.map(item => `
-            <button class="nav-btn active flex flex-col items-center justify-center gap-1 w-full h-full text-amber-400" data-target="${item.id}">
-                <i data-lucide="${item.icon}" class="w-5 h-5"></i>
-                <span class="text-[9px] font-medium tracking-wide" data-i18n="${item.label}">${i18n.t(item.label)}</span>
-            </button>
-        `).join('');
-        nav.classList.remove('hidden');
-        setTimeout(() => lucide.createIcons(), 50);
+        const n = document.getElementById('bottom-nav');
+        n.classList.remove('hidden');
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.nav-btn').forEach(x => {
+                    x.classList.remove('active', 'text-teal-400');
+                    x.classList.add('text-slate-500');
+                });
+                b.classList.add('active', 'text-teal-400');
+                const t = b.getAttribute('data-target');
+                document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden'));
+                document.getElementById('view-'+t).classList.remove('hidden');
+            };
+        });
     }
 };

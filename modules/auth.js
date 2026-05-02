@@ -1,40 +1,39 @@
 const authModule = {
     init() {
-        document.getElementById('btn-login').addEventListener('click', () => this.login());
-        document.getElementById('toggle-pw').addEventListener('click', () => this.togglePassword());
+        const l = document.getElementById('btn-login');
+        const t = document.getElementById('toggle-pw');
+        const i = document.getElementById('access-key');
+        
+        t.onclick = (e) => {
+            e.preventDefault();
+            const p = i.type === 'password';
+            i.type = p ? 'text' : 'password';
+            document.getElementById('eye-off').classList.toggle('hidden', !p);
+            document.getElementById('eye-on').classList.toggle('hidden', p);
+        };
+
+        l.onclick = () => {
+            if(!i.value) return alert('Masukkan Access Key!');
+            const r = i.value.includes('admin') ? 'KEPALA_BAGIAN' : 'STAFF';
+            document.getElementById('role-badge').textContent = r.replace('_', ' ');
+            document.getElementById('profile-role').textContent = r.replace('_', ' ');
+            document.getElementById('auth-view').classList.remove('active');
+            document.getElementById('app-view').classList.add('active');
+            
+            headerModule.init();
+            navModule.init();
+            carouselModule.init();
+            gridModule.init();
+            ghostModule.init();
+            document.getElementById('app-header').classList.remove('hidden');
+            document.getElementById('bottom-nav').classList.remove('hidden');
+            lucide.createIcons();
+        };
     },
-    
-    togglePassword() {
-        const input = document.getElementById('access-key');
-        const eyeOff = document.getElementById('eye-off');
-        const eyeOn = document.getElementById('eye-on');
-        const isPass = input.type === 'password';
-        input.type = isPass ? 'text' : 'password';
-        eyeOff.classList.toggle('hidden', !isPass);
-        eyeOn.classList.toggle('hidden', isPass);
-    },    
-    login() {
-        const key = document.getElementById('access-key').value;
-        if (!key) return alert('Masukkan Access Key!');
-        
-        const role = key.includes('admin') || key.includes('kepala') ? 'KEPALA_BAGIAN' : 'STAFF';
-        document.getElementById('role-badge').textContent = role.replace('_', ' ');
-        
-        document.getElementById('auth-view').classList.remove('active');
-        document.getElementById('app-view').classList.add('active');
-        document.getElementById('app-header').classList.remove('hidden');
-        document.getElementById('bottom-nav').classList.remove('hidden');
-        document.getElementById('carousel-container').classList.remove('hidden');
-        document.getElementById('staff-grid').classList.remove('hidden');
-        
-        // Init modules
-        if (window.headerModule) headerModule.init();
-        if (window.navModule) navModule.init();
-        if (window.gridData) gridData.render('staff-grid', gridData.staff);
-        if (window.carouselData) carouselData.init();
-        
-        setTimeout(() => lucide.createIcons(), 50);
+    logout() {
+        document.getElementById('app-view').classList.remove('active');
+        document.getElementById('auth-view').classList.add('active');
+        document.getElementById('access-key').value = '';
     }
 };
-
 document.addEventListener('DOMContentLoaded', () => authModule.init());

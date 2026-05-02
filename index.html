@@ -2,24 +2,21 @@
 <html lang="id" dir="ltr" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
-    <title>Dream OS v1.2 • Futuristic</title>
+    <title>Dream OS • Nano Quantum</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        arabic: ['Scheherazade New', 'Amiri', 'serif'],
-                        sans: ['Inter', 'sans-serif']
-                    },
                     colors: {
                         teal: { 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488' },
-                        emerald: { 400: '#34d399', 500: '#10b981' }
+                        emerald: { 400: '#34d399', 500: '#10b981' },
+                        ghost: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' }
                     }
                 }
             }
@@ -27,333 +24,165 @@
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); }
-        .font-arabic { font-family: 'Scheherazade New', 'Amiri', serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; background: #020617; }
+        .font-arabic { font-family: 'Amiri', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         .view { display: none; }
         .view.active { display: flex; }
         #auth-view.active { display: flex; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
-        .glass-pearl { background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); }
-        .arabic-glow { text-shadow: 0 0 20px rgba(45, 212, 191, 0.6), 0 0 40px rgba(45, 212, 191, 0.4); }
-        .menu-card { transition: all 0.3s ease; background: rgba(45, 212, 191, 0.1); }
-        .menu-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 40px rgba(45, 212, 191, 0.3); }
-        .gradient-bg { background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #134e5e); background-size: 400% 400%; animation: gradient 15s ease infinite; }
-        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .pulse { animation: pulse 2s ease-in-out infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .magnet:active { transform: scale(0.95); }
-        .carousel-slide { display: none; animation: fadeIn 0.5s; }
+        .glass-nano { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.04); }
+        .magnet { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+        .magnet:active { transform: scale(0.96); }
+        #dream-logo { transition: transform 0.1s; cursor: pointer; }
+        #dream-logo:active { transform: scale(0.93); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .carousel-slide { display: none; animation: fadeIn 0.3s; }
         .carousel-slide.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(5px); } to { opacity: 1; transform: translateX(0); } }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; cursor: pointer; }
-        .dot.active { background: #2dd4bf; width: 24px; border-radius: 4px; }    </style>
+        .dot.active { background: #14b8a6; width: 24px; border-radius: 4px; }
+        .ghost-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(12px); z-index: 1000; display: none; flex-direction: column; }
+        .ghost-overlay.active { display: flex; }
+    </style>
 </head>
-<body class="text-white h-screen overflow-hidden gradient-bg">
+<body class="text-slate-200 h-screen overflow-hidden flex flex-col bg-slate-950">
 
-    <!-- AUTH SCREEN -->
     <section id="auth-view" class="view active flex-col items-center justify-center h-full p-6 text-center">
-        <div id="dream-logo" class="mb-6 cursor-pointer select-none magnet">
-            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-28 h-28 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] object-cover mb-4">
-            <p class="text-sm text-teal-300 font-semibold tracking-[0.3em]">DREAM OS</p>
+        <div id="dream-logo" class="mb-6 select-none magnet flex flex-col items-center">
+            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-28 h-28 rounded-3xl shadow-[0_0_30px_rgba(245,158,11,0.2)] object-cover mb-4">
+            <p class="text-[10px] text-teal-400/80 font-mono tracking-[0.25em]">DREAM OS <span class="text-emerald-400">v1.2</span></p>
         </div>
         
-        <div class="glass p-6 rounded-3xl mb-6 max-w-md">
-            <h1 class="font-arabic text-4xl text-teal-400 mb-3 arabic-glow">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</h1>
-            <p class="font-arabic text-2xl text-emerald-400 arabic-glow">اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
-            <p class="text-xs text-teal-300/60 mt-3 tracking-[0.2em] uppercase">The Power Soul of Shalawat</p>
-        </div>
-        
-        <div class="glass p-6 rounded-3xl w-full max-w-xs">
+        <div class="glass-nano p-6 rounded-3xl w-full max-w-xs shadow-2xl border border-white/5 mb-6">
             <div class="relative mb-4">
-                <input type="password" id="access-key" placeholder="Access Key" class="w-full px-4 py-3.5 bg-white/10 rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-teal-400 text-center tracking-widest text-white placeholder-white/40">
-                <button id="toggle-pw" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-teal-400 p-2">
-                    <i data-lucide="eye" class="w-5 h-5" id="eye-off"></i>
-                    <i data-lucide="eye-off" class="w-5 h-5 hidden" id="eye-on"></i>
+                <input type="password" id="access-key" placeholder="Access Key" 
+                    class="w-full px-4 py-3 bg-slate-900/80 text-sm text-center tracking-widest rounded-2xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/40 text-slate-200 placeholder-slate-600">
+                <button id="toggle-pw" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-teal-400 p-1 z-20">
+                    <i data-lucide="eye" class="w-4 h-4" id="eye-off"></i>
+                    <i data-lucide="eye-off" class="w-4 h-4 hidden" id="eye-on"></i>
                 </button>
             </div>
-            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-2xl shadow-lg shadow-teal-500/30 magnet">ACCESS SYSTEM</button>
+            <button id="btn-login" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-500/20 magnet">
+                ACCESS SYSTEM
+            </button>
         </div>
+        
+        <p class="text-[9px] text-slate-600 font-mono">Bi idznillah • ISO 27001 & 9001 Compliant</p>
     </section>
 
-    <!-- MAIN APP -->
-    <div id="app-view" class="view flex-col h-full">
-        <!-- HEADER -->
-        <header id="app-header" class="hidden px-4 py-3 glass border-b border-white/10 shrink-0">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <img src="assets/logo-sultan.png" alt="Dream OS" class="w-10 h-10 rounded-xl shadow-lg object-cover">
-                    <div>
-                        <h1 class="text-base font-bold text-white">Dream OS</h1>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <span class="text-[10px] text-teal-300">v1.2 Futuristic</span>
-                            <span id="ai-status" class="px-2 py-0.5 rounded text-[9px] bg-orange-500/80 pulse">AI: Fallback</span>
-                        </div>
-                    </div>
+    <div id="app-view" class="view flex-col h-full flex-1">
+        <header id="app-header" class="hidden px-4 py-3 glass-nano border-b border-white/5 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <img src="assets/logo-sultan.png" alt="Dream OS" class="w-9 h-9 rounded-xl shadow-lg object-cover">
+                <div>
+                    <h1 class="text-xs font-bold text-slate-100 leading-tight">Dream OS</h1>
+                    <span class="text-[9px] text-teal-400 font-mono">Nano-Quantum</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span id="role-badge" class="px-3 py-1 bg-teal-500/20 border border-teal-500/50 rounded-lg text-[10px] font-bold text-teal-300">STAFF</span>
-                    <button id="btn-logout" class="p-2 text-white/60 hover:text-red-400 magnet">
-                        <i data-lucide="log-out" class="w-5 h-5"></i>
-                    </button>
-                </div>            </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="role-badge" class="px-2 py-0.5 bg-slate-900 border border-slate-800 text-[9px] font-bold rounded uppercase tracking-wider text-teal-400">STAFF</span>
+                <button id="btn-logout" class="p-2 text-slate-500 hover:text-red-400 magnet">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
         </header>
 
-        <!-- MAIN CONTENT -->
-        <main class="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
+        <main class="flex-1 overflow-y-auto p-3 pb-24 space-y-4 bg-slate-950">
             <div id="view-home" class="view-section active space-y-4">
-                
-                <!-- STATISTICS CARD -->
-                <div class="glass-pearl rounded-3xl p-5 hidden" id="stats-card">
-                    <div class="flex justify-between items-center mb-5">
-                        <h3 class="text-base font-semibold text-white">Today's Statistics</h3>
-                        <span class="text-xs text-teal-300 bg-teal-500/20 px-3 py-1 rounded-full">Live</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <p class="text-xs text-white/60 mb-2">Users</p>
-                            <p class="text-3xl font-bold text-white mb-1">1,450</p>
-                            <p class="text-xs text-emerald-400 flex items-center gap-1">↑ 12% from last week</p>
-                            <svg class="w-full h-12 mt-3" viewBox="0 0 100 40"><path d="M0,35 Q25,30 50,25 T100,15" fill="none" stroke="#2dd4bf" stroke-width="2"/><circle cx="100" cy="15" r="3" fill="#2dd4bf"/></svg>
-                        </div>
-                        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <p class="text-xs text-white/60 mb-2">Transactions</p>
-                            <p class="text-3xl font-bold text-white mb-1">890</p>
-                            <p class="text-xs text-emerald-400 flex items-center gap-1">↑ 8% from last week</p>
-                            <svg class="w-full h-12 mt-3" viewBox="0 0 100 40"><path d="M0,30 Q25,25 50,20 T100,10" fill="none" stroke="#10b981" stroke-width="2"/><circle cx="100" cy="10" r="3" fill="#10b981"/></svg>
-                        </div>
-                        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <p class="text-xs text-white/60 mb-2">System Uptime</p>
-                            <p class="text-2xl font-bold text-teal-400">99.98%</p>
-                            <div class="w-full bg-white/10 rounded-full h-1.5 mt-3"><div class="bg-teal-400 h-1.5 rounded-full" style="width: 99.98%"></div></div>
-                        </div>
-                        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <p class="text-xs text-white/60 mb-2">Prayer Streak</p>
-                            <p class="text-2xl font-bold text-emerald-400">5 Days 🔥</p>
-                            <div class="flex gap-1 mt-3"><div class="flex-1 h-6 bg-emerald-400 rounded"></div><div class="flex-1 h-6 bg-emerald-400 rounded"></div><div class="flex-1 h-6 bg-emerald-400 rounded"></div><div class="flex-1 h-6 bg-emerald-400/50 rounded"></div><div class="flex-1 h-6 bg-emerald-400/50 rounded"></div></div>
-                        </div>
-                    </div>
+                <div id="carousel-container" class="glass-nano p-4 rounded-2xl hidden">
+                    <div id="carousel-slides"></div>
+                    <div class="carousel-dots flex justify-center gap-2 mt-4" id="carousel-dots"></div>
                 </div>
-
-                <!-- CAROUSEL -->
-                <div id="carousel-container" class="glass rounded-3xl overflow-hidden hidden">
-                    <div id="carousel-slides" class="p-5"></div>
-                    <div class="carousel-dots flex justify-center gap-2 mt-3" id="carousel-dots"></div>
-                </div>
-
-                <!-- 9-GRID MENU -->
-                <div id="staff-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 hidden"></div>
+                <div id="staff-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 hidden"></div>
             </div>
 
-            <!-- COMMAND CENTER -->            <div id="view-command" class="view-section hidden space-y-4">
+            <div id="view-command" class="view-section hidden space-y-4">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-teal-400">Command Center</h2>
-                    <span id="command-ai-badge" class="px-2 py-1 rounded text-[10px] bg-orange-500/80">AI: Fallback</span>
+                    <h2 class="text-sm font-bold text-teal-400" data-i18n="command.title">Command Center</h2>
+                    <span class="text-[9px] bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-emerald-400 font-mono">AI Active</span>
                 </div>
-                <div class="glass p-4 rounded-2xl">
-                    <input type="text" id="command-search" placeholder="🔍 Search data..." class="w-full bg-transparent text-white focus:outline-none placeholder-white/40">
+                <div class="glass-nano p-3 rounded-xl border border-slate-900">
+                    <input type="text" data-i18n-placeholder="command.search" placeholder="Cari data..." 
+                        class="w-full bg-transparent text-xs text-slate-300 focus:outline-none placeholder-slate-600">
                 </div>
                 <div id="command-results" class="hidden space-y-2"></div>
+                <div id="command-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
 
-            <!-- OTHER VIEWS -->
-            <div id="view-user" class="view-section hidden space-y-4">
-                <div class="glass p-6 rounded-3xl text-center">
-                    <div class="w-24 h-24 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl font-bold text-white">U</div>
-                    <h3 class="text-xl font-bold text-white mb-2">User Profile</h3>
-                    <p class="text-sm text-white/60">ID: USR-2024-001</p>
-                    <p class="text-sm text-teal-400 mt-2">Role: <span id="profile-role">STAFF</span></p>
-                    <button id="btn-logout-profile" class="mt-6 w-full py-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-bold rounded-2xl magnet">Logout</button>
+            <div id="view-user" class="view-section hidden space-y-3">
+                <div class="glass-nano p-6 rounded-2xl text-center">
+                    <h3 class="text-sm font-bold text-white mb-1">User Profile</h3>
+                    <p class="text-[9px] text-teal-400 mb-4">Role: <span id="profile-role">STAFF</span></p>
+                    <button id="btn-logout-profile" class="w-full py-2.5 bg-red-600/30 border border-red-500/20 text-xs font-bold rounded-xl magnet">Logout</button>
                 </div>
             </div>
 
-            <div id="view-qr" class="view-section hidden space-y-4">
-                <div class="glass p-6 rounded-3xl text-center">
-                    <i data-lucide="scan-line" class="w-16 h-16 text-teal-400 mx-auto mb-4"></i>
-                    <h3 class="text-xl font-bold text-white mb-2">QR Smart Scanner</h3>
-                    <p class="text-sm text-white/60 mb-6">Scan QRIS, Barcode, QR Code</p>
-                    <button onclick="alert('📷 Camera ready')" class="w-full py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold rounded-2xl magnet">Open Scanner</button>
+            <div id="view-qr" class="view-section hidden space-y-3">
+                <div class="glass-nano p-6 rounded-2xl text-center">
+                    <h3 class="text-sm font-bold text-white mb-2">Smart Scanner</h3>
+                    <button onclick="alert('Camera Ready')" class="w-full py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-xs font-bold rounded-xl text-white">Open Scanner</button>
+                </div>
+            </div>
+            
+            <div id="view-info" class="view-section hidden space-y-3">
+                <div class="glass-nano p-6 rounded-2xl text-center">
+                    <h3 class="text-sm font-bold text-teal-400">Dream OS v1.2</h3>
+                    <p class="text-[9px] text-slate-500 mt-1">Nano-Quantum Architecture</p>
                 </div>
             </div>
 
-            <div id="view-info" class="view-section hidden space-y-4">
-                <div class="glass p-6 rounded-3xl text-center">
-                    <img src="assets/logo-sultan.png" alt="Dream OS" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg">
-                    <h3 class="text-2xl font-bold text-teal-400 mb-2">Dream OS</h3>
-                    <p class="text-sm text-white/60 mb-4">v1.2 • Futuristic Edition</p>
-                    <p class="text-xs text-white/40">Sovereign Modular AI Agent<br>Out of The Box Inside</p>
-                </div>
-            </div>
-
-            <div id="view-config" class="view-section hidden space-y-4">
-                <div class="glass p-5 rounded-3xl space-y-4">
-                    <h3 class="text-base font-bold text-teal-400 mb-3">Settings</h3>
-                    <div class="flex justify-between items-center py-3 border-b border-white/10">
-                        <span class="text-sm text-white/80">Dark/Light Mode</span>
-                        <button onclick="document.documentElement.classList.toggle('dark')" class="px-4 py-2 bg-white/10 rounded-xl text-sm">Toggle</button>
-                    </div>
+            <div id="view-config" class="view-section hidden space-y-3">
+                <div class="glass-nano p-4 rounded-2xl">
+                    <h3 class="text-xs font-bold text-teal-400 mb-3">Settings</h3>
                 </div>
             </div>
         </main>
-        <!-- BOTTOM NAV -->
-        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 flex justify-around items-center h-16 z-50 hidden">
-            <button class="nav-btn active flex flex-col items-center justify-center gap-1 w-full h-full text-teal-400" data-target="home"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[10px]">HOME</span></button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="user"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[10px]">USER</span></button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="qr"><i data-lucide="scan-line" class="w-6 h-6"></i><span class="text-[10px]">MENU</span></button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="info"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[10px]">INFO</span></button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-white/60" data-target="config"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[10px]">CONFIG</span></button>
+
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass-nano border-t border-white/5 flex justify-around items-center h-16 safe-bottom z-40 hidden">
+            <button class="nav-btn active flex flex-col items-center justify-center gap-1 w-full h-full text-teal-400" data-target="home">
+                <i data-lucide="home" class="w-5 h-5"></i><span class="text-[9px]">HOME</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-slate-500" data-target="user">
+                <i data-lucide="user" class="w-5 h-5"></i><span class="text-[9px]">USER</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-slate-500" data-target="qr">
+                <i data-lucide="scan-line" class="w-5 h-5"></i><span class="text-[9px]">MENU</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-slate-500" data-target="info">
+                <i data-lucide="info" class="w-5 h-5"></i><span class="text-[9px]">INFO</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-1 w-full h-full text-slate-500" data-target="config">
+                <i data-lucide="settings" class="w-5 h-5"></i><span class="text-[9px]">CONFIG</span>
+            </button>
         </nav>
     </div>
 
-    <!-- JAVASCRIPT -->
-    <script>
-    console.log('✅ Dream OS v1.2 Futuristic Loading...');
-    const state = { role: 'STAFF', currentView: 'home', ghostTaps: 0, ghostTimer: null, carouselInterval: null, aiReady: false };
-    
-    const aiService = {
-        config: { baseURL: 'http://127.0.0.1:8082', endpoint: '/api/v1/ai-agent', timeout: 8000, model: 'nemo-120b', fallback: true },
-        async isReady() { try { const c = new AbortController(); const t = setTimeout(()=>c.abort(), this.config.timeout); const r = await fetch(`${this.config.baseURL}${this.config.endpoint}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt:'ping', model:this.config.model}), signal:c.signal}); clearTimeout(t); return r.ok; } catch(e){return false;} },
-        async query(prompt, context={}) { const on = await this.isReady(); if(!on && this.config.fallback) return this.fallback(prompt,context); try { const c = new AbortController(); const t = setTimeout(()=>c.abort(), this.config.timeout); const r = await fetch(`${this.config.baseURL}${this.config.endpoint}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, model:this.config.model, context:{role:context.role||'STAFF', time:new Date().toISOString(), ...context}, stream:false}), signal:c.signal}); clearTimeout(t); if(!r.ok) throw new Error(`HTTP ${r.status}`); const d = await r.json(); return {success:true, response: d.response||d.answer||d.text||'', source:'nemo-120b'}; } catch(e){ return this.fallback(prompt,context); } },
-        fallback(prompt, context) { const l = prompt.toLowerCase(); if(l.includes('cuaca')||l.includes('weather')) return {success:true, response:'🌤️ Cerah Berawan - 32°C\n⚠️ AI Offline: Prediksi hujan 15:00\nJanitor Outdoor siap siaga.', source:'fallback'}; if(l.includes('cari')||l.includes('search')) return {success:true, response:'🔍 Hasil Pencarian (Fallback):\n• Booking: Rapat 09:00\n• K3: AC Ruang Rapat (60%)\n• Maintenance: Lampu Lobby (Done)', source:'fallback'}; return {success:true, response:`🤖 Response (Fallback): "${prompt}"\n\n⚠️ Nemo-120B offline.`, source:'fallback'}; },
-        async predictWeather(loc) { return this.query(`Analisis cuaca untuk ${loc} 3 jam ke depan.`, {task:'weather'}); }
-    };
-    if(typeof window!=='undefined') window.aiService = aiService;
+    <div id="ghost-overlay" class="ghost-overlay">
+        <div class="p-3 border-b border-white/10 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i data-lucide="ghost" class="w-4 h-4 text-ghost-500"></i>
+                <span class="text-xs font-bold text-ghost-400">GHOST MONITORING</span>
+            </div>
+            <button id="ghost-close" class="p-1 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div class="p-3 grid grid-cols-2 gap-2 overflow-y-auto max-h-[70vh]" id="ghost-tools"></div>
+        <div class="p-3 border-t border-white/5">
+            <p class="text-[8px] text-slate-500 font-mono">
+                <span id="ghost-status">● Termux Ready</span> • Audit: <span id="ghost-audit">0</span>
+            </p>
+        </div>
+    </div>
 
-    const carouselSlides = [
-        { icon: '👋', title: 'Selamat Datang', content: '<p class="text-sm text-white/80 mb-3">Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan. Terima kasih.</p><div class="flex gap-2"><span class="px-3 py-1 bg-teal-500/20 rounded-full text-xs text-teal-300">Quick Access</span><span class="px-3 py-1 bg-emerald-500/20 rounded-full text-xs text-emerald-300">Fast Response</span></div>' },
-        { icon: '📅', title: 'Jadwal Booking', content: '<div class="space-y-3"><div class="bg-white/10 p-4 rounded-2xl border border-white/20"><p class="text-xs text-teal-300 mb-1">Hari Ini</p><p class="text-sm font-semibold text-white">Rapat Koordinasi - 09:00 WIB</p></div><div class="bg-emerald-500/20 p-4 rounded-2xl border border-emerald-500/30"><p class="text-xs text-emerald-300 mb-1">Besok</p><p class="text-sm font-semibold text-white">Kunjungan Yayasan - 13:00 WIB</p></div></div>' },
-        { icon: '📊', title: 'Progress K3', content: '<div class="space-y-3"><div class="bg-white/5 p-3 rounded-xl border border-white/10"><div class="flex justify-between text-xs mb-2"><span class="text-white/80">AC Ruang Rapat</span><span class="text-orange-400">Proses</span></div><div class="w-full bg-white/10 rounded-full h-2"><div class="bg-orange-400 h-2 rounded-full" style="width: 60%"></div></div></div><div class="bg-white/5 p-3 rounded-xl border border-white/10"><div class="flex justify-between text-xs mb-2"><span class="text-white/80">Kebersihan Lobby</span><span class="text-emerald-400">Selesai</span></div><div class="w-full bg-white/10 rounded-full h-2"><div class="bg-emerald-400 h-2 rounded-full" style="width: 100%"></div></div></div></div>' },
-        { icon: '🌤️', title: 'Cuaca & AI Warning', content: '<div id="weather-ai" class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-sm text-white/70">🤖 AI loading...</p></div>' },
-        { icon: '🏢', title: 'Info Management', content: '<div class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-xs text-white/50 mb-2">Rapat CEO & Yayasan</p><p class="text-sm font-semibold text-white">Pukul 09:00 WIB di Ruang Rapat SMA</p></div>' },
-        { icon: '👥', title: 'Info Team Umum', content: '<div class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-xs text-white/50 mb-2">Rapat Mingguan</p><p class="text-sm font-semibold text-white">Jam 09:00 WIB di R. Koord Bagian Umum</p></div>' },
-        { icon: '🎁', title: 'Ucapan & Info', content: '<div class="bg-white/5 p-4 rounded-xl border border-white/10"><p class="text-sm text-white/70 mb-2">🎂 Selamat Ulang Tahun</p><p class="text-xs text-white/60">Pak Budi (Komisi 3 Bulan). Semoga berkah!</p></div>' }
-    ];
-
-    const gridData = [
-        {icon:'🌍', label:'Command Center', desc:'Manage Operations', route:'command'},
-        {icon:'📅', label:'Booking', desc:'Reserve Resources'},
-        {icon:'⚠️', label:'K3', desc:'Safety & Health'},
-        {icon:'🔒', label:'Security', desc:'Manage Security'},
-        {icon:'🧹', label:'Janitor', desc:'Cleaning and Finish'},
-        {icon:'📦', label:'Stok', desc:'Safety & Warehouse'},
-        {icon:'🔧', label:'Maintenance', desc:'Manage Operations'},
-        {icon:'🏢', label:'Asset', desc:'Manage Building'},
-        {icon:'📊', label:'Reports', desc:'Analytics & Data'}
-    ];
-
-    function renderCarousel() {
-        const container = document.getElementById('carousel-slides');
-        const dotsContainer = document.getElementById('carousel-dots');        if (!container || !dotsContainer) return;
-        container.innerHTML = carouselSlides.map((slide, i) => `<div class="carousel-slide ${i === 0 ? 'active' : ''}"><div class="flex items-center gap-3 mb-3"><span class="text-3xl">${slide.icon}</span><h3 class="text-base font-bold text-white">${slide.title}</h3></div>${slide.content}</div>`).join('');
-        dotsContainer.innerHTML = carouselSlides.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('');
-        startCarousel();
-        if(window.aiService) loadAIWeather();
-    }
-    
-    let currentSlide = 0;
-    function startCarousel() { if(state.carouselInterval) clearInterval(state.carouselInterval); state.carouselInterval = setInterval(() => { currentSlide = (currentSlide + 1) % carouselSlides.length; showSlide(currentSlide); }, 7000); }
-    function showSlide(index) { document.querySelectorAll('.carousel-slide').forEach(s => s.classList.remove('active')); document.querySelectorAll('.dot').forEach(d => d.classList.remove('active')); document.querySelectorAll('.carousel-slide')[index]?.classList.add('active'); document.querySelectorAll('.dot')[index]?.classList.add('active'); }
-    function goToSlide(index) { currentSlide = index; showSlide(currentSlide); startCarousel(); }
-    
-    function renderGrid(containerId, data) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = data.map(item => `<div class="menu-card glass p-6 rounded-3xl flex flex-col items-center justify-center gap-4 min-h-[160px] cursor-pointer group" onclick="handleGridClick('${item.label}', '${item.route || ''}')"><div class="text-6xl filter drop-shadow-lg group-hover:scale-110 transition-transform">${item.icon}</div><div class="text-center"><h3 class="text-base font-bold text-white mb-1">${item.label}</h3><p class="text-xs text-white/60">${item.desc}</p></div></div>`).join('');
-    }
-    
-    function handleGridClick(label, route) {
-        if(route === 'command') { document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); document.getElementById('view-command').classList.remove('hidden'); initCommandSearch(); return; }
-        alert(`🔧 Modul ${label}\n\nReady for development di v1.2`);
-    }
-    
-    async function loadAIWeather() {
-        const container = document.getElementById('weather-ai');
-        if (!container || !window.aiService) return;
-        container.innerHTML = '<p class="text-sm text-white/70">🤖 AI thinking...</p>';
-        const result = await aiService.predictWeather('Depok, Indonesia');
-        if (result.success) {
-            const isFallback = result.source === 'fallback';
-            container.innerHTML = `<p class="text-sm text-white mb-2">${result.response.split('\n')[0]}</p>${result.response.includes('⚠️') ? `<p class="text-xs text-orange-400 mb-2">${result.response.match(/⚠️.*?(?=\.|$)/)?.[0] || ''}</p>` : ''}<p class="text-xs text-white/70">${result.response.split('\n').slice(1).join('<br>')}</p>${isFallback ? '<p class="text-[10px] text-orange-400/80 mt-2">⚠️ Fallback mode (AI offline)</p>' : ''}`;
-            const badge = document.getElementById('ai-status');
-            if (badge) { badge.textContent = isFallback ? 'AI: Fallback' : 'AI: Online'; badge.className = `px-2 py-1 rounded text-[10px] ${isFallback ? 'bg-orange-500/80' : 'bg-emerald-500/80'} pulse`; }
-        }
-    }
-    
-    function initCommandSearch() {
-        const input = document.getElementById('command-search');
-        const resultsDiv = document.getElementById('command-results');
-        if (!input || !resultsDiv || !window.aiService) return;
-        input.onkeypress = async (e) => {
-            if (e.key === 'Enter' && input.value.trim()) {
-                const query = input.value.trim();
-                resultsDiv.classList.remove('hidden');
-                resultsDiv.innerHTML = '<p class="text-sm text-white/60 text-center py-4">🤖 AI searching...</p>';
-                const result = await aiService.query(`User search: "${query}". Return relevant data.`, { task: 'command_search' });
-                if (result.success) {
-                    const isFallback = result.source === 'fallback';
-                    resultsDiv.innerHTML = `<div class="space-y-2">${result.response.split('\n').map(line => `<div class="glass p-3 rounded-xl border border-white/10 text-sm text-white/80">${line}</div>`).join('')}</div>${isFallback ? '<p class="text-[10px] text-orange-400/80 text-center mt-3">⚠️ Using fallback data (AI offline)</p>' : ''}`;
-                }            }
-        };
-    }
-    
-    function initPasswordToggle() {
-        const toggleBtn = document.getElementById('toggle-pw');
-        const eyeOff = document.getElementById('eye-off');
-        const eyeOn = document.getElementById('eye-on');
-        const input = document.getElementById('access-key');
-        if (toggleBtn && input) {
-            toggleBtn.replaceWith(toggleBtn.cloneNode(true));
-            const newToggle = document.getElementById('toggle-pw');
-            newToggle.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const isPass = input.type === 'password'; input.type = isPass ? 'text' : 'password'; eyeOff.classList.toggle('hidden', !isPass); eyeOn.classList.toggle('hidden', isPass); });
-        }
-    }
-    
-    function initLogin() {
-        const loginBtn = document.getElementById('btn-login');
-        const input = document.getElementById('access-key');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-                const key = input.value;
-                if (!key) return alert('Masukkan Access Key!');
-                state.role = key.includes('admin') || key.includes('kepala') ? 'KEPALA_BAGIAN' : 'STAFF';
-                document.getElementById('role-badge').textContent = state.role.replace('_', ' ');
-                document.getElementById('profile-role').textContent = state.role.replace('_', ' ');
-                document.getElementById('auth-view').classList.remove('active');
-                document.getElementById('app-view').classList.add('active');
-                document.getElementById('app-header').classList.remove('hidden');
-                document.getElementById('app-header').style.display = 'flex';
-                document.getElementById('bottom-nav').classList.remove('hidden');
-                document.getElementById('carousel-container').classList.remove('hidden');
-                document.getElementById('staff-grid').classList.remove('hidden');
-                document.getElementById('stats-card').classList.remove('hidden');
-                renderCarousel();
-                renderGrid('staff-grid', gridData);
-                if(window.aiService) { aiService.isReady().then(ready => { state.aiReady = ready; const badge = document.getElementById('ai-status'); if(badge) { badge.textContent = ready ? 'AI: Online' : 'AI: Fallback'; badge.className = `px-2 py-1 rounded text-[10px] ${ready ? 'bg-emerald-500/80' : 'bg-orange-500/80'} pulse`; } }); }
-            });
-        }
-    }
-    
-    function initNavigation() {
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('active', 'text-teal-400'); b.classList.add('text-white/60'); });
-                btn.classList.add('active', 'text-teal-400'); btn.classList.remove('text-white/60');
-                const target = btn.dataset.target;
-                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-                if (target === 'home') document.getElementById('view-home').classList.remove('hidden');
-                else if (target === 'command') { if (state.role === 'KEPALA_BAGIAN') { document.getElementById('view-command').classList.remove('hidden'); initCommandSearch(); } else { alert('⚠️ Command Center untuk Kepala/Koordinator'); document.getElementById('view-home').classList.remove('hidden'); } }                else { const viewEl = document.getElementById(`view-${target}`); if (viewEl) viewEl.classList.remove('hidden'); }
-            });
-        });
-    }
-    
-    function initLogout() {
-        const doLogout = () => { document.getElementById('app-view').classList.remove('active'); document.getElementById('auth-view').classList.add('active'); document.getElementById('access-key').value = ''; state.role = 'STAFF'; };
-        const logoutBtn = document.getElementById('btn-logout');
-        const logoutProfileBtn = document.getElementById('btn-logout-profile');
-        if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
-        if (logoutProfileBtn) logoutProfileBtn.addEventListener('click', doLogout);
-    }
-    
-    document.addEventListener('DOMContentLoaded', () => { console.log('🔧 Initializing Dream OS v1.2...'); initPasswordToggle(); initLogin(); initNavigation(); initLogout(); console.log('✅ Dream OS v1.2 Ready!'); });
-    </script>
+    <script src="config/i18n.js"></script>
+    <script src="modules/header.js"></script>
+    <script src="modules/auth.js"></script>
+    <script src="modules/carousel.js"></script>
+    <script src="modules/grid.js"></script>
+    <script src="modules/nav.js"></script>
+    <script src="modules/ai-service.js"></script>
+    <script src="modules/command.js"></script>
+    <script src="modules/ghost.js"></script>
 </body>
 </html>

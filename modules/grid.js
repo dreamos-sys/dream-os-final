@@ -1,28 +1,22 @@
-const gridData = {
-    staff: [
-        {icon:'calendar',label:'grid.booking',desc:'grid.booking_desc'},
-        {icon:'alert-triangle',label:'grid.k3',desc:'grid.k3_desc'},
-        {icon:'wrench',label:'grid.maintenance',desc:'grid.maintenance_desc'},
-        {icon:'shield',label:'grid.sekuriti',desc:'grid.sekuriti_desc'},
-        {icon:'sparkles',label:'grid.janitor_in',desc:'grid.janitor_in_desc'},
-        {icon:'leaf',label:'grid.janitor_out',desc:'grid.janitor_out_desc'},
-        {icon:'package',label:'grid.stok',desc:'grid.stok_desc'},
-        {icon:'clipboard-list',label:'grid.laporan',desc:'grid.laporan_desc'},
-        {icon:'building-2',label:'grid.inventaris',desc:'grid.inventaris_desc'}
+const gridModule = {
+    data: [
+        { icon: 'shield-check', name: 'Command', desc: 'Ops' },
+        { icon: 'calendar', name: 'Booking', desc: 'Res' },
+        { icon: 'alert-triangle', name: 'K3 Form', desc: 'Audit' },
+        { icon: 'shield', name: 'Sekuriti', desc: 'Safety' },
+        { icon: 'package', name: 'Stok', desc: 'Aset' },
+        { icon: 'wrench', name: 'Maint', desc: 'Fix' }
     ],
-    
-    render(containerId, data) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        
-        container.innerHTML = data.map(item => `
-            <div class="magnet bg-slate-900/70 border border-slate-800 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 min-h-[96px] glow-border">
-                <i data-lucide="${item.icon}" class="w-6 h-6 text-amber-400"></i>
-                <span class="text-[10px] font-bold text-slate-300 text-center leading-tight tracking-wide" data-i18n="${item.label}">${i18n.t(item.label)}</span>
-                <span class="text-[8px] text-slate-500 font-mono" data-i18n="${item.desc}">${i18n.t(item.desc)}</span>
+    init() {
+        const c = document.getElementById('staff-grid');
+        c.innerHTML = this.data.map(item => `
+            <div class="glass-nano border border-slate-900 p-3 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-teal-500/30 magnet" onclick="alert('Modul ${item.name} Ready')">
+                <i data-lucide="${item.icon}" class="w-5 h-5 text-teal-400"></i>
+                <span class="text-[9px] font-bold text-slate-300">${item.name}</span>
+                <span class="text-[8px] text-slate-600 font-mono">${item.desc}</span>
             </div>
         `).join('');
-        
-        setTimeout(() => lucide.createIcons(), 50);
+        c.classList.remove('hidden');
+        lucide.createIcons();
     }
 };
