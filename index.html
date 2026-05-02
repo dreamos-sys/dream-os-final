@@ -29,6 +29,8 @@
         .view { display: none; }
         .view.active { display: flex; }
         #auth-view.active { display: flex; }
+        #dream-logo { transition: transform 0.1s; }
+        #dream-logo:active { transform: scale(0.92); }
         .grid-item:active { transform: scale(0.95); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     </style>
@@ -37,28 +39,32 @@
 
     <!-- AUTH SCREEN -->
     <section id="auth-view" class="view active flex-col items-center justify-center h-full p-6 text-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
-        <div id="dream-logo" class="mb-6 cursor-pointer">
-            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-28 h-28 rounded-3xl shadow-2xl shadow-gold-500/40 object-cover">
+        
+        <!-- Logo dengan Ghost Mode Trigger (Tap 7x) -->
+        <div id="dream-logo" class="mb-6 cursor-pointer select-none">
+            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-32 h-32 rounded-3xl shadow-2xl shadow-gold-500/40 object-cover">
             <p class="text-xs text-gold-500 mt-3 font-semibold tracking-widest">DREAM OS</p>
-        </div>
+        </div>        
         <h1 class="font-arabic text-3xl text-gold-600 mb-2">بِسْمِ اللَّهِ</h1>
         <p class="text-xs text-spiritual-500 mb-6">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
         
         <div class="w-full max-w-xs bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50">
             <div class="relative mb-4">
-                <input type="password" id="access-key" placeholder="Access Key"                     class="w-full px-4 py-3.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-gold-500 text-center tracking-widest pr-12">
+                <input type="password" id="access-key" placeholder="Access Key" 
+                    class="w-full px-4 py-3.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-gold-500 text-center tracking-widest pr-12">
                 <button id="toggle-pw" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gold-500 p-1">
                     <i data-lucide="eye" class="w-5 h-5" id="eye-off"></i>
                     <i data-lucide="eye-off" class="w-5 h-5 hidden" id="eye-on"></i>
                 </button>
             </div>
             <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-spiritual-500 to-spiritual-600 text-white font-bold rounded-2xl shadow-lg shadow-spiritual-500/30 active:scale-95 transition-transform">ACCESS SYSTEM</button>
+            <p class="text-[10px] text-slate-400 mt-3">Bi idznillah — Niat lurus, sistem terjaga.</p>
         </div>
     </section>
 
     <!-- MAIN APP -->
     <div id="app-view" class="view flex-col h-full">
-        <!-- Header -->
+        <!-- Header dengan Logo -->
         <header class="px-4 py-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center shrink-0">
             <div class="flex items-center gap-3">
                 <img src="assets/logo-sultan.png" alt="Dream OS" class="w-10 h-10 rounded-xl shadow-lg object-cover">
@@ -85,17 +91,15 @@
             </div>
 
             <!-- 9-GRID MENU -->
-            <div class="grid grid-cols-3 gap-2.5" id="staff-grid">
-                <!-- Grid items injected here -->
-            </div>
+            <div class="grid grid-cols-3 gap-2.5" id="staff-grid"></div>
 
-            <!-- Command Center (Hidden by default) -->
-            <div id="view-command" class="hidden space-y-3">
+            <!-- Command Center (Hidden by default) -->            <div id="view-command" class="hidden space-y-3">
                 <div class="flex justify-between items-center">
                     <h2 class="text-lg font-bold text-gold-500">Command Center</h2>
                     <span class="text-xs bg-slate-700 px-2 py-1 rounded-lg text-white">AI Ready</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2.5" id="command-grid"></div>            </div>
+                <div class="grid grid-cols-2 gap-2.5" id="command-grid"></div>
+            </div>
         </main>
 
         <!-- Bottom Navigation -->
@@ -138,13 +142,13 @@
                 {icon: 'clipboard-list', label: 'Laporan', desc: 'Harian'},
                 {icon: 'building-2', label: 'Inventaris', desc: 'Aset'}
             ],
-            command: [
-                {icon: 'bar-chart-3', label: 'Kinerja', desc: 'Global'},
+            command: [                {icon: 'bar-chart-3', label: 'Kinerja', desc: 'Global'},
                 {icon: 'wallet', label: 'Keuangan', desc: 'SPJ'},
                 {icon: 'database', label: 'Inventaris', desc: 'Aset'},
                 {icon: 'users', label: 'Vendor', desc: 'Tracker'},
                 {icon: 'user-check', label: 'SDM', desc: 'Tugas'},
-                {icon: 'file-text', label: 'Laporan', desc: 'Bulanan'},                {icon: 'search', label: 'Audit', desc: 'Trail'},
+                {icon: 'file-text', label: 'Laporan', desc: 'Bulanan'},
+                {icon: 'search', label: 'Audit', desc: 'Trail'},
                 {icon: 'sliders', label: 'Config', desc: 'System'}
             ]
         };
@@ -170,33 +174,24 @@
             alert(`🔧 Modul ${label}\n\nReady for v1.1`);
         };
 
-        const showView = (id) => {
-            ['view-dashboard', 'view-command'].forEach(v => {
-                const el = $(v);
-                if (el) el.classList.add('hidden');
-            });
-            const target = $(id);
-            if (target) target.classList.remove('hidden');
-        };
-
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('✅ Dream OS v1.0 Mobile Loaded');
+            console.log('✅ Dream OS v1.0 Loaded with Logo');
             
             // Render grids
             renderGrid('staff-grid', grids.staff);
             renderGrid('command-grid', grids.command);
             
-            // Show/Hide Password - FIXED
+            // Show/Hide Password
             const toggleBtn = $('toggle-pw');
             const eyeOff = $('eye-off');
             const eyeOn = $('eye-on');
             const input = $('access-key');
             
             toggleBtn.onclick = () => {
-                const isPass = input.type === 'password';                input.type = isPass ? 'text' : 'password';
+                const isPass = input.type === 'password';
+                input.type = isPass ? 'text' : 'password';
                 eyeOff.classList.toggle('hidden', !isPass);
-                eyeOn.classList.toggle('hidden', isPass);
-            };
+                eyeOn.classList.toggle('hidden', isPass);            };
             
             // Login
             $('btn-login').onclick = () => {
@@ -235,23 +230,36 @@
                     
                     const target = btn.dataset.target;
                     if(target === 'dashboard') {
-                        showView('staff-grid').parentElement.classList.remove('hidden');
                         $('view-command').classList.add('hidden');
                     } else if(target === 'config' && state.role === 'KEPALA_BAGIAN') {
-                        showView('view-command');
+                        $('view-command').classList.remove('hidden');
                     } else {
                         alert(`📱 ${target.toUpperCase()}\nReady for v1.1`);
                     }
-                };            });
+                };
+            });
 
-            // Ghost Mode
-            $('dream-logo').addEventListener('pointerdown', () => {
-                state.ghostTaps++;
-                if(state.ghostTaps === 1) state.ghostTimer = setTimeout(() => state.ghostTaps = 0, 2000);
+            // 👻 GHOST MODE: Tap Logo 7x
+            $('dream-logo').addEventListener('pointerdown', () => {                state.ghostTaps++;
+                
+                // Visual feedback
+                $('dream-logo').style.transform = `scale(${0.9 + state.ghostTaps * 0.02})`;
+                
+                if(state.ghostTaps === 1) {
+                    state.ghostTimer = setTimeout(() => {
+                        state.ghostTaps = 0;
+                        $('dream-logo').style.transform = 'scale(1)';
+                    }, 2000);
+                }
+                
                 if(state.ghostTaps >= 7) {
                     clearTimeout(state.ghostTimer);
                     state.ghostTaps = 0;
-                    alert('👻 GHOST MODE ACTIVATED');
+                    $('dream-logo').style.transform = 'scale(1)';
+                    
+                    // Ghost Mode Activated
+                    alert('👻 GHOST PROTOCOL ACTIVATED\n\nSilent OSINT, Spider & AI Scanner Ready.\n\nMode: Stealth');
+                    // Di production: window.location.hash = '#ghost-dashboard';
                 }
             });
             
