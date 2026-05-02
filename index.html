@@ -24,7 +24,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .font-arabic { font-family: 'Amiri', serif; }
         .view { display: none; }
         .view.active { display: flex; }
@@ -38,14 +38,20 @@
     <!-- AUTH SCREEN -->
     <section id="auth-view" class="view active flex-col items-center justify-center h-full p-6 text-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
         <div id="dream-logo" class="mb-6 cursor-pointer">
-            <img src="assets/logo-sultan.png" class="w-28 h-28 rounded-3xl shadow-2xl shadow-gold-500/40" alt="Dream OS Logo">
+            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-28 h-28 rounded-3xl shadow-2xl shadow-gold-500/40 object-cover">
             <p class="text-xs text-gold-500 mt-3 font-semibold tracking-widest">DREAM OS</p>
         </div>
         <h1 class="font-arabic text-3xl text-gold-600 mb-2">بِسْمِ اللَّهِ</h1>
         <p class="text-xs text-spiritual-500 mb-6">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
         
-        <div class="w-full max-w-xs bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50">            <input type="password" id="access-key" placeholder="Access Key" 
-                class="w-full px-4 py-3.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-gold-500 text-center tracking-widest mb-4">
+        <div class="w-full max-w-xs bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50">
+            <div class="relative mb-4">
+                <input type="password" id="access-key" placeholder="Access Key"                     class="w-full px-4 py-3.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-gold-500 text-center tracking-widest pr-12">
+                <button id="toggle-pw" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gold-500 p-1">
+                    <i data-lucide="eye" class="w-5 h-5" id="eye-off"></i>
+                    <i data-lucide="eye-off" class="w-5 h-5 hidden" id="eye-on"></i>
+                </button>
+            </div>
             <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-spiritual-500 to-spiritual-600 text-white font-bold rounded-2xl shadow-lg shadow-spiritual-500/30 active:scale-95 transition-transform">ACCESS SYSTEM</button>
         </div>
     </section>
@@ -55,7 +61,7 @@
         <!-- Header -->
         <header class="px-4 py-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center shrink-0">
             <div class="flex items-center gap-3">
-                <img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl shadow-lg" alt="Dream OS Logo">
+                <img src="assets/logo-sultan.png" alt="Dream OS" class="w-10 h-10 rounded-xl shadow-lg object-cover">
                 <div>
                     <h1 class="text-base font-bold text-slate-800 dark:text-white leading-tight">Dream OS</h1>
                     <span class="text-[10px] text-slate-500">v1.0 • Genesis</span>
@@ -89,11 +95,11 @@
                     <h2 class="text-lg font-bold text-gold-500">Command Center</h2>
                     <span class="text-xs bg-slate-700 px-2 py-1 rounded-lg text-white">AI Ready</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2.5" id="command-grid"></div>
-            </div>
+                <div class="grid grid-cols-2 gap-2.5" id="command-grid"></div>            </div>
         </main>
 
-        <!-- Bottom Navigation -->        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 flex justify-around items-center h-16 safe-bottom z-50">
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 flex justify-around items-center h-16 safe-bottom z-50">
             <button class="nav-btn active flex flex-col items-center justify-center gap-1 w-16 h-full text-gold-500" data-target="dashboard">
                 <i data-lucide="home" class="w-6 h-6"></i>
                 <span class="text-[10px] font-medium">Home</span>
@@ -138,19 +144,16 @@
                 {icon: 'database', label: 'Inventaris', desc: 'Aset'},
                 {icon: 'users', label: 'Vendor', desc: 'Tracker'},
                 {icon: 'user-check', label: 'SDM', desc: 'Tugas'},
-                {icon: 'file-text', label: 'Laporan', desc: 'Bulanan'},
-                {icon: 'search', label: 'Audit', desc: 'Trail'},
+                {icon: 'file-text', label: 'Laporan', desc: 'Bulanan'},                {icon: 'search', label: 'Audit', desc: 'Trail'},
                 {icon: 'sliders', label: 'Config', desc: 'System'}
             ]
         };
+
         const $ = id => document.getElementById(id);
         
         const renderGrid = (containerId, data) => {
             const container = $(containerId);
-            if (!container) {
-                console.error(`Container ${containerId} not found!`);
-                return;
-            }
+            if (!container) return;
             
             container.innerHTML = data.map(item => `
                 <div class="grid-item bg-white/80 dark:bg-slate-800/80 backdrop-blur p-3 rounded-xl border border-slate-200/50 dark:border-slate-700/50 flex flex-col items-center justify-center gap-1.5 min-h-[100px] active:scale-95 transition-transform cursor-pointer shadow-sm" onclick="handleGridClick('${item.label}')">
@@ -160,7 +163,6 @@
                 </div>
             `).join('');
             
-            // Force re-render icons
             setTimeout(() => lucide.createIcons(), 50);
         };
 
@@ -184,6 +186,18 @@
             renderGrid('staff-grid', grids.staff);
             renderGrid('command-grid', grids.command);
             
+            // Show/Hide Password - FIXED
+            const toggleBtn = $('toggle-pw');
+            const eyeOff = $('eye-off');
+            const eyeOn = $('eye-on');
+            const input = $('access-key');
+            
+            toggleBtn.onclick = () => {
+                const isPass = input.type === 'password';                input.type = isPass ? 'text' : 'password';
+                eyeOff.classList.toggle('hidden', !isPass);
+                eyeOn.classList.toggle('hidden', isPass);
+            };
+            
             // Login
             $('btn-login').onclick = () => {
                 const key = $('access-key').value;
@@ -191,7 +205,8 @@
                 
                 state.role = key.includes('admin') || key.includes('kepala') ? 'KEPALA_BAGIAN' : 'STAFF';
                 $('role-badge').textContent = state.role.replace('_', ' ');
-                                $('auth-view').classList.remove('active');
+                
+                $('auth-view').classList.remove('active');
                 $('app-view').classList.add('active');
                 
                 if(state.role === 'KEPALA_BAGIAN') {
@@ -227,8 +242,7 @@
                     } else {
                         alert(`📱 ${target.toUpperCase()}\nReady for v1.1`);
                     }
-                };
-            });
+                };            });
 
             // Ghost Mode
             $('dream-logo').addEventListener('pointerdown', () => {
@@ -240,7 +254,8 @@
                     alert('👻 GHOST MODE ACTIVATED');
                 }
             });
-                        lucide.createIcons();
+            
+            lucide.createIcons();
         });
     </script>
 </body>
