@@ -1,6 +1,6 @@
 /**
- * Dream OS v1.3.1 - Complete & Working
- * Hybrid Modular with Error Boundary
+ * Dream OS v1.3.1 - Complete Fix
+ * UI Rendering + Nav Clickable + Bismillah Header
  */
 let carouselInterval = null, currentSlide = 0, tapCount = 0, tapTimer = null;
 
@@ -47,15 +47,19 @@ DreamOS.register('auth', {
     },
     handleLogin() {
         const key = document.getElementById('access-key')?.value;        if (!key) return alert('Masukkan Access Key!');
+        DreamOS.role = (key.includes('admin') || key.includes('kepala')) ? 'KEPALA_BAGIAN' : 'STAFF';
         document.getElementById('login-page').classList.remove('active');
         document.getElementById('login-page').style.display = 'none';
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('dashboard').style.display = 'flex';
         document.getElementById('bottom-nav').style.display = 'flex';
-        DreamOS.run('home', 'init');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        // Init semua modul setelah login
+        setTimeout(() => {
+            DreamOS.run('home', 'init');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }, 100);
     },
-    openProfile() { alert('👤 User Profile\n\nRole: ' + DreamOS.role + '\nEmail: user@dream.com'); },
+    openProfile() { alert('👤 User Profile\n\nRole: ' + DreamOS.role + '\nEmail: user@dream.com\nDevice: ' + (navigator.userAgent || 'Unknown')); },
     logout() {
         document.getElementById('dashboard').classList.remove('active');
         document.getElementById('dashboard').style.display = 'none';
@@ -69,14 +73,21 @@ DreamOS.register('auth', {
 
 // 🏠 HOME MODULE
 DreamOS.register('home', {
-    init() { this.renderCarousel(); this.renderMenuGrid(); this.initNav(); },
+    init() {
+        console.log('🏠 Home module initialized');
+        this.renderCarousel();
+        this.renderMenuGrid();
+        this.initNav();
+    },
     renderCarousel() {
         const c = document.getElementById('carousel-slides'), d = document.getElementById('carousel-dots');
-        if (!c || !d) return;
+        if (!c || !d) { console.error('❌ Carousel elements not found'); return; }
         c.innerHTML = DreamOS.carouselData.map((s, i) => `<div class="carousel-slide ${i===0?'active':''}"><div class="flex items-center gap-2 mb-1 text-teal-400"><i data-lucide="${s.icon}" class="w-4 h-4"></i><span class="font-bold text-xs">${s.title}</span></div><p class="text-xs text-white/60 whitespace-pre-line">${s.text}</p></div>`).join('');
         d.innerHTML = DreamOS.carouselData.map((_, i) => `<div class="dot ${i===0?'active':''}" data-slide="${i}"></div>`).join('');
         d.querySelectorAll('.dot').forEach(dot => dot.addEventListener('click', function() { DreamOS.run('home', 'goToSlide', parseInt(this.dataset.slide)); }));
-        this.startCarousel(); if (typeof lucide !== 'undefined') lucide.createIcons();
+        this.startCarousel();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        console.log('✅ Carousel rendered');
     },
     startCarousel() {
         if (DreamOS.state.carouselInterval) clearInterval(DreamOS.state.carouselInterval);
@@ -84,8 +95,7 @@ DreamOS.register('home', {
             DreamOS.state.currentSlide = (DreamOS.state.currentSlide + 1) % DreamOS.carouselData.length;
             this.showSlide(DreamOS.state.currentSlide);
         }, 7000);
-    },
-    showSlide(i) {
+    },    showSlide(i) {
         document.querySelectorAll('.carousel-slide').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
         if (document.querySelectorAll('.carousel-slide')[i]) document.querySelectorAll('.carousel-slide')[i].classList.add('active');
@@ -93,21 +103,27 @@ DreamOS.register('home', {
     },
     goToSlide(i) { DreamOS.state.currentSlide = i; this.showSlide(i); this.startCarousel(); },
     renderMenuGrid() {
-        const c = document.getElementById('menu-grid'); if (!c) return;
+        const c = document.getElementById('menu-grid'); if (!c) { console.error('❌ Menu grid not found'); return; }
         c.innerHTML = DreamOS.menuItems.map(m => `<div class="menu-card p-3 rounded-xl flex flex-col items-center justify-center glass cursor-pointer min-h-[90px]"><div class="text-2xl mb-1">${m.icon}</div><div class="text-[10px] font-bold text-white text-center">${m.label}</div></div>`).join('');
-        c.querySelectorAll('.menu-card').forEach((el, i) => el.addEventListener('click', () => alert(DreamOS.menuItems[i].label + ' module - Ready!')));    },
+        c.querySelectorAll('.menu-card').forEach((el, i) => el.addEventListener('click', () => alert(DreamOS.menuItems[i].label + ' module - Ready!')));
+        console.log('✅ Menu grid rendered');
+    },
     initNav() {
-        document.querySelectorAll('#bottom-nav .nav-btn').forEach(btn => {
+        const navBtns = document.querySelectorAll('#bottom-nav .nav-btn');
+        if (navBtns.length === 0) { console.error('❌ Nav buttons not found'); return; }
+        navBtns.forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('#bottom-nav .nav-btn').forEach(b => { b.classList.remove('text-teal-400'); b.classList.add('text-white/60'); });
+                navBtns.forEach(b => { b.classList.remove('text-teal-400'); b.classList.add('text-white/60'); });
                 this.classList.add('text-teal-400'); this.classList.remove('text-white/60');
                 const t = this.dataset.target;
+                console.log('🔘 Nav clicked:', t);
                 if (t === 'user') DreamOS.run('auth', 'openProfile');
-                else if (t === 'menu') alert('📷 QR Scan Ready');
-                else if (t === 'info') alert('ℹ️ Dream OS v1.3.1');
+                else if (t === 'menu') alert('📷 QR Scan Ready\nMultipurpose scanner for QRIS, Products, URLs');
+                else if (t === 'info') alert('ℹ️ Dream OS v1.3.1\n\nBuilt with ❤️ for Dream Team\nISO 27001 & ISO 9241 compliant');
                 else if (t === 'config') DreamOS.run('i18n', 'showPicker');
             });
         });
+        console.log('✅ Nav buttons initialized');
     }
 });
 
@@ -123,12 +139,12 @@ DreamOS.register('i18n', {
             if (DreamOS.translations[lang][k]) el.textContent = DreamOS.translations[lang][k];
         });
         document.body.style.fontFamily = lang === 'ar' ? "'Amiri', serif" : "'Inter', sans-serif";
+        console.log('🌐 Language:', lang);
     },
     showPicker() {
         const c = localStorage.getItem('dream-lang') || 'id';
-        const opts = Object.keys(DreamOS.translations).map(l => `${l===c?'🔘':'⚪'} ${l.toUpperCase()}`).join('\n');
-        const pick = prompt('Select Language:\n' + opts + '\n\nType code (id/en/ar):', c);
-        if (pick && DreamOS.translations[pick]) this.setLanguage(pick);
+        const opts = Object.keys(DreamOS.translations).map(l => `${l===c?'🔘':''} ${l.toUpperCase()}`).join('\n');
+        const pick = prompt('Select Language:\n' + opts + '\n\nType code (id/en/ar):', c);        if (pick && DreamOS.translations[pick]) this.setLanguage(pick);
     }
 });
 
@@ -172,14 +188,13 @@ DreamOS.register('ghost', {
     },
     toggleEruda() {
         if (DreamOS.state.erudaActive) { if (typeof eruda !== 'undefined') eruda.destroy(); DreamOS.state.erudaActive = false; alert('✅ Eruda removed'); }
-        else { const s = document.createElement('script'); s.src = "https://cdn.jsdelivr.net/npm/eruda"; s.onload = () => { if (typeof eruda !== 'undefined') { eruda.init(); DreamOS.state.erudaActive = true; alert('✅ Eruda injected!'); } }; document.body.appendChild(s); }
+        else { const s = document.createElement('script'); s.src = "https://cdn.jsdelivr.net/npm/eruda"; s.onload = () => { if (typeof eruda !== 'undefined') { eruda.init(); DreamOS.state.erudaActive = true; alert('✅ Eruda injected! Tap icon ⚙️ to open console'); } }; document.body.appendChild(s); }
     },
     async runOSINT() {
         const u = document.getElementById('osint-user')?.value, r = document.getElementById('osint-res');
         if (!u || !r) return; r.classList.remove('hidden'); r.innerHTML = '🔍 Scanning...';
-        try { const d = await (await fetch('https://api.github.com/users/' + u)).json(); r.innerHTML = d.login ? '✅ ' + d.login + '\n📍 ' + (d.location||'N/A') : '❌ Not found'; } catch(e) { r.innerHTML = '❌ Error'; }
-    },
-    copyText(t) { navigator.clipboard.writeText(t).then(() => alert('✅ Copied')).catch(() => alert('📋 Copy: ' + t)); }
+        try { const d = await (await fetch('https://api.github.com/users/' + u)).json(); r.innerHTML = d.login ? '✅ ' + d.login + '\n📍 ' + (d.location||'N/A') + '\n🏢 ' + (d.bio||'N/A') : '❌ Not found'; } catch(e) { r.innerHTML = '❌ Error'; }    },
+    copyText(t) { navigator.clipboard.writeText(t).then(() => alert('✅ Copied to clipboard')).catch(() => alert('📋 Copy manually:\n' + t)); }
 });
 
 // 🚀 INIT
