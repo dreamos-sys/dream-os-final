@@ -1,8 +1,8 @@
 /**
- * Dream OS v1.3.1 - Error Boundary Modular Hybrid (Ghost Mode Fixed)
+ * Dream OS v1.3.1 - Ghost Mode Ultimate Fix (Inline Onclick)
  */
 
-// 🛡️ CORE ENGINE dengan Error Boundary
+// 🛡️ CORE ENGINE
 window.DreamOS = {
     version: '1.3.1',
     modules: {},
@@ -11,6 +11,14 @@ window.DreamOS = {
     
     register(name, mod) {
         this.modules[name] = mod;
+        // Expose module functions to window for inline onclick
+        if (mod) {
+            Object.keys(mod).forEach(key => {
+                if (typeof mod[key] === 'function') {
+                    window['ghost_' + key] = mod[key].bind(mod);
+                }
+            });
+        }
         console.log(`✅ Module registered: ${name}`);
     },
     
@@ -18,9 +26,7 @@ window.DreamOS = {
         try {
             if (this.modules[mod]?.[fn]) return this.modules[mod][fn](...args);
             console.warn(`⚠️ ${mod}.${fn} not found`);
-        } catch (e) {
-            console.error(`❌ Error in ${mod}.${fn}:`, e);
-        }
+        } catch (e) { console.error(`❌ Error in ${mod}.${fn}:`, e); }
     },
     
     t(key, lang = null) {
@@ -36,14 +42,14 @@ DreamOS.translations = {
     ar: { appName: 'Dream OS', home: 'الرئيسية', user: 'المستخدم', menu: 'القائمة', info: 'معلومات', config: 'الإعدادات', statsTitle: 'إحصائيات اليوم', users: 'إجمالي المستخدمين', uptime: 'وقت التشغيل', logout: 'تسجيل الخروج' }
 };
 
-// 🎠 CAROUSEL DATA (7 slides)
-DreamOS.carouselData = [
-    { icon: 'hand', title: 'Selamat Datang', text: 'Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan.' },
+// 🎠 CAROUSEL DATA
+DreamOS.carouselData = [    { icon: 'hand', title: 'Selamat Datang', text: 'Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan.' },
     { icon: 'calendar', title: 'Jadwal Booking', text: 'Hari Ini: Rapat Koordinasi 09:00\nBesok: Kunjungan Yayasan 13:00' },
     { icon: 'activity', title: 'Progress K3', text: 'AC Ruang Rapat: 60% (Proses)\nKebersihan Lobby: 100% (Selesai)' },
     { icon: 'cloud-rain', title: 'Cuaca & AI', text: 'Cerah Berawan - 32°C\nPrediksi hujan 15:00 WIB' },
     { icon: 'building-2', title: 'Info Management', text: 'Rapat CEO & Yayasan\nPukul 09:00 WIB di Ruang Rapat SMA' },
-    { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\nJam 09:00 WIB di R. Koord Bagian Umum' },    { icon: 'gift', title: 'Ucapan', text: '🎂 Selamat Ulang Tahun Pak Budi (Komisi 3 Bulan)' }
+    { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\nJam 09:00 WIB di R. Koord Bagian Umum' },
+    { icon: 'gift', title: 'Ucapan', text: '🎂 Selamat Ulang Tahun Pak Budi (Komisi 3 Bulan)' }
 ];
 
 // 🔢 MENU GRID DATA
@@ -86,12 +92,12 @@ DreamOS.register('auth', {
         document.getElementById('dashboard').style.display = 'none';
         document.getElementById('login-page').classList.add('active');
         document.getElementById('login-page').style.display = 'flex';
-        const nav = document.getElementById('bottom-nav');
-        if (nav) nav.style.display = 'none';
+        const nav = document.getElementById('bottom-nav');        if (nav) nav.style.display = 'none';
         document.getElementById('access-key').value = '';
         DreamOS.run('home', 'stopCarousel');
     }
 });
+
 // ==========================================
 // 🏠 MODUL: HOME
 // ==========================================
@@ -135,13 +141,13 @@ DreamOS.register('home', {
                 if (t === 'menu') alert('📋 Quick Menu: Search, QR, Settings, Activity');
                 else if (t === 'config') DreamOS.run('i18n', 'showPicker');
                 else alert(t.toUpperCase() + ' - Coming soon!');
-            });
-        });
+            });        });
     }
 });
 
 // ==========================================
-// 🌐 MODUL: I18N// ==========================================
+// 🌐 MODUL: I18N
+// ==========================================
 DreamOS.register('i18n', {
     setLanguage(lang) {
         if (!DreamOS.translations[lang]) return;
@@ -163,7 +169,7 @@ DreamOS.register('i18n', {
 });
 
 // ==========================================
-// 👻 MODUL: GHOST MODE (FIXED CLICKABLE BUTTONS)
+// 👻 MODUL: GHOST MODE (ULTIMATE FIX - INLINE ONCLICK)
 // ==========================================
 DreamOS.register('ghost', {
     init() {
@@ -178,56 +184,29 @@ DreamOS.register('ghost', {
                     DreamOS.state.tapCount = 0;
                     document.getElementById('ghost-dashboard').classList.add('active');
                     this.renderTools();
-                    // Re-bind ghost tool events after render
-                    this.bindGhostEvents();
                 }
             });
         }
         // Close button
         const close = document.getElementById('close-ghost');
         if (close) close.addEventListener('click', () => document.getElementById('ghost-dashboard').classList.remove('active'));
-    },
-    
-    // Render tools HTML
+    },    
+    // Render tools with INLINE ONCLICK (100% reliable!)
     renderTools() {
-        const c = document.getElementById('ghost-tools');        if (!c) return;
+        const c = document.getElementById('ghost-tools');
+        if (!c) return;
         c.innerHTML = `
-            <div class="ghost-card"><div class="flex justify-between items-center mb-3"><h3 class="text-base font-bold text-teal-400">💻 Eruda</h3><button id="eruda-btn" class="ghost-btn">INJECT</button></div></div>
-            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🔍 OSINT</h3><div class="flex gap-2 mb-2"><input type="text" id="osint-user" placeholder="Username" class="term-input"><button id="osint-btn" class="ghost-btn">SCAN</button></div><div id="osint-res" class="hidden bg-black/50 p-3 rounded text-xs font-mono text-emerald-400"></div></div>
-            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🌐 Nmap</h3><div class="flex gap-2 mb-2"><input type="text" id="nmap-ip" placeholder="192.168.1.1" class="term-input"><button id="nmap-btn" class="ghost-btn">COPY</button></div></div>
-            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🕷️ Spider</h3><div class="flex gap-2 mb-2"><input type="text" id="spider-url" placeholder="https://target.com" class="term-input"><button id="spider-btn" class="ghost-btn">COPY</button></div></div>
-            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🐉 Kali</h3><button id="kali-btn" class="ghost-btn w-full">INSTALL</button></div>
-            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">📡 TShark</h3><button id="tshark-btn" class="ghost-btn w-full bg-purple-500/20 text-purple-300">INSTALL</button></div>
+            <div class="ghost-card"><div class="flex justify-between items-center mb-3"><h3 class="text-base font-bold text-teal-400">💻 Eruda</h3><button class="ghost-btn" onclick="ghost_toggleEruda()">INJECT</button></div></div>
+            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🔍 OSINT</h3><div class="flex gap-2 mb-2"><input type="text" id="osint-user" placeholder="Username" class="term-input"><button class="ghost-btn" onclick="ghost_runOSINT()">SCAN</button></div><div id="osint-res" class="hidden bg-black/50 p-3 rounded text-xs font-mono text-emerald-400"></div></div>
+            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🌐 Nmap</h3><div class="flex gap-2 mb-2"><input type="text" id="nmap-ip" placeholder="192.168.1.1" class="term-input"><button class="ghost-btn" onclick="ghost_copyNmap()">COPY</button></div></div>
+            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🕷️ Spider</h3><div class="flex gap-2 mb-2"><input type="text" id="spider-url" placeholder="https://target.com" class="term-input"><button class="ghost-btn" onclick="ghost_copySpider()">COPY</button></div></div>
+            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">🐉 Kali</h3><button class="ghost-btn w-full" onclick="ghost_copyKali()">INSTALL</button></div>
+            <div class="ghost-card"><h3 class="text-base font-bold text-teal-400 mb-3">📡 TShark</h3><button class="ghost-btn w-full bg-purple-500/20 text-purple-300" onclick="ghost_copyTShark()">INSTALL</button></div>
         `;
+        console.log('👻 Ghost tools rendered with inline onclick');
     },
     
-    // Bind events using event delegation (lebih reliable!)
-    bindGhostEvents() {
-        const container = document.getElementById('ghost-tools');
-        if (!container) return;
-        
-        // Eruda
-        container.querySelector('#eruda-btn')?.addEventListener('click', () => this.toggleEruda());
-        // OSINT
-        container.querySelector('#osint-btn')?.addEventListener('click', () => this.runOSINT());
-        // Nmap
-        container.querySelector('#nmap-btn')?.addEventListener('click', () => {
-            const ip = document.getElementById('nmap-ip')?.value || '127.0.0.1';
-            this.copyText(`nmap -sV -sC ${ip}`);
-        });
-        // Spider
-        container.querySelector('#spider-btn')?.addEventListener('click', () => {
-            const url = document.getElementById('spider-url')?.value || 'https://target.com';
-            this.copyText(`scrapy startproject target && cd target && scrapy genspider target ${url}`);
-        });
-        // Kali
-        container.querySelector('#kali-btn')?.addEventListener('click', () => this.copyText('pkg install proot-distro && proot-distro install kali-linux'));
-        // TShark
-        container.querySelector('#tshark-btn')?.addEventListener('click', () => this.copyText('pkg install tshark'));
-        
-        console.log('👻 Ghost Mode events bound');
-    },
-    
+    // Functions exposed via window.ghost_* by DreamOS.register()
     toggleEruda() {
         const btn = document.getElementById('eruda-btn'); if (!btn) return;
         if (DreamOS.state.erudaActive) {
@@ -239,7 +218,8 @@ DreamOS.register('ghost', {
             s.onload = () => { if (typeof eruda !== 'undefined') { eruda.init(); DreamOS.state.erudaActive = true; btn.textContent = 'REMOVE'; } };
             document.body.appendChild(s);
         }
-    },    
+    },
+    
     async runOSINT() {
         const u = document.getElementById('osint-user')?.value, r = document.getElementById('osint-res');
         if (!u || !r) return;
@@ -250,17 +230,37 @@ DreamOS.register('ghost', {
         } catch(e) { r.innerHTML = '❌ Error'; }
     },
     
-    copyText(t) { navigator.clipboard.writeText(t).then(() => alert('✅ Copied:\n' + t)).catch(() => alert('📋 Copy:\n' + t)); }
+    copyNmap() {
+        const ip = document.getElementById('nmap-ip')?.value || '127.0.0.1';
+        this.copyText(`nmap -sV -sC ${ip}`);
+    },
+    
+    copySpider() {
+        const url = document.getElementById('spider-url')?.value || 'https://target.com';
+        this.copyText(`scrapy startproject target && cd target && scrapy genspider target ${url}`);
+    },
+        copyKali() {
+        this.copyText('pkg install proot-distro && proot-distro install kali-linux');
+    },
+    
+    copyTShark() {
+        this.copyText('pkg install tshark');
+    },
+    
+    copyText(t) { 
+        navigator.clipboard.writeText(t).then(() => alert('✅ Copied:\n' + t)).catch(() => alert('📋 Copy:\n' + t)); 
+    }
 });
 
 // ==========================================
 // 🚀 INIT
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log(`✅ Dream OS v${DreamOS.version} - Error Boundary Modular Loaded`);
+    console.log(`✅ Dream OS v${DreamOS.version} - Ultimate Ghost Mode Fix Loaded`);
     const savedLang = localStorage.getItem('dream-lang') || 'id';
     DreamOS.run('i18n', 'setLanguage', savedLang);
     DreamOS.run('auth', 'init');
     document.getElementById('btn-logout')?.addEventListener('click', () => DreamOS.run('auth', 'logout'));
+    // Expose DreamOS globally
     window.DreamOS = DreamOS;
 });
