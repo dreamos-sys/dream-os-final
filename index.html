@@ -15,10 +15,12 @@
         .view { display: none; } .view.active { display: flex; }
         .password-wrapper { position: relative; }
         .password-input { width: 100%; padding: 14px 50px 14px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; color: white; text-align: center; letter-spacing: 0.2em; }
-        .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fbbf24; cursor: pointer; padding: 8px; z-index: 10; }
+        .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fbbf24; cursor: pointer; padding: 8px; z-index: 10; font-size: 20px; }
     </style>
 </head>
 <body class="text-white h-screen overflow-hidden">
+
+    <!-- LOGIN PAGE -->
     <div id="login-page" class="view active flex-col items-center justify-center h-full p-6 text-center">
         <div id="dream-logo" class="mb-6 cursor-pointer">
             <img src="assets/logo-sultan.png" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-4">
@@ -26,32 +28,89 @@
         </div>
         <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللَّهِ</h1>
         <p class="text-[10px] text-emerald-400 mb-8">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
+        
         <div class="glass p-6 rounded-3xl w-full max-w-xs">
             <div class="password-wrapper mb-4">
                 <input type="password" id="access-key" class="password-input" placeholder="Access Key">
-                <button type="button" id="toggle-pw" class="toggle-btn">👁️</button>
+                <button type="button" id="toggle-pw" class="toggle-btn" onclick="togglePassword()">👁️</button>
             </div>
-            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-2xl shadow-lg">ACCESS SYSTEM</button>
+            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-2xl shadow-lg" onclick="doLogin()">ACCESS SYSTEM</button>
         </div>
     </div>
+
+    <!-- DASHBOARD -->
     <div id="dashboard" class="view flex-col h-full">
         <header class="px-3 py-2 glass border-b border-white/10">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <img src="assets/logo-sultan.png" class="w-9 h-9 rounded-lg">
-                    <div><h1 class="text-sm font-bold">Dream OS</h1><span class="text-[9px] text-teal-300">v1.3.1 Stealth</span></div>
+                    <img src="assets/logo-sultan.png" class="w-9 h-9 rounded-lg">                    <div><h1 class="text-sm font-bold">Dream OS</h1><span class="text-[9px] text-teal-300">v1.3.1 Stealth</span></div>
                 </div>
-                <button id="btn-logout" class="p-1.5 text-white/60 hover:text-red-400">Logout</button>
+                <button onclick="doLogout()" class="p-1.5 text-white/60 hover:text-red-400">Logout</button>
             </div>
-        </header>        <main class="flex-1 overflow-y-auto p-3">
+        </header>
+        <main class="flex-1 overflow-y-auto p-3">
             <div class="glass p-4 rounded-2xl mb-4"><h2 class="text-lg font-bold mb-2">Selamat Datang!</h2><p class="text-sm text-white/70">Dashboard Dream OS v1.3.1</p></div>
             <div class="grid grid-cols-3 gap-3">
-                <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Command')"><div class="text-3xl mb-2">🌍</div><div class="text-xs font-bold">Command</div></div>
+                <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Command Center')"><div class="text-3xl mb-2">🌍</div><div class="text-xs font-bold">Command</div></div>
                 <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Booking')"><div class="text-3xl mb-2">📅</div><div class="text-xs font-bold">Booking</div></div>
                 <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('K3')"><div class="text-3xl mb-2">⚠️</div><div class="text-xs font-bold">K3</div></div>
             </div>
         </main>
     </div>
-    <script src="js/app.js"></script>
+
+    <!-- INLINE JAVASCRIPT - PASTI JALAN! -->
+    <script>
+        let userRole = 'STAFF';
+        let tapCount = 0;
+        let tapTimer = null;
+
+        // Password Toggle
+        function togglePassword() {
+            const input = document.getElementById('access-key');
+            const btn = document.getElementById('toggle-pw');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        // Login
+        function doLogin() {
+            const key = document.getElementById('access-key').value;
+            if (!key) {
+                alert('Masukkan Access Key!');
+                return;
+            }
+            userRole = (key.includes('admin') || key.includes('kepala')) ? 'KEPALA_BAGIAN' : 'STAFF';
+            document.getElementById('login-page').classList.remove('active');
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+            document.getElementById('dashboard').style.display = 'flex';
+        }
+
+        // Logout
+        function doLogout() {            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('login-page').classList.add('active');
+            document.getElementById('login-page').style.display = 'flex';
+            document.getElementById('access-key').value = '';
+        }
+
+        // Ghost Mode (7x tap)
+        document.getElementById('dream-logo').addEventListener('pointerdown', function() {
+            tapCount++;
+            if (tapCount === 1) tapTimer = setTimeout(() => tapCount = 0, 2000);
+            if (tapCount >= 7) {
+                clearTimeout(tapTimer);
+                tapCount = 0;
+                alert('👻 GHOST MODE ACTIVATED');
+            }
+        });
+
+        console.log('✅ Dream OS v1.3.1 Loaded!');
+    </script>
 </body>
 </html>
