@@ -1,8 +1,9 @@
-// Dream OS Command Center - Simple Inline Functions
+// Dream OS Command Center - FINAL FIX (Class-based toggle)
+
 function openCommandCenter() {
     console.log('🌍 Opening Command Center...');
     
-    // Hide main content
+    // Hide main content using class
     const stats = document.getElementById('stats-card');
     const carousel = document.getElementById('carousel-container');
     const menuGrid = document.getElementById('menu-grid');
@@ -11,11 +12,15 @@ function openCommandCenter() {
     if (carousel) carousel.style.display = 'none';
     if (menuGrid) menuGrid.style.display = 'none';
     
-    // Show command center
+    // Show command center: REMOVE module-container class, ADD active
     const cmdCenter = document.getElementById('command-center');
     const cmdDashboard = document.getElementById('cmd-dashboard');
     
-    if (cmdCenter) cmdCenter.style.display = 'block';
+    if (cmdCenter) {
+        cmdCenter.classList.remove('module-container');  // ← FIX: Remove class that has display:none
+        cmdCenter.classList.add('active');                // ← Add active for display:block
+        cmdCenter.style.display = 'block';                // ← Fallback inline style
+    }
     
     if (cmdDashboard) {
         cmdDashboard.innerHTML = `
@@ -38,36 +43,48 @@ function openCommandCenter() {
         `;
     }
 }
-
 function showMain() {
     console.log('🏠 Showing Main Dashboard...');
     
     // Show main content
-    const stats = document.getElementById('stats-card');    const carousel = document.getElementById('carousel-container');
+    const stats = document.getElementById('stats-card');
+    const carousel = document.getElementById('carousel-container');
     const menuGrid = document.getElementById('menu-grid');
     
     if (stats) stats.style.display = 'block';
     if (carousel) carousel.style.display = 'block';
     if (menuGrid) menuGrid.style.display = 'block';
     
-    // Hide command center
+    // Hide command center: ADD module-container class back
     const cmdCenter = document.getElementById('command-center');
-    if (cmdCenter) cmdCenter.style.display = 'none';
+    if (cmdCenter) {
+        cmdCenter.classList.add('module-container');  // ← FIX: Re-add class with display:none
+        cmdCenter.classList.remove('active');
+        cmdCenter.style.display = 'none';
+    }
 }
 
 // Auto-bind to menu grid on load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔗 Binding Command card...');
     const menuGrid = document.getElementById('menu-grid');
     if (menuGrid) {
-        // Find the "Command" card and add click handler
         const cards = menuGrid.querySelectorAll('.menu-card');
         cards.forEach(function(card) {
             const label = card.querySelector('.text-center');
             if (label && label.textContent.trim() === 'Command') {
                 card.style.cursor = 'pointer';
-                card.onclick = function() { openCommandCenter(); };
-                console.log('✅ Command card bound to openCommandCenter()');
+                card.onclick = function() { 
+                    console.log('🖱️ Command card clicked!');
+                    openCommandCenter(); 
+                };
+                console.log('✅ Command card bound!');
             }
         });
     }
+    
+    // Also expose functions globally for console testing
+    window.openCommandCenter = openCommandCenter;
+    window.showMain = showMain;
+    console.log('✅ Functions exposed to window');
 });
