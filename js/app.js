@@ -218,3 +218,15 @@ function copySpider() { const u = document.getElementById('spider-url')?.value |
 function copyText(text) { navigator.clipboard.writeText(text).then(() => alert('✅ Copied:\n\n' + text)).catch(() => alert('📋 Copy:\n\n' + text)); }
 
 console.log('✅ All systems ready!');
+
+// FORCE SHOW BOTTOM NAV ON LOGIN
+const originalDoLogin = window.doLogin || doLogin;
+window.doLogin = function() {
+    originalDoLogin();
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) {
+        bottomNav.style.display = 'flex';
+        bottomNav.classList.remove('hidden');
+        console.log('✅ Bottom nav forced visible');
+    }
+};
