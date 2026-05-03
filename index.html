@@ -12,62 +12,38 @@
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); background-size: 400% 400%; animation: gradient 15s ease infinite; }
         @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-pearl { background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); }
         .view { display: none; } .view.active { display: flex; }
         .password-wrapper { position: relative; }
         .password-input { width: 100%; padding: 14px 50px 14px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; color: white; text-align: center; letter-spacing: 0.2em; }
         .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fbbf24; cursor: pointer; padding: 8px; z-index: 10; font-size: 20px; }
         
-        /* GHOST MODE STYLES - HIGH CONTRAST */
+        /* Ghost Mode */
         #ghost-dashboard { display: none; position: fixed; inset: 0; background: #020617; z-index: 9999; overflow-y: auto; padding: 20px; border-top: 2px solid #2dd4bf; }
-        #ghost-dashboard.active { display: block; animation: slideUp 0.3s ease-out; }
+        #ghost-dashboard.active { display: block; animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .ghost-card { background: #0f172a; border: 1px solid #1e293b; border-left: 4px solid #2dd4bf; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .ghost-btn { background: #2dd4bf; color: #020617; font-weight: bold; padding: 8px 16px; border-radius: 6px; transition: all 0.2s; }
+        .ghost-btn:hover { background: #5eead4; transform: scale(1.05); }
+        .term-input { background: #020617; border: 1px solid #334155; color: #22c55e; font-family: 'JetBrains Mono', monospace; padding: 10px; border-radius: 6px; width: 100%; }
         
-        .ghost-card { 
-            background: #0f172a; 
-            border: 1px solid #1e293b; 
-            border-left: 4px solid #2dd4bf; 
-            border-radius: 8px; 
-            padding: 16px; 
-            margin-bottom: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-        }
+        /* Carousel */
+        .carousel-slide { display: none; animation: fadeIn 0.5s; }
+        .carousel-slide.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; cursor: pointer; }
+        .dot.active { background: #2dd4bf; width: 24px; border-radius: 4px; }
         
-        /* TOMBOL YANG JELAS & KLIKABLE */
-        .ghost-btn {
-            background: #2dd4bf;
-            color: #020617;
-            font-weight: bold;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: all 0.2s;
-            box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
-        }
-        .ghost-btn:hover {
-            background: #5eead4;
-            transform: scale(1.05);            box-shadow: 0 0 20px rgba(45, 212, 191, 0.6);
-        }
-        .ghost-btn:active {
-            transform: scale(0.95);
-        }
+        /* Menu Grid */
+        .menu-card { transition: all 0.3s ease; background: rgba(45,212,191,0.1); }
+        .menu-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 30px rgba(45,212,191,0.3); }
         
-        .term-input { 
-            background: #020617; 
-            border: 1px solid #334155; 
-            color: #22c55e; 
-            font-family: 'JetBrains Mono', monospace; 
-            padding: 10px; 
-            border-radius: 6px; 
-            width: 100%;
-        }
-        .term-input:focus {
-            outline: none;
-            border-color: #2dd4bf;
-            box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
-        }
+        /* Bottom Nav */
+        .nav-btn { transition: all 0.2s; }
+        .nav-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="text-white h-screen overflow-hidden">
-
     <!-- LOGIN PAGE -->
     <div id="login-page" class="view active flex-col items-center justify-center h-full p-6 text-center">
         <div id="dream-logo" class="mb-6 cursor-pointer">
@@ -76,7 +52,6 @@
         </div>
         <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللَّهِ</h1>
         <p class="text-[10px] text-emerald-400 mb-8">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
-        
         <div class="glass p-6 rounded-3xl w-full max-w-xs">
             <div class="password-wrapper mb-4">
                 <input type="password" id="access-key" class="password-input" placeholder="Access Key">
@@ -88,26 +63,135 @@
 
     <!-- DASHBOARD -->
     <div id="dashboard" class="view flex-col h-full">
-        <header class="px-3 py-2 glass border-b border-white/10">
-            <div class="flex justify-between items-center">
+        <!-- Header dengan Bismillah -->
+        <header class="px-3 py-2 glass border-b border-white/10 shrink-0">
+            <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center gap-2">
                     <img src="assets/logo-sultan.png" class="w-9 h-9 rounded-lg">
-                    <div><h1 class="text-sm font-bold">Dream OS</h1><span class="text-[9px] text-teal-300">v1.3.1 Stealth</span></div>
-                </div>                <button onclick="doLogout()" class="p-1.5 text-white/60 hover:text-red-400">Logout</button>
+                    <div>
+                        <h1 class="text-sm font-bold">Dream OS</h1>
+                        <span class="text-[9px] text-teal-300">v1.3.1 Stealth</span>
+                    </div>
+                </div>
+                <button onclick="doLogout()" class="p-1.5 text-white/60 hover:text-red-400">Logout</button>
+            </div>
+            <div class="pt-2 border-t border-white/10 text-center">
+                <h2 class="text-base text-amber-500" style="font-family: 'Amiri', serif;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</h2>
+                <p class="text-xs text-emerald-400">اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
             </div>
         </header>
-        <main class="flex-1 overflow-y-auto p-3">
-            <div class="glass p-4 rounded-2xl mb-4"><h2 class="text-lg font-bold mb-2">Selamat Datang!</h2><p class="text-sm text-white/70">Dashboard Dream OS v1.3.1</p></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-3 space-y-3">
+            
+            <!-- Statistics Card -->
+            <div class="glass-pearl rounded-2xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-bold">Today's Statistics</h3>
+                    <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Live</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white/5 p-3 rounded-xl">
+                        <p class="text-xs text-white/60 mb-1">Users</p>
+                        <p class="text-2xl font-bold text-white">1,450</p>                        <p class="text-xs text-emerald-400">↑ 12% this week</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl">
+                        <p class="text-xs text-white/60 mb-1">Transactions</p>
+                        <p class="text-2xl font-bold text-white">890</p>
+                        <p class="text-xs text-emerald-400">↑ 8% this week</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl">
+                        <p class="text-xs text-white/60 mb-1">Uptime</p>
+                        <p class="text-xl font-bold text-teal-400">99.98%</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl">
+                        <p class="text-xs text-white/60 mb-1">Prayer Streak</p>
+                        <p class="text-xl font-bold text-emerald-400">5 Days 🔥</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7-Slide Carousel -->
+            <div class="glass rounded-2xl overflow-hidden">
+                <div id="carousel-slides" class="p-4 min-h-[180px]"></div>
+                <div class="carousel-dots flex justify-center gap-2 mt-2 pb-2" id="carousel-dots"></div>
+            </div>
+
+            <!-- 9-Grid Menu -->
             <div class="grid grid-cols-3 gap-3">
-                <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Command Center')"><div class="text-3xl mb-2">🌍</div><div class="text-xs font-bold">Command</div></div>
-                <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Booking')"><div class="text-3xl mb-2">📅</div><div class="text-xs font-bold">Booking</div></div>
-                <div class="glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('K3')"><div class="text-3xl mb-2">⚠️</div><div class="text-xs font-bold">K3</div></div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Command Center')">
+                    <div class="text-4xl mb-2">🌍</div>
+                    <div class="text-xs font-bold mb-1">Command</div>
+                    <div class="text-[10px] text-white/60">Operations</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Booking')">
+                    <div class="text-4xl mb-2">📅</div>
+                    <div class="text-xs font-bold mb-1">Booking</div>
+                    <div class="text-[10px] text-white/60">Reserve</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('K3')">
+                    <div class="text-4xl mb-2">⚠️</div>
+                    <div class="text-xs font-bold mb-1">K3</div>
+                    <div class="text-[10px] text-white/60">Safety</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Security')">
+                    <div class="text-4xl mb-2">🔒</div>
+                    <div class="text-xs font-bold mb-1">Security</div>
+                    <div class="text-[10px] text-white/60">Manage</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Janitor Indoor')">
+                    <div class="text-4xl mb-2">🧹</div>
+                    <div class="text-xs font-bold mb-1">Janitor In</div>
+                    <div class="text-[10px] text-white/60">Indoor</div>                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Janitor Outdoor')">
+                    <div class="text-4xl mb-2">🍃</div>
+                    <div class="text-xs font-bold mb-1">Janitor Out</div>
+                    <div class="text-[10px] text-white/60">Outdoor</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Stok')">
+                    <div class="text-4xl mb-2">📦</div>
+                    <div class="text-xs font-bold mb-1">Stok</div>
+                    <div class="text-[10px] text-white/60">Warehouse</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Maintenance')">
+                    <div class="text-4xl mb-2">🔧</div>
+                    <div class="text-xs font-bold mb-1">Maintenance</div>
+                    <div class="text-[10px] text-white/60">Repair</div>
+                </div>
+                <div class="menu-card glass p-4 rounded-xl text-center cursor-pointer" onclick="alert('Asset')">
+                    <div class="text-4xl mb-2">🏢</div>
+                    <div class="text-xs font-bold mb-1">Asset</div>
+                    <div class="text-[10px] text-white/60">Building</div>
+                </div>
             </div>
         </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="glass border-t border-white/10 flex justify-around items-center h-14 shrink-0">
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-teal-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span class="text-[10px]">HOME</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('User Profile')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="text-[10px]">USER</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('Menu')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span class="text-[10px]">MENU</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('Info')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-[10px]">INFO</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('Settings')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span class="text-[10px]">CONFIG</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- GHOST MODE DASHBOARD (VISIBLY IMPROVED) -->
-    <div id="ghost-dashboard">
+    <!-- GHOST MODE DASHBOARD -->    <div id="ghost-dashboard">
         <div class="flex justify-between items-center mb-8 pb-4 border-b border-teal-500/50">
             <div class="flex items-center gap-4">
                 <span class="text-5xl animate-pulse">👻</span>
@@ -116,87 +200,66 @@
                     <p class="text-sm text-teal-300 font-mono">SYSTEM COMPROMISED // STEALTH ACTIVE</p>
                 </div>
             </div>
-            <button onclick="closeGhostMode()" class="ghost-btn bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/40">✕ CLOSE</button>
+            <button onclick="closeGhostMode()" class="ghost-btn bg-red-500/20 text-red-400 border border-red-500/50">✕ CLOSE</button>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
-            <!-- Eruda Dev Tools -->
             <div class="ghost-card">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2">💻 Eruda Dev Tools</h3>
-                    <button onclick="toggleEruda()" id="eruda-btn" class="ghost-btn">INJECT CONSOLE</button>
+                    <h3 class="text-xl font-bold text-teal-400">💻 Eruda Dev Tools</h3>
+                    <button onclick="toggleEruda()" id="eruda-btn" class="ghost-btn">INJECT</button>
                 </div>
-                <p class="text-sm text-slate-400 mb-2">Mobile console debugger untuk inspect element & debug JS.</p>
-                <div id="eruda-status" class="hidden text-xs text-emerald-400 font-mono bg-emerald-500/10 p-2 rounded">✅ ERUDA ACTIVE // DEBUGGING ENABLED</div>
+                <div id="eruda-status" class="hidden text-xs text-emerald-400 font-mono bg-emerald-500/10 p-2 rounded">✅ ERUDA ACTIVE</div>
             </div>
-
-            <!-- OSINT Framework -->
             <div class="ghost-card">
-                <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2 mb-4">🔍 OSINT Scanner</h3>
+                <h3 class="text-xl font-bold text-teal-400 mb-4">🔍 OSINT Scanner</h3>
                 <div class="flex gap-2 mb-3">
-                    <input type="text" id="osint-username" placeholder="GitHub Username" class="term-input">
-                    <button onclick="runOSINT()" class="ghost-btn whitespace-nowrap">SCAN TARGET</button>
+                    <input type="text" id="osint-username" placeholder="Username" class="term-input">
+                    <button onclick="runOSINT()" class="ghost-btn whitespace-nowrap">SCAN</button>
                 </div>
-                <div id="osint-result" class="hidden bg-black/50 p-4 rounded border border-teal-500/30 text-sm font-mono text-emerald-400"></div>
+                <div id="osint-result" class="hidden bg-black/50 p-4 rounded text-sm font-mono text-emerald-400"></div>
             </div>
-
-            <!-- Nmap Scanner -->
             <div class="ghost-card">
-                <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2 mb-4">🌐 Nmap Scanner</h3>                <p class="text-sm text-slate-400 mb-3">Generate Nmap command for Termux:</p>
+                <h3 class="text-xl font-bold text-teal-400 mb-4">🌐 Nmap Scanner</h3>
                 <div class="flex gap-2 mb-2">
                     <input type="text" id="nmap-target" placeholder="192.168.1.1" class="term-input">
-                    <button onclick="copyNmap()" class="ghost-btn whitespace-nowrap">COPY CMD</button>
+                    <button onclick="copyNmap()" class="ghost-btn whitespace-nowrap">COPY</button>
                 </div>
-                <code class="text-xs text-slate-500 block mt-2">nmap -sV -sC [target]</code>
             </div>
-
-            <!-- Spider Crawler -->
             <div class="ghost-card">
-                <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2 mb-4">🕷️ Spider Crawler</h3>
+                <h3 class="text-xl font-bold text-teal-400 mb-4">🕷️ Spider Crawler</h3>
                 <div class="flex gap-2 mb-2">
                     <input type="text" id="spider-url" placeholder="https://target.com" class="term-input">
-                    <button onclick="copySpider()" class="ghost-btn whitespace-nowrap">COPY CMD</button>
-                </div>
-                <code class="text-xs text-slate-500 block mt-2">scrapy startproject target</code>
-            </div>
-
-            <!-- Kali Linux -->
-            <div class="ghost-card">
-                <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2 mb-4">🐉 Kali Linux</h3>
-                <p class="text-sm text-slate-400 mb-3">Install Kali in Termux:</p>
-                <button onclick="copyText('pkg install proot-distro && proot-distro install kali-linux')" class="ghost-btn w-full mb-2">COPY INSTALL CMD</button>
-                <button onclick="copyText('proot-distro login kali')" class="ghost-btn w-full bg-teal-500/10 text-teal-300 border-teal-500/30">COPY LOGIN CMD</button>
-            </div>
-
-            <!-- TShark -->
-            <div class="ghost-card">
-                <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2 mb-4">📡 TShark Analyzer</h3>
-                <p class="text-sm text-slate-400 mb-3">Network packet analyzer (Root required):</p>
-                <button onclick="copyText('pkg install tshark && tshark -i wlan0')" class="ghost-btn w-full bg-purple-500/20 text-purple-300 border-purple-500/50">COPY TSHARK CMD</button>
-            </div>
-
-            <!-- Quick Commands -->
-            <div class="ghost-card md:col-span-2">
-                <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2 mb-4">⌨️ Quick Termux Commands</h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center bg-black/40 p-3 rounded border border-slate-700">
-                        <code class="text-sm text-emerald-400">pkg update && pkg upgrade -y</code>
-                        <button onclick="copyText('pkg update && pkg upgrade -y')" class="ghost-btn text-xs py-1 px-3">COPY</button>
-                    </div>
-                    <div class="flex justify-between items-center bg-black/40 p-3 rounded border border-slate-700">
-                        <code class="text-sm text-emerald-400">pkg install python git nmap wget curl</code>
-                        <button onclick="copyText('pkg install python git nmap wget curl')" class="ghost-btn text-xs py-1 px-3">COPY</button>
-                    </div>
+                    <button onclick="copySpider()" class="ghost-btn whitespace-nowrap">COPY</button>
                 </div>
             </div>
-        </div>
-    </div>
-    <!-- INLINE JAVASCRIPT -->
+            <div class="ghost-card">
+                <h3 class="text-xl font-bold text-teal-400 mb-4">🐉 Kali Linux</h3>
+                <button onclick="copyText('pkg install proot-distro && proot-distro install kali-linux')" class="ghost-btn w-full mb-2">INSTALL KALI</button>
+            </div>
+            <div class="ghost-card">
+                <h3 class="text-xl font-bold text-teal-400 mb-4">📡 TShark</h3>
+                <button onclick="copyText('pkg install tshark')" class="ghost-btn w-full bg-purple-500/20 text-purple-300">INSTALL TSHARK</button>
+            </div>
+        </div>    </div>
+
+    <!-- JAVASCRIPT -->
     <script>
         let userRole = 'STAFF';
         let tapCount = 0;
         let tapTimer = null;
         let erudaActive = false;
+        let carouselInterval = null;
+        let currentSlide = 0;
+
+        const carouselSlides = [
+            { icon: '👋', title: 'Selamat Datang', content: 'Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan.' },
+            { icon: '📅', title: 'Jadwal Booking', content: 'Hari Ini: Rapat Koordinasi - 09:00 WIB\nBesok: Kunjungan Yayasan - 13:00 WIB' },
+            { icon: '📊', title: 'Progress K3', content: 'AC Ruang Rapat: 60% (Proses)\nKebersihan Lobby: 100% (Selesai)' },
+            { icon: '🌤️', title: 'Cuaca', content: 'Cerah Berawan - 32°C\nPrediksi hujan 15:00' },
+            { icon: '🏢', title: 'Info Management', content: 'Rapat CEO & Yayasan\nPukul 09:00 WIB di Ruang Rapat SMA' },
+            { icon: '👥', title: 'Info Team Umum', content: 'Rapat Mingguan\nJam 09:00 WIB di R. Koord Bagian Umum' },
+            { icon: '🎁', title: 'Ucapan', content: '🎂 Selamat Ulang Tahun Pak Budi (Komisi 3 Bulan)' }
+        ];
 
         function togglePassword() {
             const input = document.getElementById('access-key');
@@ -213,6 +276,7 @@
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
             document.getElementById('dashboard').style.display = 'flex';
+            initCarousel();
         }
 
         function doLogout() {
@@ -221,15 +285,60 @@
             document.getElementById('login-page').classList.add('active');
             document.getElementById('login-page').style.display = 'flex';
             document.getElementById('access-key').value = '';
+            if (carouselInterval) clearInterval(carouselInterval);
         }
 
-        // Ghost Mode Activation (7x Tap)
+        // Carousel
+        function initCarousel() {            const container = document.getElementById('carousel-slides');
+            const dotsContainer = document.getElementById('carousel-dots');
+            
+            container.innerHTML = carouselSlides.map((slide, i) => 
+                `<div class="carousel-slide ${i === 0 ? 'active' : ''}">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-3xl">${slide.icon}</span>
+                        <h3 class="text-base font-bold">${slide.title}</h3>
+                    </div>
+                    <p class="text-sm text-white/80 whitespace-pre-line">${slide.content}</p>
+                </div>`
+            ).join('');
+            
+            dotsContainer.innerHTML = carouselSlides.map((_, i) => 
+                `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`
+            ).join('');
+            
+            startCarousel();
+        }
+
+        function startCarousel() {
+            if (carouselInterval) clearInterval(carouselInterval);
+            carouselInterval = setInterval(() => {
+                currentSlide = (currentSlide + 1) % carouselSlides.length;
+                showSlide(currentSlide);
+            }, 7000);
+        }
+
+        function showSlide(index) {
+            document.querySelectorAll('.carousel-slide').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+            if (document.querySelectorAll('.carousel-slide')[index]) {
+                document.querySelectorAll('.carousel-slide')[index].classList.add('active');
+            }
+            if (document.querySelectorAll('.dot')[index]) {
+                document.querySelectorAll('.dot')[index].classList.add('active');
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            showSlide(currentSlide);
+            startCarousel();
+        }
+
+        // Ghost Mode
         document.getElementById('dream-logo').addEventListener('pointerdown', function() {
             tapCount++;
-            console.log('👻 Tap:', tapCount);
             if (tapCount === 1) tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-            if (tapCount >= 7) {
-                clearTimeout(tapTimer);
+            if (tapCount >= 7) {                clearTimeout(tapTimer);
                 tapCount = 0;
                 openGhostMode();
             }
@@ -237,10 +346,10 @@
 
         function openGhostMode() {
             document.getElementById('ghost-dashboard').classList.add('active');
-            console.log('👻 Ghost Mode Activated');
         }
 
-        function closeGhostMode() {            document.getElementById('ghost-dashboard').classList.remove('active');
+        function closeGhostMode() {
+            document.getElementById('ghost-dashboard').classList.remove('active');
         }
 
         function toggleEruda() {
@@ -249,8 +358,7 @@
             if (erudaActive) {
                 if (typeof eruda !== 'undefined') eruda.destroy();
                 erudaActive = false;
-                btn.textContent = 'INJECT CONSOLE';
-                btn.classList.remove('bg-red-500/20', 'text-red-400');
+                btn.textContent = 'INJECT';
                 status.classList.add('hidden');
             } else {
                 const script = document.createElement('script');
@@ -259,8 +367,7 @@
                     if (typeof eruda !== 'undefined') {
                         eruda.init();
                         erudaActive = true;
-                        btn.textContent = 'REMOVE CONSOLE';
-                        btn.classList.add('bg-red-500/20', 'text-red-400');
+                        btn.textContent = 'REMOVE';
                         status.classList.remove('hidden');
                     }
                 };
@@ -273,23 +380,18 @@
             const resultDiv = document.getElementById('osint-result');
             if (!username) { alert('Enter username!'); return; }
             resultDiv.classList.remove('hidden');
-            resultDiv.innerHTML = '🔍 Scanning GitHub API...';
+            resultDiv.innerHTML = '🔍 Scanning...';
             try {
                 const res = await fetch(`https://api.github.com/users/${username}`);
                 const data = await res.json();
                 if (data.login) {
-                    resultDiv.innerHTML = `
-                        ✅ <strong>User:</strong> ${data.login}<br>
-                        📍 <strong>Loc:</strong> ${data.location || 'Unknown'}<br>
-                        🏢 <strong>Bio:</strong> ${data.bio || 'No bio'}<br>
-                        🔗 <a href="${data.html_url}" target="_blank" class="text-teal-400 underline">Profile Link</a>
-                    `;
-                } else { resultDiv.innerHTML = `❌ User not found.`; }
-            } catch (e) { resultDiv.innerHTML = `❌ Error: ${e.message}`; }
-        }
+                    resultDiv.innerHTML = `✅ User: ${data.login}\n📍 Loc: ${data.location || 'N/A'}\n🏢 Bio: ${data.bio || 'N/A'}`;
+                } else { resultDiv.innerHTML = '❌ Not found'; }
+            } catch (e) { resultDiv.innerHTML = '❌ Error'; }        }
 
         function copyNmap() {
-            const target = document.getElementById('nmap-target').value || '127.0.0.1';            copyText(`nmap -sV -sC ${target}`);
+            const target = document.getElementById('nmap-target').value || '127.0.0.1';
+            copyText(`nmap -sV -sC ${target}`);
         }
 
         function copySpider() {
@@ -298,7 +400,7 @@
         }
 
         function copyText(text) {
-            navigator.clipboard.writeText(text).then(() => alert('✅ Copied:\n\n' + text)).catch(() => alert('📋 Copy manual:\n\n' + text));
+            navigator.clipboard.writeText(text).then(() => alert('✅ Copied:\n\n' + text)).catch(() => alert('📋 Copy:\n\n' + text));
         }
 
         console.log('✅ Dream OS v1.3.1 Loaded!');
