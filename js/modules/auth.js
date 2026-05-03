@@ -9,7 +9,7 @@ window.DreamOSModules.auth = {
     bindEvents() {
         console.log('🔧 Binding auth events...');
         
-        // INIT LUCIDE ICONS untuk login page
+        // Init Lucide icons
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
             console.log('✅ Lucide icons initialized');
@@ -17,91 +17,74 @@ window.DreamOSModules.auth = {
         
         // Password toggle
         const toggleBtn = document.getElementById('toggle-pw');
-        const eyeOff = document.getElementById('eye-off');
-        const eyeOn = document.getElementById('eye-on');
+        const eyeIcon = document.getElementById('eye-icon');
         const input = document.getElementById('access-key');
+                console.log('🔍 Elements:', { toggleBtn, eyeIcon, input });
         
-        console.log('🔍 Checking elements:');
-        console.log('- toggleBtn:', toggleBtn);
-        console.log('- input:', input);
-        console.log('- eyeOff:', eyeOff);
-        console.log('- eyeOn:', eyeOn);
-        
-        if (toggleBtn && input) {
-            console.log('✅ Password toggle elements found');
+        if (toggleBtn && input && eyeIcon) {
+            console.log('✅ All password elements found');
             toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('👁️ Toggling password...');
-                const isPass = input.type === 'password';
-                input.type = isPass ? 'text' : 'password';
-                if (eyeOff) eyeOff.classList.toggle('hidden', !isPass);
-                if (eyeOn) eyeOn.classList.toggle('hidden', isPass);
-                console.log('✅ Password type:', input.type);
+                console.log('👁️ Toggle clicked');
+                
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                
+                // Update icon
+                eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+                lucide.createIcons();
+                
+                console.log('✅ Password type changed to:', input.type);
             });
         } else {
-            console.error('❌ Password toggle elements NOT found!');
+            console.error('❌ Password elements NOT found!');
         }
         
-        // Login button        const loginBtn = document.getElementById('btn-login');
+        // Login button
+        const loginBtn = document.getElementById('btn-login');
         if (loginBtn) {
-            console.log('✅ Login button found');
             loginBtn.addEventListener('click', () => this.handleLogin());
-        } else {
-            console.error('❌ Login button NOT found!');
         }
         
         // Logout buttons
-        const logoutBtn = document.getElementById('btn-logout');
-        const logoutProfileBtn = document.getElementById('btn-logout-profile');
-        if (logoutBtn) logoutBtn.addEventListener('click', () => this.doLogout());
-        if (logoutProfileBtn) logoutProfileBtn.addEventListener('click', () => this.doLogout());
+        document.getElementById('btn-logout')?.addEventListener('click', () => this.doLogout());
+        document.getElementById('btn-logout-profile')?.addEventListener('click', () => this.doLogout());
     },
     
     handleLogin() {
-        console.log('🔐 Handling login...');
         const key = document.getElementById('access-key')?.value;
+        if (!key) return alert('Masukkan Access Key!');
         
-        if (!key) {
-            alert('Masukkan Access Key!');
-            return;
-        }
-        
-        console.log('🔑 Login with key:', key);
+        console.log('🔑 Login:', key);
         DreamOS.role = (key.includes('admin') || key.includes('kepala')) ? 'KEPALA_BAGIAN' : 'STAFF';
-        console.log('✅ Role:', DreamOS.role);
         
         // Update UI
-        const roleBadge = document.getElementById('role-badge');
-        const profileRole = document.getElementById('profile-role');
-        if (roleBadge) roleBadge.textContent = DreamOS.role.replace('_', ' ');
-        if (profileRole) profileRole.textContent = DreamOS.role.replace('_', ' ');
+        document.getElementById('role-badge')?.textContent = DreamOS.role.replace('_', ' ');
+        document.getElementById('profile-role')?.textContent = DreamOS.role.replace('_', ' ');
         
         // Switch views
         document.getElementById('auth-view')?.classList.remove('active');
         const appView = document.getElementById('app-view');
         if (appView) {
             appView.classList.add('active');
-            appView.style.display = 'flex';
-        }
+            appView.style.display = 'flex';        }
         document.getElementById('app-header')?.classList.remove('hidden');
         document.getElementById('bottom-nav')?.classList.remove('hidden');
         document.getElementById('carousel-container')?.classList.remove('hidden');
         document.getElementById('staff-grid')?.classList.remove('hidden');
         
-        console.log('✅ Loading home module...');
+        // Load modules
         if (DreamOS.modules.home) {
             DreamOS.modules.home.init();
-        } else {            DreamOS.loadModule('home').then(mod => mod?.init());
+        } else {
+            DreamOS.loadModule('home').then(mod => mod?.init());
         }
-        
-        // Load other modules
         DreamOS.loadModule('command');
         DreamOS.loadModule('ai-service');
     },
     
     doLogout() {
-        console.log('🚪 Logging out...');
         document.getElementById('app-view')?.classList.remove('active');
         document.getElementById('auth-view')?.classList.add('active');
         const accessKey = document.getElementById('access-key');
