@@ -528,3 +528,553 @@ document.querySelectorAll('#bottom-nav .nav-btn').forEach(btn => {
 });
 
 console.log('✅ Module navigation system ready!');
+
+// ==========================================
+// 🎯 MAIN MODULES NAVIGATION
+// ==========================================
+DreamOS.modules.mainNav = {
+    showModule(moduleId) {
+        // Hide main dashboard elements
+        document.getElementById('stats-card').style.display = 'none';
+        document.getElementById('carousel-container').style.display = 'none';
+        document.getElementById('menu-grid').style.display = 'none';
+        
+        // Hide all module containers
+        document.getElementById('command-center').classList.remove('active');
+        document.getElementById('main-modules').classList.remove('active');
+        document.getElementById('ai-core').classList.remove('active');
+        
+        // Show main modules container
+        document.getElementById('main-modules').classList.add('active');
+        
+        // Hide all sections, show target
+        document.querySelectorAll('#main-modules .module-section').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(moduleId);
+        if (target) target.classList.add('active');
+    },
+    
+    showCommandCenter() {
+        document.getElementById('stats-card').style.display = 'none';
+        document.getElementById('carousel-container').style.display = 'none';
+        document.getElementById('menu-grid').style.display = 'none';
+        document.getElementById('main-modules').classList.remove('active');
+        document.getElementById('ai-core').classList.remove('active');
+        document.getElementById('command-center').classList.add('active');
+        document.querySelectorAll('#command-center .module-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('cmd-dashboard').classList.add('active');
+    },
+    
+    showAI() {
+        document.getElementById('stats-card').style.display = 'none';
+        document.getElementById('carousel-container').style.display = 'none';
+        document.getElementById('menu-grid').style.display = 'none';
+        document.getElementById('main-modules').classList.remove('active');
+        document.getElementById('command-center').classList.remove('active');
+        document.getElementById('ai-core').classList.add('active');
+        document.querySelectorAll('#ai-core .module-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('ai-chat').classList.add('active');
+    },
+    
+    showHome() {
+        document.getElementById('stats-card').style.display = 'block';        document.getElementById('carousel-container').style.display = 'block';
+        document.getElementById('menu-grid').style.display = 'block';
+        document.getElementById('main-modules').classList.remove('active');
+        document.getElementById('command-center').classList.remove('active');
+        document.getElementById('ai-core').classList.remove('active');
+    }
+};
+
+// ==========================================
+// 📅 BOOKING MODULE
+// ==========================================
+DreamOS.register('booking', {
+    data: { bookings: [] },
+    init() {
+        const container = document.getElementById('mod-booking');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">📅 Booking System</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl space-y-3">
+                <div class="form-group">
+                    <label class="form-label">Nama Peminjam</label>
+                    <input type="text" id="booking-name" class="form-control" placeholder="Masukkan nama">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ruangan</label>
+                    <select id="booking-room" class="form-control">
+                        <option>Ruang Rapat Utama</option>
+                        <option>Ruang Training</option>
+                        <option>Aula</option>
+                        <option>Meeting Room A</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                        <label class="form-label">Tanggal</label>
+                        <input type="date" id="booking-date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Jam</label>
+                        <input type="time" id="booking-time" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Keperluan</label>
+                    <textarea id="booking-purpose" class="form-control" rows="2" placeholder="Deskripsi kegiatan"></textarea>
+                </div>
+                <button onclick="DreamOS.modules.booking.submit()" class="btn-primary w-full">📝 Ajukan Booking</button>            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">Booking Terbaru</h3>
+                <div id="booking-list" class="space-y-2"></div>
+            </div>
+        `;
+        this.renderList();
+    },
+    submit() {
+        const name = document.getElementById('booking-name').value;
+        const room = document.getElementById('booking-room').value;
+        const date = document.getElementById('booking-date').value;
+        const time = document.getElementById('booking-time').value;
+        const purpose = document.getElementById('booking-purpose').value;
+        if (!name || !date) return alert('Nama dan tanggal wajib diisi!');
+        
+        this.data.bookings.unshift({ id: Date.now(), name, room, date, time, purpose, status: 'pending' });
+        localStorage.setItem('dreamos_bookings', JSON.stringify(this.data.bookings));
+        alert('✅ Booking diajukan! Menunggu approval.');
+        this.renderList();
+    },
+    renderList() {
+        const list = document.getElementById('booking-list');
+        if (!list) return;
+        const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+        list.innerHTML = bookings.slice(0, 5).map(b => `
+            <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                <div>
+                    <div class="text-xs font-bold">${b.name}</div>
+                    <div class="text-[10px] text-white/60">${b.room} • ${b.date} ${b.time}</div>
+                </div>
+                <span class="status-badge status-${b.status}">${b.status.toUpperCase()}</span>
+            </div>
+        `).join('') || '<p class="text-xs text-white/40">Belum ada booking</p>';
+    }
+});
+
+// ==========================================
+// ⚠️ K3 MODULE (Safety)
+// ==========================================
+DreamOS.register('k3', {
+    data: { incidents: [], checklists: [] },
+    init() {
+        const container = document.getElementById('mod-k3');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">⚠️ K3 - Safety Management</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="glass p-4 rounded-xl text-center">
+                    <div class="text-2xl mb-1">🟢</div>
+                    <div class="text-xs font-bold">Aman</div>
+                    <div class="text-lg font-bold text-emerald-400">98%</div>
+                </div>
+                <div class="glass p-4 rounded-xl text-center">
+                    <div class="text-2xl mb-1">🟡</div>
+                    <div class="text-xs font-bold">Perlu Perhatian</div>
+                    <div class="text-lg font-bold text-amber-400">2%</div>
+                </div>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">📋 Checklist Harian</h3>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> APAR dalam kondisi baik</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> Jalur evakuasi jelas</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> P3K lengkap</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> Area kerja bersih</label>
+                </div>
+                <button class="btn-primary w-full mt-3">✅ Submit Checklist</button>
+            </div>
+        `;
+    }
+});
+
+// ==========================================
+// 🔒 SECURITY MODULE
+// ==========================================
+DreamOS.register('security', {
+    data: { logs: [], access: [] },
+    init() {
+        const container = document.getElementById('mod-security');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🔒 Security Center</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">🔐 Access Log</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Admin • Login berhasil</div>
+                        <div class="text-[10px] text-white/40">10:30 WIB</div>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Staff • Akses ditolak</div>
+                        <div class="text-[10px] text-white/40">09:15 WIB</div>
+                    </div>                </div>
+            </div>
+            <div class="glass p-4 rounded-xl mt-3">
+                <h3 class="text-sm font-bold mb-3">🛡️ Quick Actions</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="glass p-3 rounded text-center hover:bg-white/10"><div class="text-xl">🔔</div><div class="text-[10px]">Alert</div></button>
+                    <button class="glass p-3 rounded text-center hover:bg-white/10"><div class="text-xl">📊</div><div class="text-[10px]">Report</div></button>
+                    <button class="glass p-3 rounded text-center hover:bg-white/10"><div class="text-xl">👥</div><div class="text-[10px]">Users</div></button>
+                    <button class="glass p-3 rounded text-center hover:bg-white/10"><div class="text-xl">⚙️</div><div class="text-[10px]">Settings</div></button>
+                </div>
+            </div>
+        `;
+    }
+});
+
+// ==========================================
+// 🧹 JANITOR INDOOR MODULE
+// ==========================================
+DreamOS.register('janitorIn', {
+    data: { tasks: [] },
+    init() {
+        const container = document.getElementById('mod-janitor-in');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🧹 Janitor - Indoor</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">📋 Task List Indoor</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Sapu lantai lobby</div>
+                        <span class="status-badge status-pending">Pending</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Bersihkan toilet L1</div>
+                        <span class="status-badge status-approved">Done</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Lap kaca meeting room</div>
+                        <span class="status-badge status-pending">Pending</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+});
+
+// ==========================================// 🍃 JANITOR OUTDOOR MODULE
+// ==========================================
+DreamOS.register('janitorOut', {
+    data: { tasks: [] },
+    init() {
+        const container = document.getElementById('mod-janitor-out');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🍃 Janitor - Outdoor</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">📋 Task List Outdoor</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Sapu halaman depan</div>
+                        <span class="status-badge status-pending">Pending</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Potong rumput taman</div>
+                        <span class="status-badge status-approved">Done</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+});
+
+// ==========================================
+// 📦 STOK MODULE
+// ==========================================
+DreamOS.register('stok', {
+    data: { items: [] },
+    init() {
+        const container = document.getElementById('mod-stok');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">📦 Stok & Gudang</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">📊 Inventory Overview</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Kertas A4 (Rim)</div>
+                        <div class="text-sm font-bold text-emerald-400">45</div>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">                        <div class="text-xs">Tinta Printer</div>
+                        <div class="text-sm font-bold text-amber-400">8</div>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Sarung Tangan</div>
+                        <div class="text-sm font-bold text-red-400">2 ⚠️</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+});
+
+// ==========================================
+// 🔧 MAINTENANCE MODULE
+// ==========================================
+DreamOS.register('maintenance', {
+    data: { tickets: [] },
+    init() {
+        const container = document.getElementById('mod-maintenance');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🔧 Maintenance</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">🎫 Active Tickets</h3>
+                <div class="space-y-2">
+                    <div class="p-2 bg-white/5 rounded">
+                        <div class="text-xs font-bold">AC Ruang Rapat - Tidak dingin</div>
+                        <div class="text-[10px] text-white/40">Dilapor: 15 Jan • Priority: High</div>
+                    </div>
+                    <div class="p-2 bg-white/5 rounded">
+                        <div class="text-xs font-bold">Lampu koridor L2 - Mati</div>
+                        <div class="text-[10px] text-white/40">Dilapor: 14 Jan • Priority: Medium</div>
+                    </div>
+                </div>
+                <button class="btn-primary w-full mt-3">➕ Buat Ticket Baru</button>
+            </div>
+        `;
+    }
+});
+
+// ==========================================
+// 🏢 ASSET MODULE
+// ==========================================
+DreamOS.register('asset', {
+    data: { assets: [] },
+    init() {        const container = document.getElementById('mod-asset');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🏢 Asset Management</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">📋 Asset List</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Laptop Dell #AST-001</div>
+                        <div class="text-[10px] text-white/40">Ruang IT</div>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                        <div class="text-xs">Proyektor Epson #AST-015</div>
+                        <div class="text-[10px] text-white/40">Gudang</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+});
+
+// ==========================================
+// 🤖 AI CORE ENGINE (Hybrid 120B + Fallback)
+// ==========================================
+DreamOS.register('aiCore', {
+    config: {
+        // Priority: Local Ollama first, then fallback to cloud
+        providers: [
+            { id: 'ollama-local', name: 'Ollama Local', endpoint: 'http://localhost:11434', model: 'qwen2.5:0.5b', priority: 1, enabled: true },
+            { id: 'openrouter', name: 'OpenRouter API', endpoint: 'https://openrouter.ai/api/v1', model: 'qwen/qwen-2.5-72b-instruct', priority: 2, enabled: true },
+            { id: 'gemini', name: 'Gemini Flash', endpoint: 'https://generativelanguage.googleapis.com', model: 'gemini-2.0-flash', priority: 3, enabled: false }
+        ],
+        fallbackEnabled: true,
+        maxRetries: 2,
+        timeout: 30000
+    },
+    
+    state: {
+        currentProvider: null,
+        isProcessing: false,
+        history: []
+    },
+    
+    async init() {
+        const container = document.getElementById('ai-chat');
+        if (!container) return;
+                container.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🤖 AI Core Engine</h2>
+                <button onclick="DreamOS.modules.mainNav.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+            </div>
+            <div class="glass p-3 rounded-xl mb-3">
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>AI Status: <span id="ai-status">Ready</span></span>
+                    <span class="ml-auto text-white/40">Model: <span id="ai-model">qwen2.5:0.5b</span></span>
+                </div>
+            </div>
+            <div id="ai-messages" class="glass p-4 rounded-xl h-64 overflow-y-auto space-y-3 mb-3"></div>
+            <div class="flex gap-2">
+                <input type="text" id="ai-input" class="form-control flex-1" placeholder="Tanya AI...">
+                <button onclick="DreamOS.modules.aiCore.send()" class="btn-primary px-4">Send</button>
+            </div>
+        `;
+        
+        this.addMessage('system', '🤖 Dream OS AI Core ready. Hybrid mode: Local Ollama + Cloud fallback. Ask me anything!');
+    },
+    
+    addMessage(role, content) {
+        const container = document.getElementById('ai-messages');
+        if (!container) return;
+        const msg = document.createElement('div');
+        msg.className = `p-3 rounded-lg ${role === 'user' ? 'bg-teal-500/20 ml-8' : 'bg-white/5 mr-8'}`;
+        msg.innerHTML = `<div class="text-[10px] text-white/40 mb-1">${role === 'user' ? 'You' : 'AI'}</div><div class="text-sm whitespace-pre-wrap">${content}</div>`;
+        container.appendChild(msg);
+        container.scrollTop = container.scrollHeight;
+        this.state.history.push({ role, content, timestamp: Date.now() });
+    },
+    
+    async send() {
+        const input = document.getElementById('ai-input');
+        const query = input?.value.trim();
+        if (!query || this.state.isProcessing) return;
+        
+        this.addMessage('user', query);
+        input.value = '';
+        this.state.isProcessing = true;
+        document.getElementById('ai-status').textContent = 'Thinking...';
+        
+        try {
+            // Try providers in priority order
+            for (const provider of this.config.providers.filter(p => p.enabled)) {
+                try {
+                    const response = await this.queryProvider(provider, query);
+                    if (response) {
+                        this.addMessage('assistant', response);                        document.getElementById('ai-status').textContent = 'Ready';
+                        document.getElementById('ai-model').textContent = provider.model;
+                        this.state.currentProvider = provider.id;
+                        return;
+                    }
+                } catch (e) {
+                    console.warn(`Provider ${provider.id} failed:`, e);
+                    if (!this.config.fallbackEnabled) throw e;
+                }
+            }
+            // All providers failed
+            this.addMessage('assistant', '❌ Semua AI provider tidak tersedia. Pastikan Ollama running atau cek koneksi internet untuk fallback.');
+            document.getElementById('ai-status').textContent = 'Error';
+        } catch (error) {
+            console.error('AI Core error:', error);
+            this.addMessage('assistant', '⚠️ Error: ' + error.message);
+            document.getElementById('ai-status').textContent = 'Error';
+        } finally {
+            this.state.isProcessing = false;
+        }
+    },
+    
+    async queryProvider(provider, query) {
+        // Local Ollama (priority 1)
+        if (provider.id === 'ollama-local') {
+            const response = await fetch(`${provider.endpoint}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: provider.model, prompt: query, stream: false }),
+                signal: AbortSignal.timeout(this.config.timeout)
+            });
+            if (!response.ok) throw new Error('Ollama error');
+            const data = await response.json();
+            return data.response?.trim();
+        }
+        
+        // OpenRouter fallback (priority 2)
+        if (provider.id === 'openrouter') {
+            const apiKey = localStorage.getItem('openrouter_key') || '';
+            if (!apiKey) throw new Error('OpenRouter API key not set');
+            
+            const response = await fetch(`${provider.endpoint}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': window.location.origin,
+                    'X-Title': 'Dream OS'
+                },
+                body: JSON.stringify({                    model: provider.model,
+                    messages: [{ role: 'user', content: query }],
+                    max_tokens: 1024
+                }),
+                signal: AbortSignal.timeout(this.config.timeout)
+            });
+            if (!response.ok) throw new Error('OpenRouter error');
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content?.trim();
+        }
+        
+        return null;
+    }
+});
+
+// Update nav button handlers for new modules
+document.addEventListener('DOMContentLoaded', () => {
+    // Update existing nav handlers
+    document.querySelectorAll('#bottom-nav .nav-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Reset nav styles
+            document.querySelectorAll('#bottom-nav .nav-btn').forEach(b => {
+                b.classList.remove('text-teal-400');
+                b.classList.add('text-white/60');
+            });
+            this.classList.add('text-teal-400');
+            this.classList.remove('text-white/60');
+            
+            const target = this.dataset.target;
+            if (target === 'home') DreamOS.modules.mainNav.showHome();
+            else if (target === 'menu') DreamOS.modules.mainNav.showCommandCenter();
+            else if (target === 'config') DreamOS.run('i18n', 'showPicker');
+            else if (target === 'user') DreamOS.run('auth', 'openProfile');
+            else if (target === 'info') alert('ℹ️ Dream OS v1.3.1\n\nBuilt with ❤️ for Dream Team');
+        });
+    });
+    
+    // Add click handlers for menu grid items to open modules
+    document.getElementById('menu-grid')?.addEventListener('click', (e) => {
+        const card = e.target.closest('.menu-card');
+        if (!card) return;
+        const label = card.querySelector('.text-center')?.textContent?.trim();
+        
+        const moduleMap = {
+            'Command': () => DreamOS.modules.mainNav.showCommandCenter(),
+            'Booking': () => { DreamOS.modules.mainNav.showModule('mod-booking'); DreamOS.modules.booking.init(); },
+            'K3': () => { DreamOS.modules.mainNav.showModule('mod-k3'); DreamOS.modules.k3.init(); },
+            'Security': () => { DreamOS.modules.mainNav.showModule('mod-security'); DreamOS.modules.security.init(); },
+            'Janitor In': () => { DreamOS.modules.mainNav.showModule('mod-janitor-in'); DreamOS.modules.janitorIn.init(); },
+            'Janitor Out': () => { DreamOS.modules.mainNav.showModule('mod-janitor-out'); DreamOS.modules.janitorOut.init(); },            'Stok': () => { DreamOS.modules.mainNav.showModule('mod-stok'); DreamOS.modules.stok.init(); },
+            'Maintenance': () => { DreamOS.modules.mainNav.showModule('mod-maintenance'); DreamOS.modules.maintenance.init(); },
+            'Asset': () => { DreamOS.modules.mainNav.showModule('mod-asset'); DreamOS.modules.asset.init(); }
+        };
+        
+        if (moduleMap[label]) {
+            moduleMap[label]();
+        }
+    });
+    
+    console.log('✅ All modules + AI Core Engine loaded!');
+});
