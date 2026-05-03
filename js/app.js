@@ -184,7 +184,7 @@ DreamOS.register('home', {
                 const t = this.dataset.target;
                 console.log('🔘 Nav clicked:', t);
                 if (t === 'user') DreamOS.run('auth', 'openProfile');
-                else if (t === 'menu') alert('📷 QR Scan Ready');
+                else if (t === 'menu') { DreamOS.run('command', 'openCommandCenter'); }
                 else if (t === 'info') alert('ℹ️ Dream OS v1.3.1');
                 else if (t === 'config') DreamOS.run('i18n', 'showPicker');
             });
