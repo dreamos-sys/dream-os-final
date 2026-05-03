@@ -360,3 +360,171 @@ DreamOS.register('adminSlides', {
         this.renderEditor(); // Tetap di halaman editor
     }
 });
+
+// ==========================================
+// 🎯 MODULE NAVIGATION SYSTEM
+// ==========================================
+DreamOS.modules.navigation = {
+    showModule(moduleId) {
+        // Hide all sections
+        document.querySelectorAll('.module-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.querySelectorAll('#stats-card, #carousel-container, #menu-grid').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Show command center container
+        document.getElementById('command-center').classList.add('active');
+        
+        // Show specific module
+        const targetModule = document.getElementById(moduleId);
+        if (targetModule) {
+            targetModule.classList.add('active');
+        }
+        
+        // Update nav active state
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('text-teal-400');
+            btn.classList.add('text-white/60');
+        });
+    },
+    
+    showHome() {
+        // Hide command center
+        document.getElementById('command-center').classList.remove('active');
+        document.querySelectorAll('.module-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Show main dashboard
+        document.getElementById('stats-card').style.display = 'block';
+        document.getElementById('carousel-container').style.display = 'block';
+        document.getElementById('menu-grid').style.display = 'block';
+        
+        // Update nav active state
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('text-teal-400');
+            btn.classList.add('text-white/60');
+        });
+        document.querySelector('[data-target="home"]').classList.add('text-teal-400');
+        document.querySelector('[data-target="home"]').classList.remove('text-white/60');    }
+};
+
+// Update Command module to use new navigation
+DreamOS.modules.command.renderDashboard = function() {
+    const container = document.getElementById('cmd-dashboard');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold">Command Center - Kabag Umum</h2>
+            <button onclick="DreamOS.modules.navigation.showHome()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+        </div>
+        <div class="space-y-4">
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="glass p-3 rounded-xl">
+                    <div class="text-xs text-white/60 mb-1">Pending Approval</div>
+                    <div class="text-2xl font-bold text-amber-400">${this.data.approvals.filter(a => a.status === 'pending').length}</div>
+                </div>
+                <div class="glass p-3 rounded-xl">
+                    <div class="text-xs text-white/60 mb-1">Total Budget</div>
+                    <div class="text-lg font-bold text-emerald-400">Rp ${this.formatNumber(this.data.budget.reduce((sum, b) => sum + b.allocated, 0))}</div>
+                </div>
+                <div class="glass p-3 rounded-xl">
+                    <div class="text-xs text-white/60 mb-1">Indoor Stock</div>
+                    <div class="text-2xl font-bold text-blue-400">${this.data.janitorStock.indoor.reduce((sum, i) => sum + i.qty, 0)}</div>
+                </div>
+                <div class="glass p-3 rounded-xl">
+                    <div class="text-xs text-white/60 mb-1">Outdoor Stock</div>
+                    <div class="text-2xl font-bold text-green-400">${this.data.janitorStock.outdoor.reduce((sum, i) => sum + i.qty, 0)}</div>
+                </div>
+            </div>
+
+            <!-- Menu Grid Command Center -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-approval'); DreamOS.modules.command.showApprovals();">
+                    <div class="text-3xl mb-2">✅</div>
+                    <div class="text-xs font-bold">Approval</div>
+                    <div class="text-[10px] text-white/60">${this.data.approvals.filter(a => a.status === 'pending').length} pending</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-budget'); DreamOS.modules.command.showBudget();">
+                    <div class="text-3xl mb-2">💰</div>
+                    <div class="text-xs font-bold">Dana Umum</div>
+                    <div class="text-[10px] text-white/60">Kelola anggaran</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-spj'); DreamOS.modules.command.showSPJ();">
+                    <div class="text-3xl mb-2">📋</div>
+                    <div class="text-xs font-bold">SPJ</div>
+                    <div class="text-[10px] text-white/60">Pertanggungjawaban</div>                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-reports'); DreamOS.modules.command.showReports();">
+                    <div class="text-3xl mb-2">📊</div>
+                    <div class="text-xs font-bold">Laporan</div>
+                    <div class="text-[10px] text-white/60">Harian/Mingguan</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-inventory'); DreamOS.modules.command.showInventory();">
+                    <div class="text-3xl mb-2">📦</div>
+                    <div class="text-xs font-bold">Inventaris</div>
+                    <div class="text-[10px] text-white/60">${this.data.inventory.length} items</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-janitor'); DreamOS.modules.command.showJanitorStock();">
+                    <div class="text-3xl mb-2">🧹</div>
+                    <div class="text-xs font-bold">Stok Janitor</div>
+                    <div class="text-[10px] text-white/60">Indoor/Outdoor</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-rab'); DreamOS.modules.command.showRAB();">
+                    <div class="text-3xl mb-2">📝</div>
+                    <div class="text-xs font-bold">RAB</div>
+                    <div class="text-[10px] text-white/60">Rencana Anggaran</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-tax'); DreamOS.modules.command.showTax();">
+                    <div class="text-3xl mb-2">🧾</div>
+                    <div class="text-xs font-bold">Pajak</div>
+                    <div class="text-[10px] text-white/60">Laporan Tahunan</div>
+                </div>
+                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10 transition" onclick="DreamOS.modules.navigation.showModule('cmd-slides'); DreamOS.modules.adminSlides.renderEditor();">
+                    <div class="text-3xl mb-2">📝</div>
+                    <div class="text-xs font-bold">Kelola Slide</div>
+                    <div class="text-[10px] text-white/60">Admin Input</div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="glass p-4 rounded-xl">
+                <h3 class="text-sm font-bold mb-3">Recent Activity</h3>
+                <div class="space-y-2">
+                    ${this.data.approvals.slice(0, 3).map(a => `
+                        <div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                            <div>
+                                <div class="text-xs font-bold">${a.title}</div>
+                                <div class="text-[10px] text-white/60">${a.type} • ${a.date}</div>
+                            </div>
+                            <span class="px-2 py-1 rounded text-[10px] ${a.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${a.status}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;};
+
+// Update openCommandCenter to use new navigation
+DreamOS.modules.command.openCommandCenter = function() {
+    DreamOS.modules.navigation.showModule('cmd-dashboard');
+    this.renderDashboard();
+};
+
+// Update MENU nav button handler
+document.querySelectorAll('#bottom-nav .nav-btn').forEach(btn => {
+    if (btn.dataset.target === 'menu') {
+        btn.addEventListener('click', function() {
+            DreamOS.modules.command.openCommandCenter();
+        });
+    } else if (btn.dataset.target === 'home') {
+        btn.addEventListener('click', function() {
+            DreamOS.modules.navigation.showHome();
+        });
+    }
+});
+
+console.log('✅ Module navigation system ready!');
