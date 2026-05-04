@@ -139,6 +139,18 @@
             <!-- COMMAND CENTER CONTAINERS -->
             <div id="command-center" class="module-container space-y-3">
                 <div id="cmd-dashboard" class="module-section active space-y-3"></div>
+                <!-- Tanya Dream OS Chat (Week 2) -->
+                <div class="glass p-4 rounded-xl mt-4" id="rag-chat-ui" style="display:none">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold">🤖 Tanya Dream OS</h3>
+                        <button onclick="toggleRagChat()" class="text-xs text-white/60">✕</button>
+                    </div>
+                    <div id="rag-messages" class="h-32 overflow-y-auto mb-3 text-xs space-y-2"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="rag-input" class="form-control flex-1 text-xs" placeholder="Tanya jadwal shalat, SOP, dll...">
+                        <button onclick="askRag()" class="btn-primary px-3 py-1 text-xs">Kirim</button>
+                    </div>
+                </div>
                 <div id="cmd-approval" class="module-section space-y-3"></div>
                 <div id="cmd-budget" class="module-section space-y-3"></div>
                 <div id="cmd-spj" class="module-section space-y-3"></div>
@@ -217,5 +229,12 @@
     })();
     </script>
     <script src="js/ai-core.js" defer></script>
+    <script src="js/rag-core.js" defer></script>
+    <script>
+    function toggleRagChat() { const ui = document.getElementById("rag-chat-ui"); if (ui) ui.style.display = ui.style.display === "none" ? "block" : "none"; }
+    function askRag() { const input = document.getElementById("rag-input"); const msg = document.getElementById("rag-messages"); const q = input?.value.trim(); if (!q || !msg) return; msg.innerHTML += `<div class="text-right"><span class="bg-teal-500/20 px-2 py-1 rounded">${q}</span></div>`; input.value = ""; setTimeout(() => { const res = DreamOS.modules.ragCore?.search(q)?.[0]; msg.innerHTML += `<div class="text-left"><span class="bg-white/10 px-2 py-1 rounded">${res?.a || "Maaf, tidak ditemukan. Coba kata kunci lain."}</span></div>`; msg.scrollTop = msg.scrollHeight; }, 100); }
+    // Auto-show RAG chat when Command Center opens
+    const origOpenCC = window.openCommandCenter; window.openCommandCenter = function() { if (origOpenCC) origOpenCC(); setTimeout(() => { const ui = document.getElementById("rag-chat-ui"); if (ui) ui.style.display = "block"; }, 200); };
+    </script>
 </body>
 </html>
