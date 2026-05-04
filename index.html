@@ -13,6 +13,7 @@
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); background-size: 400% 400%; animation: gradient 15s ease infinite; }
         @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-pearl { background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); }
         .view { display: none; } .view.active { display: flex; }
         .password-wrapper { position: relative; }
         .password-input { width: 100%; padding: 14px 50px 14px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; color: white; text-align: center; letter-spacing: 0.15em; }
@@ -29,6 +30,9 @@
         .ghost-btn { background: #2dd4bf; color: #020617; font-weight: bold; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
         .menu-card { transition: all 0.3s ease; background: rgba(45,212,191,0.08); }
         .menu-card:hover { transform: translateY(-3px) scale(1.01); background: rgba(45,212,191,0.15); }
+        .nav-btn { transition: all 0.2s; }
+        .nav-btn:active { transform: scale(0.9); }
+        .nav-btn.active { color: #2dd4bf; }
     </style>
 </head>
 <body class="text-white h-screen overflow-hidden">
@@ -39,8 +43,8 @@
             <img src="assets/logo-sultan.png" alt="Dream OS" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] object-cover mb-4">
             <p class="text-sm text-amber-500 font-semibold tracking-[0.3em]">DREAM OS <span class="text-emerald-400">v1.3.2</span></p>
             <div id="tap-counter" class="text-[10px] text-teal-400 font-mono mt-2 opacity-0 transition-opacity duration-200">Tap 0/7</div>
-        </div>
-        <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ</h1>        <p class="text-[10px] text-emerald-400 mb-8">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
+        </div>        <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ</h1>
+        <p class="text-[10px] text-emerald-400 mb-8">اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ</p>
         <div class="glass p-6 rounded-3xl w-full max-w-xs">
             <div class="password-wrapper mb-4">
                 <input type="password" id="access-key" class="password-input" placeholder="Access Key">
@@ -101,23 +105,23 @@
         <div id="cmd-dashboard" class="p-6" style="display:none;"></div>
 
         <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 flex justify-around items-center h-14 z-50 bg-[#0f172a]/95" style="display: none;">
-            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-teal-400" onclick="alert('HOME')">
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-teal-400 active" onclick="navClick('home')">
                 <i data-lucide="home" class="w-4 h-4"></i>
                 <span class="text-[9px]">HOME</span>
             </button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('USER')">
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="navClick('user')">
                 <i data-lucide="user" class="w-4 h-4"></i>
                 <span class="text-[9px]">USER</span>
             </button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('MENU')">
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="navClick('menu')">
                 <i data-lucide="scan-line" class="w-4 h-4"></i>
                 <span class="text-[9px]">MENU</span>
             </button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('INFO')">
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="navClick('info')">
                 <i data-lucide="info" class="w-4 h-4"></i>
                 <span class="text-[9px]">INFO</span>
             </button>
-            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="alert('CONFIG')">
+            <button class="nav-btn flex flex-col items-center justify-center gap-0.5 w-full h-full text-white/60" onclick="navClick('config')">
                 <i data-lucide="settings" class="w-4 h-4"></i>
                 <span class="text-[9px]">CONFIG</span>
             </button>
@@ -133,70 +137,50 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20" id="ghost-tools"></div>
     </div>
 
-    <!-- INLINE JAVASCRIPT — GUARANTEED TO WORK -->
+    <!-- INLINE JAVASCRIPT -->
     <script>
-        // Global state
-        let tapCount = 0;
-        let tapTimer = null;
+        let tapCount = 0, tapTimer = null, currentSlide = 0, carouselInterval = null;
         let DreamOS = { modules: {}, role: 'STAFF' };
-        // Password toggle
         function togglePassword() {
             const input = document.getElementById('access-key');
             const btn = document.getElementById('toggle-pw');
-            if(input.type === 'password') {
-                input.type = 'text';
-                btn.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                btn.textContent = '👁️';
-            }
+            if(input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+            else { input.type = 'password'; btn.textContent = '👁️'; }
         }
 
-        // Login handler
         function handleLogin() {
             const key = document.getElementById('access-key').value.trim();
-            if(!key) {
-                alert('Masukkan Access Key!');
-                return;
-            }
-            
-            console.log('🔐 Login attempt:', key);
-            
-            // Switch views
+            if(!key) { alert('Masukkan Access Key!'); return; }
+            console.log('🔐 Login:', key);
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('login-page').classList.remove('active');
-            
             const dashboard = document.getElementById('dashboard');
             dashboard.style.display = 'flex';
             dashboard.classList.add('active');
-            
             document.getElementById('bottom-nav').style.display = 'flex';
-            
-            console.log('✅ Login successful');
-            
-            // Init carousel and menu
             setTimeout(initDashboard, 100);
         }
 
-        // Logout handler
         function handleLogout() {
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('dashboard').classList.remove('active');
-            
             const login = document.getElementById('login-page');
             login.style.display = 'flex';
             login.classList.add('active');
-            
-            document.getElementById('bottom-nav').style.display = 'none';            document.getElementById('access-key').value = '';
+            document.getElementById('bottom-nav').style.display = 'none';
+            document.getElementById('access-key').value = '';
         }
 
-        // Initialize dashboard
         function initDashboard() {
-            // Carousel
+            // 7 SLIDES LENGKAP
             const slides = [
-                { icon: 'hand', title: 'Selamat Datang', text: 'Silahkan dipilih formnya sesuai kebutuhan.' },
-                { icon: 'calendar', title: 'Jadwal Booking', text: 'Hari Ini: Rapat 09:00\nBesok: Yayasan 13:00' },
-                { icon: 'activity', title: 'Progress K3', text: 'AC Ruang Rapat: 60%\nLobby: 100%' }
+                { icon: 'hand', title: 'Selamat Datang', text: 'Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan.' },
+                { icon: 'calendar', title: 'Jadwal Booking', text: 'Hari Ini: Rapat Koordinasi 09:00\nBesok: Kunjungan Yayasan 13:00' },
+                { icon: 'activity', title: 'Progress K3', text: 'AC Ruang Rapat: 60% (Proses)\nKebersihan Lobby: 100% (Selesai)' },
+                { icon: 'cloud-rain', title: 'Cuaca & AI', text: 'Cerah Berawan - 32°C\nPrediksi hujan 15:00 WIB' },
+                { icon: 'building-2', title: 'Info Management', text: 'Rapat CEO & Yayasan\nPukul 09:00 WIB di Ruang Rapat SMA' },
+                { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\nJam 09:00 WIB di R. Koord Bagian Umum' },
+                { icon: 'gift', title: 'Ucapan', text: '🎂 Selamat Ulang Tahun Pak Budi (Komisi 3 Bulan)' }
             ];
             
             const c = document.getElementById('carousel-slides');
@@ -206,8 +190,7 @@
                 `<div class="carousel-slide ${i===0?'active':''}">
                     <div class="flex items-center gap-2 mb-1 text-teal-400">
                         <i data-lucide="${s.icon}" class="w-4 h-4"></i>
-                        <span class="font-bold text-xs">${s.title}</span>
-                    </div>
+                        <span class="font-bold text-xs">${s.title}</span>                    </div>
                     <p class="text-xs text-white/60 whitespace-pre-line">${s.text}</p>
                 </div>`
             ).join('');
@@ -216,7 +199,7 @@
                 `<div class="dot ${i===0?'active':''}" onclick="goToSlide(${i})"></div>`
             ).join('');
             
-            // Menu grid
+            // 9 MENU CARDS
             const items = [
                 { icon: '🌍', label: 'Command' }, { icon: '📅', label: 'Booking' }, { icon: '⚠️', label: 'K3' },
                 { icon: '🔒', label: 'Security' }, { icon: '🧹', label: 'Janitor In' }, { icon: '🍃', label: 'Janitor Out' },
@@ -231,19 +214,20 @@
                 </div>`
             ).join('');
             
-            // Initialize lucide icons
             if(typeof lucide !== 'undefined') lucide.createIcons();
             
-            // Auto-rotate carousel
-            let currentSlide = 0;
-            setInterval(() => {                currentSlide = (currentSlide + 1) % slides.length;
+            // Auto-rotate 7s
+            if(carouselInterval) clearInterval(carouselInterval);
+            carouselInterval = setInterval(() => {
+                currentSlide = (currentSlide + 1) % slides.length;
                 goToSlide(currentSlide);
             }, 7000);
             
-            console.log('✅ Dashboard initialized');
+            console.log('✅ Dashboard initialized (7 slides)');
         }
 
         function goToSlide(i) {
+            currentSlide = i;
             document.querySelectorAll('.carousel-slide').forEach((s,idx) => {
                 s.classList.toggle('active', idx === i);
             });
@@ -253,12 +237,24 @@
         }
 
         function handleMenuClick(label) {
-            if(label === 'Command') {
-                openCommandCenter();
-            } else if(label === 'Booking') {
-                alert('Booking module - Ready!');
+            if(label === 'Command') { openCommandCenter(); }
+            else if(label === 'Booking') { alert('Booking module - Ready!'); }
+            else { alert(label + ' - Ready!'); }        }
+
+        function navClick(target) {
+            // Update active state
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-teal-400');
+                btn.classList.add('text-white/60');
+            });
+            event.currentTarget.classList.add('active', 'text-teal-400');
+            event.currentTarget.classList.remove('text-white/60');
+            
+            // Handle navigation
+            if(target === 'home') {
+                showMain();
             } else {
-                alert(label + ' - Ready!');
+                alert(target.toUpperCase() + ' module - Coming soon!');
             }
         }
 
@@ -282,18 +278,26 @@
             document.getElementById('command-center').style.display = 'none';
             document.getElementById('cmd-dashboard').style.display = 'none';
             document.getElementById('main-content-wrapper').style.display = 'block';
+            // Reset nav active state
+            document.querySelectorAll('.nav-btn').forEach((btn,idx) => {
+                if(idx === 0) {
+                    btn.classList.add('active', 'text-teal-400');
+                    btn.classList.remove('text-white/60');
+                } else {
+                    btn.classList.remove('active', 'text-teal-400');
+                    btn.classList.add('text-white/60');
+                }
+            });
         }
-
-        // Ghost Mode — 7 tap activation
-        document.getElementById('dream-logo').addEventListener('click', function() {            tapCount++;
+        // Ghost Mode
+        document.getElementById('dream-logo').addEventListener('click', function() {
+            tapCount++;
             const counter = document.getElementById('tap-counter');
             counter.textContent = `Tap ${tapCount}/7`;
             counter.style.opacity = '1';
             setTimeout(() => { counter.style.opacity = '0'; }, 1500);
-            
             if(tapTimer) clearTimeout(tapTimer);
             tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-            
             if(tapCount >= 7) {
                 console.log('👻 Ghost Mode ACTIVATED!');
                 tapCount = 0;
@@ -304,7 +308,6 @@
         function openGhost() {
             const ghost = document.getElementById('ghost-dashboard');
             ghost.classList.add('active');
-            
             document.getElementById('ghost-tools').innerHTML = `
                 <div class="ghost-card"><div class="flex justify-between"><div><div class="font-bold text-teal-400">🔍 Eruda</div><div class="text-xs text-slate-400">Toggle console</div></div><button onclick="toggleEruda()" class="ghost-btn">TOGGLE</button></div></div>
                 <div class="ghost-card"><div class="flex justify-between"><div><div class="font-bold text-teal-400">🌐 Network</div><div class="text-xs text-slate-400">Connection info</div></div><button onclick="showNetInfo()" class="ghost-btn">SHOW</button></div></div>
@@ -313,45 +316,23 @@
             `;
         }
 
-        function closeGhost() {
-            document.getElementById('ghost-dashboard').classList.remove('active');
-        }
-
+        function closeGhost() { document.getElementById('ghost-dashboard').classList.remove('active'); }
         function toggleEruda() {
             if(!window.eruda) {
                 const s = document.createElement('script');
                 s.src = 'https://cdn.jsdelivr.net/npm/eruda';
                 s.onload = () => { eruda.init(); eruda.show(); };
                 document.body.appendChild(s);
-            } else {
-                eruda[eruda._isShow ? 'hide' : 'show']();
-            }
+            } else { eruda[eruda._isShow ? 'hide' : 'show'](); }
         }
-
         function showNetInfo() {
-            if(navigator.connection) {
-                alert(`Network: ${navigator.connection.effectiveType}\nDownlink: ${navigator.connection.downlink}Mbps`);
-            } else {
-                alert('Network API not supported');
-            }
+            if(navigator.connection) alert(`Network: ${navigator.connection.effectiveType}\nDownlink: ${navigator.connection.downlink}Mbps`);
+            else alert('Network API not supported');
         }
-        function clearStorage() {
-            if(confirm('Clear all localStorage?')) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
+        function clearStorage() { if(confirm('Clear all localStorage?')) { localStorage.clear(); location.reload(); } }
+        function copyCommands() { navigator.clipboard.writeText('# Dream OS Dev\npkg install nmap git python -y\npip install requests'); alert('📋 Copied!'); }
 
-        function copyCommands() {
-            navigator.clipboard.writeText('# Dream OS Dev\npkg install nmap git python -y\npip install requests');
-            alert('📋 Copied!');
-        }
-
-        // Enter key support
-        document.getElementById('access-key').addEventListener('keypress', function(e) {
-            if(e.key === 'Enter') handleLogin();
-        });
-
+        document.getElementById('access-key').addEventListener('keypress', function(e) { if(e.key === 'Enter') handleLogin(); });
         console.log('✅ Dream OS v1.3.2 inline scripts loaded');
     </script>
 </body>
