@@ -1,110 +1,64 @@
+/** Dream OS Command Center — Hybrid Pattern v1.0
+ * Karpathy: Modular logic + Global Bridge fallback
+ * Addy: Event delegation, <3KB, defer load
+ */
 (function() {
     'use strict';
-    DreamOS.register('auth', {
-        init() {
-            document.getElementById('btn-login')?.addEventListener('click', () => this.handleLogin());
-            document.getElementById('toggle-pw')?.addEventListener('click', () => {
-                const i = document.getElementById('access-key');
-                i.type = i.type === 'password' ? 'text' : 'password';
-            });
-        },
-        handleLogin() {
-            const k = document.getElementById('access-key').value;
-            if(!k) return alert('Masukkan Access Key!');
-            document.getElementById('login-page').classList.remove('active');
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('dashboard').classList.add('active');
-            document.getElementById('dashboard').style.display = 'flex';
-            document.getElementById('bottom-nav').style.display = 'flex';
-            DreamOS.run('home', 'init');
-        },
-        openProfile() {
-            alert('👤 User Role: ' + DreamOS.role + '\nDevice: ' + navigator.userAgent);
-        },
-        logout() {
-            document.getElementById('dashboard').classList.remove('active');
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('login-page').classList.add('active');
-            document.getElementById('login-page').style.display = 'flex';
-            document.getElementById('bottom-nav').style.display = 'none';
+    
+    // Modular logic (internal)
+    function openCommandCenter() {
+        console.log('🌍 Command Center opened');
+        
+        // Hide main content
+        const main = document.getElementById('main-content-wrapper');
+        if(main) main.style.display = 'none';
+        
+        // Show command center
+        const cc = document.getElementById('command-center');
+        const cd = document.getElementById('cmd-dashboard');
+        if(cc) { cc.style.display = 'block'; cc.classList.add('active'); }
+        if(cd) {
+            cd.style.display = 'block';
+            cd.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">🌍 Command Center</h2>
+                    <button onclick="showMain()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60">Pending</div><div class="text-2xl font-bold text-amber-400">3</div></div>
+                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60">Budget</div><div class="text-lg font-bold text-emerald-400">Rp 50Jt</div></div>
+                </div>
+            `;
+        }
+    }
+    
+    function showMain() {
+        console.log('🏠 showMain() called');
+        document.getElementById('command-center')?.classList.remove('active');
+        document.getElementById('command-center') && (document.getElementById('command-center').style.display = 'none');
+        document.getElementById('cmd-dashboard') && (document.getElementById('cmd-dashboard').style.display = 'none');
+        document.getElementById('main-content-wrapper') && (document.getElementById('main-content-wrapper').style.display = 'block');
+    }
+    
+    // 🌉 GLOBAL BRIDGE (inline fallback — WAJIB!)
+    window.openCommandCenter = openCommandCenter;
+    window.showMain = showMain;
+    
+    // Event delegation for dynamic elements (Aman untuk content yang di-render via innerHTML)
+    document.addEventListener('click', function(e) {
+        if(e.target.closest('[data-action="open-command"]') || e.target.closest('#menu-grid .menu-card:nth-child(1)')) {
+            openCommandCenter();
         }
     });
-
-    DreamOS.register('home', {
-        init() {
-            this.renderCarousel();
-            this.renderMenuGrid();
-            this.initNav();
-        },
-        renderCarousel() {
-            const c = document.getElementById('carousel-slides'), d = document.getElementById('carousel-dots');
-            if(!c || !d) return;
-            c.innerHTML = DreamOS.carouselData.map((s,i) => `<div class="carousel-slide ${i===0?'active':''}"><div class="flex items-center gap-2 mb-1 text-teal-400"><i data-lucide="${s.icon}" class="w-4 h-4"></i><span class="font-bold text-xs">${s.title}</span></div><p class="text-xs text-white/60 whitespace-pre-line">${s.text}</p></div>`).join('');
-            d.innerHTML = DreamOS.carouselData.map((_, i) => `<div class="dot ${i===0?'active':''}" data-slide="${i}"></div>`).join('');
-            d.querySelectorAll('.dot').forEach(dot => dot.addEventListener('click', function() {
-                DreamOS.run('home', 'goToSlide', parseInt(this.dataset.slide));
-            }));
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-        },
-        showSlide(i) {
-            document.querySelectorAll('.carousel-slide').forEach(s=>s.classList.remove('active'));
-            document.querySelectorAll('.dot').forEach(d=>d.classList.remove('active'));
-            document.querySelectorAll('.carousel-slide')[i]?.classList.add('active');
-            document.querySelectorAll('.dot')[i]?.classList.add('active');
-        },
-        goToSlide(i) {
-            this.showSlide(i);
-        },
-        renderMenuGrid() {
-            const c = document.getElementById('menu-grid');
-            if(!c) return;
-            c.innerHTML = DreamOS.menuItems.map(m => `<div class="menu-card p-3 rounded-xl flex flex-col items-center justify-center glass cursor-pointer min-h-[90px]"><div class="text-2xl mb-1">${m.icon}</div><div class="text-[10px] font-bold text-white text-center">${m.label}</div></div>`).join('');
-            c.querySelectorAll('.menu-card').forEach((el,i) => {
-                el.addEventListener('click', () => {
-                    const label = DreamOS.menuItems[i].label;
-                    if (label === 'Command') {
-                        window.openCommandCenter();
-                    } else if (label === 'Booking') {
-                        DreamOS.run('booking', 'init');
-                    } else {
-                        alert(label + ' - Ready!');
-                    }
-                });
-            });
-        },
-        initNav() {
-            document.querySelectorAll('#bottom-nav .nav-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const target = this.dataset.target;
-                    if (target === 'config') DreamOS.run('i18n', 'showPicker');
-                    else if (target === 'user') DreamOS.run('auth', 'openProfile');
-                    else alert(target.toUpperCase() + ' - Ready!');
-                });
-            });
-        }
-    });
-
-    DreamOS.register('i18n', {
-        setLanguage(lang) {
-            if (!DreamOS.translations[lang]) return;
-            localStorage.setItem('dream-lang', lang);
-            document.documentElement.lang = lang;
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const k = el.getAttribute('data-i18n');
-                if (DreamOS.translations[lang][k]) el.textContent = DreamOS.translations[lang][k];
-            });
-        },
-        showPicker() {
-            const l = localStorage.getItem('dream-lang') || 'id';
-            const p = prompt('Pilih Bahasa (id/en/ar)', l);
-            if(p && DreamOS.translations[p]) this.setLanguage(p);
-        }
-    });
-
-    // Ghost
-            document.getElementById('close-ghost')?.addEventListener('click', () => {
-                document.getElementById('ghost-dashboard').classList.remove('active');
-            });
-        }
-    });
+    
+    // DOM ready init
+    function init() {
+        console.log('✅ Command Center hybrid initialized');
+    }
+    
+    if(document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
