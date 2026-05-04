@@ -1,39 +1,30 @@
-/**
- * Dream OS Modular Bridge v1.0
- */
-const Bridge = {
-    _listeners: {},
-    emit: function(event, data) {
-        console.log(`🌉 Bridge emit: ${event}`, data);
-        try {
-            localStorage.setItem('dreamos_event', JSON.stringify({event, data, ts: Date.now()}));
-        } catch(e) { console.warn('Bridge emit failed:', e); }
-        if(this._listeners[event]) {
-            this._listeners[event].forEach(fn => {
-                try { fn(data); } catch(e) { console.warn('Listener error:', e); }
+(function() {
+    'use strict';
+    DreamOS.register('bridge', {
+        _listeners: {},
+        emit(event, data) {
+            try {
+                localStorage.setItem('dreamos_bridge', JSON.stringify({event, data, ts: Date.now()}));
+                if(this._listeners[event]) {
+                    this._listeners[event].forEach(fn => fn(data));
+                }
+            } catch(e){}
+        },
+        on(event, fn) {
+            if(!this._listeners[event]) this._listeners[event] = [];
+            this._listeners[event].push(fn);
+        },
+        init() {
+            window.addEventListener('storage', (e) => {
+                if(e.key === 'dreamos_bridge') {
+                    try {
+                        const {event, data} = JSON.parse(e.newValue);
+                        if(this._listeners[event]) this._listeners[event].forEach(fn => fn(data));
+                    } catch(e){}
+                }
             });
-        }
-    },
-    on: function(event, fn) {
-        if(!this._listeners[event]) this._listeners[event] = [];
-        this._listeners[event].push(fn);
-        console.log(`🌉 Bridge subscribed: ${event}`);
-    },
-    init: function() {
-        window.addEventListener('storage', (e) => {
-            if(e.key === 'dreamos_event') {
-                try {
-                    const {event, data} = JSON.parse(e.newValue);
-                    if(this._listeners[event]) {
-                        this._listeners[event].forEach(fn => {
-                            try { fn(data); } catch(e) { console.warn('Storage listener error:', e); }
-                        });
-                    }
-                } catch(err) { console.warn('Bridge parse error:', err); }
-            }
-        });
-        console.log('🌉 Bridge initialized');
-    }
-};
-if(typeof window !== 'undefined') Bridge.init();
-console.log('🌉 Modular Bridge v1.0 loaded ✅');
+        },
+        verify() { return true; }
+    });
+    if(window.DreamOS) DreamOS.modules.bridge.init();
+})();
