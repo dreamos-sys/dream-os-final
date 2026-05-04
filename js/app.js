@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Init home modules after view switch (with small delay for DOM readiness)
             setTimeout(() => {
                 DreamOS.run('home', 'init');
+                if (typeof lucide !== .undefined.) lucide.createIcons();
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }, 300);
         });
