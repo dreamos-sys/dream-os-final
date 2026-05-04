@@ -161,6 +161,12 @@ pip install requests
         DreamOS.register('ghost', Ghost);
         console.log('✅ Ghost Mode v1.0 registered');
         
+        // 🔧 DEBUG: Manual activation for testing
+        window._debugGhost = function() {
+            console.log("👻 [DEBUG] Manual Ghost activation");
+            Ghost.activate();
+        };
+        
         // Auto-init when DOM ready
         if(document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => Ghost.init());
