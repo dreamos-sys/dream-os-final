@@ -4,7 +4,7 @@
         _listeners: {},
         emit(event, data) {
             try {
-                localStorage.setItem('dreamos_bridge', JSON.stringify({event, data, ts: Date.now()}));
+                localStorage.setItem('dreamos:event', JSON.stringify({event, data, ts: Date.now()}));
                 if(this._listeners[event]) {
                     this._listeners[event].forEach(fn => fn(data));
                 }
@@ -16,7 +16,7 @@
         },
         init() {
             window.addEventListener('storage', (e) => {
-                if(e.key === 'dreamos_bridge') {
+                if(e.key === 'dreamos:event') {
                     try {
                         const {event, data} = JSON.parse(e.newValue);
                         if(this._listeners[event]) this._listeners[event].forEach(fn => fn(data));
