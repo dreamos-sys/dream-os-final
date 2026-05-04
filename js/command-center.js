@@ -1,90 +1,103 @@
-// Dream OS Command Center - FINAL FIX (Class-based toggle)
-
-function openCommandCenter() {
-    console.log('🌍 Opening Command Center...');
+/**
+ * Dream OS Command Center — GUARANTEED WORKING v2
+ * Karpathy-Style: Simple, verifiable, surgical
+ */
+(function() {
+    'use strict';
     
-    // Hide main content using class
-    const stats = document.getElementById('stats-card');
-    const carousel = document.getElementById('carousel-container');
-    const menuGrid = document.getElementById('menu-grid');
+    // Global functions (exposed to window for manual testing)
+    window.openCommandCenter = function() {
+        console.log('🌍 [CC] openCommandCenter() called');
+        
+        // Hide main dashboard elements
+        ['stats-card','carousel-container','menu-grid'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.style.display = 'none'; console.log(`[CC] Hidden #${id}`); }
+        });
+        
+        // Show command center container
+        const cc = document.getElementById('command-center');
+        const cd = document.getElementById('cmd-dashboard');
+        
+        if (cc) {
+            cc.style.display = 'block';
+            cc.classList.remove('module-container');
+            cc.classList.add('active');
+            console.log('[CC] Showed #command-center');
+        }
+        
+        if (cd) {
+            cd.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">🌍 Command Center</h2>
+                    <button onclick="showMain()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Pending</div><div class="text-2xl font-bold text-amber-400">3</div></div>
+                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Budget</div><div class="text-lg font-bold text-emerald-400">Rp 50Jt</div></div>
+                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Indoor</div><div class="text-2xl font-bold text-blue-400">45</div></div>
+                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Outdoor</div><div class="text-2xl font-bold text-green-400">23</div></div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    <div class="glass p-4 rounded-xl cursor-pointer" onclick="alert('Approval')"><div class="text-3xl mb-2">✅</div><div class="text-xs font-bold">Approval</div></div>
+                    <div class="glass p-4 rounded-xl cursor-pointer" onclick="alert('Budget')"><div class="text-3xl mb-2">💰</div><div class="text-xs font-bold">Dana Umum</div></div>
+                    <div class="glass p-4 rounded-xl cursor-pointer" onclick="alert('SPJ')"><div class="text-3xl mb-2">📋</div><div class="text-xs font-bold">SPJ</div></div>                    <div class="glass p-4 rounded-xl cursor-pointer" onclick="alert('Reports')"><div class="text-3xl mb-2">📊</div><div class="text-xs font-bold">Laporan</div></div>
+                </div>
+            `;
+            console.log('[CC] Rendered dashboard content');
+        }
+    };
     
-    if (stats) stats.style.display = 'none';
-    if (carousel) carousel.style.display = 'none';
-    if (menuGrid) menuGrid.style.display = 'none';
+    window.showMain = function() {
+        console.log('🏠 [CC] showMain() called');
+        ['stats-card','carousel-container','menu-grid'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        });
+        const cc = document.getElementById('command-center');
+        if (cc) {
+            cc.style.display = 'none';
+            cc.classList.add('module-container');
+            cc.classList.remove('active');
+        }
+    };
     
-    // Show command center: REMOVE module-container class, ADD active
-    const cmdCenter = document.getElementById('command-center');
-    const cmdDashboard = document.getElementById('cmd-dashboard');
-    
-    if (cmdCenter) {
-        cmdCenter.classList.remove('module-container');  // ← FIX: Remove class that has display:none
-        cmdCenter.classList.add('active');                // ← Add active for display:block
-        cmdCenter.style.display = 'block';                // ← Fallback inline style
-    }
-    
-    if (cmdDashboard) {
-        cmdDashboard.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold">🌍 Command Center</h2>
-                <button onclick="showMain()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Pending</div><div class="text-2xl font-bold text-amber-400">3</div></div>
-                <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Budget</div><div class="text-lg font-bold text-emerald-400">Rp 50Jt</div></div>
-                <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Indoor</div><div class="text-2xl font-bold text-blue-400">45</div></div>
-                <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60 mb-1">Outdoor</div><div class="text-2xl font-bold text-green-400">23</div></div>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10" onclick="alert('Approval Module')"><div class="text-3xl mb-2">✅</div><div class="text-xs font-bold">Approval</div></div>
-                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10" onclick="alert('Budget Module')"><div class="text-3xl mb-2">💰</div><div class="text-xs font-bold">Dana Umum</div></div>
-                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10" onclick="alert('SPJ Module')"><div class="text-3xl mb-2">📋</div><div class="text-xs font-bold">SPJ</div></div>
-                <div class="glass p-4 rounded-xl cursor-pointer hover:bg-white/10" onclick="alert('Reports Module')"><div class="text-3xl mb-2">📊</div><div class="text-xs font-bold">Laporan</div></div>
-            </div>
-        `;
-    }
-}
-function showMain() {
-    console.log('🏠 Showing Main Dashboard...');
-    
-    // Show main content
-    const stats = document.getElementById('stats-card');
-    const carousel = document.getElementById('carousel-container');
-    const menuGrid = document.getElementById('menu-grid');
-    
-    if (stats) stats.style.display = 'block';
-    if (carousel) carousel.style.display = 'block';
-    if (menuGrid) menuGrid.style.display = 'block';
-    
-    // Hide command center: ADD module-container class back
-    const cmdCenter = document.getElementById('command-center');
-    if (cmdCenter) {
-        cmdCenter.classList.add('module-container');  // ← FIX: Re-add class with display:none
-        cmdCenter.classList.remove('active');
-        cmdCenter.style.display = 'none';
-    }
-}
-
-// Auto-bind to menu grid on load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔗 Binding Command card...');
-    const menuGrid = document.getElementById('menu-grid');
-    if (menuGrid) {
-        const cards = menuGrid.querySelectorAll('.menu-card');
-        cards.forEach(function(card) {
+    // Auto-bind: Wait for menu-grid to exist, then bind Command card
+    function bindCommandCard() {
+        const grid = document.getElementById('menu-grid');
+        if (!grid) {
+            console.log('[CC] menu-grid not ready, retrying in 300ms...');
+            setTimeout(bindCommandCard, 300);
+            return;
+        }
+        
+        const cards = grid.querySelectorAll('.menu-card');
+        let bound = false;
+        
+        cards.forEach(card => {
             const label = card.querySelector('.text-center');
             if (label && label.textContent.trim() === 'Command') {
-                card.style.cursor = 'pointer';
-                card.onclick = function() { 
-                    console.log('🖱️ Command card clicked!');
-                    openCommandCenter(); 
+                card.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('[CC] Command card clicked!');
+                    window.openCommandCenter();
                 };
-                console.log('✅ Command card bound!');
+                card.style.cursor = 'pointer';
+                bound = true;
+                console.log('✅ [CC] Command card bound successfully');
             }
         });
+        
+        if (!bound) {
+            console.warn('⚠️ [CC] Command card not found in menu-grid');
+        }    }
+    
+    // Start binding process
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindCommandCard);
+    } else {
+        setTimeout(bindCommandCard, 100);
     }
     
-    // Also expose functions globally for console testing
-    window.openCommandCenter = openCommandCenter;
-    window.showMain = showMain;
-    console.log('✅ Functions exposed to window');
-});
+    console.log('✅ [CC] Command Center module loaded');
+})();
