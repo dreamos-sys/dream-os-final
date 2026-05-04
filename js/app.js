@@ -43,6 +43,8 @@ DreamOS.register('auth', {
         document.getElementById('dashboard').style.display = 'flex';
         document.getElementById('bottom-nav').style.display = 'flex';
         setTimeout(() => { DreamOS.run('home', 'init'); if (typeof lucide !== 'undefined') lucide.createIcons(); }, 300);
+    // Sync Booking → Carousel via Bridge
+    if(DreamOS.modules.bridge){DreamOS.modules.bridge.on("booking:created",function(b){var slides=document.querySelectorAll(".carousel-slide");if(slides[1]){var today=new Date().toISOString().split("T")[0];var bookings=JSON.parse(localStorage.getItem("dreamos_bookings")||"[]");var count=bookings.filter(function(x){return x.tanggal===today&&x.status==="approved"}).length;var el=slides[1].querySelector("p");if(el)el.textContent="Hari Ini: "+count+" booking\n"+b.sarana+" · "+b.jam+"\nBesok: Kunjungan Yayasan 13:00";}});}
     },    logout() {
         document.getElementById('dashboard').classList.remove('active');
         document.getElementById('dashboard').style.display = 'none';
