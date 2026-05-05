@@ -1,22 +1,20 @@
-/** * 👑 Dream OS Command Center v1.4 — Sultan Remix
- * Arsitektur: Hybrid Bridge + AI Sultan Integration
+/** 👑 Dream OS Command Center v1.4 — Sultan No-Router Edition
+ * Arsitektur: Direct AI Handshake (Gemini + Local Beast)
  * Karpathy: Surgical logic | Addy: <3KB | Dream OS: Depok-Safe
  */
 (function() {
     'use strict';
 
     const CC = {
-        // Obfuscated Key (Base64) - Biar gak telanjang banget
+        // Obfuscated Gemini Key (Bawel mode: ON)
         _k: "QUl6YVN5QzI5N3p2TFZOdmxsS2c3Qm53NVlIeFFHRGxtSktuUDRr",
-        _endpoint: "http://localhost:20128/v1/chat/completions", // 9Router Default
-
+        
         init() {
-            console.log('✅ Command Center v1.4 Sultan Remix Initialized');
+            console.log('✅ Sultan No-Router Remix Loaded');
             this.bindEvents();
         },
 
         open() {
-            console.log('🌍 [CC] Sultan Mode Activated');
             const main = document.getElementById('main-content-wrapper');
             const cc = document.getElementById('command-center');
             const cd = document.getElementById('cmd-dashboard');
@@ -35,77 +33,78 @@
             return `
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="text-xl font-bold text-teal-400">🌍 Command Center</h2>
-                        <p class="text-[10px] text-white/40 uppercase tracking-widest">Master Control v1.4</p>
+                        <h2 class="text-xl font-bold text-amber-500">🌍 Sultan Command</h2>
+                        <p class="text-[10px] text-teal-400 font-mono tracking-tighter">GEMINI + NEMO 120B ENGINE</p>
                     </div>
-                    <button onclick="showMain()" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition">
-                        <i data-lucide="home" class="w-5 h-5 text-amber-500"></i>
-                    </button>
+                    <button onclick="showMain()" class="p-2 bg-white/5 rounded-xl text-amber-500">←</button>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <div class="glass p-4 rounded-2xl border border-white/5">
-                        <div class="text-[10px] text-white/50 mb-1">Budget Terpakai</div>
-                        <div class="text-lg font-bold text-emerald-400">Rp 50,2 Jt</div>
-                        <div class="w-full bg-white/10 h-1 mt-2 rounded-full overflow-hidden">
-                            <div class="bg-emerald-500 h-full" style="width: 65%"></div>
-                        </div>
+                        <div class="text-[10px] text-white/50">Core Status</div>
+                        <div class="text-lg font-bold text-emerald-400">OPTIMIZED</div>
                     </div>
                     <div class="glass p-4 rounded-2xl border border-white/5">
-                        <div class="text-[10px] text-white/50 mb-1">User Active</div>
-                        <div class="text-lg font-bold text-blue-400">1,450</div>
-                        <p class="text-[9px] text-blue-300/50 mt-1">↑ 12% dari kemarin</p>
+                        <div class="text-[10px] text-white/50">Nemo 120B</div>
+                        <div class="text-lg font-bold text-blue-400">READY</div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-4 gap-3 mb-6">
                     ${['Approval', 'Budget', 'SPJ', 'Reports'].map((label, i) => `
-                        <div class="glass p-3 rounded-xl text-center cursor-pointer active:scale-95 transition" onclick="alert('${label} Clicked')">
+                        <div class="glass p-3 rounded-xl text-center active:scale-90 transition" onclick="alert('${label} Ready')">
                             <div class="text-2xl mb-1">${['✅','💰','📋','📊'][i]}</div>
-                            <div class="text-[9px] font-bold uppercase">${label}</div>
+                            <div class="text-[9px] font-bold">${label}</div>
                         </div>
                     `).join('')}
                 </div>
 
-                <div class="glass p-4 rounded-2xl border border-teal-500/30 bg-teal-500/5" id="ai-chat-ui">
+                <div class="glass p-4 rounded-2xl border border-teal-500/30 bg-black/20" id="ai-chat-ui">
                     <div class="flex justify-between items-center mb-3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
-                            <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider">Dream OS Smart Agent</h3>
+                        <h3 class="text-xs font-bold text-teal-400">🤖 Dream Agent Pro</h3>
+                        <div class="flex gap-2">
+                             <span id="ai-source" class="text-[8px] px-2 py-0.5 bg-white/5 rounded text-white/40">IDLE</span>
+                             <button onclick="toggleAiChat()" class="text-white/20">✕</button>
                         </div>
-                        <button onclick="toggleAiChat()" class="text-white/30 hover:text-white">✕</button>
                     </div>
-                    <div id="ai-messages" class="h-32 overflow-y-auto mb-3 text-[11px] space-y-3 p-2 bg-black/20 rounded-xl border border-white/5">
-                        <div class="text-left"><span class="bg-white/5 p-2 rounded-lg text-white/70 italic">Bismillah, ada yang bisa saya bantu, My Bro?</span></div>
+                    <div id="ai-messages" class="h-32 overflow-y-auto mb-3 text-[11px] space-y-3 p-2 bg-black/40 rounded-xl">
+                        <div class="text-left"><span class="text-white/50 italic">Bismillah, Sultan mau nanya apa hari ini? 😎</span></div>
                     </div>
                     <div class="flex gap-2">
-                        <input type="text" id="ai-input" class="flex-1 p-3 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:border-teal-500 transition outline-none" placeholder="Tanya koding, SOP, atau info...">
-                        <button id="ai-send" class="px-4 py-2 bg-teal-500 text-slate-950 font-black text-xs rounded-xl hover:bg-teal-400 active:scale-90 transition">SEND</button>
+                        <input type="text" id="ai-input" class="flex-1 p-3 rounded-xl bg-slate-900 border border-white/10 text-white text-xs outline-none" placeholder="Tanya koding atau strategi...">
+                        <button id="ai-send" class="px-4 bg-teal-500 text-slate-950 font-black text-xs rounded-xl">SEND</button>
                     </div>
                 </div>
             `;
         },
 
         async queryAI(prompt) {
-            // Priority 1: 9Router (Local) | Priority 2: Direct Gemini (Fallback)
+            const sourceTag = document.getElementById('ai-source');
             try {
-                const response = await fetch(this._endpoint, {
+                sourceTag.textContent = 'GEMINI-PRO';
+                sourceTag.classList.add('text-amber-500');
+
+                // Direct Fetch ke Google Gemini API
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${atob(this._k)}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + atob(this._k) },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        model: "kr/claude-sonnet-4.5", // Sultan model via 9Router
-                        messages: [{role: "user", content: prompt}]
+                        contents: [{ parts: [{ text: prompt }] }]
                     })
                 });
-                const data = await response.json();
-                return data.choices[0].message.content;
+                
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
             } catch (e) {
-                console.warn('⚠️ 9Router offline, using RAG fallback');
+                sourceTag.textContent = 'NEMO-120B (LOCAL)';
+                sourceTag.classList.replace('text-amber-500', 'text-blue-400');
+                
+                // Fallback ke RAG Lokal atau Local LLM Endpoint lo
                 if(window.DreamOS?.modules?.ragCore) {
-                    const localRes = DreamOS.modules.ragCore.search(prompt)?.[0];
-                    return localRes?.a || "Waduh, koneksi ke Sultan lagi macet, Bro. Coba cek 9Router lo.";
+                    const local = DreamOS.modules.ragCore.search(prompt)?.[0];
+                    return local?.a || "Waduh Bro, cloud macet & lokal nggak nemu. Cek koneksi lo!";
                 }
-                return "Sistem offline. Periksa koneksi Termux lo.";
+                return "Sistem Offline.";
             }
         },
 
@@ -121,19 +120,17 @@
                 if(!q) return;
 
                 input.value = '';
-                msgDiv.innerHTML += `<div class="text-right"><span class="bg-teal-500/20 text-teal-200 p-2 rounded-lg inline-block shadow-sm">${q}</span></div>`;
-                msgDiv.innerHTML += `<div id="ai-loading" class="text-left"><span class="bg-white/5 p-2 rounded-lg animate-pulse text-white/50">Memikirkan...</span></div>`;
+                msgDiv.innerHTML += `<div class="text-right"><span class="bg-teal-500/20 text-teal-200 p-2 rounded-lg inline-block">${q}</span></div>`;
+                msgDiv.innerHTML += `<div id="ai-loading" class="text-left"><span class="animate-pulse text-white/30">Memikirkan...</span></div>`;
                 msgDiv.scrollTop = msgDiv.scrollHeight;
 
                 const answer = await this.queryAI(q);
                 
                 document.getElementById('ai-loading')?.remove();
-                msgDiv.innerHTML += `<div class="text-left"><span class="bg-white/10 p-2 rounded-lg text-emerald-300 leading-relaxed block border border-white/5">${answer}</span></div>`;
+                msgDiv.innerHTML += `<div class="text-left"><span class="bg-white/10 p-2 rounded-lg text-emerald-300 block border border-white/5">${answer}</span></div>`;
                 msgDiv.scrollTop = msgDiv.scrollHeight;
             };
-
             input.onkeypress = (e) => { if(e.key === 'Enter') btn.click(); };
-            if(window.lucide) lucide.createIcons();
         },
 
         bindEvents() {
@@ -143,8 +140,6 @@
         }
     };
 
-    // 🌉 GLOBAL BRIDGE (Expose to window)
-    window.openCommandCenter = () => CC.open();
     window.showMain = () => {
         document.getElementById('command-center').style.display = 'none';
         document.getElementById('cmd-dashboard').style.display = 'none';
