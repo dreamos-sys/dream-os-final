@@ -374,3 +374,184 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('🕸️ Dream Web Spider Detection aktif.');
 });
+
+// ========== DREAMSENTINEL — OTAK KEAMANAN TANPA AI ==========
+window.DreamSentinel = {
+    // 1. SESSION FINGERPRINT (membedakan tab/session)
+    sessionId: (function() {
+        const existing = sessionStorage.getItem('sentinel_sid');
+        if (existing) return existing;
+        const fp = [
+            screen.width, screen.height,
+            navigator.language,
+            new Date().getTimezoneOffset(),
+            Math.random().toString(36).slice(2, 10)
+        ].join('|');
+        sessionStorage.setItem('sentinel_sid', fp);
+        return fp;
+    })(),
+
+    sessionLog: [],               // log aktivitas per session
+
+    // 2. BEHAVIORAL BASELINE
+    baseline: {
+        clicksPerMinute: 0,
+        errorsPerSession: 0,
+        tabSwitchesPerMinute: 0,
+        lastMinuteTimestamp: Date.now(),
+        clickCount: 0,
+        errorCount: 0,
+        tabSwitchCount: 0
+    },
+
+    // 3. REPUTATION (dari webMap DreamWeb)
+    reputationThreshold: 5,       // di atas ini area dianggap "panas"
+
+    // 4. STATUS
+    isDeceptionActive: false,
+
+    // Inisialisasi: mendengarkan semua sensor
+    init() {
+        console.log('🛡️ DreamSentinel aktif. Session:', this.sessionId);
+
+        // Dengarkan semua event keamanan
+        DreamEventBus.subscribe('web:vibration', (data) => {
+            this.handleVibration(data);
+        }, 'sentinel');
+
+        DreamEventBus.subscribe('immune:threat-logged', (data) => {
+            this.handleThreat(data);
+        }, 'sentinel');
+
+        DreamEventBus.subscribe('vault:unlock-failed', () => {
+            this.baseline.errorCount++;
+            this.evaluateSessionRisk();
+        }, 'sentinel');
+
+        DreamEventBus.subscribe('vault:unlock-success', () => {
+            // Owner terdeteksi
+            this.baseline.errorCount = 0; // reset
+            if (window.DreamImmune) DreamImmune.identifyAsOwner();
+        }, 'sentinel');
+
+        // Hitung baseline tiap menit
+        setInterval(() => this.calculateBaseline(), 60000);
+
+        // Monitor klik untuk baseline
+        document.addEventListener('click', (e) => {
+            this.baseline.clickCount++;
+        });
+
+        // Monitor pergantian tab di Command Center
+        const tabObserver = new MutationObserver(() => {
+            this.baseline.tabSwitchCount++;
+        });
+        const tabContainer = document.getElementById('tab-container');
+        if (tabContainer) tabObserver.observe(tabContainer, { childList: true, subtree: true });
+    },
+
+    // Tangani getaran dari DreamWeb
+    handleVibration(data) {
+        this.sessionLog.push({ time: Date.now(), event: 'vibration', data });
+        this.evaluateSessionRisk();
+    },
+
+    // Tangani ancaman dari DreamImmune
+    handleThreat(data) {
+        this.sessionLog.push({ time: Date.now(), event: 'threat', data });
+        // Jika jenis ancaman adalah 'role-violation', periksa reputasi area
+        if (data.type === 'role-violation' && data.details && data.details.tab) {
+            const tab = data.details.tab;
+            const heat = (window.DreamWeb && DreamWeb.webMap) ? 
+                (DreamWeb.webMap.get('tab-' + tab) || 0) : 0;
+            if (heat > this.reputationThreshold) {
+                console.warn('🔥 Area panas terdeteksi:', tab, 'dengan skor', heat);
+                // Langsung eskalasi jika area sudah sangat panas
+                if (window.DreamImmune) DreamImmune.threatLevel = 2;
+            }
+        }
+        this.evaluateSessionRisk();
+    },
+
+    // Evaluasi risiko session ini
+    evaluateSessionRisk() {
+        const totalErrors = this.baseline.errorCount;
+        const totalClicks = this.baseline.clickCount;
+
+        // Jika error tinggi + vault failed, kemungkinan besar penyusup
+        if (totalErrors >= 3 && window.DreamImmune && !DreamImmune.ownerSession) {
+            console.error('🚨 DreamSentinel: Session ini berisiko tinggi.');
+            if (window.DreamWeb) DreamWeb.escalationLevel = Math.max(DreamWeb.escalationLevel, 2);
+            // Jika sudah sangat tinggi, aktifkan deception
+            if (totalErrors >= 5) {
+                this.activateDeception();
+            }
+        }
+    },
+
+    // Hitung baseline per menit
+    calculateBaseline() {
+        const now = Date.now();
+        const elapsed = (now - this.baseline.lastMinuteTimestamp) / 60000;
+        this.baseline.clicksPerMinute = this.baseline.clickCount / Math.max(1, elapsed);
+        this.baseline.errorsPerSession = this.baseline.errorCount;
+        this.baseline.tabSwitchesPerMinute = this.baseline.tabSwitchCount / Math.max(1, elapsed);
+        // Reset counter
+        this.baseline.clickCount = 0;
+        this.baseline.tabSwitchCount = 0;
+        this.baseline.lastMinuteTimestamp = now;
+
+        // Deteksi lonjakan >300%
+        if (this.baseline.clicksPerMinute > 30) { // 30 klik/menit sebagai threshold awal
+            console.warn('📈 Lonjakan aktivitas terdeteksi:', this.baseline.clicksPerMinute, 'klik/menit');
+            if (window.DreamWeb) DreamWeb.vibrate('behavior-anomaly', { cpm: this.baseline.clicksPerMinute });
+        }
+    },
+
+    // AKTIFKAN DECEPTION (mengelabui penyusup)
+    activateDeception() {
+        if (this.isDeceptionActive) return;
+        this.isDeceptionActive = true;
+        console.warn('🪤 Deception aktif: Menyajikan data palsu.');
+
+        // Simpan data asli di memory (tersembunyi)
+        const realData = {};
+        for (let key of Object.keys(localStorage)) {
+            realData[key] = localStorage.getItem(key);
+        }
+        window._dreamRealData = realData;
+
+        // Ganti localStorage dengan data palsu
+        localStorage.setItem('dreamos_bookings', JSON.stringify([
+            { id: 999, title: 'DATA PALSU', date: '2000-01-01', status: 'fake' }
+        ]));
+        localStorage.setItem('dreamos_rabs', JSON.stringify([]));
+        localStorage.setItem('dreamos_aset', JSON.stringify([{ nama: 'DUMMY', jumlah: 0 }]));
+        localStorage.setItem('dreamos_audit', JSON.stringify([]));
+
+        // Kunci vault dengan passphrase acak agar penyusup sulit
+        if (window.DreamVault) {
+            DreamVault.lock('deception-lock-' + Date.now());
+        }
+
+        // Reload untuk menampilkan data palsu
+        setTimeout(() => location.reload(), 1000);
+    },
+
+    // Pulihkan data asli (hanya bisa dipanggil owner)
+    restoreRealData() {
+        if (window._dreamRealData) {
+            for (let [key, value] of Object.entries(window._dreamRealData)) {
+                localStorage.setItem(key, value);
+            }
+            delete window._dreamRealData;
+            this.isDeceptionActive = false;
+            console.log('✅ Data asli dipulihkan.');
+        }
+    }
+};
+
+// Jalankan setelah DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+    DreamSentinel.init();
+});
