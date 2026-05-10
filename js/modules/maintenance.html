@@ -1,4 +1,140 @@
-<div class="glass p-4 rounded-xl">
-  <h2 class="text-lg font-bold mb-3">📌 Modul Maintenance</h2>
-  <p>Modul ini sedang dalam pengembangan. Fitur akan segera hadir.</p>
+<div class="glass p-4 rounded-xl space-y-4">
+  <div class="flex justify-between items-center">
+    <h2 class="text-xl font-bold flex items-center gap-2">🛠️ Modul Maintenance</h2>
+    <button id="print-maint-modul" class="bg-amber-600 text-xs px-3 py-1 rounded">🖨️ Print</button>
+  </div>
+
+  <!-- Form tambah maintenance -->
+  <div class="bg-white/5 p-3 rounded-xl">
+    <h3 class="text-sm font-bold mb-2">➕ Catat Maintenance Baru</h3>
+    <div class="grid grid-cols-2 gap-2">
+      <input type="text" id="maint-item" placeholder="Barang (contoh: AC, Lift)" class="bg-black/30 p-2 rounded text-sm">
+      <input type="text" id="maint-desc" placeholder="Jenis servis (contoh: cuci AC, ganti oli)" class="bg-black/30 p-2 rounded text-sm">
+      <input type="date" id="maint-date" class="bg-black/30 p-2 rounded text-sm">
+      <input type="number" id="maint-cost" placeholder="Biaya" class="bg-black/30 p-2 rounded text-sm">
+      <input type="text" id="maint-tech" placeholder="Teknisi / Vendor" class="bg-black/30 p-2 rounded text-sm col-span-2">
+    </div>
+    <button id="btn-add-maint-modul" class="bg-teal-600 px-3 py-1 rounded text-sm mt-2">Tambah Record</button>
+  </div>
+
+  <!-- Pencarian -->
+  <div class="bg-white/5 p-3 rounded-xl">
+    <h3 class="text-sm font-bold mb-2">🔍 Cari Maintenance</h3>
+    <div class="flex flex-wrap gap-2">
+      <input type="text" id="search-maint-modul" placeholder="Cari (AC, cuci, 2025-01)" class="flex-1 bg-black/30 p-2 rounded text-sm">
+      <input type="date" id="search-start-modul" placeholder="Dari tgl" class="bg-black/30 p-2 rounded text-sm w-36">
+      <input type="date" id="search-end-modul" placeholder="Sampai tgl" class="bg-black/30 p-2 rounded text-sm w-36">
+      <button id="btn-search-maint-modul" class="bg-emerald-600 px-3 rounded text-sm">🔍 Search</button>
+      <button id="reset-search-modul" class="bg-white/20 px-3 rounded text-sm">Reset</button>
+    </div>
+  </div>
+
+  <!-- Daftar maintenance -->
+  <div id="maint-list-modul" class="space-y-2 max-h-96 overflow-y-auto"></div>
 </div>
+
+<script>
+  let maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
+  let currentMaintFilter = { keyword: '', startDate: '', endDate: '' };
+
+  function saveMaint() {
+    localStorage.setItem('dreamos_maintenances', JSON.stringify(maintenances));
+  }
+
+  function renderMaintenances() {
+    const container = document.getElementById('maint-list-modul');
+    if (!container) return;
+    let filtered = maintenances;
+    if (currentMaintFilter.keyword) {
+      const kw = currentMaintFilter.keyword.toLowerCase();
+      filtered = filtered.filter(m => m.item.toLowerCase().includes(kw) || m.desc.toLowerCase().includes(kw));
+    }
+    if (currentMaintFilter.startDate) {
+      filtered = filtered.filter(m => m.date >= currentMaintFilter.startDate);
+    }
+    if (currentMaintFilter.endDate) {
+      filtered = filtered.filter(m => m.date <= currentMaintFilter.endDate);
+    }
+    container.innerHTML = filtered.map(m => `
+      <div class="bg-white/5 p-2 rounded flex justify-between items-start" data-id="${m.id}">
+        <div>
+          <div class="font-bold">${m.item} - ${m.desc}</div>
+          <div class="text-xs">Tanggal: ${m.date} | Biaya: Rp ${(m.cost || 0).toLocaleString()} | Teknisi: ${m.tech || '-'}</div>
+        </div>
+        <button class="delete-maint-modul text-red-400 text-xs" data-id="${m.id}">✖ Hapus</button>
+      </div>
+    `).join('');
+    // Attach delete events
+    document.querySelectorAll('.delete-maint-modul').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        maintenances = maintenances.filter(m => m.id !== id);
+        saveMaint();
+        renderMaintenances();
+      });
+    });
+  }
+
+  function addMaintenance(item, desc, date, cost, tech) {
+    const newMaint = { id: Date.now(), item, desc, date, cost: parseInt(cost) || 0, tech };
+    maintenances.push(newMaint);
+    saveMaint();
+    renderMaintenances();
+  }
+
+  // Event listeners
+  document.getElementById('btn-add-maint-modul')?.addEventListener('click', () => {
+    const item = document.getElementById('maint-item').value.trim();
+    const desc = document.getElementById('maint-desc').value.trim();
+    const date = document.getElementById('maint-date').value;
+    const cost = document.getElementById('maint-cost').value;
+    const tech = document.getElementById('maint-tech').value.trim();
+    if (item && desc && date) {
+      addMaintenance(item, desc, date, cost, tech);
+      document.getElementById('maint-item').value = '';
+      document.getElementById('maint-desc').value = '';
+      document.getElementById('maint-date').value = '';
+      document.getElementById('maint-cost').value = '';
+      document.getElementById('maint-tech').value = '';
+    } else {
+      alert('Harap isi minimal barang, jenis servis, dan tanggal');
+    }
+  });
+
+  document.getElementById('btn-search-maint-modul')?.addEventListener('click', () => {
+    currentMaintFilter.keyword = document.getElementById('search-maint-modul').value;
+    currentMaintFilter.startDate = document.getElementById('search-start-modul').value;
+    currentMaintFilter.endDate = document.getElementById('search-end-modul').value;
+    renderMaintenances();
+  });
+
+  document.getElementById('reset-search-modul')?.addEventListener('click', () => {
+    document.getElementById('search-maint-modul').value = '';
+    document.getElementById('search-start-modul').value = '';
+    document.getElementById('search-end-modul').value = '';
+    currentMaintFilter = { keyword: '', startDate: '', endDate: '' };
+    renderMaintenances();
+  });
+
+  document.getElementById('print-maint-modul')?.addEventListener('click', () => {
+    const printContent = document.getElementById('maint-list-modul').cloneNode(true);
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html>
+        <head><title>Laporan Maintenance</title>
+        <style>body { font-family: monospace; padding: 20px; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }</style>
+        </head><body>${printContent.innerHTML}</body>
+      </html>
+    `);
+    win.document.close();
+    win.print();
+  });
+
+  // Sample data jika kosong
+  if (maintenances.length === 0) {
+    maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk' }];
+    saveMaint();
+  }
+
+  renderMaintenances();
+</script>
