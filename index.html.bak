@@ -34,8 +34,6 @@
         .nav-btn:active { transform: scale(0.9); }
         .nav-btn.active { color: #2dd4bf; }
     </style>
-  <script src="js/eventBus.js"></script>
-  <script src="js/moduleLoader.js"></script>
 </head>
 <body class="text-white h-screen overflow-hidden">
 
@@ -340,80 +338,3 @@
     <script src="js/ai-router.js" defer></script>
 </body>
 </html>
-<script>
-  // Override handleMenuClick untuk memuat modul via ModuleLoader
-  (function() {
-    const originalHandleMenuClick = window.handleMenuClick;
-    window.handleMenuClick = function(label) {
-      // Mapping label ke id modul, url, dan container
-      const modules = {
-        'Booking': { id: 'booking', url: 'js/modules/booking.html', container: 'command-center' },
-        'K3': { id: 'k3', url: 'js/modules/k3.html', container: 'command-center' },
-        'Security': { id: 'security', url: 'js/modules/security.html', container: 'command-center' },
-        'Janitor In': { id: 'janitor-in', url: 'js/modules/janitor-in.html', container: 'command-center' },
-        'Janitor Out': { id: 'janitor-out', url: 'js/modules/janitor-out.html', container: 'command-center' },
-        'Stok': { id: 'stok', url: 'js/modules/stok.html', container: 'command-center' },
-        'Maintenance': { id: 'maintenance', url: 'js/modules/maintenance.html', container: 'command-center' },
-        'Asset': { id: 'asset', url: 'js/modules/asset.html', container: 'command-center' },
-        'Command': { id: 'command', url: 'js/modules/command.html', container: 'command-center' }
-      };
-      const mod = modules[label];
-      if (mod) {
-        // Tampilkan container command-center, sembunyikan main-content-wrapper
-        const mainWrapper = document.getElementById('main-content-wrapper');
-        const cmdContainer = document.getElementById('command-center');
-        const cmdDashboard = document.getElementById('cmd-dashboard');
-        if (mainWrapper) mainWrapper.style.display = 'none';
-        if (cmdContainer) {
-          cmdContainer.style.display = 'block';
-          if (cmdDashboard) cmdDashboard.style.display = 'block';
-        }
-        // Load modul
-        window.ModuleLoader.load(mod.id, mod.url, mod.container);
-      } else {
-        // Fallback ke fungsi asli jika ada
-        if (typeof originalHandleMenuClick === 'function') originalHandleMenuClick(label);
-      }
-    };
-  })();
-
-  // Event untuk ghost mode (emit event saat 7 tap)
-  (function() {
-    let tapCount = 0;
-    let tapTimer = null;
-    const logo = document.getElementById('dream-logo');
-    if (logo) {
-      logo.addEventListener('click', () => {
-        tapCount++;
-        const counter = document.getElementById('tap-counter');
-        if (counter) counter.textContent = `Tap ${tapCount}/7`;
-        if (tapTimer) clearTimeout(tapTimer);
-        tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-        if (tapCount >= 7) {
-          tapCount = 0;
-          // Emit event ghost.activate
-          if (window.DreamEventBus) window.DreamEventBus.emit('ghost.activate', {});
-          // Buka ghost dashboard (fungsi openGhost sudah ada)
-          if (typeof openGhost === 'function') openGhost();
-          else console.log('Ghost mode activated!');
-        }
-      });
-    }
-  })();
-
-  // Subscribe carousel ke event booking.created (opsional)
-  if (window.DreamEventBus) {
-    window.DreamEventBus.subscribe('booking.created', (data) => {
-      console.log('Event booking.created:', data);
-      // Update carousel slide jika diperlukan
-      const carouselSlides = document.querySelectorAll('.carousel-slide');
-      if (carouselSlides.length >= 2) {
-        const secondSlide = carouselSlides[1];
-        if (secondSlide) {
-          const textEl = secondSlide.querySelector('p');
-          if (textEl) textEl.textContent = `Booking baru: ${data.title} - ${data.date}`;
-        }
-      }
-    }, 'carousel');
-  }
-</script>
