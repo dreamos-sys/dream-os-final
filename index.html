@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="id" dir="ltr" class="dark">
 <head>
+  <script>
+    class EventBus { constructor() { this.subscribers = new Map(); } subscribe(event,cb,mid){if(!this.subscribers.has(event)) this.subscribers.set(event,new Map()); this.subscribers.get(event).set(mid||"anon",cb); return ()=>this.unsubscribe(event,mid); } unsubscribe(event,mid){ const m=this.subscribers.get(event); if(m) m.delete(mid); } emit(event,data){ const m=this.subscribers.get(event); if(m) m.forEach(cb=>cb(data)); } }
+    window.DreamEventBus = new EventBus();
+    class ModuleLoader { constructor(){ this.loaded=new Map(); } async load(id,url,containerId){ if(this.loaded.has(id)) return; try{ const res=await fetch(url); const html=await res.text(); const cont=document.getElementById(containerId); if(cont){ cont.innerHTML=html; this.loaded.set(id,true); cont.querySelectorAll("script").forEach(old=>{ const ns=document.createElement("script"); ns.textContent=old.textContent; document.body.appendChild(ns); old.remove(); }); } } catch(e){ console.error("Module load error:",e); } } }
+    window.ModuleLoader = new ModuleLoader();
+  </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
