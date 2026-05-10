@@ -125,3 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("Quantum Core for Smart AI Agent ready.");
+
+// ========== MODULE REGISTRY (Karpathy pattern) ==========
+if (window.DreamOS) {
+  window.DreamOS.mods = new Map();
+  window.DreamOS.register = function(name, mod) {
+    this.mods.set(name, mod);
+    console.log('Modul ' + name + ' terdaftar');
+    DreamEventBus.emit('module:registered', { name });
+  };
+}
