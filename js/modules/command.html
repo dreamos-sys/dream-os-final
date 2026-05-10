@@ -1,68 +1,192 @@
+<!DOCTYPE html>
 <div class="glass p-4 rounded-xl">
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-bold flex items-center gap-2"><span>🌍</span> Command Center</h2>
-    <button id="voice-btn" class="bg-teal-600 p-2 rounded-full w-10 h-10 flex items-center justify-center">🎙️</button>
+  <div class="flex justify-between items-center mb-3 pb-2 border-b border-white/20">
+    <div class="flex gap-2">
+      <span class="text-xs bg-teal-600/30 px-2 py-1 rounded-full" id="role-badge">Role: kabag</span>
+      <button id="switch-role" class="text-xs underline text-teal-300">Switch Role</button>
+    </div>
+    <div class="text-xs text-white/40">Audit Trail aktif</div>
   </div>
-  <div id="chat-history" class="h-64 overflow-y-auto mb-4 space-y-2 p-2 bg-black/20 rounded-xl">
-    <div class="text-center text-white/40 text-sm">✨ Kirim perintah atau bicara ✨</div>
+
+  <div class="flex gap-1 mb-4 flex-wrap border-b border-white/20 pb-2">
+    <button class="tab-btn active px-3 py-1 text-xs rounded-full bg-teal-600/30" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="booking">📅 Booking</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="approval">✅ Approval</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="rab">💰 RAB & Realisasi</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="dana">📅 Dana Periodik</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="maintenance">🛠️ Maintenance</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="report">📈 Laporan</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="inventaris">🏢 Inventaris</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" data-tab="audit">📜 Audit Trail</button>
   </div>
-  <div class="flex gap-2">
-    <input type="text" id="command-input" placeholder="Ketik perintah... (misal: buka booking, laporan stok)" class="flex-1 bg-black/30 p-2 rounded-xl border border-white/20">
-    <button id="send-btn" class="bg-teal-600 px-4 py-2 rounded-xl">Kirim</button>
+
+  <div id="tab-dashboard" class="tab-content">
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Booking Pending</div><div class="text-xl font-bold text-amber-400" id="pending-count">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Total RAB Diajukan</div><div class="text-xl font-bold text-emerald-400" id="rab-total">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Realisasi Bulan Ini</div><div class="text-xl font-bold text-teal-400" id="realisasi-bulan">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Total Dana Tips</div><div class="text-xl font-bold text-blue-400" id="tips-total">0</div></div>
+    </div>
+    <div class="bg-white/5 p-2 rounded-xl mb-3">
+      <div class="text-sm font-bold mb-1">📈 Anggaran vs Realisasi (Bulan Ini)</div>
+      <canvas id="budgetChart" height="150" class="w-full"></canvas>
+    </div>
+    <div class="bg-white/5 p-3 rounded-xl"><div class="text-sm font-bold mb-1">🔔 Notifikasi</div><div id="notif-list" class="text-xs text-white/60 space-y-1 max-h-32 overflow-y-auto"></div></div>
   </div>
-  <div class="text-[10px] text-white/40 mt-2 text-center">Contoh: "buka booking" | "tampilkan stok" | "jadwal maintenance"</div>
+
+  <div id="tab-booking" class="tab-content hidden">
+    <div class="flex gap-2 mb-3"><input type="text" id="booking-title" placeholder="Judul Booking" class="flex-1 bg-black/30 p-2 rounded text-sm"><input type="date" id="booking-date" class="bg-black/30 p-2 rounded"><button id="btn-add-booking" class="bg-teal-600 px-3 rounded text-sm">+</button></div>
+    <div id="booking-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <div id="tab-approval" class="tab-content hidden">
+    <div class="bg-white/5 p-2 rounded mb-2"><div class="text-sm font-bold">📋 Approval Booking</div><div id="approval-booking-list" class="space-y-2 mt-2 max-h-40 overflow-y-auto"></div></div>
+    <div class="bg-white/5 p-2 rounded"><div class="text-sm font-bold">💰 Approval RAB</div><div id="approval-rab-list" class="space-y-2 mt-2 max-h-40 overflow-y-auto"></div></div>
+  </div>
+
+  <div id="tab-rab" class="tab-content hidden">
+    <div class="flex gap-2 mb-2"><input type="text" id="rab-name" placeholder="Nama Kegiatan" class="flex-1 bg-black/30 p-2 rounded text-sm"><input type="number" id="rab-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm"><button id="btn-add-rab" class="bg-teal-600 px-3 rounded text-sm">Ajukan</button></div>
+    <div class="flex gap-2 mb-2"><input type="text" id="rab-real" placeholder="Realisasi (deskripsi)" class="flex-1 bg-black/30 p-2 rounded text-sm"><input type="number" id="rab-real-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm"><button id="btn-real" class="bg-amber-600 px-3 rounded text-sm">Catat</button></div>
+    <div class="mb-2"><input type="file" id="rab-file" accept=".pdf,.jpg,.png" class="text-xs"><button id="btn-upload" class="bg-purple-600 px-2 py-1 rounded text-xs mt-1">Upload Dokumen</button><div id="file-list" class="text-xs mt-1"></div></div>
+    <div id="rab-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+  </div>
+
+  <div id="tab-dana" class="tab-content hidden">
+    <div class="bg-white/5 p-3 rounded-xl mb-3">
+      <h3 class="text-sm font-bold mb-2">➕ Ajukan Dana Periodik</h3>
+      <div class="flex gap-2 flex-wrap mb-2">
+        <select id="periode-jenis" class="bg-black/30 p-2 rounded text-sm">
+          <option value="harian">Harian</option><option value="mingguan">Mingguan</option><option value="bulanan">Bulanan</option><option value="tahunan">Tahunan</option>
+        </select>
+        <input type="text" id="dana-kegiatan" placeholder="Nama Kegiatan" class="flex-1 bg-black/30 p-2 rounded text-sm">
+        <input type="number" id="dana-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm">
+        <button id="btn-add-dana" class="bg-teal-600 px-3 rounded text-sm">Ajukan</button>
+      </div>
+      <div class="flex gap-2 flex-wrap mt-2">
+        <select id="periode-filter" class="bg-black/30 p-2 rounded text-sm"><option value="all">Semua Periode</option><option value="harian">Harian</option><option value="mingguan">Mingguan</option><option value="bulanan">Bulanan</option><option value="tahunan">Tahunan</option></select>
+        <button id="filter-dana" class="bg-teal-600/50 px-3 rounded text-sm">Filter</button>
+      </div>
+    </div>
+    <div class="bg-white/5 p-3 rounded-xl">
+      <h3 class="text-sm font-bold mb-2">💵 Dana Tips Lapangan</h3>
+      <div class="flex gap-2 mb-2"><input type="text" id="tips-deskripsi" placeholder="Deskripsi (misal: makan siang tim)" class="flex-1 bg-black/30 p-2 rounded text-sm"><input type="number" id="tips-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm"><button id="btn-add-tips" class="bg-blue-600 px-3 rounded text-sm">Tambah Tips</button></div>
+      <div id="tips-list" class="max-h-40 overflow-y-auto text-xs space-y-1 mt-2"></div>
+    </div>
+    <div class="bg-white/5 p-3 rounded-xl mt-3">
+      <h3 class="text-sm font-bold mb-2">📋 Riwayat Pengajuan Dana Periodik</h3>
+      <div id="dana-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+      <button id="print-dana" class="mt-2 bg-amber-600 text-xs px-2 py-1 rounded">🖨️ Print Dana</button>
+    </div>
+  </div>
+
+  <div id="tab-maintenance" class="tab-content hidden">
+    <div class="bg-white/5 p-3 rounded-xl mb-3">
+      <h3 class="text-sm font-bold mb-2">➕ Catat Maintenance</h3>
+      <div class="flex gap-2 flex-wrap mb-2">
+        <input type="text" id="maint-item" placeholder="Barang (misal: AC, Lift)" class="flex-1 bg-black/30 p-2 rounded text-sm">
+        <input type="text" id="maint-desc" placeholder="Jenis Servis (misal: cuci AC, ganti oli)" class="flex-1 bg-black/30 p-2 rounded text-sm">
+        <input type="date" id="maint-date" class="bg-black/30 p-2 rounded">
+      </div>
+      <div class="flex gap-2">
+        <input type="number" id="maint-cost" placeholder="Biaya" class="w-28 bg-black/30 p-2 rounded text-sm">
+        <input type="text" id="maint-tech" placeholder="Teknisi" class="flex-1 bg-black/30 p-2 rounded text-sm">
+        <button id="btn-add-maint" class="bg-teal-600 px-3 rounded text-sm">Tambah</button>
+      </div>
+    </div>
+    <div class="bg-white/5 p-3 rounded-xl mb-3">
+      <h3 class="text-sm font-bold mb-2">🔍 Cari Maintenance</h3>
+      <div class="flex gap-2 flex-wrap">
+        <input type="text" id="search-maint" placeholder="Cari (AC, cuci, 2025-01)" class="flex-1 bg-black/30 p-2 rounded text-sm">
+        <input type="date" id="search-start" placeholder="Dari tgl" class="bg-black/30 p-2 rounded text-sm w-36">
+        <input type="date" id="search-end" placeholder="Sampai tgl" class="bg-black/30 p-2 rounded text-sm w-36">
+        <button id="btn-search-maint" class="bg-emerald-600 px-3 rounded text-sm">🔍 Search</button>
+        <button id="reset-search" class="bg-white/20 px-3 rounded text-sm">Reset</button>
+        <button id="print-maint" class="bg-amber-600 px-3 rounded text-sm">🖨️ Print</button>
+      </div>
+    </div>
+    <div id="maint-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <div id="tab-report" class="tab-content hidden">
+    <div class="flex gap-2 mb-2"><select id="report-period" class="bg-black/30 p-2 rounded text-sm"><option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option><option value="yearly">Tahunan</option></select><button id="btn-gen-report" class="bg-teal-600 px-3 rounded text-sm">Generate</button><button id="print-report" class="bg-amber-600 px-3 rounded text-sm">🖨️ Print</button></div>
+    <div id="report-result" class="bg-black/20 p-3 rounded-xl text-xs whitespace-pre-wrap font-mono max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <div id="tab-inventaris" class="tab-content hidden">
+    <div class="flex gap-2 mb-2"><input type="text" id="aset-name" placeholder="Nama Aset" class="flex-1 bg-black/30 p-2 rounded text-sm"><input type="number" id="aset-qty" placeholder="Jumlah" class="w-20 bg-black/30 p-2 rounded text-sm"><button id="btn-add-aset" class="bg-teal-600 px-3 rounded text-sm">Tambah</button></div>
+    <div id="aset-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <div id="tab-audit" class="tab-content hidden">
+    <div id="audit-list" class="space-y-1 max-h-80 overflow-y-auto text-xs font-mono"></div>
+    <button id="clear-audit" class="bg-red-600/50 text-xs px-2 py-1 rounded mt-2">Clear Audit</button>
+  </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  function addMessage(text, isUser = true) {
-    const history = document.getElementById('chat-history');
-    const div = document.createElement('div');
-    div.className = isUser ? 'text-right' : 'text-left';
-    const bubbleClass = isUser ? 'bg-teal-600/30 text-teal-200' : 'bg-white/10 text-white';
-    div.innerHTML = `<div class="inline-block p-2 rounded-xl ${bubbleClass} max-w-[80%] break-words">${text}</div>`;
-    history.appendChild(div);
-    history.scrollTop = history.scrollHeight;
-  }
-  async function callAI(prompt) {
-    addMessage('🤖 Memproses...', false);
-    await new Promise(r => setTimeout(r, 500));
-    const lower = prompt.toLowerCase();
-    let response = '';
-    if (lower.includes('buka booking')) {
-      response = 'Membuka modul Booking...';
-      if (window.DreamEventBus) window.DreamEventBus.emit('command.openModule', { module: 'Booking' });
-      else { const btn = Array.from(document.querySelectorAll('.menu-card')).find(el => el.innerText.includes('Booking')); if(btn) btn.click(); }
-    } else if (lower.includes('stok')) response = '📦 Stok: Kertas A4 20 rim, Tinta hitam 5 botol.';
-    else if (lower.includes('maintenance')) response = '🔧 Jadwal maintenance: Lift 20 Mei, AC 25 Mei.';
-    else if (lower.includes('asset')) response = '🏢 Aset: 5 laptop, 3 proyektor, 10 AC.';
-    else if (lower.includes('k3')) response = '⚠️ K3: Tidak ada insiden, safety briefing Jumat.';
-    else response = `❌ Perintah "${prompt}" tidak dikenali. Coba: "buka booking", "laporan stok".`;
-    const lastMsg = document.getElementById('chat-history').lastChild;
-    if (lastMsg && lastMsg.innerText.includes('Memproses')) lastMsg.remove();
-    addMessage(response, false);
-  }
-  function sendCommand() {
-    const input = document.getElementById('command-input');
-    const text = input.value.trim();
-    if (!text) return;
-    addMessage(text, true);
-    input.value = '';
-    callAI(text);
-  }
-  let recognition = null;
-  if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-    recognition.lang = 'id-ID';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (e) => { document.getElementById('command-input').value = e.results[0][0].transcript; sendCommand(); };
-    recognition.onerror = () => addMessage('🎙️ Voice tidak dikenali.', false);
-  }
-  document.getElementById('send-btn').addEventListener('click', sendCommand);
-  document.getElementById('command-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendCommand(); });
-  const voiceBtn = document.getElementById('voice-btn');
-  if (voiceBtn && recognition) voiceBtn.addEventListener('click', () => { recognition.start(); addMessage('🎙️ Dengarkan...', false); });
-  else if (voiceBtn) voiceBtn.disabled = true;
-  if (window.DreamEventBus) {
-    window.DreamEventBus.subscribe('command.execute', (data) => { document.getElementById('command-input').value = data.command; sendCommand(); }, 'command-module');
-  }
+  let bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+  let rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[]');
+  let realisasi = JSON.parse(localStorage.getItem('dreamos_realisasi') || '[]');
+  let aset = JSON.parse(localStorage.getItem('dreamos_aset') || '[{"nama":"Laptop","jumlah":5},{"nama":"Proyektor","jumlah":3},{"nama":"AC","jumlah":10}]');
+  let audit = JSON.parse(localStorage.getItem('dreamos_audit') || '[]');
+  let userRole = localStorage.getItem('dreamos_role') || 'kabag';
+  let periodicFunds = JSON.parse(localStorage.getItem('dreamos_periodic_funds') || '[]');
+  let tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
+  let maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
+  
+  let chartInstance = null;
+  let currentMaintFilter = { keyword: '', startDate: '', endDate: '' };
+
+  function addAudit(action, details) { let entry = { timestamp: new Date().toISOString(), role: userRole, action, details }; audit.unshift(entry); if (audit.length > 200) audit.pop(); localStorage.setItem('dreamos_audit', JSON.stringify(audit)); if (document.getElementById('tab-audit') && !document.getElementById('tab-audit').classList.contains('hidden')) renderAudit(); }
+  function saveAll() { localStorage.setItem('dreamos_bookings', JSON.stringify(bookings)); localStorage.setItem('dreamos_rabs', JSON.stringify(rabs)); localStorage.setItem('dreamos_realisasi', JSON.stringify(realisasi)); localStorage.setItem('dreamos_aset', JSON.stringify(aset)); localStorage.setItem('dreamos_periodic_funds', JSON.stringify(periodicFunds)); localStorage.setItem('dreamos_tips', JSON.stringify(tips)); localStorage.setItem('dreamos_maintenances', JSON.stringify(maintenances)); }
+  function getApprovalLevel() { if (userRole === 'koordinator') return 1; if (userRole === 'kabag') return 2; if (userRole === 'direktur') return 3; return 2; }
+  function canApprove(item) { let level = getApprovalLevel(); if (!item.approvalLevel) item.approvalLevel = 1; if (level > item.approvalLevel) return true; if (level === item.approvalLevel && item.status === 'pending') return true; return false; }
+  function approveItem(type, id) { let item, arr; if (type === 'booking') arr = bookings; else arr = rabs; item = arr.find(i => i.id == id); if (!item) return; if (item.status !== 'pending') return; let currentLevel = getApprovalLevel(); if (currentLevel > item.approvalLevel) { item.approvalLevel = currentLevel; item.status = 'approved'; addAudit(`✅ Approve ${type}`, `${item.title || item.nama} approved by ${userRole}`); } else if (currentLevel === item.approvalLevel) { item.status = 'approved'; addAudit(`✅ Approve ${type}`, `${item.title || item.nama} approved by ${userRole}`); } else { addAudit(`❌ Reject ${type}`, `${item.title || item.nama} rejected by ${userRole}`); } saveAll(); renderAll(); }
+  
+  function renderBookings() { let container = document.getElementById('booking-list'); if(!container) return; container.innerHTML = bookings.map(b => `<div class="bg-white/5 p-2 rounded flex justify-between"><div><div>${b.title}</div><div>${b.date} - ${b.status}</div></div>${canApprove(b) ? `<button class="approve-booking text-green-400" data-type="booking" data-id="${b.id}">✅</button>` : ''}</div>`).join(''); document.querySelectorAll('.approve-booking').forEach(btn => btn.addEventListener('click', (e) => approveItem(btn.dataset.type, parseInt(btn.dataset.id)))); }
+  function renderApprovals() { let pendingBookings = bookings.filter(b => b.status === 'pending' && canApprove(b)); let pendingRabs = rabs.filter(r => r.status === 'pending' && canApprove(r)); document.getElementById('approval-booking-list').innerHTML = pendingBookings.map(b => `<div>${b.title}<button class="approve-booking-approval text-green-400 ml-2" data-type="booking" data-id="${b.id}">Approve</button></div>`).join(''); document.getElementById('approval-rab-list').innerHTML = pendingRabs.map(r => `<div>${r.nama} - Rp ${r.nominal}<button class="approve-rab text-green-400 ml-2" data-type="rab" data-id="${r.id}">Approve</button></div>`).join(''); document.querySelectorAll('.approve-booking-approval').forEach(btn => btn.addEventListener('click', (e) => approveItem('booking', parseInt(btn.dataset.id)))); document.querySelectorAll('.approve-rab').forEach(btn => btn.addEventListener('click', (e) => approveItem('rab', parseInt(btn.dataset.id)))); }
+  function renderRAB() { let container = document.getElementById('rab-list'); if(!container) return; container.innerHTML = rabs.map(r => `<div>${r.nama} - Rp ${r.nominal} - ${r.status}</div>`).join(''); }
+  function renderAset() { let container = document.getElementById('aset-list'); if(!container) return; container.innerHTML = aset.map(a => `<div>${a.nama} x${a.jumlah}<button class="delete-aset text-red-400" data-nama="${a.nama}">Hapus</button></div>`).join(''); document.querySelectorAll('.delete-aset').forEach(btn => btn.addEventListener('click', () => { aset = aset.filter(a => a.nama !== btn.dataset.nama); saveAll(); renderAll(); addAudit('Hapus Aset', btn.dataset.nama); })); }
+  function renderAudit() { let container = document.getElementById('audit-list'); if(!container) return; container.innerHTML = audit.slice(0,50).map(a => `<div>${new Date(a.timestamp).toLocaleString()} - ${a.role}: ${a.action} - ${a.details}</div>`).join(''); }
+  function renderPeriodicFunds(filterType = 'all') { let container = document.getElementById('dana-list'); if (!container) return; let filtered = periodicFunds; if (filterType !== 'all') filtered = periodicFunds.filter(f => f.jenis === filterType); container.innerHTML = filtered.map(f => `<div class="bg-white/5 p-2 rounded"><div class="flex justify-between"><span class="font-bold">${f.kegiatan}</span><span class="text-teal-300">${f.jenis}</span></div><div>Nominal: Rp ${f.nominal.toLocaleString()} - Status: ${f.status || 'pending'}</div><div>Tgl: ${f.tanggal}</div></div>`).join(''); }
+  function renderTips() { let container = document.getElementById('tips-list'); if (!container) return; let total = tips.reduce((s,t)=>s+t.nominal,0); if(document.getElementById('tips-total')) document.getElementById('tips-total').innerText = 'Rp ' + total.toLocaleString(); container.innerHTML = tips.slice(-10).reverse().map(t => `<div>📌 ${t.deskripsi} - Rp ${t.nominal.toLocaleString()} (${t.tanggal})</div>`).join(''); }
+  function renderMaintenances() { let container = document.getElementById('maint-list'); if (!container) return; let filtered = maintenances; if (currentMaintFilter.keyword) { let kw = currentMaintFilter.keyword.toLowerCase(); filtered = filtered.filter(m => m.item.toLowerCase().includes(kw) || m.desc.toLowerCase().includes(kw)); } if (currentMaintFilter.startDate) filtered = filtered.filter(m => m.date >= currentMaintFilter.startDate); if (currentMaintFilter.endDate) filtered = filtered.filter(m => m.date <= currentMaintFilter.endDate); container.innerHTML = filtered.map(m => `<div class="bg-white/5 p-2 rounded flex justify-between items-start"><div><div class="font-bold">${m.item} - ${m.desc}</div><div class="text-xs">Tanggal: ${m.date} | Biaya: Rp ${m.cost.toLocaleString()} | Teknisi: ${m.tech}</div></div><button class="delete-maint text-red-400 text-xs" data-id="${m.id}">✖</button></div>`).join(''); document.querySelectorAll('.delete-maint').forEach(btn => btn.addEventListener('click', (e) => { let id = parseInt(btn.dataset.id); maintenances = maintenances.filter(m => m.id !== id); saveAll(); renderMaintenances(); addAudit('Hapus Maintenance', id); })); }
+  function updateDashboardExtended() { let pendingBookings = bookings.filter(b => b.status === 'pending').length; let totalRab = rabs.reduce((sum, r) => sum + r.nominal, 0); let realisasiBulan = realisasi.filter(r => new Date(r.tanggal).getMonth() === new Date().getMonth()).reduce((sum, r) => sum + (r.nominal || 0), 0); let asetTerpakai = aset.reduce((sum, a) => sum + a.jumlah, 0); let totalTips = tips.reduce((s,t)=>s+t.nominal,0); document.getElementById('pending-count').innerText = pendingBookings; document.getElementById('rab-total').innerText = 'Rp ' + totalRab.toLocaleString(); document.getElementById('realisasi-bulan').innerText = 'Rp ' + realisasiBulan.toLocaleString(); document.getElementById('aset-terpakai').innerText = asetTerpakai; if (document.getElementById('tips-total')) document.getElementById('tips-total').innerText = 'Rp ' + totalTips.toLocaleString(); let notif = []; if (pendingBookings > 0) notif.push(`${pendingBookings} booking pending`); if (rabs.filter(r => r.status === 'pending' && canApprove(r)).length > 0) notif.push('RAB pending'); if (periodicFunds.filter(f => f.status === 'pending').length > 0) notif.push('Dana periodik pending'); document.getElementById('notif-list').innerHTML = notif.length ? notif.map(n => `<div>🔔 ${n}</div>`).join('') : '<div>✅ Semua aman</div>'; let totalRabApproved = rabs.filter(r => r.status === 'approved').reduce((s,r)=>s+r.nominal,0); let totalRealisasi = realisasi.reduce((s,r)=>s+(r.nominal||0),0); let ctx = document.getElementById('budgetChart')?.getContext('2d'); if (ctx) { if (chartInstance) chartInstance.destroy(); chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['Anggaran Disetujui', 'Realisasi'], datasets: [{ label: 'Rp', data: [totalRabApproved, totalRealisasi], backgroundColor: ['#2dd4bf', '#f59e0b'] }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: 'white' } } } } }); } }
+  function generateReport(period) { let now = new Date(); let filter; if (period==='daily') filter = d => d===now.toISOString().slice(0,10); else if (period==='monthly') filter = d => d.slice(0,7)===now.toISOString().slice(0,7); else if (period==='yearly') filter = d => d.slice(0,4)===now.toISOString().slice(0,4); else filter = () => true; let filteredBookings = bookings.filter(b => filter(b.date)); let totalRab = rabs.filter(r=>r.status==='approved').reduce((s,r)=>s+r.nominal,0); let totalReal = realisasi.reduce((s,r)=>s+(r.nominal||0),0); document.getElementById('report-result').innerText = `Laporan ${period.toUpperCase()}\nBooking: ${filteredBookings.length}\nRAB Approved: Rp ${totalRab.toLocaleString()}\nRealisasi: Rp ${totalReal.toLocaleString()}\nSisa: Rp ${(totalRab-totalReal).toLocaleString()}`; addAudit('Generate Report', period); }
+  function printElement(selector, title) { let content = document.querySelector(selector).cloneNode(true); let win = window.open('', '_blank'); win.document.write(`<html><head><title>${title}</title><style>body { font-family: monospace; padding: 20px; } .bg-white\\/5, .glass { background: #f1f5f9; color: black; border: 1px solid #ccc; }</style></head><body>${content.outerHTML}</body></html>`); win.document.close(); win.print(); }
+  
+  function renderAll() { renderBookings(); renderApprovals(); renderRAB(); renderAset(); updateDashboardExtended(); renderAudit(); renderPeriodicFunds(); renderTips(); renderMaintenances(); }
+  
+  // Inisialisasi data contoh jika kosong
+  if (bookings.length === 0) bookings = [{ id: 1, title: 'Rapat Koordinasi', date: '2026-05-15', status: 'pending', approvalLevel: 1 }];
+  if (rabs.length === 0) rabs = [{ id: 1, nama: 'Seminar AI', nominal: 5000000, status: 'pending', approvalLevel: 1, realisasi: '' }];
+  if (maintenances.length === 0) maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk' }];
+  saveAll();
+  
+  document.getElementById('role-badge').innerText = `Role: ${userRole}`;
+  renderAll();
+  
+  function initTabs() { document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-teal-600/30')); btn.classList.add('active', 'bg-teal-600/30'); document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden'); }); }); }
+  initTabs();
+  
+  document.getElementById('switch-role')?.addEventListener('click', () => { let roles = ['koordinator', 'kabag', 'direktur']; let idx = roles.indexOf(userRole); userRole = roles[(idx+1)%roles.length]; localStorage.setItem('dreamos_role', userRole); document.getElementById('role-badge').innerText = `Role: ${userRole}`; addAudit('Switch Role', userRole); renderAll(); });
+  document.getElementById('clear-audit')?.addEventListener('click', () => { if(confirm('Hapus semua audit?')){ audit=[]; localStorage.setItem('dreamos_audit',JSON.stringify(audit)); renderAudit(); addAudit('Clear Audit','all logs'); } });
+  document.getElementById('btn-add-booking')?.addEventListener('click', () => { const title=document.getElementById('booking-title').value, date=document.getElementById('booking-date').value; if(title&&date){ bookings.push({id:Date.now(), title, date, status:'pending', approvalLevel:1}); saveAll(); renderAll(); addAudit('Tambah Booking',title); document.getElementById('booking-title').value=''; } });
+  document.getElementById('btn-add-rab')?.addEventListener('click', () => { const nama=document.getElementById('rab-name').value, nominal=parseInt(document.getElementById('rab-nominal').value); if(nama&&nominal){ rabs.push({id:Date.now(), nama, nominal, status:'pending', approvalLevel:1}); saveAll(); renderAll(); addAudit('Ajukan RAB',`${nama} Rp ${nominal}`); document.getElementById('rab-name').value=''; document.getElementById('rab-nominal').value=''; } });
+  document.getElementById('btn-real')?.addEventListener('click', () => { const desc=document.getElementById('rab-real').value, nominal=parseInt(document.getElementById('rab-real-nominal').value)||0; if(desc){ realisasi.push({tanggal:new Date().toISOString().slice(0,10), nominal, deskripsi:desc}); saveAll(); renderAll(); addAudit('Catat Realisasi',`${desc} Rp ${nominal}`); document.getElementById('rab-real').value=''; document.getElementById('rab-real-nominal').value=''; } });
+  document.getElementById('btn-upload')?.addEventListener('click', () => { const fileInput=document.getElementById('rab-file'); if(fileInput.files.length){ const file=fileInput.files[0]; const reader=new FileReader(); reader.onload=e=>{ if(rabs.length){ rabs[rabs.length-1].fileName=file.name; rabs[rabs.length-1].fileData=e.target.result; saveAll(); renderRAB(); addAudit('Upload Dokumen',file.name); } }; reader.readAsDataURL(file); } });
+  document.getElementById('btn-add-aset')?.addEventListener('click', () => { const nama=document.getElementById('aset-name').value, qty=parseInt(document.getElementById('aset-qty').value); if(nama&&qty){ aset.push({nama, jumlah:qty}); saveAll(); renderAll(); addAudit('Tambah Aset',`${nama} x${qty}`); document.getElementById('aset-name').value=''; document.getElementById('aset-qty').value=''; } });
+  document.getElementById('btn-gen-report')?.addEventListener('click', () => { const period=document.getElementById('report-period').value; generateReport(period); });
+  document.getElementById('btn-add-dana')?.addEventListener('click', () => { const jenis = document.getElementById('periode-jenis').value; const kegiatan = document.getElementById('dana-kegiatan').value; const nominal = parseInt(document.getElementById('dana-nominal').value); if (kegiatan && nominal) { periodicFunds.push({ id: Date.now(), jenis, kegiatan, nominal, status: 'pending', tanggal: new Date().toISOString().slice(0,10) }); saveAll(); renderPeriodicFunds(); addAudit('Ajukan Dana Periodik', `${jenis} - ${kegiatan} Rp ${nominal}`); document.getElementById('dana-kegiatan').value=''; document.getElementById('dana-nominal').value=''; } });
+  document.getElementById('filter-dana')?.addEventListener('click', () => { const filter = document.getElementById('periode-filter').value; renderPeriodicFunds(filter); });
+  document.getElementById('btn-add-tips')?.addEventListener('click', () => { const deskripsi = document.getElementById('tips-deskripsi').value; const nominal = parseInt(document.getElementById('tips-nominal').value); if(deskripsi && nominal) { tips.push({ id: Date.now(), deskripsi, nominal, tanggal: new Date().toISOString().slice(0,10) }); saveAll(); renderTips(); updateDashboardExtended(); addAudit('Tambah Tips', `${deskripsi} Rp ${nominal}`); document.getElementById('tips-deskripsi').value=''; document.getElementById('tips-nominal').value=''; } });
+  document.getElementById('btn-add-maint')?.addEventListener('click', () => { const item = document.getElementById('maint-item').value; const desc = document.getElementById('maint-desc').value; const date = document.getElementById('maint-date').value; const cost = parseInt(document.getElementById('maint-cost').value) || 0; const tech = document.getElementById('maint-tech').value; if (item && desc && date) { maintenances.push({ id: Date.now(), item, desc, date, cost, tech }); saveAll(); renderMaintenances(); addAudit('Tambah Maintenance', `${item} - ${desc}`); document.getElementById('maint-item').value=''; document.getElementById('maint-desc').value=''; document.getElementById('maint-date').value=''; document.getElementById('maint-cost').value=''; document.getElementById('maint-tech').value=''; } });
+  document.getElementById('btn-search-maint')?.addEventListener('click', () => { currentMaintFilter.keyword = document.getElementById('search-maint').value; currentMaintFilter.startDate = document.getElementById('search-start').value; currentMaintFilter.endDate = document.getElementById('search-end').value; renderMaintenances(); });
+  document.getElementById('reset-search')?.addEventListener('click', () => { document.getElementById('search-maint').value = ''; document.getElementById('search-start').value = ''; document.getElementById('search-end').value = ''; currentMaintFilter = { keyword: '', startDate: '', endDate: '' }; renderMaintenances(); });
+  document.getElementById('print-dana')?.addEventListener('click', () => { printElement('#tab-dana .bg-white\\/5:last-child', 'Laporan Dana Periodik'); });
+  document.getElementById('print-maint')?.addEventListener('click', () => { printElement('#maint-list', 'Laporan Maintenance'); });
+  document.getElementById('print-report')?.addEventListener('click', () => { printElement('#report-result', 'Laporan Umum'); });
+  
+  setInterval(() => { renderAll(); }, 5000);
 </script>
