@@ -1,4 +1,68 @@
 <div class="glass p-4 rounded-xl">
-  <h2 class="text-lg font-bold mb-3">📌 Modul Command</h2>
-  <p>Modul ini sedang dalam pengembangan. Fitur akan segera hadir.</p>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><span>🌍</span> Command Center</h2>
+    <button id="voice-btn" class="bg-teal-600 p-2 rounded-full w-10 h-10 flex items-center justify-center">🎙️</button>
+  </div>
+  <div id="chat-history" class="h-64 overflow-y-auto mb-4 space-y-2 p-2 bg-black/20 rounded-xl">
+    <div class="text-center text-white/40 text-sm">✨ Kirim perintah atau bicara ✨</div>
+  </div>
+  <div class="flex gap-2">
+    <input type="text" id="command-input" placeholder="Ketik perintah... (misal: buka booking, laporan stok)" class="flex-1 bg-black/30 p-2 rounded-xl border border-white/20">
+    <button id="send-btn" class="bg-teal-600 px-4 py-2 rounded-xl">Kirim</button>
+  </div>
+  <div class="text-[10px] text-white/40 mt-2 text-center">Contoh: "buka booking" | "tampilkan stok" | "jadwal maintenance"</div>
 </div>
+<script>
+  function addMessage(text, isUser = true) {
+    const history = document.getElementById('chat-history');
+    const div = document.createElement('div');
+    div.className = isUser ? 'text-right' : 'text-left';
+    const bubbleClass = isUser ? 'bg-teal-600/30 text-teal-200' : 'bg-white/10 text-white';
+    div.innerHTML = `<div class="inline-block p-2 rounded-xl ${bubbleClass} max-w-[80%] break-words">${text}</div>`;
+    history.appendChild(div);
+    history.scrollTop = history.scrollHeight;
+  }
+  async function callAI(prompt) {
+    addMessage('🤖 Memproses...', false);
+    await new Promise(r => setTimeout(r, 500));
+    const lower = prompt.toLowerCase();
+    let response = '';
+    if (lower.includes('buka booking')) {
+      response = 'Membuka modul Booking...';
+      if (window.DreamEventBus) window.DreamEventBus.emit('command.openModule', { module: 'Booking' });
+      else { const btn = Array.from(document.querySelectorAll('.menu-card')).find(el => el.innerText.includes('Booking')); if(btn) btn.click(); }
+    } else if (lower.includes('stok')) response = '📦 Stok: Kertas A4 20 rim, Tinta hitam 5 botol.';
+    else if (lower.includes('maintenance')) response = '🔧 Jadwal maintenance: Lift 20 Mei, AC 25 Mei.';
+    else if (lower.includes('asset')) response = '🏢 Aset: 5 laptop, 3 proyektor, 10 AC.';
+    else if (lower.includes('k3')) response = '⚠️ K3: Tidak ada insiden, safety briefing Jumat.';
+    else response = `❌ Perintah "${prompt}" tidak dikenali. Coba: "buka booking", "laporan stok".`;
+    const lastMsg = document.getElementById('chat-history').lastChild;
+    if (lastMsg && lastMsg.innerText.includes('Memproses')) lastMsg.remove();
+    addMessage(response, false);
+  }
+  function sendCommand() {
+    const input = document.getElementById('command-input');
+    const text = input.value.trim();
+    if (!text) return;
+    addMessage(text, true);
+    input.value = '';
+    callAI(text);
+  }
+  let recognition = null;
+  if ('webkitSpeechRecognition' in window) {
+    recognition = new webkitSpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (e) => { document.getElementById('command-input').value = e.results[0][0].transcript; sendCommand(); };
+    recognition.onerror = () => addMessage('🎙️ Voice tidak dikenali.', false);
+  }
+  document.getElementById('send-btn').addEventListener('click', sendCommand);
+  document.getElementById('command-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendCommand(); });
+  const voiceBtn = document.getElementById('voice-btn');
+  if (voiceBtn && recognition) voiceBtn.addEventListener('click', () => { recognition.start(); addMessage('🎙️ Dengarkan...', false); });
+  else if (voiceBtn) voiceBtn.disabled = true;
+  if (window.DreamEventBus) {
+    window.DreamEventBus.subscribe('command.execute', (data) => { document.getElementById('command-input').value = data.command; sendCommand(); }, 'command-module');
+  }
+</script>
