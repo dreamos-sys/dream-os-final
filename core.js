@@ -226,3 +226,151 @@ document.addEventListener('DOMContentLoaded', () => {
         // tapi tidak bisa kami pastikan. Kami serahkan ke event vault:unlock-success.
     }
 });
+
+// ========== DREAM WEB — SPIDER DETECTION DEVICE ==========
+window.DreamWeb = {
+    sensorTags: new Map(),           // { sensorId: { type, triggered, lastTriggered, count } }
+    correlationWindow: 5000,        // 5 detik untuk menghubungkan event
+    escalationLevel: 0,             // 0-3
+    webMap: new Map(),              // "lokasi" rawan yang diingat
+    
+    // Mendaftarkan sensor baru ke jaring
+    registerSensor(id, type, threshold = 3) {
+        this.sensorTags.set(id, { type, threshold, triggered: false, lastTriggered: 0, count: 0 });
+        console.log('🕷️ Sensor terpasang:', id, 'tipe:', type);
+    },
+    
+    // Suatu sensor terpicu — getaran di jaring
+    vibrate(sensorId, detail = {}) {
+        const sensor = this.sensorTags.get(sensorId);
+        if (!sensor) return;
+        
+        const now = Date.now();
+        sensor.count++;
+        sensor.lastTriggered = now;
+        sensor.triggered = true;
+        
+        console.warn('🕸️ Getaran di jaring:', sensorId, '(hit ke-' + sensor.count + ')', detail);
+        DreamEventBus.emit('web:vibration', { sensorId, detail, count: sensor.count });
+        
+        // Catat lokasi (sensorId) ke webMap untuk diingat
+        this.webMap.set(sensorId, (this.webMap.get(sensorId) || 0) + 1);
+        
+        // Evaluasi korelasi: adakah sensor lain yang terpicu dalam waktu dekat?
+        this.correlate(sensorId);
+        
+        // Evaluasi eskalasi
+        this.evaluateEscalation();
+    },
+    
+    // Korelasi: cari sensor lain yang juga terpicu dalam correlationWindow
+    correlate(sourceId) {
+        const now = Date.now();
+        let activated = [];
+        for (let [id, s] of this.sensorTags.entries()) {
+            if (id !== sourceId && (now - s.lastTriggered) < this.correlationWindow) {
+                activated.push(id);
+            }
+        }
+        if (activated.length > 0) {
+            console.warn('🕷️🐞 Korelasi ancaman:', activated.length, 'sensor lain terpicu:', activated);
+            DreamEventBus.emit('web:correlation', { source: sourceId, activated });
+            // Jika banyak sensor terpicu, naikkan eskalasi langsung
+            if (activated.length >= 2) {
+                this.escalationLevel = Math.min(3, this.escalationLevel + 1);
+            }
+        }
+    },
+    
+    // Evaluasi apakah perlu meningkatkan eskalasi
+    evaluateEscalation() {
+        let totalTriggers = 0;
+        for (let s of this.sensorTags.values()) totalTriggers += s.count;
+        
+        if (totalTriggers >= 10 && this.escalationLevel < 3) {
+            this.escalationLevel = 3;
+            console.error('🕷️🛡️ ESKALASI LEVEL 3: Ancaman serius terdeteksi!');
+            DreamEventBus.emit('web:escalation-3');
+            this.autoDefend();
+        } else if (totalTriggers >= 6 && this.escalationLevel < 2) {
+            this.escalationLevel = 2;
+            console.warn('🕷️⚠️ Eskalasi level 2');
+            DreamEventBus.emit('web:escalation-2');
+        } else if (totalTriggers >= 3 && this.escalationLevel === 0) {
+            this.escalationLevel = 1;
+            console.info('🕷️🔍 Eskalasi level 1');
+        }
+    },
+    
+    // Pertahanan otomatis
+    autoDefend() {
+        // Panggil prosedur keamanan yang ada
+        if (window.DreamImmune) {
+            DreamImmune.threatLevel = 2;
+            DreamImmune.respond();
+        }
+        // Isolasi: sembunyikan modul sensitif
+        const containers = ['#command-center', '#module-container'];
+        containers.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (el) el.style.display = 'none';
+        });
+        alert('🕷️ Jaring mendeteksi ancaman besar. Sistem diamankan.');
+    },
+    
+    // Patroli jaring: setiap interval, bersihkan sensor yang lama tidak terpicu
+    startWebPatrol(intervalMs = 30000) {
+        setInterval(() => {
+            const now = Date.now();
+            for (let [id, s] of this.sensorTags.entries()) {
+                if (s.triggered && (now - s.lastTriggered) > 60000) {
+                    s.triggered = false; // reset jika sudah tenang
+                }
+            }
+            // Turunkan eskalasi jika sudah tenang 5 menit
+            if (this.escalationLevel > 0 && 
+                [...this.sensorTags.values()].every(s => (now - s.lastTriggered) > 300000)) {
+                this.escalationLevel = 0;
+                console.log('🕷️ Jaring tenang, eskalasi dinormalkan.');
+            }
+        }, intervalMs);
+    },
+    
+    // Dapatkan peta kerawanan (untuk Ghost Mode)
+    getHeatmap() {
+        return Object.fromEntries(this.webMap);
+    }
+};
+
+// Inisialisasi: pasang sensor-sensor default
+document.addEventListener('DOMContentLoaded', () => {
+    // Sensor 1: Error di console
+    const originalError = console.error;
+    console.error = function(...args) {
+        DreamWeb.vibrate('console-error', { message: args[0] });
+        originalError.apply(console, args);
+    };
+    
+    // Sensor 2: Percobaan akses file yang tidak ada (404)
+    // Kita intercept fetch hanya untuk module loader? Tidak bisa langsung,
+    // tapi kita bisa deteksi dari ModuleLoader jika ada.
+    
+    // Sensor 3: localStorage diubah langsung (proxy)
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+        // Jika bukan dari fungsi internal, anggap mencurigakan
+        if (key !== 'deadman_last_check' && key !== 'immune_patterns' && 
+            key !== 'web_memory' && key !== 'dreamos_role') {
+            // Bisa dari user biasa, tapi kita catat jika banyak perubahan aneh
+            // Untuk deteksi perubahan massal, kita bisa lihat pola
+        }
+        originalSetItem.apply(this, arguments);
+    };
+    
+    // Sensor 4: Klik di luar jam kerja? (opsional)
+    
+    // Mulai patroli
+    DreamWeb.startWebPatrol();
+    
+    console.log('🕸️ Dream Web Spider Detection aktif.');
+});
