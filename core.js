@@ -135,3 +135,94 @@ if (window.DreamOS) {
     DreamEventBus.emit('module:registered', { name });
   };
 }
+
+// ========== DREAM IMMUNE SYSTEM (Auto-Imun Digital) ==========
+window.DreamImmune = {
+    ownerSession: false,
+    threatLevel: 0,               // 0 = aman, 1 = waspada, 2 = bahaya
+    failedAttempts: {},           // { 'ip'?: jumlah, pattern: jumlah }
+    attackPatterns: JSON.parse(localStorage.getItem('immune_patterns') || '[]'),
+    
+    // Identifikasi sebagai pemilik sah
+    identifyAsOwner() {
+        this.ownerSession = true;
+        this.threatLevel = 0;
+        console.log('👑 Owner teridentifikasi. Immune system dalam mode ramah.');
+        DreamEventBus.emit('immune:owner-identified');
+    },
+    
+    // Catat percobaan mencurigakan
+    logAttempt(type, details) {
+        const key = type + '::' + JSON.stringify(details).slice(0,100);
+        this.failedAttempts[key] = (this.failedAttempts[key] || 0) + 1;
+        console.warn('⚠️ Immune: percobaan mencurigakan tercatat', type, details);
+        DreamEventBus.emit('immune:threat-logged', { type, details, count: this.failedAttempts[key] });
+        this.evaluate();
+    },
+    
+    // Evaluasi ancaman
+    evaluate() {
+        let totalAttempts = Object.values(this.failedAttempts).reduce((a,b)=>a+b,0);
+        if (totalAttempts >= 5 && !this.ownerSession) {
+            this.threatLevel = 2;
+            this.respond();
+        } else if (totalAttempts >= 3 && !this.ownerSession) {
+            this.threatLevel = 1;
+            console.warn('⚠️ Immune: waspada, ancaman meningkat.');
+        }
+        // Simpan pola ke memory
+        if (totalAttempts > 0) {
+            DreamMemory.addMessage('system', 'Immune threat level: ' + this.threatLevel);
+        }
+    },
+    
+    // Respons otomatis
+    respond() {
+        console.error('🚨 IMMUNE RESPONSE AKTIF: Ancaman level 2!');
+        // Isolasi: kunci vault jika ada
+        if (window.DreamVault && !DreamVault.isLocked) {
+            const emergencyPass = 'dreamos-self-lock-' + Date.now();
+            DreamVault.lock(emergencyPass);
+        }
+        // Hapus session role (paksa jadi tamu)
+        localStorage.setItem('dreamos_role', 'guest');
+        // Catat pola serangan
+        this.attackPatterns.push({
+            time: Date.now(),
+            attempts: {...this.failedAttempts},
+            threatLevel: this.threatLevel
+        });
+        localStorage.setItem('immune_patterns', JSON.stringify(this.attackPatterns));
+        // Reset counter setelah respons
+        this.failedAttempts = {};
+        alert('🚨 Keamanan sistem diaktifkan. Data telah diamankan. Silakan hubungi administrator.');
+        // Reload untuk menerapkan kuncian
+        location.reload();
+    },
+    
+    // Vaksinasi: tolak pola yang sudah dikenal
+    isKnownAttack(pattern) {
+        return this.attackPatterns.some(p => 
+            JSON.stringify(p.attempts) === JSON.stringify(pattern)
+        );
+    },
+    
+    // Mulai patroli rutin
+    startPatrol(intervalMs = 60000) {
+        setInterval(() => {
+            if (this.threatLevel > 0 && !this.ownerSession) {
+                console.log('🛡️ Immune patrol... threat level:', this.threatLevel);
+            }
+        }, intervalMs);
+    }
+};
+
+// Auto-start patrol saat DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+    DreamImmune.startPatrol();
+    // Owner check: jika vault terbuka baru-baru ini, anggap owner
+    if (localStorage.getItem('dream_vault') === null && localStorage.getItem('dreamos_bookings')) {
+        // Vault tidak terkunci, berarti sebelumnya owner sudah unlock, 
+        // tapi tidak bisa kami pastikan. Kami serahkan ke event vault:unlock-success.
+    }
+});
