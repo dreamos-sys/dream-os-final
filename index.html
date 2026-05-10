@@ -347,6 +347,7 @@
     window.handleMenuClick = function(label) {
       // Mapping label ke id modul, url, dan container
       const modules = {
+        'Command': { id: 'command', url: 'js/modules/command.html', container: 'command-center' },
         'Booking': { id: 'booking', url: 'js/modules/booking.html', container: 'command-center' },
         'K3': { id: 'k3', url: 'js/modules/k3.html', container: 'command-center' },
         'Security': { id: 'security', url: 'js/modules/security.html', container: 'command-center' },
@@ -359,6 +360,13 @@
       };
       const mod = modules[label];
       if (mod) {
+          if (typeof window.ModuleLoader !== 'undefined' && window.ModuleLoader.load) {
+            window.ModuleLoader.load(mod.id, mod.url, mod.container);
+          } else {
+            fetch(mod.url).then(res => res.text()).then(html => {
+              document.getElementById(mod.container).innerHTML = html;
+            }).catch(err => console.error('Fallback load failed:', err));
+          }
         // Tampilkan container command-center, sembunyikan main-content-wrapper
         const mainWrapper = document.getElementById('main-content-wrapper');
         const cmdContainer = document.getElementById('command-center');
