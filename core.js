@@ -555,3 +555,128 @@ window.DreamSentinel = {
 document.addEventListener('DOMContentLoaded', () => {
     DreamSentinel.init();
 });
+
+// ========== DREAM FINGERPRINT — DEVICE SENSOR HASH ==========
+window.DreamFingerprint = {
+    ownerHash: localStorage.getItem('owner_device_hash') || null,
+    currentHash: null,
+    isOwnerDevice: false,
+
+    // Kumpulkan data sensor (tanpa permission)
+    async collectData() {
+        const data = {
+            screen: [screen.width, screen.height, screen.colorDepth, screen.pixelDepth],
+            gpu: await this.getGPUHash(),
+            battery: await this.getBatteryInfo(),
+            orientation: await this.getOrientationInfo(),
+            motion: await this.getMotionInfo(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            language: navigator.language,
+            platform: navigator.platform,
+            touchPoints: navigator.maxTouchPoints,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+            deviceMemory: navigator.deviceMemory || 'unknown',
+        };
+        return data;
+    },
+
+    // GPU fingerprint via WebGL
+    getGPUHash() {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) return 'no-webgl';
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown';
+            const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown';
+            return vendor + '|' + renderer;
+        } catch (e) {
+            return 'webgl-error';
+        }
+    },
+
+    // Battery info
+    async getBatteryInfo() {
+        try {
+            if (navigator.getBattery) {
+                const battery = await navigator.getBattery();
+                return [battery.charging, battery.level, battery.chargingTime, battery.dischargingTime].join('|');
+            }
+        } catch (e) {}
+        return 'no-battery-api';
+    },
+
+    // Gyroscope / Accelerometer (sekali baca)
+    getOrientationInfo() {
+        return new Promise((resolve) => {
+            const timeout = setTimeout(() => resolve('no-orientation'), 2000);
+            window.addEventListener('deviceorientation', (e) => {
+                clearTimeout(timeout);
+                resolve([e.alpha?.toFixed(4), e.beta?.toFixed(4), e.gamma?.toFixed(4)].join('|'));
+            }, { once: true });
+        });
+    },
+
+    getMotionInfo() {
+        return new Promise((resolve) => {
+            const timeout = setTimeout(() => resolve('no-motion'), 2000);
+            window.addEventListener('devicemotion', (e) => {
+                clearTimeout(timeout);
+                const acc = e.accelerationIncludingGravity;
+                if (acc) {
+                    resolve([acc.x?.toFixed(3), acc.y?.toFixed(3), acc.z?.toFixed(3)].join('|'));
+                } else {
+                    resolve('no-accel');
+                }
+            }, { once: true });
+        });
+    },
+
+    // Buat hash SHA-256 dari data
+    async computeHash(data) {
+        const str = JSON.stringify(data);
+        const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+
+    // Inisialisasi
+    async init() {
+        console.log('🔍 DreamFingerprint: Mengumpulkan data sensor...');
+        const data = await this.collectData();
+        this.currentHash = await this.computeHash(data);
+        sessionStorage.setItem('device_hash', this.currentHash);
+
+        // Bandingkan dengan owner hash
+        if (this.ownerHash && this.currentHash === this.ownerHash) {
+            this.isOwnerDevice = true;
+            console.log('👑 Device Owner terdeteksi!');
+            DreamEventBus.emit('device:owner-detected', { hash: this.currentHash });
+            if (window.DreamImmune) DreamImmune.identifyAsOwner();
+        } else {
+            console.log('🖥️ Device asing, hash:', this.currentHash);
+            DreamEventBus.emit('device:unknown', { hash: this.currentHash });
+        }
+    },
+
+    // Simpan device ini sebagai owner (dipanggil manual oleh owner dari Ghost Mode)
+    setAsOwner() {
+        this.ownerHash = this.currentHash;
+        localStorage.setItem('owner_device_hash', this.currentHash);
+        this.isOwnerDevice = true;
+        console.log('✅ Device ini disimpan sebagai Owner.');
+        DreamEventBus.emit('device:owner-set');
+    },
+
+    // Hapus owner (reset)
+    removeOwner() {
+        localStorage.removeItem('owner_device_hash');
+        this.ownerHash = null;
+        this.isOwnerDevice = false;
+        console.log('🗑️ Owner device dihapus.');
+    }
+};
+
+// Jalankan inisialisasi setelah DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => DreamFingerprint.init(), 1000); // delay 1 detik untuk sensor
+});
