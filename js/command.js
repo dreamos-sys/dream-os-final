@@ -1,5 +1,4 @@
 console.log('✅ command.js dimuat');
-// Data global
 window.bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
 window.rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[]');
 window.realisasi = JSON.parse(localStorage.getItem('dreamos_realisasi') || '[]');
@@ -11,7 +10,6 @@ window.tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
 window.maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
 window.chartInstance = null;
 
-// Fungsi Switch Role (tanpa reload)
 window.switchRole = function() {
     var roles = ['koordinator', 'kabag', 'direktur'];
     var current = localStorage.getItem('dreamos_role') || 'kabag';
@@ -20,62 +18,37 @@ window.switchRole = function() {
     localStorage.setItem('dreamos_role', newRole);
     var badge = document.getElementById('role-badge');
     if (badge) badge.innerText = 'Role: ' + newRole;
-    console.log('Role switched to ' + newRole);
 };
 
-// Fungsi pindah tab
 window.switchTab = function(tabId) {
-    console.log('switchTab: ' + tabId);
-    document.querySelectorAll('.tab-btn').forEach(function(b) {
-        b.classList.remove('active', 'bg-teal-600/30');
-    });
-    document.querySelectorAll('.tab-content').forEach(function(c) {
-        c.classList.add('hidden');
-    });
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active', 'bg-teal-600/30'); });
+    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.add('hidden'); });
     var target = document.getElementById('tab-' + tabId);
     if (target) target.classList.remove('hidden');
     var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\')"]');
     if (activeBtn) activeBtn.classList.add('active', 'bg-teal-600/30');
 };
 
-// Update dashboard (dipanggil saat switchTab('dashboard'))
 window.updateDashboard = function() {
     var pendingCount = window.bookings.filter(function(b) { return b.status === 'pending'; }).length;
     var totalRab = window.rabs.reduce(function(s, r) { return s + r.nominal; }, 0);
     var realisasiBulan = window.realisasi.reduce(function(s, r) { return s + (r.nominal || 0); }, 0);
     var totalTips = window.tips.reduce(function(s, t) { return s + t.nominal; }, 0);
-
-    var el = document.getElementById('pending-count');
-    if (el) el.innerText = pendingCount;
-    el = document.getElementById('rab-total');
-    if (el) el.innerText = 'Rp ' + totalRab.toLocaleString();
-    el = document.getElementById('realisasi-bulan');
-    if (el) el.innerText = 'Rp ' + realisasiBulan.toLocaleString();
-    el = document.getElementById('tips-total');
-    if (el) el.innerText = 'Rp ' + totalTips.toLocaleString();
-
+    var el;
+    el = document.getElementById('pending-count'); if (el) el.innerText = pendingCount;
+    el = document.getElementById('rab-total'); if (el) el.innerText = 'Rp ' + totalRab.toLocaleString();
+    el = document.getElementById('realisasi-bulan'); if (el) el.innerText = 'Rp ' + realisasiBulan.toLocaleString();
+    el = document.getElementById('tips-total'); if (el) el.innerText = 'Rp ' + totalTips.toLocaleString();
     if (typeof Chart !== 'undefined') {
         var ctx = document.getElementById('budgetChart');
         if (ctx) {
             ctx = ctx.getContext('2d');
             if (window.chartInstance) window.chartInstance.destroy();
-            window.chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Anggaran', 'Realisasi'],
-                    datasets: [{
-                        label: 'Rp',
-                        data: [totalRab, realisasiBulan],
-                        backgroundColor: ['#2dd4bf', '#f59e0b']
-                    }]
-                },
-                options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
-            });
+            window.chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['Anggaran', 'Realisasi'], datasets: [{ label: 'Rp', data: [totalRab, realisasiBulan], backgroundColor: ['#2dd4bf', '#f59e0b'] }] }, options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } } });
         }
     }
 };
 
-// Data contoh
 if (window.bookings.length === 0) window.bookings = [{ id: 1, title: 'Rapat Koordinasi', date: '2026-05-15', status: 'pending', approvalLevel: 1 }];
 if (window.rabs.length === 0) window.rabs = [{ id: 1, nama: 'Seminar AI', nominal: 5000000, status: 'pending', approvalLevel: 1 }];
 if (window.maintenances.length === 0) window.maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk', status: 'progress' }];
