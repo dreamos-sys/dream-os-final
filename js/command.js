@@ -1,11 +1,4 @@
-// ==========================================
-// DREAM OS COMMAND CENTER - CORE LOGIC
-// Bi idznillah - Out of The Box Inside
-// ==========================================
-
 console.log('Command Center Logic Loaded');
-
-// --- Inisialisasi Global ---
 window.bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
 window.rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[]');
 window.realisasi = JSON.parse(localStorage.getItem('dreamos_realisasi') || '[]');
@@ -17,7 +10,6 @@ window.tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
 window.maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
 window.chartInstance = null;
 
-// --- Fungsi Bantuan ---
 window.addAudit = function(action, details) {
     window.audit.unshift({ timestamp: new Date().toISOString(), role: window.userRole, action, details });
     if (window.audit.length > 200) window.audit.pop();
@@ -34,7 +26,6 @@ window.saveAll = function() {
     localStorage.setItem('dreamos_maintenances', JSON.stringify(window.maintenances));
 };
 
-// --- Fungsi Tab ---
 window.switchTab = function(tabId) {
     console.log('switchTab called: ' + tabId);
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-teal-600/30'));
@@ -46,7 +37,6 @@ window.switchTab = function(tabId) {
     if (tabId === 'dashboard') window.updateDashboard();
 };
 
-// --- Fungsi Switch Role (TIDAK LOGOUT) ---
 window.switchRole = function() {
     console.log('switchRole called');
     var roles = ['koordinator', 'kabag', 'direktur'];
@@ -56,10 +46,8 @@ window.switchRole = function() {
     localStorage.setItem('dreamos_role', newRole);
     var badge = document.getElementById('role-badge');
     if (badge) badge.innerText = 'Role: ' + newRole;
-    // Tidak melakukan reload, hanya update badge
 };
 
-// --- Update Dashboard ---
 window.updateDashboard = function() {
     var pendingCount = window.bookings.filter(function(b) { return b.status === 'pending'; }).length;
     var totalRab = window.rabs.reduce(function(sum, r) { return sum + r.nominal; }, 0);
@@ -71,7 +59,6 @@ window.updateDashboard = function() {
     document.getElementById('realisasi-bulan').innerText = 'Rp ' + realisasiBulan.toLocaleString();
     document.getElementById('tips-total').innerText = 'Rp ' + totalTips.toLocaleString();
 
-    // Grafik
     if (typeof Chart !== 'undefined') {
         var ctx = document.getElementById('budgetChart');
         if (ctx) {
@@ -93,7 +80,6 @@ window.updateDashboard = function() {
     }
 };
 
-// Data contoh
 if (window.bookings.length === 0) window.bookings = [{ id: 1, title: 'Rapat Koordinasi', date: '2026-05-15', status: 'pending', approvalLevel: 1 }];
 if (window.rabs.length === 0) window.rabs = [{ id: 1, nama: 'Seminar AI', nominal: 5000000, status: 'pending', approvalLevel: 1 }];
 if (window.maintenances.length === 0) window.maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk', status: 'progress' }];
