@@ -708,3 +708,46 @@ if (document.readyState === 'complete') {
 } else {
     window.addEventListener('load', injectSwitchRoleButton);
 }
+
+
+
+// ========== DOUBLE INJECTOR: PAKSA SWITCH ROLE & CHART SETELAH MODULE LOAD ==========
+function forceActivateSwitchRole() {
+    const badge = document.getElementById('role-badge');
+    const switchBtn = document.getElementById('switch-role') || document.querySelector('.switch-role, [id*="switch"]');
+    if (badge && switchBtn) {
+        // Timpa onclick langsung
+        switchBtn.onclick = function() {
+            var r = ['koordinator','kabag','direktur'];
+            var c = localStorage.getItem('dreamos_role') || 'kabag';
+            var i = r.indexOf(c);
+            var n = r[(i+1)%r.length];
+            localStorage.setItem('dreamos_role', n);
+            badge.innerText = 'Role: ' + n;
+            location.reload();
+        };
+        console.log('✅ Switch Role PAKSA diaktifkan');
+    } else {
+        setTimeout(forceActivateSwitchRole, 800);
+    }
+}
+
+function forceChartInit() {
+    if (typeof Chart !== 'undefined' && document.getElementById('budgetChart') && typeof updateDashboardExtended === 'function') {
+        updateDashboardExtended();
+        console.log('✅ Chart PAKSA diinisialisasi');
+    } else {
+        setTimeout(forceChartInit, 700);
+    }
+}
+
+// Jalankan setelah DOM siap
+if (document.readyState === 'complete') {
+    forceActivateSwitchRole();
+    forceChartInit();
+} else {
+    window.addEventListener('load', function() {
+        forceActivateSwitchRole();
+        forceChartInit();
+    });
+}
