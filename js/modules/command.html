@@ -27,7 +27,18 @@
       <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Realisasi Bulan Ini</div><div class="text-xl font-bold text-teal-400" id="realisasi-bulan">0</div></div>
       <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Total Dana Tips</div><div class="text-xl font-bold text-blue-400" id="tips-total">0</div></div>
     </div>
-    <div class="bg-white/5 p-2 rounded-xl mb-3"><div class="text-sm font-bold mb-1">📈 Anggaran vs Realisasi (Bulan Ini)</div><div id="budget-chart-placeholder" class="text-center text-xs text-white/40">[ Grafik ]</div></div>
+    <div class="bg-white/5 p-2 rounded-xl mb-3"><div class="text-sm font-bold mb-1">📈 Anggaran vs Realisasi (Bulan Ini)</div><canvas id="budgetChart" height="150" class="w-full"></canvas>
+    <div class="grid grid-cols-4 gap-2 mb-3" id="modul-summary-grid">
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Bookings</div><div class="text-lg font-bold" id="sum-bookings">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">RAB</div><div class="text-lg font-bold" id="sum-rab">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Dana Periodik</div><div class="text-lg font-bold" id="sum-dana">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Tips</div><div class="text-lg font-bold" id="sum-tips">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Maintenance</div><div class="text-lg font-bold" id="sum-maint">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Aset</div><div class="text-lg font-bold" id="sum-aset">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Realisasi</div><div class="text-lg font-bold" id="sum-realisasi">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Audit</div><div class="text-lg font-bold" id="sum-audit">0</div></div>
+    </div>
+</div>
     <div class="bg-white/5 p-3 rounded-xl"><div class="text-sm font-bold mb-1">🔔 Notifikasi</div><div id="notif-list" class="text-xs text-white/60 space-y-1 max-h-32 overflow-y-auto"></div></div>
   </div>
 
@@ -223,6 +234,18 @@
     document.querySelectorAll('.delete-maint').forEach(btn => btn.addEventListener('click', (e) => { let id = parseInt(btn.dataset.id); maintenances = maintenances.filter(m => m.id !== id); saveAll(); renderMaintenances(); addAudit('Hapus Maintenance', id); }));
   }
 
+
+  function updateModuleSummary() {
+    document.getElementById('sum-bookings').innerText = bookings.length;
+    document.getElementById('sum-rab').innerText = rabs.length;
+    document.getElementById('sum-dana').innerText = periodicFunds.length;
+    document.getElementById('sum-tips').innerText = tips.reduce((s,t)=>s+t.nominal,0).toLocaleString();
+    document.getElementById('sum-maint').innerText = maintenances.length;
+    document.getElementById('sum-aset').innerText = aset.reduce((s,a)=>s+a.jumlah,0);
+    document.getElementById('sum-realisasi').innerText = realisasi.reduce((s,r)=>s+(r.nominal||0),0).toLocaleString();
+    document.getElementById('sum-audit').innerText = audit.length;
+  }
+
   function updateDashboardExtended() {
     let pendingBookings = bookings.filter(b => b.status === 'pending').length;
     let totalRab = rabs.reduce((sum, r) => sum + r.nominal, 0);
@@ -237,6 +260,7 @@
     if (rabs.filter(r => r.status === 'pending' && canApprove(r)).length > 0) notif.push('RAB pending');
     if (periodicFunds.filter(f => f.status === 'pending').length > 0) notif.push('Dana periodik pending');
     document.getElementById('notif-list').innerHTML = notif.length ? notif.map(n => '<div>🔔 '+n+'</div>').join('') : '<div>✅ Semua aman</div>';
+  updateModuleSummary();
     let totalRabApproved = rabs.filter(r => r.status === 'approved').reduce((s,r)=>s+r.nominal,0);
     let totalRealisasi = realisasi.reduce((s,r)=>s+(r.nominal||0),0);
     let ctx = document.getElementById('budgetChart')?.getContext('2d');
@@ -269,7 +293,7 @@
   }
 
   function renderAll() {
-    renderBookings(); renderApprovals(); renderRAB(); renderAset(); updateDashboardExtended(); renderAudit(); renderPeriodicFunds(); renderTips(); renderMaintenances();
+    renderBookings(); renderApprovals(); renderRAB(); renderAset(); updateDashboardExtended(); renderAudit(); renderPeriodicFunds(); renderTips(); renderMaintenances(); updateModuleSummary();
   }
 
   // Fungsi pindah tab (dipasang di window)
