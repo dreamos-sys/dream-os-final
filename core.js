@@ -680,3 +680,31 @@ window.DreamFingerprint = {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => DreamFingerprint.init(), 1000); // delay 1 detik untuk sensor
 });
+
+// ========== INJEKSI TOMBOL SWITCH ROLE HIDUP ==========
+function injectSwitchRoleButton() {
+    // Cari teks "Role:" di header, lalu ganti dengan versi yang bisa diklik
+    const bodyText = document.body.innerText;
+    if (bodyText.includes('Role:')) {
+        // Cari semua span yang mungkin berisi teks "Role:"
+        const allSpans = document.querySelectorAll('span, div, p');
+        for (let el of allSpans) {
+            if (el.innerText.includes('Role:')) {
+                // Ganti konten dengan span id='role-badge' dan tombol Switch Role
+                const currentRole = localStorage.getItem('dreamos_role') || 'kabag';
+                el.innerHTML = `<span id="role-badge" class="text-xs bg-teal-600/30 px-2 py-1 rounded-full">Role: ${currentRole}</span> <button class="text-xs underline text-teal-300 ml-2" onclick="(function(){var r=['koordinator','kabag','direktur'];var c=localStorage.getItem('dreamos_role')||'kabag';var i=r.indexOf(c);var n=r[(i+1)%r.length];localStorage.setItem('dreamos_role',n);document.getElementById('role-badge').innerText='Role: '+n;location.reload();})()">Switch Role</button>`;
+                console.log('✅ Switch Role button injected');
+                return;
+            }
+        }
+    }
+    // Jika tidak ditemukan, coba lagi nanti
+    setTimeout(injectSwitchRoleButton, 1000);
+}
+
+// Mulai injeksi setelah DOM siap
+if (document.readyState === 'complete') {
+    injectSwitchRoleButton();
+} else {
+    window.addEventListener('load', injectSwitchRoleButton);
+}
