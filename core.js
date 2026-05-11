@@ -751,3 +751,17 @@ if (document.readyState === 'complete') {
         forceChartInit();
     });
 }
+
+// ========== PAKSA OTAK COMMAND CENTER ==========
+function injectCommandBrain() {
+    if (document.getElementById('command-center') && !document.querySelector('script[src="js/command.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'js/command.js';
+        script.onload = () => console.log('🧠 Otak Command Center terpasang');
+        document.body.appendChild(script);
+    } else {
+        setTimeout(injectCommandBrain, 500);
+    }
+}
+if (document.readyState === 'complete') injectCommandBrain();
+else window.addEventListener('load', injectCommandBrain);
