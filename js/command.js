@@ -3,6 +3,8 @@
 // Bi idznillah - Out of The Box Inside
 // ==========================================
 
+console.log('Command Center Logic Loaded');
+
 // --- Inisialisasi Global ---
 window.bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
 window.rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[]');
@@ -14,7 +16,6 @@ window.periodicFunds = JSON.parse(localStorage.getItem('dreamos_periodic_funds')
 window.tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
 window.maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
 window.chartInstance = null;
-window.currentMaintFilter = { keyword: '', startDate: '', endDate: '' };
 
 // --- Fungsi Bantuan ---
 window.addAudit = function(action, details) {
@@ -33,33 +34,37 @@ window.saveAll = function() {
     localStorage.setItem('dreamos_maintenances', JSON.stringify(window.maintenances));
 };
 
-// --- Fungsi Utama (diakses oleh onclick di HTML) ---
+// --- Fungsi Tab ---
 window.switchTab = function(tabId) {
+    console.log('switchTab called: ' + tabId);
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-teal-600/30'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    const target = document.getElementById('tab-' + tabId);
+    var target = document.getElementById('tab-' + tabId);
     if (target) target.classList.remove('hidden');
-    const activeBtn = document.querySelector(`.tab-btn[onclick*="${tabId}"]`);
+    var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\')"]');
     if (activeBtn) activeBtn.classList.add('active', 'bg-teal-600/30');
     if (tabId === 'dashboard') window.updateDashboard();
 };
 
+// --- Fungsi Switch Role (TIDAK LOGOUT) ---
 window.switchRole = function() {
-    const roles = ['koordinator', 'kabag', 'direktur'];
-    let current = localStorage.getItem('dreamos_role') || 'kabag';
-    let idx = roles.indexOf(current);
-    let newRole = roles[(idx + 1) % roles.length];
+    console.log('switchRole called');
+    var roles = ['koordinator', 'kabag', 'direktur'];
+    var current = localStorage.getItem('dreamos_role') || 'kabag';
+    var idx = roles.indexOf(current);
+    var newRole = roles[(idx + 1) % roles.length];
     localStorage.setItem('dreamos_role', newRole);
-    document.getElementById('role-badge').innerText = 'Role: ' + newRole;
-    location.reload();
+    var badge = document.getElementById('role-badge');
+    if (badge) badge.innerText = 'Role: ' + newRole;
+    // Tidak melakukan reload, hanya update badge
 };
 
-// --- Logika Dashboard ---
+// --- Update Dashboard ---
 window.updateDashboard = function() {
-    const pendingCount = window.bookings.filter(b => b.status === 'pending').length;
-    const totalRab = window.rabs.reduce((sum, r) => sum + r.nominal, 0);
-    const realisasiBulan = window.realisasi.reduce((sum, r) => sum + (r.nominal || 0), 0);
-    const totalTips = window.tips.reduce((s,t)=>s+t.nominal,0);
+    var pendingCount = window.bookings.filter(function(b) { return b.status === 'pending'; }).length;
+    var totalRab = window.rabs.reduce(function(sum, r) { return sum + r.nominal; }, 0);
+    var realisasiBulan = window.realisasi.reduce(function(sum, r) { return sum + (r.nominal || 0); }, 0);
+    var totalTips = window.tips.reduce(function(s,t){ return s + t.nominal; }, 0);
 
     document.getElementById('pending-count').innerText = pendingCount;
     document.getElementById('rab-total').innerText = 'Rp ' + totalRab.toLocaleString();
@@ -68,8 +73,9 @@ window.updateDashboard = function() {
 
     // Grafik
     if (typeof Chart !== 'undefined') {
-        const ctx = document.getElementById('budgetChart')?.getContext('2d');
+        var ctx = document.getElementById('budgetChart');
         if (ctx) {
+            ctx = ctx.getContext('2d');
             if (window.chartInstance) window.chartInstance.destroy();
             window.chartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -87,13 +93,10 @@ window.updateDashboard = function() {
     }
 };
 
-// --- Inisialisasi Data Contoh ---
+// Data contoh
 if (window.bookings.length === 0) window.bookings = [{ id: 1, title: 'Rapat Koordinasi', date: '2026-05-15', status: 'pending', approvalLevel: 1 }];
 if (window.rabs.length === 0) window.rabs = [{ id: 1, nama: 'Seminar AI', nominal: 5000000, status: 'pending', approvalLevel: 1 }];
 if (window.maintenances.length === 0) window.maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk', status: 'progress' }];
 window.saveAll();
-
-// --- Finalisasi: Update UI & Verifikasi ---
-document.getElementById('role-badge').innerText = 'Role: ' + window.userRole;
 window.updateDashboard();
-console.log('✅ Command Center Logic Active');
+console.log('✅ Command Center Ready');
