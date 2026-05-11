@@ -29,6 +29,17 @@
     </div>
     <div class="bg-white/5 p-2 rounded-xl mb-3"><div class="text-sm font-bold mb-1">📈 Anggaran vs Realisasi (Bulan Ini)</div><canvas id="budgetChart" height="150" class="w-full"></canvas>
     <div class="grid grid-cols-4 gap-2 mb-3" id="modul-summary-grid">
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">📅 Booking</div><div class="text-lg font-bold" id="sum-bookings">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">💰 RAB</div><div class="text-lg font-bold" id="sum-rab">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">📅 Dana P.</div><div class="text-lg font-bold" id="sum-dana">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">💵 Tips</div><div class="text-lg font-bold" id="sum-tips">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">🛠️ Maint.</div><div class="text-lg font-bold" id="sum-maint">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">🏢 Aset</div><div class="text-lg font-bold" id="sum-aset">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">📈 Realisasi</div><div class="text-lg font-bold" id="sum-realisasi">0</div></div>
+      <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">📜 Audit</div><div class="text-lg font-bold" id="sum-audit">0</div></div>
+    </div>
+
+    <div class="grid grid-cols-4 gap-2 mb-3" id="modul-summary-grid">
       <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Bookings</div><div class="text-lg font-bold" id="sum-bookings">0</div></div>
       <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">RAB</div><div class="text-lg font-bold" id="sum-rab">0</div></div>
       <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Dana Periodik</div><div class="text-lg font-bold" id="sum-dana">0</div></div>
@@ -39,7 +50,7 @@
       <div class="bg-white/5 p-2 rounded-xl text-center"><div class="text-xs text-white/60">Audit</div><div class="text-lg font-bold" id="sum-audit">0</div></div>
     </div>
 </div>
-    <div class="bg-white/5 p-3 rounded-xl"><div class="text-sm font-bold mb-1">🔔 Notifikasi</div><div id="notif-list" class="text-xs text-white/60 space-y-1 max-h-32 overflow-y-auto"></div></div>
+    <div class="bg-white/5 p-3 rounded-xl"><div class="text-sm font-bold mb-1">🔔 Notifikasi</div><div id="notif-list" class="text-xs text-white/60 space-y-1 max-h-32 overflow-y-auto"></div><hr class="my-2 border-white/20"><div class="text-sm font-bold mb-1">⚠️ Prediksi & Perhatian</div><div id="proactive-alerts" class="text-xs space-y-1 max-h-40 overflow-y-auto"></div></div>
   </div>
 
   <!-- Booking -->
@@ -230,7 +241,7 @@
     }
     if (currentMaintFilter.startDate) filtered = filtered.filter(m => m.date >= currentMaintFilter.startDate);
     if (currentMaintFilter.endDate) filtered = filtered.filter(m => m.date <= currentMaintFilter.endDate);
-    container.innerHTML = filtered.map(m => `<div class="bg-white/5 p-2 rounded flex justify-between items-start"><div><div class="font-bold">${m.item} - ${m.desc}</div><div class="text-xs">Tanggal: ${m.date} | Biaya: Rp ${(m.cost||0).toLocaleString()} | Teknisi: ${m.tech||'-'}</div></div><button class="delete-maint text-red-400 text-xs" data-id="${m.id}">✖</button></div>`).join('');
+    container.innerHTML = filtered.map(m => `<div class="bg-white/5 p-2 rounded flex justify-between items-start"><div><div class="font-bold">${m.item} - ${m.desc}</div><div class="text-xs">Tanggal: ${m.date} | Biaya: Rp ${(m.cost||0).toLocaleString()} | Teknisi: ${m.tech||'-'} | Status: ${m.status || 'progress'}</div></div><button class="delete-maint text-red-400 text-xs" data-id="${m.id}">✖</button></div>`).join('');
     document.querySelectorAll('.delete-maint').forEach(btn => btn.addEventListener('click', (e) => { let id = parseInt(btn.dataset.id); maintenances = maintenances.filter(m => m.id !== id); saveAll(); renderMaintenances(); addAudit('Hapus Maintenance', id); }));
   }
 
@@ -244,6 +255,44 @@
     document.getElementById('sum-aset').innerText = aset.reduce((s,a)=>s+a.jumlah,0);
     document.getElementById('sum-realisasi').innerText = realisasi.reduce((s,r)=>s+(r.nominal||0),0).toLocaleString();
     document.getElementById('sum-audit').innerText = audit.length;
+  }
+
+  function updateModuleSummary() {
+    document.getElementById('sum-bookings').innerText = bookings.length;
+    document.getElementById('sum-rab').innerText = rabs.length;
+    document.getElementById('sum-dana').innerText = periodicFunds.length;
+    document.getElementById('sum-tips').innerText = tips.reduce((s,t)=>s+t.nominal,0).toLocaleString();
+    document.getElementById('sum-maint').innerText = maintenances.filter(m => m.status !== 'selesai').length;
+    document.getElementById('sum-aset').innerText = aset.reduce((s,a)=>s+a.jumlah,0);
+    document.getElementById('sum-realisasi').innerText = realisasi.reduce((s,r)=>s+(r.nominal||0),0).toLocaleString();
+    document.getElementById('sum-audit').innerText = audit.length;
+  }
+
+  function updateProactiveAlerts() {
+    let alerts = [];
+    // Maintenance progres (status bukan 'selesai')
+    maintenances.filter(m => m.status !== 'selesai').forEach(m => {
+      alerts.push(`🛠️ Maintenance ${m.item} masih progres`);
+    });
+    // Booking pending
+    bookings.filter(b => b.status === 'pending').forEach(b => {
+      alerts.push(`📅 Booking "${b.title}" menunggu approval`);
+    });
+    // RAB pending
+    rabs.filter(r => r.status === 'pending').forEach(r => {
+      alerts.push(`💰 RAB "${r.nama}" menunggu approval`);
+    });
+    // Aset menipis (jumlah <= 2)
+    aset.filter(a => a.jumlah <= 2).forEach(a => {
+      alerts.push(`📉 Stok aset "${a.nama}" tinggal ${a.jumlah}`);
+    });
+    // Tampilkan di container baru
+    let alertContainer = document.getElementById('proactive-alerts');
+    if (alertContainer) {
+      alertContainer.innerHTML = alerts.length > 0 
+        ? alerts.map(a => `<div class="text-xs text-amber-400">⚠️ ${a}</div>`).join('')
+        : '<div class="text-xs text-green-400">✅ Semua terkendali</div>';
+    }
   }
 
   function updateDashboardExtended() {
@@ -268,6 +317,8 @@
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['Anggaran Disetujui', 'Realisasi'], datasets: [{ label: 'Rp', data: [totalRabApproved, totalRealisasi], backgroundColor: ['#2dd4bf', '#f59e0b'] }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: 'white' } } } } });
     }
+    updateModuleSummary();
+    updateProactiveAlerts();
   }
 
   function generateReport(period) {
@@ -327,7 +378,7 @@
   document.getElementById('btn-add-dana')?.addEventListener('click', () => { const jenis = document.getElementById('periode-jenis').value; const kegiatan = document.getElementById('dana-kegiatan').value; const nominal = parseInt(document.getElementById('dana-nominal').value); if (kegiatan && nominal) { periodicFunds.push({ id: Date.now(), jenis, kegiatan, nominal, status: 'pending', tanggal: new Date().toISOString().slice(0,10) }); saveAll(); renderPeriodicFunds(); addAudit('Ajukan Dana Periodik', jenis+' - '+kegiatan+' Rp '+nominal); document.getElementById('dana-kegiatan').value=''; document.getElementById('dana-nominal').value=''; } });
   document.getElementById('filter-dana')?.addEventListener('click', () => { const filter = document.getElementById('periode-filter').value; renderPeriodicFunds(filter); });
   document.getElementById('btn-add-tips')?.addEventListener('click', () => { const deskripsi = document.getElementById('tips-deskripsi').value; const nominal = parseInt(document.getElementById('tips-nominal').value); if(deskripsi && nominal) { tips.push({ id: Date.now(), deskripsi, nominal, tanggal: new Date().toISOString().slice(0,10) }); saveAll(); renderTips(); updateDashboardExtended(); addAudit('Tambah Tips', deskripsi+' Rp '+nominal); document.getElementById('tips-deskripsi').value=''; document.getElementById('tips-nominal').value=''; } });
-  document.getElementById('btn-add-maint')?.addEventListener('click', () => { const item = document.getElementById('maint-item').value; const desc = document.getElementById('maint-desc').value; const date = document.getElementById('maint-date').value; const cost = parseInt(document.getElementById('maint-cost').value) || 0; const tech = document.getElementById('maint-tech').value; if (item && desc && date) { maintenances.push({ id: Date.now(), item, desc, date, cost, tech }); saveAll(); renderMaintenances(); addAudit('Tambah Maintenance', item+' - '+desc); document.getElementById('maint-item').value=''; document.getElementById('maint-desc').value=''; document.getElementById('maint-date').value=''; document.getElementById('maint-cost').value=''; document.getElementById('maint-tech').value=''; } });
+  document.getElementById('btn-add-maint')?.addEventListener('click', () => { const item = document.getElementById('maint-item').value; const desc = document.getElementById('maint-desc').value; const date = document.getElementById('maint-date').value; const cost = parseInt(document.getElementById('maint-cost').value) || 0; const tech = document.getElementById('maint-tech').value; if (item && desc && date) { maintenances.push({ id: Date.now(), item, desc, date, cost, tech, status: 'progress' }); saveAll(); renderMaintenances(); addAudit('Tambah Maintenance', item+' - '+desc); document.getElementById('maint-item').value=''; document.getElementById('maint-desc').value=''; document.getElementById('maint-date').value=''; document.getElementById('maint-cost').value=''; document.getElementById('maint-tech').value=''; } });
   document.getElementById('btn-search-maint')?.addEventListener('click', () => { currentMaintFilter.keyword = document.getElementById('search-maint').value; currentMaintFilter.startDate = document.getElementById('search-start').value; currentMaintFilter.endDate = document.getElementById('search-end').value; renderMaintenances(); });
   document.getElementById('reset-search')?.addEventListener('click', () => { document.getElementById('search-maint').value = ''; document.getElementById('search-start').value = ''; document.getElementById('search-end').value = ''; currentMaintFilter = { keyword: '', startDate: '', endDate: '' }; renderMaintenances(); });
   document.getElementById('print-dana')?.addEventListener('click', () => { printElement('#tab-dana .bg-white\\/5:last-child', 'Laporan Dana Periodik'); });
@@ -337,7 +388,7 @@
   // Inisialisasi data contoh jika kosong
   if (bookings.length === 0) bookings = [{ id: 1, title: 'Rapat Koordinasi', date: '2026-05-15', status: 'pending', approvalLevel: 1 }];
   if (rabs.length === 0) rabs = [{ id: 1, nama: 'Seminar AI', nominal: 5000000, status: 'pending', approvalLevel: 1, realisasi: '' }];
-  if (maintenances.length === 0) maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk' }];
+  if (maintenances.length === 0) maintenances = [{ id: 1, item: 'AC Ruang Rapat', desc: 'Cuci AC', date: '2026-02-10', cost: 250000, tech: 'PT Suhu Sejuk', status: 'progress' }];
   saveAll();
 
   document.getElementById('role-badge').innerText = 'Role: '+userRole;
