@@ -753,15 +753,91 @@ if (document.readyState === 'complete') {
 }
 
 // ========== PAKSA OTAK COMMAND CENTER ==========
-function injectCommandBrain() {
     if (document.getElementById('command-center') && !document.querySelector('script[src="js/command.js"]')) {
         const script = document.createElement('script');
         script.src = 'js/command.js';
         script.onload = () => console.log('🧠 Otak Command Center terpasang');
         document.body.appendChild(script);
     } else {
-        setTimeout(injectCommandBrain, 500);
     }
 }
-if (document.readyState === 'complete') injectCommandBrain();
-else window.addEventListener('load', injectCommandBrain);
+
+
+
+// ========== SWITCH ROLE GLOBAL ==========
+window.switchRole = function() {
+    var roles = ['koordinator', 'kabag', 'direktur'];
+    var current = localStorage.getItem('dreamos_role') || 'kabag';
+    var idx = roles.indexOf(current);
+    var newRole = roles[(idx + 1) % roles.length];
+    localStorage.setItem('dreamos_role', newRole);
+    var badge = document.getElementById('role-badge');
+    if (badge) badge.innerText = 'Role: ' + newRole;
+    // Jangan reload
+};
+
+// ========== SWITCH TAB GLOBAL ==========
+window.switchTab = function(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active', 'bg-teal-600/30');
+    });
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+        c.classList.add('hidden');
+    });
+    var target = document.getElementById('tab-' + tabId);
+    if (target) target.classList.remove('hidden');
+    var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\' )"]');
+    if (activeBtn) activeBtn.classList.add('active', 'bg-teal-600/30');
+    if (tabId === 'dashboard' && typeof window.updateDashboard === 'function') {
+        window.updateDashboard();
+    }
+};
+
+// ========== UPDATE DASHBOARD ==========
+window.updateDashboard = function() {
+    var bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[{"id":1,"title":"Rapat Koordinasi","date":"2026-05-15","status":"pending"}]');
+    var rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[{"id":1,"nama":"Seminar AI","nominal":5000000,"status":"pending"}]');
+    var realisasi = JSON.parse(localStorage.getItem('dreamos_realisasi') || '[]');
+    var tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
+    
+    var pendingCount = bookings.filter(function(b) { return b.status === 'pending'; }).length;
+    var totalRab = rabs.reduce(function(s, r) { return s + r.nominal; }, 0);
+    var realisasiBulan = realisasi.reduce(function(s, r) { return s + (r.nominal || 0); }, 0);
+    var totalTips = tips.reduce(function(s, t) { return s + t.nominal; }, 0);
+
+    var el = document.getElementById('pending-count');
+    if (el) el.innerText = pendingCount;
+    el = document.getElementById('rab-total');
+    if (el) el.innerText = 'Rp ' + totalRab.toLocaleString();
+    el = document.getElementById('realisasi-bulan');
+    if (el) el.innerText = 'Rp ' + realisasiBulan.toLocaleString();
+    el = document.getElementById('tips-total');
+    if (el) el.innerText = 'Rp ' + totalTips.toLocaleString();
+
+    if (typeof Chart !== 'undefined') {
+        var ctx = document.getElementById('budgetChart');
+        if (ctx) {
+            ctx = ctx.getContext('2d');
+            if (window.chartInstance) window.chartInstance.destroy();
+            window.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Anggaran', 'Realisasi'],
+                    datasets: [{
+                        label: 'Rp',
+                        data: [totalRab, realisasiBulan],
+                        backgroundColor: ['#2dd4bf', '#f59e0b']
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+            });
+        }
+    }
+};
+
+// Jalankan setelah DOM selesai
+if (document.readyState === 'complete') {
+    window.updateDashboard();
+} else {
+    window.addEventListener('load', window.updateDashboard);
+}
