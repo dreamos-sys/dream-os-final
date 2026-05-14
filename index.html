@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Dream OS • v1.3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -39,7 +38,10 @@
         </div>
         <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ</h1>
         <div class="glass p-6 rounded-3xl w-full max-w-xs">
-            <input type="password" id="access-key" class="w-full p-4 mb-4 bg-white/10 rounded-2xl text-center border border-white/20 outline-none" placeholder="Access Key">
+            <div class="relative mb-4">
+                <input type="password" id="access-key" class="w-full p-4 pr-12 bg-white/10 rounded-2xl text-center border border-white/20 outline-none" placeholder="Access Key">
+                <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-xl">👁️</button>
+            </div>
             <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase rounded-2xl" onclick="handleLogin()">ACCESS SYSTEM</button>
         </div>
     </section>
@@ -78,7 +80,14 @@
                 <div class="grid grid-cols-3 gap-3" id="menu-grid"></div>
             </div>
 
-            <div id="command-center" style="display:none;" class="glass p-4 rounded-xl"></div>
+            <div id="command-center" style="display:none;">
+                <div class="flex justify-start mb-3">
+                    <button onclick="goHome()" class="text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-2 text-teal-300">
+                        <i data-lucide="chevron-left" class="w-3 h-3"></i> BACK TO HOME
+                    </button>
+                </div>
+                <div id="command-content-body" class="glass p-4 rounded-xl"></div>
+            </div>
         </main>
 
         <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 flex justify-around items-center h-14 z-50 bg-[#0f172a]/95" style="display: none;">
@@ -102,14 +111,19 @@
 
     <div id="ghost-dashboard">
         <div class="flex justify-between items-center mb-6 pb-3 border-b border-teal-500/50">
-            <h1 class="text-xl font-bold text-teal-400">👻 GHOST MODE</h1>
-            <button onclick="closeGhost()" class="text-red-400 text-xs">✕ CLOSE</button>
+            <h1 class="text-xl font-bold text-teal-400 uppercase tracking-tighter">👻 Stealth Ghost Mode</h1>
+            <button onclick="closeGhost()" class="text-red-400 text-xs px-2 py-1 bg-red-400/10 rounded">✕ CLOSE</button>
         </div>
-        <div class="grid grid-cols-1 gap-4 pb-20" id="ghost-tools"></div>
+        <div class="grid grid-cols-1 gap-3 pb-20" id="ghost-tools"></div>
     </div>
 
     <script>
         let tapCount = 0, tapTimer = null, carouselInterval = null;
+
+        function togglePassword() {
+            const input = document.getElementById('access-key');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
 
         function handleLogin() {
             document.getElementById('login-page').classList.remove('active');
@@ -122,42 +136,41 @@
 
         function handleLogout() { location.reload(); }
 
+        function goHome() {
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('command-center').style.display = 'none';
+            navClick('home', document.querySelector('.nav-btn'));
+        }
+
         function initDashboard() {
-            // CAROUSEL
             const slides = [
                 { icon: 'hand', title: 'Selamat Datang', text: 'Silakan pilih modul di bawah.' },
                 { icon: 'calendar', title: 'Jadwal', text: 'Rapat Koordinasi: 09:00 WIB' },
                 { icon: 'activity', title: 'Status K3', text: 'Kebersihan: 100% Selesai' },
                 { icon: 'cloud', title: 'Cuaca', text: 'Cerah Berawan - 32°C' },
-                { icon: 'building', title: 'Info SMA', text: 'Rapat Yayasan: 10:00 WIB' },
-                { icon: 'users', title: 'Tim Umum', text: 'Briefing Pagi: Selesai' },
-                { icon: 'gift', title: 'HBD', text: 'Selamat Ultah Pak Budi!' }
+                { icon: 'building', title: 'Info SMA', text: 'Rapat Yayasan: 10:00 WIB' }
             ];
             document.getElementById('carousel-slides').innerHTML = slides.map((s,i) => `
                 <div class="carousel-slide ${i===0?'active':''}">
                     <div class="flex items-center gap-2 mb-1 text-teal-400">
                         <i data-lucide="${s.icon}" class="w-4 h-4"></i>
-                        <span class="font-bold text-xs">${s.title}</span>
+                        <span class="font-bold text-xs uppercase tracking-widest">${s.title}</span>
                     </div>
                     <p class="text-xs text-white/60">${s.text}</p>
                 </div>`).join('');
             document.getElementById('carousel-dots').innerHTML = slides.map((_,i) => `
                 <div class="dot ${i===0?'active':''}" onclick="goToSlide(${i})"></div>`).join('');
 
-            // 9 GRID MENU
             const items = [
                 { icon: '🌍', label: 'Command' }, { icon: '📅', label: 'Booking' }, { icon: '⚠️', label: 'K3' },
                 { icon: '🔒', label: 'Security' }, { icon: '🧹', label: 'Janitor In' }, { icon: '🍃', label: 'Janitor Out' },
                 { icon: '📦', label: 'Stok' }, { icon: '🔧', label: 'Maintenance' }, { icon: '🏢', label: 'Asset' }
             ];
-            const menuGrid = document.getElementById('menu-grid');
-            if(menuGrid) {
-                menuGrid.innerHTML = items.map(m => `
-                    <div class="menu-card p-3 rounded-xl flex flex-col items-center justify-center glass cursor-pointer min-h-[90px]" onclick="handleMenuClick('${m.label}')">
-                        <div class="text-2xl mb-1">${m.icon}</div>
-                        <div class="text-[10px] font-bold text-white text-center">${m.label}</div>
-                    </div>`).join('');
-            }
+            document.getElementById('menu-grid').innerHTML = items.map(m => `
+                <div class="menu-card p-3 rounded-xl flex flex-col items-center justify-center glass cursor-pointer min-h-[90px]" onclick="handleMenuClick('${m.label}')">
+                    <div class="text-2xl mb-1">${m.icon}</div>
+                    <div class="text-[10px] font-bold text-white text-center">${m.label}</div>
+                </div>`).join('');
 
             if(window.lucide) lucide.createIcons();
             if(carouselInterval) clearInterval(carouselInterval);
@@ -165,7 +178,6 @@
                 let current = [...document.querySelectorAll('.carousel-slide')].findIndex(s => s.classList.contains('active'));
                 goToSlide((current + 1) % slides.length);
             }, 5000);
-            console.log('✅ 9-Grid Menu Rendered Successfully');
         }
 
         function goToSlide(i) {
@@ -175,26 +187,28 @@
 
         function handleMenuClick(label) {
             if(label === 'Command') {
+                const body = document.getElementById('command-content-body');
                 const container = document.getElementById('command-center');
                 const homeView = document.getElementById('home-view');
                 fetch('js/modules/command.html').then(r => r.text()).then(html => {
-                    container.innerHTML = html;
+                    body.innerHTML = html;
                     homeView.style.display = 'none';
                     container.style.display = 'block';
-                    const scripts = container.querySelectorAll('script');
+                    const scripts = body.querySelectorAll('script');
                     scripts.forEach(s => {
                         const ns = document.createElement('script');
                         ns.textContent = s.textContent;
                         document.body.appendChild(ns);
                         s.remove();
                     });
+                    if(window.lucide) lucide.createIcons();
                 });
             } else { alert(label + ' ready!'); }
         }
 
         function navClick(target, btn) {
             document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('text-teal-400'); b.classList.add('text-white/60'); });
-            btn.classList.add('text-teal-400');
+            if(btn) btn.classList.add('text-teal-400');
             if(target === 'home') {
                 document.getElementById('home-view').style.display = 'block';
                 document.getElementById('command-center').style.display = 'none';
@@ -210,10 +224,24 @@
 
         function openGhost() {
             document.getElementById('ghost-dashboard').classList.add('active');
-            document.getElementById('ghost-tools').innerHTML = `<div class="ghost-card p-4 rounded-xl border border-teal-500/20 bg-teal-500/5 mb-3" onclick="location.reload()"><div class="font-bold">🔄 Force Refresh</div><div class="text-[10px] text-white/40">Clean cache and reload</div></div>`;
+            document.getElementById('ghost-tools').innerHTML = `
+                <div class="ghost-card p-4 rounded-xl border border-teal-500/20 bg-teal-500/5 flex justify-between" onclick="toggleEruda()">
+                    <div><div class="font-bold text-teal-400">🔍 ERUDA CONSOLE</div><div class="text-[9px] text-white/40">Toggle developer tools</div></div>
+                    <div class="text-teal-400 text-xs">OPEN</div>
+                </div>
+                <div class="ghost-card p-4 rounded-xl border border-teal-500/20 bg-teal-500/5 flex justify-between" onclick="alert('Network: '+navigator.connection.effectiveType)">
+                    <div><div class="font-bold text-teal-400">🌐 NETWORK INFO</div><div class="text-[9px] text-white/40">Check speed & latency</div></div>
+                    <div class="text-teal-400 text-xs">VIEW</div>
+                </div>
+                <div class="ghost-card p-4 rounded-xl border border-red-500/20 bg-red-500/5 flex justify-between" onclick="localStorage.clear();location.reload();">
+                    <div><div class="font-bold text-red-400">🗑️ WIPE DATA</div><div class="text-[9px] text-red-400/40">Clear storage & reset</div></div>
+                    <div class="text-red-400 text-xs">CLEAR</div>
+                </div>`;
         }
         function closeGhost() { document.getElementById('ghost-dashboard').classList.remove('active'); }
-        console.log('✅ Dream OS v1.3.2 Clean Stable Loaded');
+        function toggleEruda() { if(!window.eruda) { const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/eruda'; s.onload=()=>{ eruda.init(); eruda.show(); }; document.body.appendChild(s); } else eruda[eruda._isShow ? 'hide' : 'show'](); }
+        
+        console.log('✅ Sultan Final Ultimate Stable Remix Loaded');
     </script>
 </body>
 </html>
