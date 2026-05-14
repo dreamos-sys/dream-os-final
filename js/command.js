@@ -10,24 +10,9 @@ window.tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
 window.maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
 window.chartInstance = null;
 
-window.switchRole = function() {
-    var roles = ['koordinator', 'kabag', 'direktur'];
-    var current = localStorage.getItem('dreamos_role') || 'kabag';
-    var idx = roles.indexOf(current);
-    var newRole = roles[(idx + 1) % roles.length];
-    localStorage.setItem('dreamos_role', newRole);
-    var badge = document.getElementById('role-badge');
-    if (badge) badge.innerText = 'Role: ' + newRole;
-};
+// removed
 
-window.switchTab = function(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active', 'bg-teal-600/30'); });
-    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.add('hidden'); });
-    var target = document.getElementById('tab-' + tabId);
-    if (target) target.classList.remove('hidden');
-    var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\')"]');
-    if (activeBtn) activeBtn.classList.add('active', 'bg-teal-600/30');
-};
+// removed
 
 window.updateDashboard = function() {
     var pendingCount = window.bookings.filter(function(b) { return b.status === 'pending'; }).length;

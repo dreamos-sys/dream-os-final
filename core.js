@@ -656,32 +656,9 @@ if (document.readyState === 'complete') {
     }
 }
 // ========== SWITCH ROLE GLOBAL ==========
-window.switchRole = function() {
-    var roles = ['koordinator', 'kabag', 'direktur'];
-    var current = localStorage.getItem('dreamos_role') || 'kabag';
-    var idx = roles.indexOf(current);
-    var newRole = roles[(idx + 1) % roles.length];
-    localStorage.setItem('dreamos_role', newRole);
-    var badge = document.getElementById('role-badge');
-    if (badge) badge.innerText = 'Role: ' + newRole;
-    // Jangan reload
-};
+// removed
 // ========== SWITCH TAB GLOBAL ==========
-window.switchTab = function(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(function(b) {
-        b.classList.remove('active', 'bg-teal-600/30');
-    });
-    document.querySelectorAll('.tab-content').forEach(function(c) {
-        c.classList.add('hidden');
-    });
-    var target = document.getElementById('tab-' + tabId);
-    if (target) target.classList.remove('hidden');
-    var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\' )"]');
-    if (activeBtn) activeBtn.classList.add('active', 'bg-teal-600/30');
-    if (tabId === 'dashboard' && typeof window.updateDashboard === 'function') {
-        window.updateDashboard();
-    }
-};
+// removed
 // ========== UPDATE DASHBOARD ==========
 window.updateDashboard = function() {
     var bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[{"id":1,"title":"Rapat Koordinasi","date":"2026-05-15","status":"pending"}]');
