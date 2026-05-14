@@ -210,62 +210,46 @@
         }
 
         function handleMenuClick(label) {
-    if(label === 'Command') {
-        const container = document.getElementById('command-center');
-        const mainWrapper = document.getElementById('main-content-wrapper');
-        if(container && mainWrapper) {
-            fetch('js/modules/command.html')
-                .then(res => res.text())
-                .then(html => {
-                    container.innerHTML = html;
-                    mainWrapper.style.display = 'none';
-                    container.style.display = 'block';
-                    // Wait for DOM to parse before executing scripts
-                    setTimeout(() => {
-                        const scripts = container.querySelectorAll('script');
-                        scripts.forEach(oldScript => {
-                            const newScript = document.createElement('script');
-                            newScript.textContent = oldScript.textContent;
-                            document.body.appendChild(newScript);
-                            oldScript.remove();
-                        });
-                        // Ensure global functions are ready
-                        if (typeof window.renderAll === 'function') {
-                            window.renderAll();
-                        }
-                    }, 50);
-                }))
-                .catch(err => console.error('Failed to load Command Center:', err));
-        }
-    } else if(label === 'Booking') { alert('Booking module - Ready!'); }
-    else { alert(label + ' - Ready!'); }
-}
-            else if(label === 'Booking') { alert('Booking module - Ready!'); }
+            if(label === 'Command') {
+                const container = document.getElementById('command-center');
+                const mainWrapper = document.getElementById('main-content-wrapper');
+                if(container && mainWrapper) {
+                    fetch('js/modules/command.html')
+                        .then(res => res.text())
+                        .then(html => {
+                            container.innerHTML = html;
+                            mainWrapper.style.display = 'none';
+                            container.style.display = 'block';
+                            // Execute scripts
+                            const scripts = container.querySelectorAll('script');
+                            scripts.forEach(oldScript => {
+                                const newScript = document.createElement('script');
+                                newScript.textContent = oldScript.textContent;
+                                document.body.appendChild(newScript);
+                                oldScript.remove();
+                            });
+                            // Trigger renderAll if exists
+                            if(typeof window.renderAll === 'function') {
+                                setTimeout(() => window.renderAll(), 100);
+                            }
+                        })
+                        .catch(err => console.error('Failed to load Command Center:', err));
+                }
+            } else if(label === 'Booking') { alert('Booking module - Ready!'); }
             else { alert(label + ' - Ready!'); }
         }
 
         function navClick(target) {
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-teal-400'));
             event.currentTarget.classList.add('active', 'text-teal-400');
-            if(target === 'home') showMain();
-            else alert(target.toUpperCase() + ' module - Coming soon!');
-        }
-
-        function openCommandCenter() {
-            document.getElementById('main-content-wrapper').style.display = 'none';
-            const cmdContainer = document.getElementById('command-center');
-            const cmdDashboard = document.getElementById('cmd-dashboard');
-            if(!cmdContainer) return;
-            cmdContainer.style.display = 'block';
-            cmdDashboard.style.display = 'block';
-            cmdDashboard.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold">🌍 Command Center</h2><button onclick="showMain()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button></div><div class="grid grid-cols-2 gap-3"><div class="glass p-3 rounded-xl"><div class="text-xs text-white/60">Pending</div><div class="text-2xl font-bold text-amber-400">3</div></div><div class="glass p-3 rounded-xl"><div class="text-xs text-white/60">Budget</div><div class="text-lg font-bold text-emerald-400">Rp 50Jt</div></div></div>`;
-        }
-
-        function showMain() {
-            document.getElementById('command-center').style.display = 'none';
-            document.getElementById('cmd-dashboard').style.display = 'none';
-            document.getElementById('main-content-wrapper').style.display = 'block';
-            document.querySelectorAll('.nav-btn').forEach((btn,idx) => { if(idx===0) { btn.classList.add('active','text-teal-400'); } else { btn.classList.remove('active','text-teal-400'); btn.classList.add('text-white/60'); } });
+            if(target === 'home') {
+                const mainWrapper = document.getElementById('main-content-wrapper');
+                const cmdContainer = document.getElementById('command-center');
+                if(mainWrapper) mainWrapper.style.display = 'block';
+                if(cmdContainer) cmdContainer.style.display = 'none';
+            } else {
+                alert(target.toUpperCase() + ' module - Coming soon!');
+            }
         }
 
         // ========== GHOST MODE (7 TAP) ==========
