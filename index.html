@@ -220,15 +220,21 @@
                     container.innerHTML = html;
                     mainWrapper.style.display = 'none';
                     container.style.display = 'block';
-                    // Execute scripts
-                    const scripts = container.querySelectorAll('script');
-                    scripts.forEach(oldScript => {
-                        const newScript = document.createElement('script');
-                        newScript.textContent = oldScript.textContent;
-                        document.body.appendChild(newScript);
-                        oldScript.remove();
-                    });
-                })
+                    // Wait for DOM to parse before executing scripts
+                    setTimeout(() => {
+                        const scripts = container.querySelectorAll('script');
+                        scripts.forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            newScript.textContent = oldScript.textContent;
+                            document.body.appendChild(newScript);
+                            oldScript.remove();
+                        });
+                        // Ensure global functions are ready
+                        if (typeof window.renderAll === 'function') {
+                            window.renderAll();
+                        }
+                    }, 50);
+                }))
                 .catch(err => console.error('Failed to load Command Center:', err));
         }
     } else if(label === 'Booking') { alert('Booking module - Ready!'); }
