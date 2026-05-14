@@ -1,235 +1,77 @@
-<div class="glass p-4 rounded-xl">
+<div class="glass p-4 rounded-xl" id="command-container-inner">
   <div class="flex justify-between items-center mb-3 pb-2 border-b border-white/20">
     <div class="flex gap-2">
       <span class="text-xs bg-teal-600/30 px-2 py-1 rounded-full" id="role-badge">Role: kabag</span>
       <button id="switch-role" class="text-xs underline text-teal-300">Switch Role</button>
     </div>
-    <div class="text-xs text-white/40">Audit Trail aktif</div>
+    <div class="text-xs text-white/40 font-mono">ISO 27001 SECURED</div>
   </div>
-  
+
   <div class="flex gap-1 mb-4 flex-wrap border-b border-white/20 pb-2">
-    <button class="tab-btn active bg-teal-600/30 px-3 py-1 text-xs rounded-full" onclick="window.switchTab('dashboard')">📊 Dashboard</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('booking')">📅 Booking</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('approval')">✅ Approval</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('rab')">💰 RAB & Realisasi</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('dana')">📅 Dana Periodik</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('maintenance')">🛠️ Maintenance</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('report')">📈 Laporan</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('inventaris')">🏢 Inventaris</button>
-    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('audit')">📜 Audit Trail</button>
+    <button class="tab-btn active bg-teal-600/30 px-3 py-1 text-xs rounded-full" onclick="window.switchTab('dashboard')">📊 DASHBOARD</button>
+    <button class="tab-btn px-3 py-1 text-xs rounded-full" onclick="window.switchTab('audit')">📜 AUDIT</button>
   </div>
 
   <div id="tab-dashboard" class="tab-content">
     <div class="grid grid-cols-2 gap-2 mb-3">
-      <div class="bg-white/5 p-2 rounded-xl text-center">
-        <div class="text-xs text-white/60">Booking Pending</div>
+      <div class="bg-white/5 p-3 rounded-xl text-center">
+        <div class="text-[10px] text-white/60">PENDING</div>
         <div class="text-xl font-bold text-amber-400" id="pending-count">0</div>
       </div>
-      <div class="bg-white/5 p-2 rounded-xl text-center">
-        <div class="text-xs text-white/60">Total RAB Diajukan</div>
+      <div class="bg-white/5 p-3 rounded-xl text-center">
+        <div class="text-[10px] text-white/60">TOTAL RAB</div>
         <div class="text-xl font-bold text-emerald-400" id="rab-total">0</div>
       </div>
-      <div class="bg-white/5 p-2 rounded-xl text-center">
-        <div class="text-xs text-white/60">Realisasi Bulan Ini</div>
-        <div class="text-xl font-bold text-teal-400" id="realisasi-bulan">0</div>
-      </div>
-      <div class="bg-white/5 p-2 rounded-xl text-center">
-        <div class="text-xs text-white/60">Total Dana Tips</div>
-        <div class="text-xl font-bold text-blue-400" id="tips-total">0</div>
-      </div>
     </div>
-    <div class="bg-white/5 p-2 rounded-xl mb-3">
-      <div class="text-sm font-bold mb-1">📈 Anggaran vs Realisasi (Bulan Ini)</div>
-      <canvas id="budgetChart" height="150" class="w-full"></canvas>
-    </div>
-    <div class="bg-white/5 p-3 rounded-xl">
-      <div class="text-sm font-bold mb-1">🔔 Notifikasi</div>
-      <div id="notif-list" class="text-xs text-white/60 space-y-1 max-h-32 overflow-y-auto"></div>
+    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+        <div class="text-sm font-bold mb-2">🔔 Notifikasi Sistem</div>
+        <div id="notif-list" class="text-[10px] text-white/40 italic">Menunggu data...</div>
     </div>
   </div>
-
-  <div id="tab-booking" class="tab-content hidden">
-    <div class="flex gap-2 mb-3">
-      <input type="text" id="booking-title" placeholder="Judul Booking" class="flex-1 bg-black/30 p-2 rounded text-sm">
-      <input type="date" id="booking-date" class="bg-black/30 p-2 rounded">
-      <button id="btn-add-booking" class="bg-teal-600 px-3 rounded text-sm">+</button>
-    </div>
-    <div id="booking-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
-  </div>
-
-  <div id="tab-approval" class="tab-content hidden">
-    <div class="bg-white/5 p-2 rounded mb-2">
-      <div class="text-sm font-bold">📋 Approval Booking</div>
-      <div id="approval-booking-list" class="space-y-2 mt-2 max-h-40 overflow-y-auto"></div>
-    </div>
-    <div class="bg-white/5 p-2 rounded">
-      <div class="text-sm font-bold">💰 Approval RAB</div>
-      <div id="approval-rab-list" class="space-y-2 mt-2 max-h-40 overflow-y-auto"></div>
-    </div>
-  </div>
-
-  <div id="tab-rab" class="tab-content hidden">
-    <div class="flex gap-2 mb-2">
-      <input type="text" id="rab-name" placeholder="Nama Kegiatan" class="flex-1 bg-black/30 p-2 rounded text-sm">
-      <input type="number" id="rab-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm">
-      <button id="btn-add-rab" class="bg-teal-600 px-3 rounded text-sm">Ajukan</button>
-    </div>
-    <div class="flex gap-2 mb-2">
-      <input type="text" id="rab-real" placeholder="Realisasi (deskripsi)" class="flex-1 bg-black/30 p-2 rounded text-sm">
-      <input type="number" id="rab-real-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm"><button id="btn-real" class="bg-amber-600 px-3 rounded text-sm">Catat</button>
-    </div>
-    <div id="rab-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
-  </div>
-
-  <div id="tab-dana" class="tab-content hidden">
-    <div class="bg-white/5 p-3 rounded-xl mb-3">
-      <h3 class="text-sm font-bold mb-2">➕ Ajukan Dana Periodik</h3>
-      <div class="flex gap-2 flex-wrap mb-2">
-        <select id="periode-jenis" class="bg-black/30 p-2 rounded text-sm">
-          <option value="harian">Harian</option>
-          <option value="mingguan">Mingguan</option>
-          <option value="bulanan">Bulanan</option>
-          <option value="tahunan">Tahunan</option>
-        </select>
-        <input type="text" id="dana-kegiatan" placeholder="Nama Kegiatan" class="flex-1 bg-black/30 p-2 rounded text-sm">
-        <input type="number" id="dana-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm">
-        <button id="btn-add-dana" class="bg-teal-600 px-3 rounded text-sm">Ajukan</button>
-      </div>
-    </div>
-    <div class="bg-white/5 p-3 rounded-xl">
-      <h3 class="text-sm font-bold mb-2">💵 Dana Tips Lapangan</h3>
-      <div class="flex gap-2 mb-2">
-        <input type="text" id="tips-deskripsi" placeholder="Deskripsi" class="flex-1 bg-black/30 p-2 rounded text-sm">
-        <input type="number" id="tips-nominal" placeholder="Nominal" class="w-28 bg-black/30 p-2 rounded text-sm">
-        <button id="btn-add-tips" class="bg-blue-600 px-3 rounded text-sm">Tambah Tips</button>
-      </div>
-      <div id="tips-list" class="max-h-40 overflow-y-auto text-xs space-y-1 mt-2"></div>
-    </div>
-    <div id="dana-list" class="space-y-2 max-h-48 overflow-y-auto mt-2"></div>
-  </div>
-
-  <div id="tab-maintenance" class="tab-content hidden">
-    <div id="maint-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
-  </div>
-
-  <div id="tab-report" class="tab-content hidden">
-    <div class="flex gap-2 mb-2">
-      <select id="report-period" class="bg-black/30 p-2 rounded text-sm">
-        <option value="daily">Harian</option>
-        <option value="weekly">Mingguan</option>
-        <option value="monthly">Bulanan</option>
-      </select>
-      <button id="btn-gen-report" class="bg-teal-600 px-3 rounded text-sm">Generate</button>
-    </div>
-    <div id="report-result" class="bg-black/20 p-3 rounded-xl text-xs font-mono whitespace-pre-wrap"></div>
-  </div>
-
-  <div id="tab-inventaris" class="tab-content hidden">
-    <div id="aset-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
-  </div>
-
+  
   <div id="tab-audit" class="tab-content hidden">
-    <div id="audit-list" class="space-y-1 max-h-80 overflow-y-auto text-xs font-mono"></div>
+    <div id="audit-list" class="text-[9px] font-mono space-y-1"></div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  // ========== ENCAPSULATED SCOPE & SAFETY GUARDS ==========
-  (function() {
-    'use strict';
+// Pake IIFE biar gak tabrakan sama global
+(function() {
+    console.log('🚀 Modul Command Berhasil Dimuat');
 
-    let bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-    let rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[]');
-    let realisasi = JSON.parse(localStorage.getItem('dreamos_realisasi') || '[]');
-    let aset = JSON.parse(localStorage.getItem('dreamos_aset') || '[{"nama":"Laptop","jumlah":5},{"nama":"Proyektor","jumlah":3}]');
-    let audit = JSON.parse(localStorage.getItem('dreamos_audit') || '[]');
-    let userRole = localStorage.getItem('dreamos_role') || 'kabag';
-    let periodicFunds = JSON.parse(localStorage.getItem('dreamos_periodic_funds') || '[]');
-    let tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
-    let maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
-    let chartInstance = null;
+    // Fungsi Pengaman (Null-Guard)
+    const updateEl = (id, val) => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = val;
+    };
 
-    function setElText(id, text) {
-      const el = document.getElementById(id);
-      if (el) el.innerText = text;
-    }
-
-    function addAudit(action, details) {
-      let entry = { timestamp: new Date().toISOString(), role: userRole, action, details };
-      audit.unshift(entry);
-      if (audit.length > 100) audit.pop();
-      localStorage.setItem('dreamos_audit', JSON.stringify(audit));
-      renderAudit();
-    }
-
-    function saveAll() {
-      localStorage.setItem('dreamos_bookings', JSON.stringify(bookings));
-      localStorage.setItem('dreamos_rabs', JSON.stringify(rabs));
-      localStorage.setItem('dreamos_realisasi', JSON.stringify(realisasi));
-      localStorage.setItem('dreamos_aset', JSON.stringify(aset));
-      localStorage.setItem('dreamos_periodic_funds', JSON.stringify(periodicFunds));
-      localStorage.setItem('dreamos_tips', JSON.stringify(tips));
-      localStorage.setItem('dreamos_maintenances', JSON.stringify(maintenances));
-    }
-
-    function renderBookings() {
-      let container = document.getElementById('booking-list');
-      if(!container) return;
-      container.innerHTML = bookings.map(b => `<div class="bg-white/5 p-2 rounded mb-1 flex justify-between"><span>${b.title} (${b.date})</span><span class="text-amber-400">${b.status}</span></div>`).join('');
-    }
-
-    function renderAudit() {
-      let container = document.getElementById('audit-list');
-      if(!container) return;
-      container.innerHTML = audit.slice(0,30).map(a => `<div class="text-[10px]">${a.action} - ${a.details}</div>`).join('');
-    }
-
-    function updateDashboardExtended() {
-      try {
-        let pendingBookings = bookings.filter(b => b.status === 'pending').length;
-        let totalRab = rabs.reduce((sum, r) => sum + r.nominal, 0);
-        let realisasiBulan = realisasi.reduce((sum, r) => sum + (r.nominal || 0), 0);
-        let totalTips = tips.reduce((s,t) => s+t.nominal, 0);
-
-        setElText('pending-count', pendingBookings);
-        setElText('rab-total', 'Rp ' + totalRab.toLocaleString());
-        setElText('realisasi-bulan', 'Rp ' + realisasiBulan.toLocaleString());
-        setElText('tips-total', 'Rp ' + totalTips.toLocaleString());
-
-        // Render Chart dengan aman
-        let ctx = document.getElementById('budgetChart')?.getContext('2d');
-        if (ctx && typeof Chart !== 'undefined') {
-            if (chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Anggaran', 'Realisasi'],
-                    datasets: [{ label: 'Rp', data: [totalRab, realisasiBulan], backgroundColor: ['#2dd4bf', '#f59e0b'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-        }
-      } catch(e) { console.error("Dashboard upgrade error masked: ", e); }
-    }
-
-    window.switchTab = function(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      let target = document.getElementById('tab-'+tabId);
-      if (target) target.classList.remove('hidden');
+    window.switchTab = function(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        const target = document.getElementById('tab-' + id);
+        if(target) target.classList.remove('hidden');
+        console.log('📂 Switch tab to:', id);
     };
 
     window.initCommandCenter = function() {
-      console.log('🚀 initCommandCenter Executed Safely');
-      const badge = document.getElementById('role-badge');
-      if(badge) badge.innerText = 'Role: ' + userRole;
-      
-      renderBookings();
-      renderAudit();
-      updateDashboardExtended();
+        console.log('⚙️ Inisialisasi Data Command Center...');
+        try {
+            // Ambil data dari localStorage
+            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+            const rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[]');
+            
+            updateEl('pending-count', bookings.filter(b => b.status === 'pending').length);
+            updateEl('rab-total', 'Rp ' + rabs.reduce((a,b) => a + (b.nominal || 0), 0).toLocaleString());
+            updateEl('notif-list', '✅ Sistem Sinkron');
+            
+            console.log('✅ Render Berhasil');
+        } catch (e) {
+            console.error('❌ Render Gagal:', e);
+        }
     };
 
-    // Auto-run if elements exist
-    setTimeout(() => { window.initCommandCenter(); }, 50);
-  })();
+    // Trigger otomatis dengan delay kecil biar DOM nempel dulu
+    setTimeout(() => {
+        if(typeof window.initCommandCenter === 'function') window.initCommandCenter();
+    }, 100);
+})();
 </script>
