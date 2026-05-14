@@ -218,25 +218,30 @@
                 const mainWrapper = document.getElementById('main-content-wrapper');
                 if(container && mainWrapper) {
                     fetch('js/modules/command.html')
-                        .then(res => res.text())
-                        .then(html => {
-                            container.innerHTML = html;
-                            mainWrapper.style.display = 'none';
-                            container.style.display = 'block';
-                            // Execute scripts
-                            const scripts = container.querySelectorAll('script');
-                            scripts.forEach(oldScript => {
-                                const newScript = document.createElement('script');
-                                newScript.textContent = oldScript.textContent;
-                                document.body.appendChild(newScript);
-                                oldScript.remove();
-                            });
-                            // Trigger renderAll if exists
-                            if(typeof window.renderAll === 'function') {
-                                setTimeout(() => window.renderAll(), 100);
-                            }
-                        })
-                        .catch(err => console.error('Failed to load Command Center:', err));
+                .then(res => res.text())
+                .then(html => {
+                    container.innerHTML = html;
+                    mainWrapper.style.display = 'none';
+                    container.style.display = 'block';
+                    // Execute scripts
+                    const scripts = container.querySelectorAll('script');
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = oldScript.textContent;
+                        document.body.appendChild(newScript);
+                        oldScript.remove();
+                    });
+                    // Try to call init function after scripts execute
+                    setTimeout(() => {
+                        if (typeof window.initCommandCenter === 'function') {
+                            console.log('✅ Calling initCommandCenter from index');
+                            window.initCommandCenter();
+                        } else {
+                            console.error('❌ initCommandCenter not found, trying renderAll');
+                            if (typeof window.renderAll === 'function') window.renderAll();
+                        }
+                    }, 300);
+                });
                 }
             } else if(label === 'Booking') { alert('Booking module - Ready!'); }
             else { alert(label + ' - Ready!'); }
