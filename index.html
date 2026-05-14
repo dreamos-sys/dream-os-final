@@ -100,6 +100,7 @@
                 <div class="carousel-dots flex justify-center gap-2 mt-2 pb-2" id="carousel-dots"></div>
             </div>
 
+            <div id="command-center" style="display:none;" class="glass p-4 rounded-xl"></div>
             <div class="grid grid-cols-3 gap-3" id="menu-grid"></div>
         </main>
 
@@ -209,7 +210,30 @@
         }
 
         function handleMenuClick(label) {
-            if(label === 'Command') { openCommandCenter(); }
+    if(label === 'Command') {
+        const container = document.getElementById('command-center');
+        const mainWrapper = document.getElementById('main-content-wrapper');
+        if(container && mainWrapper) {
+            fetch('js/modules/command.html')
+                .then(res => res.text())
+                .then(html => {
+                    container.innerHTML = html;
+                    mainWrapper.style.display = 'none';
+                    container.style.display = 'block';
+                    // Execute scripts
+                    const scripts = container.querySelectorAll('script');
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = oldScript.textContent;
+                        document.body.appendChild(newScript);
+                        oldScript.remove();
+                    });
+                })
+                .catch(err => console.error('Failed to load Command Center:', err));
+        }
+    } else if(label === 'Booking') { alert('Booking module - Ready!'); }
+    else { alert(label + ' - Ready!'); }
+}
             else if(label === 'Booking') { alert('Booking module - Ready!'); }
             else { alert(label + ' - Ready!'); }
         }
