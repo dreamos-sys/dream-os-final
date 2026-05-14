@@ -1,333 +1,57 @@
 <!DOCTYPE html>
 <html lang="id" dir="ltr" class="dark">
 <head>
-  <script>
-    class EventBus { constructor() { this.subscribers = new Map(); } subscribe(event,cb,mid){if(!this.subscribers.has(event)) this.subscribers.set(event,new Map()); this.subscribers.get(event).set(mid||"anon",cb); return ()=>this.unsubscribe(event,mid); } unsubscribe(event,mid){ const m=this.subscribers.get(event); if(m) m.delete(mid); } emit(event,data){ const m=this.subscribers.get(event); if(m) m.forEach(cb=>cb(data)); } }
-    window.DreamEventBus = new EventBus();
-    class ModuleLoader { constructor(){ this.loaded=new Map(); } async load(id,url,containerId){ if(this.loaded.has(id)) return; try{ const res=await fetch(url); const html=await res.text(); const cont=document.getElementById(containerId); if(cont){ cont.innerHTML=html; this.loaded.set(id,true); cont.querySelectorAll("script").forEach(old=>{ const ns=document.createElement("script"); ns.textContent=old.textContent; document.body.appendChild(ns); old.remove(); }); } } catch(e){ console.error("Module load error:",e); } } }
-    window.ModuleLoader = new ModuleLoader();
-  
-  
-        function togglePassword() {
-            const input = document.getElementById('access-key');
-            const btn = document.getElementById('toggle-pw');
-            if(input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
-            else { input.type = 'password'; btn.textContent = '👁️'; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream OS • Recovery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 1rem; }
+        .menu-card:hover { transform: scale(1.02); transition: 0.2s; background: rgba(45,212,191,0.2); }
+    </style>
+</head>
+<body class="text-white min-h-screen flex items-center justify-center">
+    <div id="app" class="w-full max-w-md p-4">
+        <div id="login-view" class="text-center">
+            <img src="https://dreamos-sys.github.io/dream-os-final/assets/logo-sultan.png" class="w-28 h-28 rounded-3xl mx-auto mb-4 shadow-xl" onerror="this.src='https://placehold.co/100x100?text=Dream'">
+            <h1 class="text-2xl font-bold mb-2">Dream OS</h1>
+            <p class="text-emerald-400 text-sm mb-6">اللهم صل على سيدنا محمد</p>
+            <div class="glass p-6">
+                <input type="password" id="accessKey" placeholder="Access Key" class="w-full p-3 rounded-xl bg-black/30 border border-white/20 mb-4 text-center">
+                <button onclick="login()" class="w-full bg-emerald-600 py-3 rounded-xl font-bold">ACCESS SYSTEM</button>
+            </div>
+        </div>
+        <div id="dashboard-view" style="display:none;">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-bold">Dream OS</h1>
+                <button onclick="logout()" class="text-red-400 text-sm">Logout</button>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Command')">🌍 Command</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Booking')">📅 Booking</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('K3')">⚠️ K3</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Security')">🔒 Security</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Janitor In')">🧹 Janitor In</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Janitor Out')">🍃 Janitor Out</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Stok')">📦 Stok</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Maintenance')">🔧 Maintenance</div>
+                <div class="menu-card glass p-3 text-center cursor-pointer" onclick="alert('Asset')">🏢 Asset</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function login() {
+            let key = document.getElementById('accessKey').value;
+            if(key === 'dreamos') {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('dashboard-view').style.display = 'block';
+            } else { alert('Access key salah'); }
         }
-
-        function handleLogin() {
-            const key = document.getElementById('access-key').value.trim();
-            if(!key) { alert('Masukkan Access Key!'); return; }
-            console.log('🔐 Login:', key);
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('login-page').classList.remove('active');
-            const dashboard = document.getElementById('dashboard');
-            dashboard.style.display = 'flex';
-            dashboard.classList.add('active');
-            document.getElementById('bottom-nav').style.display = 'flex';
-            setTimeout(initDashboard, 100);
+        function logout() {
+            document.getElementById('login-view').style.display = 'block';
+            document.getElementById('dashboard-view').style.display = 'none';
         }
-
-        function handleLogout() {
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('dashboard').classList.remove('active');
-            const login = document.getElementById('login-page');
-            login.style.display = 'flex';
-            login.classList.add('active');
-            document.getElementById('bottom-nav').style.display = 'none';
-            document.getElementById('access-key').value = '';
-        }
-
-        function initDashboard() {
-            // 7 SLIDES LENGKAP
-            const slides = [
-                { icon: 'hand', title: 'Selamat Datang', text: 'Selamat datang Bapak/Ibu. Silahkan dipilih formnya sesuai kebutuhan.' },
-                { icon: 'calendar', title: 'Jadwal Booking', text: 'Hari Ini: Rapat Koordinasi 09:00\nBesok: Kunjungan Yayasan 13:00' },
-                { icon: 'activity', title: 'Progress K3', text: 'AC Ruang Rapat: 60% (Proses)\nKebersihan Lobby: 100% (Selesai)' },
-                { icon: 'cloud-rain', title: 'Cuaca & AI', text: 'Cerah Berawan - 32°C\nPrediksi hujan 15:00 WIB' },
-                { icon: 'building-2', title: 'Info Management', text: 'Rapat CEO & Yayasan\nPukul 09:00 WIB di Ruang Rapat SMA' },
-                { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\nJam 09:00 WIB di R. Koord Bagian Umum' },
-                { icon: 'gift', title: 'Ucapan', text: '🎂 Selamat Ulang Tahun Pak Budi (Komisi 3 Bulan)' }
-            ];
-            
-            const c = document.getElementById('carousel-slides');
-            const d = document.getElementById('carousel-dots');
-            
-            c.innerHTML = slides.map((s,i) => 
-                `<div class="carousel-slide ${i===0?'active':''}">
-                    <div class="flex items-center gap-2 mb-1 text-teal-400">
-                        <i data-lucide="${s.icon}" class="w-4 h-4"></i>
-                        <span class="font-bold text-xs">${s.title}</span>                    </div>
-                    <p class="text-xs text-white/60 whitespace-pre-line">${s.text}</p>
-                </div>`
-            ).join('');
-            
-            d.innerHTML = slides.map((_,i) => 
-                `<div class="dot ${i===0?'active':''}" onclick="goToSlide(${i})"></div>`
-            ).join('');
-            
-            // 9 MENU CARDS
-            const items = [
-                { icon: '🌍', label: 'Command' }, { icon: '📅', label: 'Booking' }, { icon: '⚠️', label: 'K3' },
-                { icon: '🔒', label: 'Security' }, { icon: '🧹', label: 'Janitor In' }, { icon: '🍃', label: 'Janitor Out' },
-                { icon: '📦', label: 'Stok' }, { icon: '🔧', label: 'Maintenance' }, { icon: '🏢', label: 'Asset' }
-            ];
-            
-            const menuGrid = document.getElementById('menu-grid');
-            menuGrid.innerHTML = items.map(m => 
-                `<div class="menu-card p-3 rounded-xl flex flex-col items-center justify-center glass cursor-pointer min-h-[90px]" onclick="handleMenuClick('${m.label}')">
-                    <div class="text-2xl mb-1">${m.icon}</div>
-                    <div class="text-[10px] font-bold text-white text-center">${m.label}</div>
-                </div>`
-            ).join('');
-            
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-            
-            // Auto-rotate 7s
-            if(carouselInterval) clearInterval(carouselInterval);
-            carouselInterval = setInterval(() => {
-                currentSlide = (currentSlide + 1) % slides.length;
-                goToSlide(currentSlide);
-            }, 7000);
-            
-            console.log('✅ Dashboard initialized (7 slides)');
-        }
-
-        function goToSlide(i) {
-            currentSlide = i;
-            document.querySelectorAll('.carousel-slide').forEach((s,idx) => {
-                s.classList.toggle('active', idx === i);
-            });
-            document.querySelectorAll('.dot').forEach((d,idx) => {
-                d.classList.toggle('active', idx === i);
-            });
-        }
-
-        function handleMenuClick(label) {
-            if(label === 'Command') { openCommandCenter(); }
-            else if(label === 'Booking') { alert('Booking module - Ready!'); }
-            else { alert(label + ' - Ready!'); }        }
-
-        function navClick(target) {
-            // Update active state
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active', 'text-teal-400');
-                btn.classList.add('text-white/60');
-            });
-            event.currentTarget.classList.add('active', 'text-teal-400');
-            event.currentTarget.classList.remove('text-white/60');
-            
-            // Handle navigation
-            if(target === 'home') {
-                showMain();
-            } else {
-                alert(target.toUpperCase() + ' module - Coming soon!');
-            }
-        }
-
-        function openCommandCenter() {
-            document.getElementById('main-content-wrapper').style.display = 'none';
-            document.getElementById('command-center').style.display = 'block';
-            document.getElementById('cmd-dashboard').style.display = 'block';
-            document.getElementById('cmd-dashboard').innerHTML = `
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">🌍 Command Center</h2>
-                    <button onclick="showMain()" class="px-3 py-1 bg-white/10 rounded text-xs">← Home</button>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60">Pending</div><div class="text-2xl font-bold text-amber-400">3</div></div>
-                    <div class="glass p-3 rounded-xl"><div class="text-xs text-white/60">Budget</div><div class="text-lg font-bold text-emerald-400">Rp 50Jt</div></div>
-                </div>
-            `;
-        }
-
-        function showMain() {
-            document.getElementById('command-center').style.display = 'none';
-            document.getElementById('cmd-dashboard').style.display = 'none';
-            document.getElementById('main-content-wrapper').style.display = 'block';
-            // Reset nav active state
-            document.querySelectorAll('.nav-btn').forEach((btn,idx) => {
-                if(idx === 0) {
-                    btn.classList.add('active', 'text-teal-400');
-                    btn.classList.remove('text-white/60');
-                } else {
-                    btn.classList.remove('active', 'text-teal-400');
-                    btn.classList.add('text-white/60');
-                }
-            });
-        }
-        // Ghost Mode
-        document.getElementById('dream-logo').addEventListener('click', function() {
-            tapCount++;
-            const counter = document.getElementById('tap-counter');
-            counter.textContent = `Tap ${tapCount}/7`;
-            counter.style.opacity = '1';
-            setTimeout(() => { counter.style.opacity = '0'; }, 1500);
-            if(tapTimer) clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-            if(tapCount >= 7) {
-                console.log('👻 Ghost Mode ACTIVATED!');
-                tapCount = 0;
-                openGhost();
-            }
-        });
-
-        function openGhost() {
-            const ghost = document.getElementById('ghost-dashboard');
-            ghost.classList.add('active');
-            document.getElementById('ghost-tools').innerHTML = `
-                <div class="ghost-card"><div class="flex justify-between"><div><div class="font-bold text-teal-400">🔍 Eruda</div><div class="text-xs text-slate-400">Toggle console</div></div><button onclick="toggleEruda()" class="ghost-btn">TOGGLE</button></div></div>
-                <div class="ghost-card"><div class="flex justify-between"><div><div class="font-bold text-teal-400">🌐 Network</div><div class="text-xs text-slate-400">Connection info</div></div><button onclick="showNetInfo()" class="ghost-btn">SHOW</button></div></div>
-                <div class="ghost-card"><div class="flex justify-between"><div><div class="font-bold text-teal-400">🗑️ Clear</div><div class="text-xs text-slate-400">Clear storage</div></div><button onclick="clearStorage()" class="ghost-btn bg-red-500/20 text-red-400">CLEAR</button></div></div>
-                <div class="ghost-card"><div class="flex justify-between"><div><div class="font-bold text-teal-400">📋 Copy</div><div class="text-xs text-slate-400">Termux commands</div></div><button onclick="copyCommands()" class="ghost-btn">COPY</button></div></div>
-            `;
-        }
-
-        function closeGhost() { document.getElementById('ghost-dashboard').classList.remove('active'); }
-        function toggleEruda() {
-            if(!window.eruda) {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/eruda';
-                s.onload = () => { eruda.init(); eruda.show(); };
-                document.body.appendChild(s);
-            } else { eruda[eruda._isShow ? 'hide' : 'show'](); }
-        }
-        function showNetInfo() {
-            if(navigator.connection) alert(`Network: ${navigator.connection.effectiveType}\nDownlink: ${navigator.connection.downlink}Mbps`);
-            else alert('Network API not supported');
-        }
-        function clearStorage() { if(confirm('Clear all localStorage?')) { localStorage.clear(); location.reload(); } }
-        function copyCommands() { navigator.clipboard.writeText('# Dream OS Dev\npkg install nmap git python -y\npip install requests'); alert('📋 Copied!'); }
-
-        document.getElementById('access-key').addEventListener('keypress', function(e) { if(e.key === 'Enter') handleLogin(); });
-        console.log('✅ Dream OS v1.3.2 inline scripts loaded');
-  
-  
-    document.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active", "bg-teal-600/30"); });
-    document.querySelectorAll(".tab-content").forEach(function(c) { c.classList.add("hidden"); });
-    var target = document.getElementById("tab-" + tabId);
-    if (target) target.classList.remove("hidden");
-    var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\'')"]');
-    if (activeBtn) activeBtn.classList.add("active", "bg-teal-600/30");
-};
-  
-  
-      const mod = modules[label];
-      if (mod) {
-          if (typeof window.ModuleLoader !== 'undefined' && window.ModuleLoader.load) {
-            window.ModuleLoader.load(mod.id, mod.url, mod.container);
-          } else {
-            fetch(mod.url).then(res => res.text()).then(html => {
-              document.getElementById(mod.container).innerHTML = html;
-            }).catch(err => console.error('Fallback load failed:', err));
-          }
-        // Tampilkan container command-center, sembunyikan main-content-wrapper
-        const mainWrapper = document.getElementById('main-content-wrapper');
-        const cmdContainer = document.getElementById('command-center');
-        const cmdDashboard = document.getElementById('cmd-dashboard');
-        if (mainWrapper) mainWrapper.style.display = 'none';
-        if (cmdContainer) {
-          cmdContainer.style.display = 'block';
-          if (cmdDashboard) cmdDashboard.style.display = 'block';
-        }
-        // Load modul
-        window.ModuleLoader.load(mod.id, mod.url, mod.container);
-      } else {
-        // Fallback ke fungsi asli jika ada
-        if (typeof originalHandleMenuClick === 'function') originalHandleMenuClick(label);
-      }
-    };
-  })();
-
-  // Event untuk ghost mode (emit event saat 7 tap)
-  (function() {
-    let tapCount = 0;
-    let tapTimer = null;
-    const logo = document.getElementById('dream-logo');
-    if (logo) {
-      logo.addEventListener('click', () => {
-        tapCount++;
-        const counter = document.getElementById('tap-counter');
-        if (counter) counter.textContent = `Tap ${tapCount}/7`;
-        if (tapTimer) clearTimeout(tapTimer);
-        tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-        if (tapCount >= 7) {
-          tapCount = 0;
-          // Emit event ghost.activate
-          if (window.DreamEventBus) window.DreamEventBus.emit('ghost.activate', {});
-          // Buka ghost dashboard (fungsi openGhost sudah ada)
-          if (typeof openGhost === 'function') openGhost();
-          else console.log('Ghost mode activated!');
-        }
-      });
-    }
-  })();
-
-  // Subscribe carousel ke event booking.created (opsional)
-  if (window.DreamEventBus) {
-    window.DreamEventBus.subscribe('booking.created', (data) => {
-      console.log('Event booking.created:', data);
-      // Update carousel slide jika diperlukan
-      const carouselSlides = document.querySelectorAll('.carousel-slide');
-      if (carouselSlides.length >= 2) {
-        const secondSlide = carouselSlides[1];
-        if (secondSlide) {
-          const textEl = secondSlide.querySelector('p');
-          if (textEl) textEl.textContent = `Booking baru: ${data.title} - ${data.date}`;
-        }
-      }
-    }, 'carousel');
-  }
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    const navId = btn.getAttribute('data-nav');
-    if(navId === 'home') btn.onclick = navHome;
-    else if(navId === 'user') btn.onclick = navUser;
-    else if(navId === 'menu') btn.onclick = navMenu;
-    else if(navId === 'info') btn.onclick = navInfo;
-    else if(navId === 'config') btn.onclick = navConfig;
-  });
-</script>
-
-<script>
-function navHome() {
-    var mainWrapper = document.getElementById('main-content-wrapper');
-    var cmdCenter = document.getElementById('command-center');
-    var cmdDashboard = document.getElementById('cmd-dashboard');
-    if (mainWrapper) mainWrapper.style.display = 'block';
-    if (cmdCenter) cmdCenter.style.display = 'none';
-    if (cmdDashboard) cmdDashboard.style.display = 'none';
-    document.querySelectorAll('.nav-btn').forEach(function(btn) {
-        btn.classList.remove('active', 'text-teal-400');
-    });
-    var homeBtn = document.querySelector('[data-nav="home"]');
-    if (homeBtn) homeBtn.classList.add('active', 'text-teal-400');
-}
-function navUser() { var role = localStorage.getItem('dreamos_role') || 'kabag'; alert('Role: ' + role + '\nNama: Kabid Dream'); }
-function navMenu() {
-    var popup = document.getElementById('menu-popup');
-    if (!popup) {
-        popup = document.createElement('div');
-        popup.id = 'menu-popup';
-        popup.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50';
-        var cards = document.querySelectorAll('.menu-card');
-        var cardsHtml = '';
-        cards.forEach(function(card) {
-            cardsHtml += card.outerHTML.replace(/onclick="[^"]*"/g, '').replace(/class="/g, 'class="text-left ');
-        });
-        popup.innerHTML = '<div class="glass p-4 rounded-xl w-64"><h3 class="text-center mb-2">📋 Modul Cepat</h3><div class="grid grid-cols-2 gap-2">' + cardsHtml + '</div><button class="mt-4 w-full bg-teal-600 py-1 rounded" onclick="document.getElementById(\'menu-popup\').remove()">Tutup</button></div>';
-        document.body.appendChild(popup);
-    } else popup.style.display = 'flex';
-}
-function navInfo() { alert('Dream OS v2.2.2\nBi idznillah\nAllahumma shalli ala Muhammad'); }
-function navConfig() { if(confirm('Ganti role ke koordinator?')) { localStorage.setItem('dreamos_role', 'koordinator'); location.reload(); } }
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.nav-btn').forEach(function(btn) {
-        var navId = btn.getAttribute('data-nav');
-        if (navId === 'home') btn.onclick = navHome;
-        else if (navId === 'user') btn.onclick = navUser;
-        else if (navId === 'menu') btn.onclick = navMenu;
-        else if (navId === 'info') btn.onclick = navInfo;
-        else if (navId === 'config') btn.onclick = navConfig;
-    });
-});
-</script>
+    </script>
+</body>
+</html>
