@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • The Soul v4.3</title>
+    <title>Dream OS • The Honest v4.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,11 +15,9 @@
         .card-hover { transition: all 0.2s ease; cursor: pointer; }
         .card-hover:active { transform: scale(0.95); border-color: var(--primary); }
         
-        /* Sentinel & LED Pulse */
         .pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 0 15px rgba(16,185,129,0); } }
         
-        /* 7-Second Nav Slide RESTORED */
         .nav-slide { animation: slideNav 7s infinite linear; }
         @keyframes slideNav { 0% { transform: translateX(-8%); } 50% { transform: translateX(8%); } 100% { transform: translateX(-8%); } }
         
@@ -28,13 +26,11 @@
         
         #lockdown { position: fixed; inset: 0; background: rgba(1,2,6,0.98); z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         .hide-scroll::-webkit-scrollbar { display: none; }
-    
+        
         @media (prefers-reduced-motion: reduce) {
-            .nav-slide { animation: none !important; transform: none !important; }
-            .pulse { animation: none !important; }
-            .slide-up { animation: none !important; opacity: 1 !important; }
+            .nav-slide, .pulse, .slide-up { animation: none !important; opacity: 1 !important; transform: none !important; }
         }
-</style>
+    </style>
 </head>
 <body class="select-none">
 
@@ -57,7 +53,7 @@
                 <button onclick="togglePass()" class="p-2 text-white/30 hover:text-emerald-400 transition"><i id="eye" data-lucide="eye"></i></button>
             </div>
             <button onclick="login()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl shadow-lg transition active:scale-95 text-[10px] tracking-widest uppercase">Access Core</button>
-            <p class="text-[10px] text-amber-400/80 font-semibold text-center uppercase tracking-widest">⚠️ DEMO UI • Client-Side Only • Not for Production</p>
+            <p class="text-[9px] text-amber-400/80 font-semibold text-center uppercase tracking-widest">⚠️ DEMO UI • Client-Side Only</p>
         </div>
     </section>
 
@@ -86,9 +82,11 @@
         <header class="pt-12 pb-6 px-6 text-center space-y-2 relative z-40 bg-gradient-to-b from-[#010409] to-transparent">
             <h1 class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
             <p class="text-sm text-emerald-500 italic opacity-80" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            
             <div class="absolute top-6 right-6 flex items-center gap-2">
-                <p id="geo" class="text-[8px] text-white/30 uppercase font-bold tracking-widest">Scanning</p>
-                <div id="led" class="w-2 h-2 rounded-full bg-emerald-500 pulse"></div>
+                <p id="geo-loading" class="text-[8px] text-emerald-400/70 uppercase font-bold tracking-widest animate-pulse">📡 Detecting...</p>
+                <p id="geo" class="hidden text-[8px] text-white/30 uppercase font-bold tracking-widest">Scanning</p>
+                <div id="led" class="w-2 h-2 rounded-full bg-amber-500 pulse"></div>
             </div>
         </header>
 
@@ -96,7 +94,7 @@
             
             <div class="glass rounded-2xl p-4 slide-up" style="animation-delay:0.1s">
                 <p class="text-[9px] text-white/50 leading-relaxed text-center uppercase tracking-widest font-bold">
-                    <span class="text-emerald-400">Status:</span> UI Prototype • Client-Side Only
+                    <span class="text-amber-400">Status:</span> UI Prototype • Client-Side Only
                 </p>
             </div>
 
@@ -130,14 +128,10 @@
         const HQ = { lat: -6.4172, lon: 106.8302 }; // GDC Depok
         const RADIUS_KM = 2.0;
         const MODULES = [
-            { id: 'cmd', label: 'CMD', icon: 'terminal' },
-            { id: 'book', label: 'BOOK', icon: 'calendar' },
-            { id: 'k3', label: 'K3', icon: 'shield-alert' },
-            { id: 'sec', label: 'SEC', icon: 'lock' },
-            { id: 'in', label: 'IN', icon: 'log-in' },
-            { id: 'out', label: 'OUT', icon: 'log-out' },
-            { id: 'stok', label: 'STOK', icon: 'package' },
-            { id: 'maint', label: 'MAINT', icon: 'wrench' },
+            { id: 'cmd', label: 'CMD', icon: 'terminal' }, { id: 'book', label: 'BOOK', icon: 'calendar' },
+            { id: 'k3', label: 'K3', icon: 'shield-alert' }, { id: 'sec', label: 'SEC', icon: 'lock' },
+            { id: 'in', label: 'IN', icon: 'log-in' }, { id: 'out', label: 'OUT', icon: 'log-out' },
+            { id: 'stok', label: 'STOK', icon: 'package' }, { id: 'maint', label: 'MAINT', icon: 'wrench' },
             { id: 'asset', label: 'ASSET', icon: 'building' }
         ];
 
@@ -163,30 +157,49 @@
         window.login = async () => {
             const pass = document.getElementById('pass').value;
             if(pass !== 'b15m1ll4h_012443410') { alert('Password Salah'); return; }
-            
             if(!navigator.geolocation) { lockdown('GPS Terblokir'); return; }
             
             document.getElementById('login').style.opacity = '0';
             setTimeout(async () => {
-                const safe = await verifyGeo();
-                if(!safe) return;
                 document.getElementById('login').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
-                initApp();
+                const safe = await verifyGeo();
+                if(safe) initApp();
             }, 500);
         };
 
         const verifyGeo = () => new Promise(resolve => {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const dist = haversine(pos.coords.latitude, pos.coords.longitude, HQ.lat, HQ.lon);
-                if(dist <= RADIUS_KM) {
-                    document.getElementById('geo').textContent = `SACRED • ${dist.toFixed(1)}KM`;
-                    resolve(true);
-                } else {
-                    lockdown(`OFF-GRID: ${dist.toFixed(1)}KM`);
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const dist = haversine(pos.coords.latitude, pos.coords.longitude, HQ.lat, HQ.lon);
+                    document.getElementById('geo-loading').classList.add('hidden');
+                    const geoEl = document.getElementById('geo');
+                    const ledEl = document.getElementById('led');
+                    geoEl.classList.remove('hidden');
+                    
+                    if(dist <= RADIUS_KM) {
+                        geoEl.textContent = `SACRED • ${dist.toFixed(1)}KM`;
+                        ledEl.className = 'w-2 h-2 rounded-full bg-emerald-500 pulse shadow-[0_0_8px_#10b981]';
+                        resolve(true);
+                    } else {
+                        lockdown(`OFF-GRID: ${dist.toFixed(1)}KM`);
+                        resolve(false);
+                    }
+                }, 
+                err => {
+                    console.error("Geo error:", err);
+                    document.getElementById('geo-loading').classList.add('hidden');
+                    const geoEl = document.getElementById('geo');
+                    const ledEl = document.getElementById('led');
+                    geoEl.classList.remove('hidden');
+                    geoEl.textContent = "GPS UNAVAILABLE";
+                    geoEl.classList.replace('text-white/30', 'text-rose-500');
+                    ledEl.className = 'w-2 h-2 rounded-full bg-rose-500 pulse shadow-[0_0_8px_#f43f5e]';
+                    lockdown('GPS ERROR / DENIED');
                     resolve(false);
-                }
-            }, () => { lockdown('GPS ERROR'); resolve(false); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+                }, 
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
         });
 
         const lockdown = (msg) => {
@@ -202,48 +215,22 @@
                 </div>
             `).join('');
             lucide.createIcons();
-            log('Soul of Dream OS v4.3 Restored.');
+            log('Soul of Dream OS v4.4 Restored.');
         };
 
-        window.openModule = (id) => {
-            log(`Module accessed: ${id.toUpperCase()}`);
-            alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`);
-        };
+        window.openModule = (id) => { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); };
+        window.navAlert = (name) => { log(`Nav clicked: ${name}`); alert(`Navigasi ke: ${name}\n(Mode UI Demo)`); };
 
-        window.navAlert = (name) => {
-            log(`Nav clicked: ${name}`);
-            alert(`Navigasi ke: ${name}\n(Mode UI Demo)`);
-        };
-
-        // GHOST HUB (7-TAP PADA SENTINEL TENGAH)
         let taps = 0, tapTimer;
         window.tapLogo = () => {
             taps++;
-            if(taps >= 7) {
-                taps = 0;
-                toggleGhost();
-                log('Stealth Hub Override (7-Tap) Accepted.');
-            }
-            clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => taps = 0, 2000);
+            if(taps >= 7) { taps = 0; toggleGhost(); log('Stealth Hub Override (7-Tap) Accepted.'); }
+            clearTimeout(tapTimer); tapTimer = setTimeout(() => taps = 0, 2000);
         };
 
-        window.toggleGhost = () => {
-            const hub = document.getElementById('ghost');
-            hub.classList.toggle('hidden');
-            if(!hub.classList.contains('hidden')) lucide.createIcons();
-        };
-
-        window.wipeLogs = () => {
-            log('Purging logs...');
-            setTimeout(() => { document.getElementById('log').innerHTML = ''; alert('Logs Cleared!'); }, 500);
-        };
-
-        window.spoofId = () => {
-            const id = Math.random().toString(16).slice(2,14).toUpperCase();
-            log(`Identity Spoofed: ${id}`);
-            alert(`Identity Spoofed!\nVirtual MAC: ${id}`);
-        };
+        window.toggleGhost = () => { const hub = document.getElementById('ghost'); hub.classList.toggle('hidden'); if(!hub.classList.contains('hidden')) lucide.createIcons(); };
+        window.wipeLogs = () => { log('Purging logs...'); setTimeout(() => { document.getElementById('log').innerHTML = ''; alert('Logs Cleared!'); }, 500); };
+        window.spoofId = () => { const id = Math.random().toString(16).slice(2,14).toUpperCase(); log(`Identity Spoofed: ${id}`); alert(`Identity Spoofed!\nVirtual MAC: ${id}`); };
 
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
