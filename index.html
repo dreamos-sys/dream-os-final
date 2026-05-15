@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • Bulletproof v4.1</title>
+    <title>Dream OS • Geo-Fix 2KM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #10b981; --bg: #020617; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; margin: 0; }
         .glass { background: rgba(255,255,255,0.02); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
         .arabic-glow { text-shadow: 0 0 25px rgba(16,185,129,0.5); }
         #lockdown-overlay { position: fixed; inset: 0; background: #450a0a; z-index: 999; display: none; align-items: center; justify-content: center; text-align: center; }
@@ -17,16 +17,33 @@
 </head>
 <body class="select-none">
 
+    <!-- LOCKDOWN OVERLAY -->
     <div id="lockdown-overlay">
-        <div class="p-10 space-y-6">
+        <div class="space-y-6 p-10 text-center">
             <p class="text-6xl arabic-glow">ه</p>
-            <h1 id="lockdown-msg" class="text-2xl font-bold uppercase tracking-widest text-rose-500">SECURITY BREACH</h1>
-            <p id="lockdown-desc" class="text-[10px] text-white/50 uppercase tracking-[0.3em]"></p>
+            <h1 class="text-2xl font-bold uppercase text-rose-500">OUT OF BOUNDS</h1>
+            <p id="lockdown-msg" class="text-[10px] text-white/50 uppercase tracking-[0.3em]"></p>
             <button onclick="location.reload()" class="px-8 py-3 glass rounded-full text-[10px] font-bold">RE-SCAN</button>
         </div>
     </div>
 
-    <div id="app-shell" class="hidden flex-col h-full bg-[#020617]">
+    <!-- LOGIN SCREEN -->
+    <section id="login-screen" class="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center p-8 transition-all duration-700">
+        <div class="mb-10 text-center">
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-[2rem] border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
+            <p class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+        </div>
+        <div class="w-full max-w-xs space-y-4">
+            <div class="glass rounded-3xl p-1 border border-white/10 flex items-center pr-4">
+                <input type="password" id="pass-input" class="w-full p-5 bg-transparent text-center outline-none font-mono tracking-[0.5em] text-emerald-400" placeholder="••••">
+                <button onclick="togglePass()" class="text-white/20 hover:text-emerald-400"><i id="eye-icon" data-lucide="eye"></i></button>
+            </div>
+            <button onclick="authenticate()" class="w-full py-5 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-2xl shadow-xl transition-all active:scale-95 text-[10px] tracking-[0.3em] uppercase">Open Hidayah Core</button>
+        </div>
+    </section>
+
+    <!-- MAIN SHELL -->
+    <div id="app-shell" class="hidden flex-col h-full">
         <header class="p-6 border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl sticky top-0 z-50 text-center">
             <p class="text-3xl font-bold text-white arabic-glow mb-1" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
             <p class="text-[14px] text-emerald-400 italic mb-4" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
@@ -35,7 +52,7 @@
                     <img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/20" onerror="this.style.display='none'">
                     <div class="text-left">
                         <span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span>
-                        <p id="geo-label" class="text-[8px] text-white/30 uppercase">Bulletproof v4.1</p>
+                        <p id="geo-label" class="text-[8px] text-white/30 uppercase">Geo-Fix 2KM</p>
                     </div>
                 </div>
                 <div id="status-led" class="w-2 h-2 rounded-full bg-white/10"></div>
@@ -45,167 +62,91 @@
     </div>
 
     <script>
-        // ==================== KONFIGURASI UTAMA (AMAN) ====================
-        // Koordinat pusat TIDAK lagi disimpan mentah!
-        const GEO_SEED = "سُبْحَانَ الَّذِي أَسْرَىٰ بِعَبْدِهِ لَيْلًا";
-        let HQ = null; // Akan di-load dari sessionStorage
+        // ==================== KONFIGURASI ====================
+        const MASTER_HQ = { lat: -6.2000, lon: 106.8166 }; // Ganti dengan koordinat persis rumah Master
+        const MAX_RADIUS_KM = 2.0;
 
-        const CONFIG = {
-            MAX_RADIUS_KM: 2.0,
-            MAX_HUMAN_SPEED_KMH: 200, // <-- DIPERKETAT!
-            IP_VERIFY_TIMEOUT_MS: 3000,
-            INTEGRITY_CHECK_INTERVAL: 3000,
-        };
-
-        // ==================== HASH UTILS (HMAC-SHA256) ====================
-        const HashUtils = {
-            sha256: async (msg) => {
-                const buf = new TextEncoder().encode(msg);
-                const hash = await crypto.subtle.digest('SHA-256', buf);
-                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-            }
-        };
-
-        // ==================== 1. INTEGRITY SEAL (ANTI-TAMPER) ====================
-        let SCRIPT_HASH = '';
-        async function sealCode() {
-            const script = document.querySelector('script:not([src])').textContent;
-            SCRIPT_HASH = await HashUtils.sha256(script);
-        }
-        async function verifyCodeIntegrity() {
-            const currentScript = document.querySelector('script:not([src])').textContent;
-            const currentHash = await HashUtils.sha256(currentScript);
-            if (currentHash !== SCRIPT_HASH) {
-                triggerLockdown('CODE TAMPERING DETECTED', 'Kode telah dimodifikasi. Sesi dihancurkan.');
-            }
-        }
-
-        // ==================== 2. LAPISAN WAKTU (ANTI-DRIFT) ====================
-        async function getWorldTime() {
-            try {
-                const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Jakarta');
-                const data = await res.json();
-                return new Date(data.utc_datetime).getTime();
-            } catch(e) {
-                return Date.now(); // Fallback ke waktu lokal jika offline
-            }
-        }
-
-        // ==================== 3. LAPISAN LOKASI (ANTI-SPOOF) ====================
-        async function loadHQ() {
-            const stored = sessionStorage.getItem('hq_enc');
-            if (stored) {
-                HQ = JSON.parse(atob(stored));
-            } else {
-                // Default jika belum ada (hanya untuk first-time setup)
-                HQ = { lat: -6.2000, lon: 106.8166 };
-            }
-        }
-
+        // ==================== FUNGSI JARAK (HAVERSINE) ====================
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
+            const R = 6371; // km
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
+        // ==================== VERIFIKASI GEO ====================
         async function verifyGeo() {
-            if (!HQ) await loadHQ();
             return new Promise((resolve) => {
                 if (!("geolocation" in navigator)) {
-                    triggerLockdown('GPS REQUIRED', 'Perangkat tidak mendukung GPS.');
+                    document.getElementById('lockdown-overlay').style.display = 'flex';
+                    document.getElementById('lockdown-msg').innerText = 'GPS TIDAK TERSEDIA';
                     resolve(false);
                     return;
                 }
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const { latitude: gpsLat, longitude: gpsLon } = pos.coords;
-                    const distToHQ = calculateDistance(gpsLat, gpsLon, HQ.lat, HQ.lon);
-
-                    // Cek 1: Radius
-                    if (distToHQ > CONFIG.MAX_RADIUS_KM) {
-                        triggerLockdown('OUT OF BOUNDS', `${distToHQ.toFixed(1)} km dari pusat.`);
-                        resolve(false); return;
-                    }
-
-                    // Cek 2: Kecepatan (Gunakan World Time)
-                    const now = await getWorldTime();
-                    const last = JSON.parse(sessionStorage.getItem('last_pos'));
-                    if (last) {
-                        const speedDist = calculateDistance(last.lat, last.lon, gpsLat, gpsLon);
-                        const timeDiff = (now - last.ts) / 1000; // detik
-                        const speed = (speedDist / timeDiff) * 3600;
-                        if (speed > CONFIG.MAX_HUMAN_SPEED_KMH) {
-                            triggerLockdown('ABNORMAL SPEED', `${speed.toFixed(0)} km/jam.`);
-                            resolve(false); return;
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const dist = calculateDistance(
+                            pos.coords.latitude, pos.coords.longitude,
+                            MASTER_HQ.lat, MASTER_HQ.lon
+                        );
+                        if (dist <= MAX_RADIUS_KM) {
+                            document.getElementById('geo-label').innerText = `SACRED • ${dist.toFixed(2)} km`;
+                            document.getElementById('status-led').className = "w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]";
+                            resolve(true);
+                        } else {
+                            document.getElementById('lockdown-overlay').style.display = 'flex';
+                            document.getElementById('lockdown-msg').innerText = `${dist.toFixed(1)} KM (MAX 2 KM)`;
+                            resolve(false);
                         }
-                    } else {
-                        // First boot: Wajib ada riwayat!
-                        sessionStorage.setItem('last_pos', JSON.stringify({lat: gpsLat, lon: gpsLon, ts: now}));
-                        triggerLockdown('INITIAL SETUP', 'Login pertama harus di Sacred Circle.');
-                        resolve(false); return;
-                    }
-                    sessionStorage.setItem('last_pos', JSON.stringify({lat: gpsLat, lon: gpsLon, ts: now}));
-
-                    // Cek 3: Cross-verify dengan IP (WAJIB)
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), CONFIG.IP_VERIFY_TIMEOUT_MS);
-                        const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-                        clearTimeout(timeoutId);
-                        
-                        if (!res.ok) throw new Error('IP API failed');
-                        
-                        const ipData = await res.json();
-                        const distToIP = calculateDistance(gpsLat, gpsLon, ipData.latitude, ipData.longitude);
-                        if (distToIP > 100) { // <-- DIPERKETAT! 100km
-                            triggerLockdown('LOCATION SPOOFED', `GPS vs IP: ${distToIP.toFixed(0)} km.`);
-                            resolve(false); return;
-                        }
-                    } catch(e) {
-                        // Jika IP check gagal, TOLAK!
-                        triggerLockdown('NETWORK VERIFICATION FAILED', 'Tidak dapat memverifikasi IP.');
-                        resolve(false); return;
-                    }
-
-                    // SEMUA AMAN
-                    document.getElementById('geo-label').innerText = `SACRED • ${distToHQ.toFixed(2)} km`;
-                    document.getElementById('status-led').className = "w-2 h-2 rounded-full bg-emerald-500";
-                    resolve(true);
-                }, () => {
-                    triggerLockdown('GPS DENIED', 'Izin lokasi ditolak.');
-                    resolve(false);
-                }, { enableHighAccuracy: true, timeout: 10000 });
+                    },
+                    () => {
+                        document.getElementById('lockdown-overlay').style.display = 'flex';
+                        document.getElementById('lockdown-msg').innerText = 'GPS DIBLOKIR';
+                        resolve(false);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
             });
         }
 
-        function triggerLockdown(title, desc) {
-            document.getElementById('lockdown-overlay').style.display = 'flex';
-            document.getElementById('lockdown-msg').innerText = title;
-            document.getElementById('lockdown-desc').innerText = desc;
-        }
+        // ==================== AUTH ====================
+        window.togglePass = () => {
+            const inp = document.getElementById('pass-input');
+            const icon = document.getElementById('eye-icon');
+            const isPass = inp.type === 'password';
+            inp.type = isPass ? 'text' : 'password';
+            icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        };
 
-        // ==================== BOOT SEQUENCE ====================
-        async function bootSystem() {
-            // 1. Cek Integritas Kode
-            await verifyCodeIntegrity();
-
-            // 2. Cek Geo
-            const isSafe = await verifyGeo();
-            if (isSafe) {
-                document.getElementById('app-shell').style.display = 'flex';
-                renderUI();
+        window.authenticate = async function() {
+            const pass = document.getElementById('pass-input').value;
+            if (pass === 'b15m1ll4h_012443410') { // Ganti password sesuai keinginan
+                // Verifikasi Geo dulu
+                const safe = await verifyGeo();
+                if (!safe) return; // Akan tampil lockdown overlay
+                // Login sukses
+                document.getElementById('login-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-shell').style.display = 'flex';
+                    renderUI();
+                }, 500);
+            } else {
+                alert('Access Denied');
             }
-        }
+        };
 
+        // ==================== UI ====================
         function renderUI() {
             document.getElementById('main-viewport').innerHTML = `
                 <div class="h-32 glass rounded-[2.5rem] flex items-center justify-center p-6 text-center italic text-white/10 text-xs">
-                    Bulletproof v4.1 • All Systems Nominal
+                    Geo-Fix 2KM • Radius Sakti Aktif
                 </div>
                 <div class="grid grid-cols-3 gap-3">
                     ${['CMD','BOOK','K3','SEC','JAN-IN','JAN-OUT','STOK','MAINT','ASSET'].map(m => `
-                        <div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                        <div class="glass p-5 rounded-3xl text-center flex flex-col items-center active:scale-90 transition">
                             <i data-lucide="shield" class="w-7 h-7 text-emerald-400 mb-2"></i>
                             <span class="text-[9px] font-bold uppercase">${m}</span>
                         </div>
@@ -214,12 +155,7 @@
             lucide.createIcons();
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
-            await sealCode();
-            setInterval(verifyCodeIntegrity, CONFIG.INTEGRITY_CHECK_INTERVAL);
-            bootSystem();
-        });
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
 </body>
 </html>
