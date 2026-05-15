@@ -3,168 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • v1.7.5 Nano</title>
+    <title>Dream OS • v1.8.5 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="js/vaccineVault.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; height: 100vh; overflow: hidden; }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
-        .card-menu { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); transition: 0.2s; }
-        .card-menu:active { transform: scale(0.95); background: rgba(16,185,129,0.1); }
-        .nav-active { color: #10b981 !important; filter: drop-shadow(0 0 8px rgba(16,185,129,0.5)); }
+        :root { --primary: #10b981; --bg: #0f172a; --glass: rgba(255,255,255,0.03); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
+        .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .nav-active { color: var(--primary) !important; filter: drop-shadow(0 0 8px rgba(16,185,129,0.5)); }
+        .card-nano { background: rgba(255,255,255,0.05); transition: 0.3s; border: 1px solid rgba(255,255,255,0.08); }
+        .card-nano:active { transform: scale(0.92); background: rgba(16,185,129,0.1); border-color: var(--primary); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .slide-fade { display: none; animation: fadeEffect 1s; }
-        @keyframes fadeEffect { from {opacity: 0.4} to {opacity: 1} }
+        
+        /* Ghost Hub Overlay */
+        #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(2,6,23,0.98); z-index: 1000; padding: 25px; overflow-y: auto; }
+        #ghost-hub.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body class="select-none">
 
-    <section id="login-page" class="flex flex-col items-center justify-center h-full p-8 absolute inset-0 z-[60] bg-[#0f172a]">
-        <div id="logo-trigger" class="mb-10 cursor-pointer active:scale-95 transition text-center">
-            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-[2rem] shadow-2xl mb-4 border border-amber-500/20">
-            <h1 class="text-amber-500 font-bold tracking-[0.3em] text-[10px]">DREAM OS <span class="text-emerald-400 font-light">v1.3.2</span></h1>
-            <p class="text-2xl mt-6 text-white font-bold" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+    <section id="login-screen" class="fixed inset-0 z-[100] bg-[#0f172a] flex flex-col items-center justify-center p-8 transition-all duration-700">
+        <div id="logo-trigger" class="mb-8 cursor-pointer active:scale-95 transition-all relative">
+            <div id="ghost-glow" class="absolute inset-0 bg-amber-500/0 rounded-full blur-2xl transition-all"></div>
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-[2rem] shadow-2xl border border-amber-500/20 relative z-10">
+            <p class="text-2xl mt-6 font-bold text-center" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
         </div>
         <div class="w-full max-w-xs space-y-4">
-            <div class="glass rounded-3xl p-1 border border-white/10">
-                <input type="password" id="access-key" class="w-full p-5 bg-transparent text-center outline-none font-mono tracking-[0.5em] text-emerald-400" placeholder="••••">
+            <div class="glass rounded-3xl p-1 border border-white/10 flex items-center pr-4">
+                <input type="password" id="pass-input" class="w-full p-5 bg-transparent text-center outline-none font-mono tracking-[0.5em] text-emerald-400" placeholder="••••">
+                <button onclick="togglePass()" class="text-white/20 hover:text-emerald-400 transition">
+                    <i id="eye-icon" data-lucide="eye"></i>
+                </button>
             </div>
-            <button onclick="handleLogin()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-95 text-[10px] tracking-widest uppercase">Start Session</button>
+            <button onclick="initSystem()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-2xl shadow-xl transition-all active:scale-95 text-[10px] tracking-widest uppercase">Launch Dream OS</button>
         </div>
     </section>
 
-    <div id="dashboard" class="hidden flex-col h-full bg-[#0f172a]">
-        
-        <header class="p-5 border-b border-white/5 bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50">
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-3">
-                    <img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/10 shadow-lg">
-                    <div>
-                        <span class="text-[10px] font-black text-amber-500 tracking-widest uppercase italic">Dream OS</span>
-                        <p class="text-[8px] text-white/30 uppercase">Master M • v1.7.5</p>
-                    </div>
-                </div>
-                <div onclick="navSwitch('profile', this)" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 active:scale-90 transition">
-                    <i data-lucide="user" class="w-5 h-5 text-emerald-400"></i>
-                </div>
-            </div>
-            <div class="text-center py-2 bg-white/5 rounded-2xl border border-white/5">
-                <p class="text-sm font-bold text-white" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
-                <p class="text-[10px] text-emerald-400 font-medium italic mt-1" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
-            </div>
-        </header>
+    <div id="app-shell" class="hidden flex-col h-full">
+        <header id="app-header" class="p-5 border-b border-white/5 bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50"></header>
+        <main id="main-viewport" class="flex-1 overflow-y-auto p-5 pb-32 hide-scrollbar space-y-8"></main>
+        <nav id="app-nav" class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#0f172a]/95 backdrop-blur-3xl"></nav>
+    </div>
 
-        <main class="flex-1 overflow-y-auto p-5 pb-32 hide-scrollbar space-y-8">
-            <div id="home-view" class="view-content space-y-8">
-                <div id="grid-stats-container" class="grid grid-cols-4 gap-2.5"></div>
-
-                <div class="relative h-40 w-full glass rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
-                    <div id="carousel-container" class="h-full"></div>
-                </div>
-
-                <div id="grid-modules-container" class="grid grid-cols-3 gap-3.5"></div>
-            </div>
-
-            <div id="profile-view" class="view-content hidden p-6 text-center text-white/20 uppercase tracking-widest">Profile Module Active</div>
-            <div id="about-view" class="view-content hidden p-6 text-center text-white/20 uppercase tracking-widest">Power Soul of Shalawat Team</div>
-        </main>
-
-        <nav class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#0f172a]/95 backdrop-blur-3xl">
-            <button onclick="navSwitch('home', this)" class="nav-btn nav-active flex flex-col items-center gap-2">
-                <i data-lucide="home" class="w-6 h-6 pointer-events-none"></i><span class="text-[8px] font-bold">HOME</span>
-            </button>
-            <button onclick="navSwitch('profile', this)" class="nav-btn text-white/30 flex flex-col items-center gap-2">
-                <i data-lucide="user" class="w-6 h-6 pointer-events-none"></i><span class="text-[8px] font-bold">PROFILE</span>
-            </button>
-            <button onclick="navSwitch('qr', this)" class="flex flex-col items-center gap-2">
-                <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#0f172a] shadow-2xl active:scale-90 transition">
-                    <i data-lucide="qr-code" class="w-6 h-6 text-white"></i>
-                </div>
-                <span class="text-[8px] font-bold text-emerald-400">SCAN</span>
-            </button>
-            <button onclick="navSwitch('about', this)" class="nav-btn text-white/30 flex flex-col items-center gap-2">
-                <i data-lucide="info" class="w-6 h-6 pointer-events-none"></i><span class="text-[8px] font-bold">ABOUT</span>
-            </button>
-            <button onclick="navSwitch('config', this)" class="nav-btn text-white/30 flex flex-col items-center gap-2">
-                <i data-lucide="settings" class="w-6 h-6 pointer-events-none"></i><span class="text-[8px] font-bold">SETTING</span>
-            </button>
-        </nav>
+    <div id="ghost-hub">
+        <div class="flex justify-between items-center mb-8 border-b border-teal-500/20 pb-4">
+            <h2 class="text-xs font-black text-teal-400 tracking-[0.3em] uppercase italic">Stealth War Room</h2>
+            <button onclick="toggleGhost(false)" class="text-red-500 font-bold text-[10px]">✕ CLOSE</button>
+        </div>
+        <div id="ghost-grid" class="grid grid-cols-2 gap-4"></div>
+        <div id="ghost-res" class="hidden mt-6 glass p-4 rounded-2xl border border-white/5">
+            <p id="res-title" class="text-[10px] font-bold text-pink-400 mb-2 uppercase"></p>
+            <div id="res-body" class="text-[9px] font-mono text-white/50 overflow-x-auto max-h-48"></div>
+        </div>
     </div>
 
     <script>
-        // --- NANO MODULAR CONFIGURATION ---
-        const GRID_STATS = [
-            { icon: 'activity', val: '128', color: 'text-blue-400' },
-            { icon: 'calendar', val: '45', color: 'text-emerald-400' },
-            { icon: 'archive', val: '890', color: 'text-amber-400' },
-            { icon: 'shield', val: 'MAX', color: 'text-rose-400' },
-            { icon: 'cpu', val: '99%', color: 'text-cyan-400' },
-            { icon: 'database', val: 'SYNC', color: 'text-purple-400' },
-            { icon: 'zap', val: 'STBL', color: 'text-teal-400' },
-            { icon: 'fingerprint', val: 'HID', color: 'text-white/40' }
-        ];
-
-        const MODULES = [
-            { id: 'cmd', label: 'CMD', icon: 'layout-dashboard', color: 'text-blue-400' },
-            { id: 'book', label: 'BOOK', icon: 'calendar', color: 'text-emerald-400' },
-            { id: 'k3', label: 'K3', icon: 'shield-alert', color: 'text-rose-400' },
-            { id: 'sec', label: 'SEC', icon: 'lock', color: 'text-amber-400' },
-            { id: 'janin', label: 'JAN-IN', icon: 'droplet', color: 'text-cyan-400' },
-            { id: 'janout', label: 'JAN-OUT', icon: 'wind', color: 'text-teal-400' },
-            { id: 'stok', label: 'STOK', icon: 'box', color: 'text-orange-400' },
-            { id: 'maint', label: 'MAINT', icon: 'wrench', color: 'text-blue-300' },
-            { id: 'asset', label: 'ASSET', icon: 'building', color: 'text-slate-400' }
-        ];
-
-        // --- CORE LOGIC ---
-        let slideIdx = 0;
-
-        function renderUI() {
-            // Render Stats
-            document.getElementById('grid-stats-container').innerHTML = GRID_STATS.map(s => `
-                <div class="glass p-3 rounded-2xl text-center border border-white/5">
-                    <i data-lucide="${s.icon}" class="w-4 h-4 mx-auto ${s.color} mb-1"></i>
-                    <span class="text-[9px] font-bold block">${s.val}</span>
-                </div>`).join('');
-
-            // Render Modules
-            document.getElementById('grid-modules-container').innerHTML = MODULES.map(m => `
-                <div onclick="navSwitch('${m.id}')" class="card-menu p-5 rounded-3xl text-center flex flex-col items-center">
-                    <i data-lucide="${m.icon}" class="w-7 h-7 ${m.color} mb-2"></i>
-                    <span class="text-[9px] font-bold uppercase tracking-widest">${m.label}</span>
-                </div>`).join('');
-
-            // Render Carousel
-            document.getElementById('carousel-container').innerHTML = [1,2,3,4,5,6,7].map(n => `
-                <div class="slide-fade h-full bg-gradient-to-br from-white/5 to-transparent flex items-center justify-center p-8 text-center text-xs italic text-white/50">
-                    System Message ${n}: Dream OS Power Soul v1.7.5 Active
-                </div>`).join('');
-
-            lucide.createIcons();
-            startSlides();
-        }
-
-        function startSlides() {
-            let slides = document.getElementsByClassName("slide-fade");
-            for (let i = 0; i < slides.length; i++) slides[i].style.display = "none";
-            slideIdx++; if (slideIdx > slides.length) slideIdx = 1;
-            slides[slideIdx-1].style.display = "flex";
-            setTimeout(startSlides, 7000); 
-        }
-
-        window.handleLogin = () => {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'flex';
-            renderUI();
+        // --- DATA ARCHITECTURE ---
+        const UI_CONFIG = {
+            stats: [
+                { icon: 'activity', val: '128', color: 'text-blue-400' },
+                { icon: 'calendar', val: '45', color: 'text-emerald-400' },
+                { icon: 'archive', val: '890', color: 'text-amber-400' },
+                { icon: 'shield', val: 'MAX', color: 'text-rose-400' }
+            ],
+            modules: [
+                { id: 'cmd', label: 'CMD', icon: 'layout-dashboard', color: 'text-blue-400' },
+                { id: 'book', label: 'BOOK', icon: 'calendar', color: 'text-emerald-400' },
+                { id: 'sec', label: 'SEC', icon: 'lock', color: 'text-amber-400' },
+                { id: 'stok', label: 'STOK', icon: 'box', color: 'text-orange-400' }
+            ]
         };
 
-        window.navSwitch = (view, btn) => {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active', 'text-white/30'));
-            if(btn && btn.classList.contains('nav-btn')) btn.classList.add('nav-active');
-            document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
-            const target = document.getElementById(view + '-view');
-            if(target) target.classList.remove('hidden');
+        // --- CORE FUNCTIONS ---
+        let ghostTap = 0, ghostTimer = null;
+
+        window.togglePass = () => {
+            const input = document.getElementById('pass-input');
+            const icon = document.getElementById('eye-icon');
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        };
+
+        window.initSystem = () => {
+            document.getElementById('login-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-shell').style.display = 'flex';
+                renderDashboard();
+            }, 500);
+        };
+
+        function renderDashboard() {
+            // Header
+            document.getElementById('app-header').innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-3">
+                        <img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/10 shadow-lg">
+                        <div><span class="text-[10px] font-black text-amber-500 tracking-widest uppercase italic">Dream OS</span><p class="text-[8px] text-white/30 uppercase">Master M • v1.8.5</p></div>
+                    </div>
+                </div>
+                <div class="text-center py-2 bg-white/5 rounded-2xl border border-white/5">
+                    <p class="text-sm font-bold text-white" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+                </div>`;
+            
+            // Home Content (Nano Modular)
+            document.getElementById('main-viewport').innerHTML = `
+                <div class="grid grid-cols-4 gap-2">${UI_CONFIG.stats.map(s => `<div class="glass p-3 rounded-2xl text-center"><i data-lucide="${s.icon}" class="w-4 h-4 mx-auto ${s.color} mb-1"></i><span class="text-[9px] font-bold block">${s.val}</span></div>`).join('')}</div>
+                <div class="h-40 glass rounded-[2.5rem] flex items-center justify-center italic text-white/20 text-xs">System Carousel Ready</div>
+                <div class="grid grid-cols-3 gap-3">${UI_CONFIG.modules.map(m => `<div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center"><i data-lucide="${m.icon}" class="w-7 h-7 ${m.color} mb-2"></i><span class="text-[9px] font-bold uppercase">${m.label}</span></div>`).join('')}</div>
+            `;
+            
+            // Navigation
+            document.getElementById('app-nav').innerHTML = `
+                <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold">HOME</span></button>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold">PROFILE</span></button>
+                <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#0f172a] shadow-2xl active:scale-90 transition"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold">ABOUT</span></button>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold">CONFIG</span></button>
+            `;
+            lucide.createIcons();
+        }
+
+        // GHOST HUB LOGIC
+        document.getElementById('logo-trigger').addEventListener('click', () => {
+            ghostTap++;
+            const glow = document.getElementById('ghost-glow');
+            glow.style.background = `rgba(245, 158, 11, ${ghostTap * 0.15})`;
+            if(ghostTap >= 7) { ghostTap = 0; glow.style.background = 'none'; toggleGhost(true); }
+            clearTimeout(ghostTimer);
+            ghostTimer = setTimeout(() => { ghostTap = 0; glow.style.background = 'none'; }, 2500);
+        });
+
+        window.toggleGhost = (show) => {
+            const hub = document.getElementById('ghost-hub');
+            hub.classList.toggle('active', show);
+            if(show) {
+                const tools = [
+                    { t: 'CVE Intel', c: 'amber', a: 'alert("Fetching CVE...")' },
+                    { t: 'Analyzer', c: 'rose', a: 'alert("Ready to Scan")' },
+                    { t: 'Vaccine', c: 'emerald', a: 'alert("Lab Active")' },
+                    { t: 'Forensic', c: 'purple', a: 'alert("Exif Loaded")' }
+                ];
+                document.getElementById('ghost-grid').innerHTML = tools.map(t => `
+                    <div onclick="${t.a}" class="glass p-6 rounded-3xl border border-${t.c}-500/20 text-center active:scale-95">
+                        <p class="text-[10px] font-black text-${t.c}-400 uppercase tracking-widest">${t.t}</p>
+                    </div>`).join('');
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
