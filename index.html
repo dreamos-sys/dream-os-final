@@ -243,7 +243,11 @@
                 
                 { id: 'exif', title: '📸 METADATA INTEL', desc: 'Extract GPS & Hidden Info', action: 'triggerExif()', color: 'purple', label: 'EXTRACT' },
                 { id: 'neural', title: '🧠 NEURAL AGENT', desc: 'AI Intelligence Report', action: 'neuralAgent()', color: 'pink', label: 'LINK' },
-                { id: 'dorking', title: '🔎 GOOGLE DORKING', desc: 'Find Sensitive Info/Files', action: 'promptDorking()', color: 'amber', label: 'GEN' },
+                
+                { id: 'exif', title: '📸 METADATA INTEL', desc: 'GPS & Camera Deep Scan', action: 'triggerExif()', color: 'purple', label: 'EXTRACT' },
+                { id: 'neural', title: '🧠 NEURAL AGENT', desc: 'AI Intelligence Report', action: 'neuralAgent()', color: 'pink', label: 'LINK' },
+                { id: 'dorking', title: '🔎 GOOGLE DORKING', desc: 'Find Sensitive Files', action: 'promptDorking()', color: 'amber', label: 'GEN' },
+
 
                 { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Reset storage & OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
 
@@ -288,6 +292,51 @@
             console.warn("--- NEURAL INTEL REPORT: " + target + " ---");
             console.log("Analyzing cross-platform data...");
             console.log("Status: High Risk Profile Detected.");
+        };
+
+        
+        window.triggerExif = function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if(!file) return;
+                alert("⏳ Processing Byte Stream...");
+                EXIF.getData(file, function() {
+                    const allTags = EXIF.getAllTags(this);
+                    if (Object.keys(allTags).length === 0) {
+                        alert("❌ No Metadata Found (Possibly stripped by WhatsApp/Social Media)");
+                        return;
+                    }
+                    const make = allTags.Make || "Unknown";
+                    const model = allTags.Model || "Unknown";
+                    const date = allTags.DateTime || "Unknown";
+                    
+                    // Logic GPS Sultan
+                    let gpsInfo = "Not Detected";
+                    if(allTags.GPSLatitude) {
+                        const lat = allTags.GPSLatitude;
+                        const lon = allTags.GPSLongitude;
+                        gpsInfo = `${lat[0]}°${lat[1]}'${lat[2].toFixed(2)}"`;
+                    }
+
+                    alert(`🔍 INTEL REPORT:\n------------------\nDevice: ${make} ${model}\nTaken: ${date}\nGPS Data: ${gpsInfo}\n\nFull log sent to Eruda Console!`);
+                    console.table(allTags);
+                });
+            };
+            input.click();
+        };
+
+        window.neuralAgent = function() {
+            const target = prompt("Analyze Target Information:", "sultanerwin");
+            if(!target) return;
+            console.warn("🧠 NEURAL LINK INITIATED for: " + target);
+            alert("🧠 SYSTEM: Connecting to neural nodes...\nChecking digital footprints for " + target);
+            setTimeout(() => {
+                alert("✅ ANALYSIS COMPLETE\nCheck Console for Risk Assessment.");
+                console.log("Risk Factor: LOW\nDigital Presence: Multi-platform\nActivity: Developer/Security Enthusiast");
+            }, 2000);
         };
 
         window.promptDorking = function() {
