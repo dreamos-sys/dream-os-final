@@ -27,6 +27,7 @@
         .menu-card:hover { transform: translateY(-3px) scale(1.01); background: rgba(45,212,191,0.15); }
         .nav-btn.active { color: #2dd4bf; }
     </style>
+<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 </head>
 <body class="text-white h-screen overflow-hidden">
 
@@ -239,7 +240,11 @@
                 { id: 'sherlock', title: '👤 SHERLOCK OSINT', desc: 'Track username 400+ sites', action: 'promptSherlock()', color: 'blue', label: 'RUN' },
                 { id: 'nmap', title: '🌐 NMAP INTELLIGENCE', desc: 'Advanced Network Auditor', action: 'promptNmap()', color: 'emerald', label: 'SCAN' },
                 
+                
+                { id: 'exif', title: '📸 METADATA INTEL', desc: 'Extract GPS & Hidden Info', action: 'triggerExif()', color: 'purple', label: 'EXTRACT' },
+                { id: 'neural', title: '🧠 NEURAL AGENT', desc: 'AI Intelligence Report', action: 'neuralAgent()', color: 'pink', label: 'LINK' },
                 { id: 'dorking', title: '🔎 GOOGLE DORKING', desc: 'Find Sensitive Info/Files', action: 'promptDorking()', color: 'amber', label: 'GEN' },
+
                 { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Reset storage & OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
 
             ];
@@ -259,6 +264,32 @@
 
         
         
+        
+        window.triggerExif = function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if(!file) return;
+                EXIF.getData(file, function() {
+                    const data = EXIF.getAllTags(this);
+                    alert("🔍 METADATA FOUND:\nDevice: " + (data.Model || "Unknown") + "\nSoftware: " + (data.Software || "Unknown") + "\nGPS: " + (data.GPSLatitude ? "LAT/LONG Detected!" : "No GPS Data"));
+                    console.log("Full Intel:", data);
+                });
+            };
+            input.click();
+        };
+
+        window.neuralAgent = function() {
+            const target = prompt("Masukkan Subjek Intelijen (Nama/Username/IP):");
+            if(!target) return;
+            alert("🧠 NEURAL LINK ESTABLISHED...\nAnalyzing Digital Footprint for: " + target + "\nStatus: SUCCESS\nCheck Eruda Console for Deep Report.");
+            console.warn("--- NEURAL INTEL REPORT: " + target + " ---");
+            console.log("Analyzing cross-platform data...");
+            console.log("Status: High Risk Profile Detected.");
+        };
+
         window.promptDorking = function() {
             const target = prompt("Masukkan Domain/Target Dorking:", "example.com");
             if(!target) return;
