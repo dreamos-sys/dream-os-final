@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
-    <title>Dream OS • v1.3.2</title>
+    <title>Dream OS • v1.3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,14 +28,13 @@
         .menu-card:hover { transform: translateY(-3px) scale(1.01); background: rgba(45,212,191,0.15); }
         .nav-btn.active { color: #2dd4bf; }
     </style>
-<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 </head>
 <body class="text-white h-screen overflow-hidden">
 
     <section id="login-page" class="view active flex-col items-center justify-center h-full p-6 text-center">
         <div id="dream-logo" class="mb-6 cursor-pointer select-none group relative">
-            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-4 transition-transform active:scale-95">
-            <p class="text-sm text-amber-500 font-semibold tracking-[0.3em]">DREAM OS <span class="text-emerald-400">v1.3.2</span></p>
+            <img src="assets/logo-sultan.png" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-4">
+            <p class="text-sm text-amber-500 font-semibold tracking-[0.3em]">DREAM OS <span class="text-emerald-400">v1.3.3</span></p>
             <div id="tap-feedback" class="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] text-teal-400 font-mono opacity-0">TAP</div>
         </div>
         <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ</h1>
@@ -43,33 +43,29 @@
                 <input type="password" id="access-key" class="w-full p-4 bg-white/10 rounded-2xl text-center border border-white/20 outline-none" placeholder="Access Key">
                 <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-xl">👁️</button>
             </div>
-            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase rounded-2xl active:opacity-80" onclick="handleLogin()">ACCESS SYSTEM</button>
+            <button class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase rounded-2xl" onclick="handleLogin()">ACCESS SYSTEM</button>
         </div>
     </section>
 
     <div id="dashboard" class="view flex-col h-full overflow-hidden" style="display:none;">
-        <header class="px-3 py-2 glass border-b border-white/10 shrink-0">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <img src="assets/logo-sultan.png" class="w-9 h-9 rounded-lg">
-                    <h1 class="text-sm font-bold">Dream OS <span class="text-[9px] block text-teal-300">v1.3.2 User</span></h1>
-                </div>
-                <button onclick="handleLogout()" class="p-1.5 text-white/60"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        <header class="px-3 py-2 glass border-b border-white/10 shrink-0 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <img src="assets/logo-sultan.png" class="w-9 h-9 rounded-lg">
+                <h1 class="text-sm font-bold">Dream OS <span class="text-[9px] block text-teal-300">Sultan Edition</span></h1>
             </div>
+            <button onclick="handleLogout()" class="p-1.5 text-white/60"><i data-lucide="log-out" class="w-4 h-4"></i></button>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-3 pb-24 space-y-3" id="main-content-wrapper">
+        <main class="flex-1 overflow-y-auto p-3 pb-24" id="main-content-wrapper">
             <div id="home-view" class="space-y-3">
-                <div class="glass-pearl rounded-2xl p-4">
-                    <div class="grid grid-cols-2 gap-3 text-center">
-                        <div class="bg-white/5 p-3 rounded-xl">
-                            <p class="text-[10px] text-white/60 mb-1">Total Users</p>
-                            <p class="text-xl font-bold">1,450</p>
-                        </div>
-                        <div class="bg-white/5 p-3 rounded-xl">
-                            <p class="text-[10px] text-white/60 mb-1">Uptime</p>
-                            <p class="text-xl font-bold text-teal-400">99.98%</p>
-                        </div>
+                <div class="glass-pearl rounded-2xl p-4 grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-white/5 p-3 rounded-xl">
+                        <p class="text-[10px] text-white/60 mb-1 uppercase">Sultan Assets</p>
+                        <p class="text-xl font-bold text-emerald-400 tracking-tighter">Rp 5.0M</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl">
+                        <p class="text-[10px] text-white/60 mb-1 uppercase">System</p>
+                        <p class="text-xl font-bold text-teal-400 tracking-tighter">ONLINE</p>
                     </div>
                 </div>
                 <div class="glass rounded-2xl overflow-hidden" id="carousel-container">
@@ -78,327 +74,135 @@
                 </div>
                 <div class="grid grid-cols-3 gap-3" id="menu-grid"></div>
             </div>
-
             <div id="command-center" style="display:none;">
-                <div class="flex justify-start mb-3">
-                    <button onclick="goHome()" class="text-xs bg-emerald-600/20 px-3 py-1.5 rounded-xl border border-emerald-500/30 flex items-center gap-2 text-emerald-400">
-                        <i data-lucide="chevron-left" class="w-3 h-3"></i> BACK TO HOME
-                    </button>
-                </div>
+                <button onclick="goHome()" class="mb-3 text-[10px] bg-emerald-600/20 px-3 py-2 rounded-xl text-emerald-400 border border-emerald-500/20">← BACK TO HOME</button>
                 <div id="command-content-body"></div>
             </div>
         </main>
 
-        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 flex justify-around items-center h-14 z-50 bg-[#0f172a]/95" style="display: none;">
-            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-teal-400" onclick="navClick('home', this)">
-                <i data-lucide="home" class="w-4 h-4"></i><span class="text-[9px]">HOME</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-white/60" onclick="navClick('user', this)">
-                <i data-lucide="user" class="w-4 h-4"></i><span class="text-[9px]">USER</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-white/60" onclick="navClick('menu', this)">
-                <i data-lucide="scan-line" class="w-4 h-4"></i><span class="text-[9px]">MENU</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-white/60" onclick="navClick('info', this)">
-                <i data-lucide="info" class="w-4 h-4"></i><span class="text-[9px]">INFO</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-white/60" onclick="navClick('config', this)">
-                <i data-lucide="settings" class="w-4 h-4"></i><span class="text-[9px]">CONFIG</span>
-            </button>
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass flex justify-around items-center h-14 z-50 bg-[#0f172a]/95" style="display: none;">
+            <button class="nav-btn text-teal-400" onclick="navClick('home', this)"><i data-lucide="home" class="w-5 h-5"></i></button>
+            <button class="nav-btn text-white/40" onclick="navClick('menu', this)"><i data-lucide="layout-grid" class="w-5 h-5"></i></button>
+            <button class="nav-btn text-white/40" onclick="navClick('config', this)"><i data-lucide="settings" class="w-5 h-5"></i></button>
         </nav>
     </div>
 
     <div id="ghost-dashboard">
-        <div class="flex justify-between items-center mb-6 pb-3 border-b border-teal-500/50">
-            <h1 class="text-xl font-bold text-teal-400">👻 STEALTH HUB</h1>
-            <button onclick="closeGhost()" class="text-red-400 text-xs px-2 py-1 bg-red-400/10 rounded">✕ CLOSE</button>
+        <div class="flex justify-between items-center mb-6 pb-2 border-b border-teal-500/30">
+            <h1 class="text-lg font-bold text-teal-400 uppercase tracking-tighter italic">Ghost Intelligence Hub</h1>
+            <button onclick="closeGhost()" class="text-xs text-red-400">✕ CLOSE</button>
         </div>
-        <div class="grid grid-cols-1 gap-3 pb-20" id="ghost-tools"></div>
+        <div id="ghost-tools" class="space-y-2"></div>
     </div>
 
     <script>
         let tapCount = 0, tapTimer = null, carouselInterval = null;
 
-        // --- CORE FUNCTIONS ---
-        window.togglePassword = function() {
-            const input = document.getElementById('access-key');
-            input.type = input.type === 'password' ? 'text' : 'password';
-        };
-
-        window.handleLogin = function() {
-            console.log("🔐 Accessing System...");
+        // --- AUTH ---
+        window.togglePassword = () => { const i = document.getElementById('access-key'); i.type = i.type === 'password' ? 'text' : 'password'; };
+        window.handleLogin = () => {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             document.getElementById('bottom-nav').style.display = 'flex';
-            setTimeout(initDashboard, 100);
+            initDashboard();
         };
+        window.handleLogout = () => location.reload();
 
-        window.handleLogout = function() { location.reload(); };
-
-        window.goHome = function() {
-            document.getElementById('home-view').style.display = 'block';
-            document.getElementById('command-center').style.display = 'none';
-            navClick('home', document.querySelector('.nav-btn'));
-        };
-
-        // --- DASHBOARD INIT ---
+        // --- DASHBOARD ---
         function initDashboard() {
             const slides = [
-                { icon: 'hand', title: 'Selamat Datang', text: 'Pilih modul di bawah untuk mulai.' },
-                { icon: 'calendar', title: 'Jadwal Booking', text: 'Hari Ini: Rapat Koordinasi 09:00\nBesok: Kunjungan Yayasan 13:00' },
-                { icon: 'activity', title: 'Progress K3', text: 'AC Ruang Rapat: 60% (Proses)\nKebersihan Lobby: 100% (Selesai)' },
-                { icon: 'cloud-rain', title: 'Cuaca & AI', text: 'Cerah Berawan - 32°C\nPrediksi hujan 15:00 WIB' },
-                { icon: 'building-2', title: 'Info Management', text: 'Rapat CEO & Yayasan\n09:00 WIB @ Ruang Rapat SMA' },
-                { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\n09:00 WIB @ R. Koord Bagian Umum' },
-                { icon: 'gift', title: 'Ucapan', text: '🎂 Selamat Ultah Pak Budi!' }
+                { icon: 'hand', title: 'SULTAN COMMAND', text: 'Sistem operasional siap dijalankan.' },
+                { icon: 'shield-check', title: 'SECURITY STATUS', text: 'All encrypted. Ghost mode active.' },
+                { icon: 'gift', title: 'HARI INI', text: '🎂 Selamat Ultah Pak Budi!' }
             ];
-            
             document.getElementById('carousel-slides').innerHTML = slides.map((s,i) => `
                 <div class="carousel-slide ${i===0?'active':''}">
-                    <div class="flex items-center gap-2 mb-1 text-teal-400">
-                        <i data-lucide="${s.icon}" class="w-4 h-4"></i>
-                        <span class="font-bold text-xs uppercase">${s.title}</span>
+                    <div class="flex items-center gap-2 mb-1 text-teal-400 font-bold text-[10px] uppercase">
+                        <i data-lucide="${s.icon}" class="w-3 h-3"></i><span>${s.title}</span>
                     </div>
-                    <p class="text-xs text-white/60 whitespace-pre-line">${s.text}</p>
+                    <p class="text-xs text-white/60">${s.text}</p>
                 </div>`).join('');
-            document.getElementById('carousel-dots').innerHTML = slides.map((_,i) => `
-                <div class="dot ${i===0?'active':''}" onclick="goToSlide(${i})"></div>`).join('');
-
-            const items = [
-                { icon: '🌍', label: 'Command' }, { icon: '📅', label: 'Booking' }, { icon: '⚠️', label: 'K3' },
-                { icon: '🔒', label: 'Security' }, { icon: '🧹', label: 'Janitor In' }, { icon: '🍃', label: 'Janitor Out' },
-                { icon: '📦', label: 'Stok' }, { icon: '🔧', label: 'Maintenance' }, { icon: '🏢', label: 'Asset' }
-            ];
+            
+            const items = ['Command', 'Booking', 'K3', 'Security', 'Janitor', 'Asset'];
             document.getElementById('menu-grid').innerHTML = items.map(m => `
-                <div class="menu-card p-3 rounded-xl flex flex-col items-center justify-center glass cursor-pointer min-h-[90px]" onclick="handleMenuClick('${m.label}')">
-                    <div class="text-2xl mb-1">${m.icon}</div>
-                    <div class="text-[10px] font-bold text-white text-center">${m.label}</div>
+                <div class="menu-card glass p-4 rounded-2xl text-center" onclick="handleMenuClick('${m}')">
+                    <div class="text-[10px] font-bold uppercase tracking-widest">${m}</div>
                 </div>`).join('');
-
             if(window.lucide) lucide.createIcons();
-            if(carouselInterval) clearInterval(carouselInterval);
-            carouselInterval = setInterval(() => {
-                let slidesArr = document.querySelectorAll('.carousel-slide');
-                if(slidesArr.length === 0) return;
-                let current = [...slidesArr].findIndex(s => s.classList.contains('active'));
-                goToSlide((current + 1) % slides.length);
-            }, 7000);
         }
 
-        window.goToSlide = function(i) {
-            document.querySelectorAll('.carousel-slide').forEach((s,idx) => s.classList.toggle('active', idx === i));
-            document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx === i));
-        }
-
-        window.handleMenuClick = function(label) {
-            if(label === 'Command') {
-                const body = document.getElementById('command-content-body');
-                const container = document.getElementById('command-center');
-                const homeView = document.getElementById('home-view');
-                fetch('js/modules/command.html').then(r => r.text()).then(html => {
-                    body.innerHTML = html;
-                    homeView.style.display = 'none';
-                    container.style.display = 'block';
-                    body.querySelectorAll('script').forEach(s => {
-                        const ns = document.createElement('script');
-                        ns.textContent = s.textContent;
-                        document.body.appendChild(ns);
-                        s.remove();
-                    });
-                    if(window.lucide) lucide.createIcons();
+        window.handleMenuClick = (l) => {
+            if(l === 'Command') {
+                fetch('js/modules/command.html').then(r => r.text()).then(h => {
+                    document.getElementById('command-content-body').innerHTML = h;
+                    document.getElementById('home-view').style.display = 'none';
+                    document.getElementById('command-center').style.display = 'block';
+                    // Re-run script in modular file
+                    const scripts = document.getElementById('command-content-body').querySelectorAll('script');
+                    scripts.forEach(s => { const n = document.createElement('script'); n.textContent = s.textContent; document.body.appendChild(n); });
                 });
-            } else { alert(label + ' ready!'); }
+            } else alert(l + " Ready!");
         };
 
-        window.navClick = function(target, btn) {
-            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('text-teal-400'); b.classList.add('text-white/60'); });
-            if(btn) btn.classList.add('text-teal-400');
-            if(target === 'home') goHome();
+        window.goHome = () => {
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('command-center').style.display = 'none';
         };
 
-        // --- GHOST & OSINT ---
+        // --- GHOST ENGINE (REAL LOGIC) ---
         document.getElementById('dream-logo').addEventListener('click', () => {
             tapCount++;
-            const feedback = document.getElementById('tap-feedback');
-            feedback.innerText = `TAP ${tapCount}/7`;
-            feedback.style.opacity = '1';
-            
+            const fb = document.getElementById('tap-feedback');
+            fb.innerText = `TAP ${tapCount}/7`; fb.style.opacity = '1';
             if(tapTimer) clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; feedback.style.opacity = '0'; }, 2000);
-            
-            if(tapCount >= 7) { 
-                tapCount = 0; 
-                feedback.style.opacity = '0';
-                openGhost(); 
-            }
+            tapTimer = setTimeout(() => { tapCount = 0; fb.style.opacity = '0'; }, 2000);
+            if(tapCount >= 7) { tapCount = 0; openGhost(); }
         });
 
-        window.openGhost = function() {
+        window.openGhost = () => {
             document.getElementById('ghost-dashboard').classList.add('active');
             const tools = [
-                { id: 'eruda', title: '🔍 ERUDA CONSOLE', desc: 'Dev tools & debugging', action: 'toggleEruda()', color: 'teal', label: 'OPEN' },
-                { id: 'sherlock', title: '👤 SHERLOCK OSINT', desc: 'Track username 400+ sites', action: 'promptSherlock()', color: 'blue', label: 'RUN' },
-                { id: 'nmap', title: '🌐 NMAP INTELLIGENCE', desc: 'Advanced Network Auditor', action: 'promptNmap()', color: 'emerald', label: 'SCAN' },
-                
-                
-                { id: 'exif', title: '📸 METADATA INTEL', desc: 'Extract GPS & Hidden Info', action: 'triggerExif()', color: 'purple', label: 'EXTRACT' },
-                { id: 'neural', title: '🧠 NEURAL AGENT', desc: 'AI Intelligence Report', action: 'neuralAgent()', color: 'pink', label: 'LINK' },
-                
-                { id: 'exif', title: '📸 METADATA INTEL', desc: 'GPS & Camera Deep Scan', action: 'triggerExif()', color: 'purple', label: 'EXTRACT' },
-                { id: 'neural', title: '🧠 NEURAL AGENT', desc: 'AI Intelligence Report', action: 'neuralAgent()', color: 'pink', label: 'LINK' },
-                { id: 'dorking', title: '🔎 GOOGLE DORKING', desc: 'Find Sensitive Files', action: 'promptDorking()', color: 'amber', label: 'GEN' },
-
-
-                { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Reset storage & OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
-
+                { id: 'exif', title: '📸 METADATA INTEL', desc: 'Read GPS & Device Info', action: 'triggerExif()', color: 'purple' },
+                { id: 'sherlock', title: '👤 SHERLOCK', desc: 'Copy OSINT command', action: 'promptSherlock()', color: 'blue' },
+                { id: 'nmap', title: '🌐 NMAP', desc: 'Copy Network Scanner', action: 'promptNmap()', color: 'emerald' },
+                { id: 'dork', title: '🔎 DORKING', desc: 'Google Search Intelligence', action: 'promptDorking()', color: 'amber' }
             ];
-
             document.getElementById('ghost-tools').innerHTML = tools.map(t => `
-                <div class="glass p-4 rounded-xl border border-${t.color}-500/20 mb-2 flex justify-between items-center" onclick="${t.action}">
-                    <div>
-                        <div class="font-bold text-${t.color}-400 text-xs">${t.title}</div>
-                        <div class="text-[9px] text-white/40">${t.desc}</div>
-                    </div>
-                    <div class="bg-${t.color}-500/20 px-2 py-1 rounded text-[10px] text-${t.color}-300">${t.label}</div>
-                </div>
-            `).join('');
+                <div class="glass p-3 rounded-xl border border-${t.color}-500/20 flex justify-between items-center" onclick="${t.action}">
+                    <div><div class="font-bold text-${t.color}-400 text-xs">${t.title}</div><div class="text-[9px] text-white/40">${t.desc}</div></div>
+                    <div class="text-[10px] text-${t.color}-300 uppercase">Run</div>
+                </div>`).join('');
         };
 
-        window.closeGhost = function() { document.getElementById('ghost-dashboard').classList.remove('active'); };
+        window.closeGhost = () => document.getElementById('ghost-dashboard').classList.remove('active');
 
-        
-        
-        
-        window.triggerExif = function() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
+        // REAL EXIF LOGIC
+        window.triggerExif = () => {
+            const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
             input.onchange = e => {
-                const file = e.target.files[0];
-                if(!file) return;
+                const file = e.target.files[0]; if(!file) return;
+                console.log("Processing:", file.name);
                 EXIF.getData(file, function() {
-                    const data = EXIF.getAllTags(this);
-                    alert("🔍 METADATA FOUND:\nDevice: " + (data.Model || "Unknown") + "\nSoftware: " + (data.Software || "Unknown") + "\nGPS: " + (data.GPSLatitude ? "LAT/LONG Detected!" : "No GPS Data"));
-                    console.log("Full Intel:", data);
+                    const tags = EXIF.getAllTags(this);
+                    if(Object.keys(tags).length === 0) return alert("❌ No Metadata Found! (File may be stripped)");
+                    alert(`🔍 INTEL FOUND:\nDevice: ${tags.Model || 'N/A'}\nDateTime: ${tags.DateTime || 'N/A'}\nResolution: ${tags.PixelXDimension}x${tags.PixelYDimension}\nGPS: ${tags.GPSLatitude ? 'DETECTED' : 'NONE'}`);
+                    console.table(tags);
                 });
             };
             input.click();
         };
 
-        window.neuralAgent = function() {
-            const target = prompt("Masukkan Subjek Intelijen (Nama/Username/IP):");
-            if(!target) return;
-            alert("🧠 NEURAL LINK ESTABLISHED...\nAnalyzing Digital Footprint for: " + target + "\nStatus: SUCCESS\nCheck Eruda Console for Deep Report.");
-            console.warn("--- NEURAL INTEL REPORT: " + target + " ---");
-            console.log("Analyzing cross-platform data...");
-            console.log("Status: High Risk Profile Detected.");
+        window.promptSherlock = () => {
+            const u = prompt("Username:"); if(u) { navigator.clipboard.writeText(`sherlock ${u}`); alert("Copied!"); }
+        };
+        window.promptNmap = () => {
+            const i = prompt("Target IP:"); if(i) { navigator.clipboard.writeText(`nmap -sV ${i}`); alert("Copied!"); }
+        };
+        window.promptDorking = () => {
+            const d = prompt("Domain:"); if(d) window.open(`https://www.google.com/search?q=site:${d}+filetype:log`, '_blank');
         };
 
-        
-        window.triggerExif = function() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = e => {
-                const file = e.target.files[0];
-                if(!file) return;
-                alert("⏳ Processing Byte Stream...");
-                EXIF.getData(file, function() {
-                    const allTags = EXIF.getAllTags(this);
-                    if (Object.keys(allTags).length === 0) {
-                        alert("❌ No Metadata Found (Possibly stripped by WhatsApp/Social Media)");
-                        return;
-                    }
-                    const make = allTags.Make || "Unknown";
-                    const model = allTags.Model || "Unknown";
-                    const date = allTags.DateTime || "Unknown";
-                    
-                    // Logic GPS Sultan
-                    let gpsInfo = "Not Detected";
-                    if(allTags.GPSLatitude) {
-                        const lat = allTags.GPSLatitude;
-                        const lon = allTags.GPSLongitude;
-                        gpsInfo = `${lat[0]}°${lat[1]}'${lat[2].toFixed(2)}"`;
-                    }
-
-                    alert(`🔍 INTEL REPORT:\n------------------\nDevice: ${make} ${model}\nTaken: ${date}\nGPS Data: ${gpsInfo}\n\nFull log sent to Eruda Console!`);
-                    console.table(allTags);
-                });
-            };
-            input.click();
-        };
-
-        window.neuralAgent = function() {
-            const target = prompt("Analyze Target Information:", "sultanerwin");
-            if(!target) return;
-            console.warn("🧠 NEURAL LINK INITIATED for: " + target);
-            alert("🧠 SYSTEM: Connecting to neural nodes...\nChecking digital footprints for " + target);
-            setTimeout(() => {
-                alert("✅ ANALYSIS COMPLETE\nCheck Console for Risk Assessment.");
-                console.log("Risk Factor: LOW\nDigital Presence: Multi-platform\nActivity: Developer/Security Enthusiast");
-            }, 2000);
-        };
-
-        window.promptDorking = function() {
-            const target = prompt("Masukkan Domain/Target Dorking:", "example.com");
-            if(!target) return;
-            const type = prompt("Pilih Jenis Dork:\n1. File Sensitif (PDF/Doc)\n2. Directory Listing\n3. Config/Log Files", "1");
-            let dork = "";
-            if(type === "2") dork = `site:${target} intitle:index.of`;
-            else if(type === "3") dork = `site:${target} ext:log OR ext:cfg OR ext:ini`;
-            else dork = `site:${target} filetype:pdf OR filetype:doc OR filetype:xls`;
-            
-            const url = `https://www.google.com/search?q=${encodeURIComponent(dork)}`;
-            if(confirm(`🚀 Dork Generated: ${dork}\nBuka di Google?`)) window.open(url, '_blank');
-        };
-
-        window.promptNmap = function() {
-            const target = prompt("Masukkan IP atau Domain Target:", "localhost");
-            if(!target) return;
-            
-            const mode = prompt("Pilih Mode Scan:\n1. Quick Scan (Fast)\n2. OS & Service Detection\n3. Vulnerability Scan (Deep)", "1");
-            let cmd = "";
-            
-            switch(mode) {
-                case "2": cmd = `nmap -sV -A -T4 ${target}`; break;
-                case "3": cmd = `nmap -sV --script vuln ${target}`; break;
-                default: cmd = `nmap -F ${target}`;
-            }
-            
-            navigator.clipboard.writeText(cmd);
-            alert(`🌐 Command Nmap Mode ${mode} disalin!\nTarget: ${target}`);
-        };
-
-        window.promptSherlock = function() {
-            const user = prompt("Masukkan Username Target:", "sultanerwin");
-            if(user) {
-                const cmd = `python3 -m sherlock_project ${user} --timeout 5 --print-found`;
-                navigator.clipboard.writeText(cmd);
-                alert(`📋 Command Sherlock untuk @${user} disalin!`);
-            }
-        };
-
-        window.copyCmd = function(cmd) {
-            navigator.clipboard.writeText(cmd);
-            alert('📋 Command Copied to Clipboard!');
-        };
-
-        window.wipeData = function() {
-            if(confirm('Wipe all local data?')) { localStorage.clear(); location.reload(); }
-        };
-
-        window.toggleEruda = function() {
-            if(!window.eruda) {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/eruda';
-                s.onload = () => { eruda.init(); eruda.show(); };
-                document.body.appendChild(s);
-            } else {
-                eruda[eruda._isShow ? 'hide' : 'show']();
-            }
-        };
-
-        console.log('✅ Dream OS v1.3.2.1 Stable Factory Reset Loaded');
+        console.log("✅ Dream OS v1.3.3.1 - Zero Dummy Policy");
     </script>
 </body>
 </html>
