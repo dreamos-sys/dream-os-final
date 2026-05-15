@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • v1.9.1 Sacred</title>
+    <title>Dream OS • v1.9.5 Sacred</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="js/vaccineVault.js"></script>
@@ -13,6 +13,8 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
         .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         .nav-active { color: var(--primary) !important; filter: drop-shadow(0 0 10px rgba(16,185,129,0.5)); }
+        .card-nano { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); transition: 0.2s; }
+        .card-nano:active { transform: scale(0.92); background: rgba(16,185,129,0.1); border-color: var(--primary); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         #boot-splash { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
         #boot-splash.hidden { opacity: 0; pointer-events: none; }
@@ -66,6 +68,27 @@
         const SESSION_KEY = "shalawat_nur";
         let ghostTap = 0, ghostTimer = null;
 
+        // Configuration
+        const UI_DATA = {
+            stats: [
+                { icon: 'activity', val: '128', color: 'text-blue-400' },
+                { icon: 'calendar', val: '45', color: 'text-emerald-400' },
+                { icon: 'archive', val: '890', color: 'text-amber-400' },
+                { icon: 'shield', val: 'MAX', color: 'text-rose-400' }
+            ],
+            modules: [
+                { id: 'cmd', label: 'CMD', icon: 'layout-dashboard', color: 'text-blue-400' },
+                { id: 'book', label: 'BOOK', icon: 'calendar', color: 'text-emerald-400' },
+                { id: 'k3', label: 'K3', icon: 'shield-alert', color: 'text-rose-400' },
+                { id: 'sec', label: 'SEC', icon: 'lock', color: 'text-amber-400' },
+                { id: 'janin', label: 'JAN-IN', icon: 'droplet', color: 'text-cyan-400' },
+                { id: 'janout', label: 'JAN-OUT', icon: 'wind', color: 'text-teal-400' },
+                { id: 'stok', label: 'STOK', icon: 'box', color: 'text-orange-400' },
+                { id: 'maint', label: 'MAINT', icon: 'wrench', color: 'text-blue-300' },
+                { id: 'asset', label: 'ASSET', icon: 'building', color: 'text-slate-400' }
+            ]
+        };
+
         function encrypt(t) { return btoa(t.split('').map((c,i) => String.fromCharCode(c.charCodeAt(0) ^ SESSION_KEY.charCodeAt(i % SESSION_KEY.length))).join('')); }
         function decrypt(e) { return atob(e).split('').map((c,i) => String.fromCharCode(c.charCodeAt(0) ^ SESSION_KEY.charCodeAt(i % SESSION_KEY.length))).join(''); }
 
@@ -89,23 +112,28 @@
             if (document.getElementById('pass-input').value === SACRED_PASS) {
                 localStorage.setItem('dream_lock', encrypt('MASTER_ACTIVE_' + Date.now()));
                 location.reload();
-            } else { alert('Access Denied: Wrong Sacred Key'); }
+            } else { alert('Access Denied'); }
         };
 
         function renderDashboard() {
             document.getElementById('app-header').innerHTML = `
                 <div class="flex justify-between items-center mb-4">
-                    <div class="flex items-center gap-3"><img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/10 shadow-lg"><div><span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span><p class="text-[8px] text-white/30 uppercase">Master M • v1.9.1</p></div></div>
+                    <div class="flex items-center gap-3"><img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/10 shadow-lg"><div><span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span><p class="text-[8px] text-white/30 uppercase">Master M • v1.9.5</p></div></div>
                     <button onclick="localStorage.removeItem('dream_lock'); location.reload();" class="text-white/20 hover:text-red-400 text-[8px] font-bold">LOGOUT</button>
                 </div>
                 <div class="text-center py-2 bg-white/5 rounded-2xl border border-white/5"><p class="text-sm font-bold text-white" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p></div>`;
             
             document.getElementById('main-viewport').innerHTML = `
-                <div class="grid grid-cols-4 gap-2"><div class="glass p-3 rounded-2xl text-center"><i data-lucide="activity" class="w-4 h-4 mx-auto text-blue-400 mb-1"></i><span class="text-[9px] font-bold">128</span></div><div class="glass p-3 rounded-2xl text-center"><i data-lucide="calendar" class="w-4 h-4 mx-auto text-emerald-400 mb-1"></i><span class="text-[9px] font-bold">45</span></div><div class="glass p-3 rounded-2xl text-center"><i data-lucide="archive" class="w-4 h-4 mx-auto text-amber-400 mb-1"></i><span class="text-[9px] font-bold">890</span></div><div class="glass p-3 rounded-2xl text-center"><i data-lucide="shield" class="w-4 h-4 mx-auto text-rose-400"></i><span class="text-[9px] font-bold">MAX</span></div></div>
+                <div class="grid grid-cols-4 gap-2">${UI_DATA.stats.map(s => `<div class="glass p-3 rounded-2xl text-center"><i data-lucide="${s.icon}" class="w-4 h-4 mx-auto ${s.color} mb-1"></i><span class="text-[9px] font-bold block">${s.val}</span></div>`).join('')}</div>
                 <div class="h-32 glass rounded-[2rem] flex items-center justify-center italic text-white/20 text-xs">Dynamic Intel Feed Active</div>
-                <div class="grid grid-cols-3 gap-3"><div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center"><i data-lucide="terminal" class="w-7 h-7 text-blue-400 mb-2"></i><span class="text-[9px] font-bold">CMD</span></div><div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center"><i data-lucide="lock" class="w-7 h-7 text-amber-400 mb-2"></i><span class="text-[9px] font-bold">SEC</span></div><div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center"><i data-lucide="box" class="w-7 h-7 text-orange-400 mb-2"></i><span class="text-[9px] font-bold">STOK</span></div></div>`;
+                <div class="grid grid-cols-3 gap-3">${UI_DATA.modules.map(m => `<div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center"><i data-lucide="${m.icon}" class="w-7 h-7 ${m.color} mb-2"></i><span class="text-[9px] font-bold uppercase tracking-tight">${m.label}</span></div>`).join('')}</div>`;
 
-            document.getElementById('app-nav').innerHTML = `<button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold">HOME</span></button><button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold">PROFILE</span></button><div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#0f172a] shadow-2xl active:scale-90 transition"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div><button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold">ABOUT</span></button><button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold">CONFIG</span></button>`;
+            document.getElementById('app-nav').innerHTML = `
+                <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">User</span></button>
+                <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#0f172a] shadow-2xl active:scale-90 transition"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Info</span></button>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Config</span></button>`;
             lucide.createIcons();
         }
 
@@ -121,13 +149,13 @@
                 const tools = [
                     { t: 'Live CVE Intel', c: 'amber', exec: async () => { 
                         const data = await VaccineVault.fetchCVE();
-                        showRes('CVE INTEL', data ? data.map(c => `[${c.id}] ${c.summary}`).join('\n\n') : 'Connection Error');
+                        showRes('CVE INTEL', data ? data.map(c => `[${c.id}] ${c.summary}`).join('\n\n') : 'Error Connect');
                     }},
                     { t: 'Risk Analyzer', c: 'rose', exec: () => { 
-                        const p = prompt("Input Payload:"); if(p) { const r = VaccineVault.analyze(p); showRes('NEURAL REPORT', `Score: ${r.score}%\nSigs: ${r.risks.join(', ')}`); }
+                        const p = prompt("Payload:"); if(p) { const r = VaccineVault.analyze(p); showRes('NEURAL REPORT', `Score: ${r.score}%\nSigs: ${r.risks.join(', ')}`); }
                     }},
-                    { t: 'Vaccine Lab', c: 'emerald', exec: () => { alert("Vaccine Engine 1.0 Active"); }},
-                    { t: 'Exif Intel', c: 'purple', exec: () => { alert("Exif Intel Ready"); }}
+                    { t: 'Vaccine Lab', c: 'emerald', exec: () => { showRes('VACCINE', 'Engine Active v1.0'); }},
+                    { t: 'Exif Intel', c: 'purple', exec: () => { showRes('EXIF', 'Forensic Ready'); }}
                 ];
                 document.getElementById('ghost-grid').innerHTML = tools.map(t => `<div onclick="(${t.exec.toString()})()" class="glass p-6 rounded-3xl border border-${t.c}-500/20 text-center active:scale-95"><p class="text-[10px] font-black text-${t.c}-400 uppercase">${t.t}</p></div>`).join('');
                 document.getElementById('ghost-res').classList.add('hidden');
