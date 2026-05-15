@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Dream OS • v1.3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -32,9 +31,10 @@
 <body class="text-white h-screen overflow-hidden">
 
     <section id="login-page" class="view active flex-col items-center justify-center h-full p-6 text-center">
-        <div id="dream-logo" class="mb-6 cursor-pointer select-none">
-            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-4">
+        <div id="dream-logo" class="mb-6 cursor-pointer select-none group relative">
+            <img src="assets/logo-sultan.png" alt="Dream OS" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-4 transition-transform active:scale-95">
             <p class="text-sm text-amber-500 font-semibold tracking-[0.3em]">DREAM OS <span class="text-emerald-400">v1.3.2</span></p>
+            <div id="tap-feedback" class="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] text-teal-400 font-mono opacity-0">TAP</div>
         </div>
         <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ</h1>
         <div class="glass p-6 rounded-3xl w-full max-w-xs">
@@ -42,11 +42,11 @@
                 <input type="password" id="access-key" class="w-full p-4 bg-white/10 rounded-2xl text-center border border-white/20 outline-none" placeholder="Access Key">
                 <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-xl">👁️</button>
             </div>
-            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase rounded-2xl" onclick="handleLogin()">ACCESS SYSTEM</button>
+            <button id="btn-login" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase rounded-2xl active:opacity-80" onclick="handleLogin()">ACCESS SYSTEM</button>
         </div>
     </section>
 
-    <div id="dashboard" class="view flex-col h-full overflow-hidden">
+    <div id="dashboard" class="view flex-col h-full overflow-hidden" style="display:none;">
         <header class="px-3 py-2 glass border-b border-white/10 shrink-0">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
@@ -109,8 +109,8 @@
 
     <div id="ghost-dashboard">
         <div class="flex justify-between items-center mb-6 pb-3 border-b border-teal-500/50">
-            <h1 class="text-xl font-bold text-teal-400">👻 GHOST MODE</h1>
-            <button onclick="closeGhost()" class="text-red-400 text-xs">✕ CLOSE</button>
+            <h1 class="text-xl font-bold text-teal-400">👻 STEALTH HUB</h1>
+            <button onclick="closeGhost()" class="text-red-400 text-xs px-2 py-1 bg-red-400/10 rounded">✕ CLOSE</button>
         </div>
         <div class="grid grid-cols-1 gap-3 pb-20" id="ghost-tools"></div>
     </div>
@@ -118,33 +118,37 @@
     <script>
         let tapCount = 0, tapTimer = null, carouselInterval = null;
 
-        function togglePassword() {
+        // --- CORE FUNCTIONS ---
+        window.togglePassword = function() {
             const input = document.getElementById('access-key');
             input.type = input.type === 'password' ? 'text' : 'password';
-        }
+        };
 
-        function handleLogin() {
-            console.log("🔐 Attempting Login...");
+        window.handleLogin = function() {
+            console.log("🔐 Accessing System...");
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             document.getElementById('bottom-nav').style.display = 'flex';
             setTimeout(initDashboard, 100);
-        }
+        };
 
-        function handleLogout() { location.reload(); }
-        function goHome() {
+        window.handleLogout = function() { location.reload(); };
+
+        window.goHome = function() {
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('command-center').style.display = 'none';
-        }
+            navClick('home', document.querySelector('.nav-btn'));
+        };
 
+        // --- DASHBOARD INIT ---
         function initDashboard() {
             const slides = [
-                { icon: 'hand', title: 'Selamat Datang', text: 'Silakan pilih modul di bawah.' },
+                { icon: 'hand', title: 'Selamat Datang', text: 'Pilih modul di bawah untuk mulai.' },
                 { icon: 'calendar', title: 'Jadwal Booking', text: 'Hari Ini: Rapat Koordinasi 09:00\nBesok: Kunjungan Yayasan 13:00' },
                 { icon: 'activity', title: 'Progress K3', text: 'AC Ruang Rapat: 60% (Proses)\nKebersihan Lobby: 100% (Selesai)' },
                 { icon: 'cloud-rain', title: 'Cuaca & AI', text: 'Cerah Berawan - 32°C\nPrediksi hujan 15:00 WIB' },
-                { icon: 'building-2', title: 'Info Management', text: 'Rapat CEO & Yayasan\nPukul 09:00 WIB di Ruang Rapat SMA' },
-                { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\nJam 09:00 WIB di R. Koord Bagian Umum' },
+                { icon: 'building-2', title: 'Info Management', text: 'Rapat CEO & Yayasan\n09:00 WIB @ Ruang Rapat SMA' },
+                { icon: 'users', title: 'Info Team Umum', text: 'Rapat Mingguan\n09:00 WIB @ R. Koord Bagian Umum' },
                 { icon: 'gift', title: 'Ucapan', text: '🎂 Selamat Ultah Pak Budi!' }
             ];
             
@@ -173,17 +177,19 @@
             if(window.lucide) lucide.createIcons();
             if(carouselInterval) clearInterval(carouselInterval);
             carouselInterval = setInterval(() => {
-                let current = [...document.querySelectorAll('.carousel-slide')].findIndex(s => s.classList.contains('active'));
-                if(current !== -1) goToSlide((current + 1) % slides.length);
+                let slidesArr = document.querySelectorAll('.carousel-slide');
+                if(slidesArr.length === 0) return;
+                let current = [...slidesArr].findIndex(s => s.classList.contains('active'));
+                goToSlide((current + 1) % slides.length);
             }, 7000);
         }
 
-        function goToSlide(i) {
+        window.goToSlide = function(i) {
             document.querySelectorAll('.carousel-slide').forEach((s,idx) => s.classList.toggle('active', idx === i));
             document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx === i));
         }
 
-        function handleMenuClick(label) {
+        window.handleMenuClick = function(label) {
             if(label === 'Command') {
                 const body = document.getElementById('command-content-body');
                 const container = document.getElementById('command-center');
@@ -201,31 +207,38 @@
                     if(window.lucide) lucide.createIcons();
                 });
             } else { alert(label + ' ready!'); }
-        }
+        };
 
-        function navClick(target, btn) {
+        window.navClick = function(target, btn) {
             document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('text-teal-400'); b.classList.add('text-white/60'); });
             if(btn) btn.classList.add('text-teal-400');
             if(target === 'home') goHome();
-        }
+        };
 
+        // --- GHOST & OSINT ---
         document.getElementById('dream-logo').addEventListener('click', () => {
             tapCount++;
+            const feedback = document.getElementById('tap-feedback');
+            feedback.innerText = `TAP ${tapCount}/7`;
+            feedback.style.opacity = '1';
+            
             if(tapTimer) clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => tapCount = 0, 2000);
-            if(tapCount >= 7) { tapCount = 0; openGhost(); }
+            tapTimer = setTimeout(() => { tapCount = 0; feedback.style.opacity = '0'; }, 2000);
+            
+            if(tapCount >= 7) { 
+                tapCount = 0; 
+                feedback.style.opacity = '0';
+                openGhost(); 
+            }
         });
 
-        
-        function openGhost() {
+        window.openGhost = function() {
             document.getElementById('ghost-dashboard').classList.add('active');
             const tools = [
-                { id: 'eruda', title: '🔍 ERUDA CONSOLE', desc: 'Developer tools & debugging', action: 'toggleEruda()', color: 'teal', label: 'OPEN' },
-                { id: 'sherlock', title: '👤 SHERLOCK OSINT', desc: 'Deep Track Username Across 400+ Sites', action: 'promptSherlock()', color: 'blue', label: 'RUN' },
+                { id: 'eruda', title: '🔍 ERUDA CONSOLE', desc: 'Dev tools & debugging', action: 'toggleEruda()', color: 'teal', label: 'OPEN' },
+                { id: 'sherlock', title: '👤 SHERLOCK OSINT', desc: 'Track username 400+ sites', action: 'promptSherlock()', color: 'blue', label: 'RUN' },
                 { id: 'nmap', title: '🌐 NMAP SCANNER', desc: 'Deep network scanning', action: 'copyCmd("nmap -sV -p- localhost")', color: 'emerald', label: 'COPY' },
-                { id: 'tshark', title: '🦈 TSHARK CAPTURE', desc: 'Packet analysis tool', action: 'copyCmd("tshark -i 1 -f \"tcp port 80\"")', color: 'indigo', label: 'COPY' },
-                { id: 'phone', title: '📱 PHONE INFOGA', desc: 'Phone number intelligence', action: 'copyCmd("phoneinfoga scan -n +62...")', color: 'cyan', label: 'COPY' },
-                { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Clear storage & Reset OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
+                { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Reset storage & OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
             ];
 
             document.getElementById('ghost-tools').innerHTML = tools.map(t => `
@@ -237,32 +250,40 @@
                     <div class="bg-${t.color}-500/20 px-2 py-1 rounded text-[10px] text-${t.color}-300">${t.label}</div>
                 </div>
             `).join('');
-        }
+        };
 
-        
-        function promptSherlock() {
+        window.closeGhost = function() { document.getElementById('ghost-dashboard').classList.remove('active'); };
+
+        window.promptSherlock = function() {
             const user = prompt("Masukkan Username Target:", "sultanerwin");
             if(user) {
-                const cmd = `sherlock ${user} --timeout 5 --print-found`;
+                const cmd = `python3 -m sherlock_project ${user} --timeout 5 --print-found`;
                 navigator.clipboard.writeText(cmd);
-                alert(`📋 Command untuk @${user} disalin!\nPaste di Termux Sultan sekarang.`);
+                alert(`📋 Command Sherlock untuk @${user} disalin!`);
             }
-        }
+        };
 
-        function copyCmd(cmd) {
+        window.copyCmd = function(cmd) {
             navigator.clipboard.writeText(cmd);
-            alert('📋 Command Copied to Clipboard!
-Paste it in your Termux.');
-        }
+            alert('📋 Command Copied to Clipboard!');
+        };
 
-        function wipeData() {
+        window.wipeData = function() {
             if(confirm('Wipe all local data?')) { localStorage.clear(); location.reload(); }
-        }
+        };
 
-        function closeGhost() { document.getElementById('ghost-dashboard').classList.remove('active'); }
-        function toggleEruda() { if(!window.eruda) { const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/eruda'; s.onload=()=>{ eruda.init(); eruda.show(); }; document.body.appendChild(s); } else eruda[eruda._isShow ? 'hide' : 'show'](); }
-        
-        console.log('✅ Dream OS v1.3.2 Modular Ready');
+        window.toggleEruda = function() {
+            if(!window.eruda) {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+                s.onload = () => { eruda.init(); eruda.show(); };
+                document.body.appendChild(s);
+            } else {
+                eruda[eruda._isShow ? 'hide' : 'show']();
+            }
+        };
+
+        console.log('✅ Dream OS v1.3.2.1 Stable Factory Reset Loaded');
     </script>
 </body>
 </html>
