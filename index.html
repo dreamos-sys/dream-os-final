@@ -55,8 +55,8 @@
                     <h2 class="text-2xl font-bold">Welcome, <span class="text-teal-400">Master M</span></h2>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="glass p-5 rounded-3xl"><i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 mb-2"></i><p class="text-[10px] text-white/30 uppercase">Firewall</p><p class="text-xs font-bold">ACTIVE</p></div>
-                    <div class="glass p-5 rounded-3xl"><i data-lucide="cpu" class="w-5 h-5 text-blue-400 mb-2"></i><p class="text-[10px] text-white/30 uppercase">Neural Core</p><p class="text-xs font-bold">STABLE</p></div>
+                    <div class="glass p-5 rounded-3xl"><i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 mb-2"></i><p class="text-[10px] text-white/30 uppercase">Firewall</p><p class="text-xs font-bold uppercase">ACTIVE</p></div>
+                    <div class="glass p-5 rounded-3xl"><i data-lucide="cpu" class="w-5 h-5 text-blue-400 mb-2"></i><p class="text-[10px] text-white/30 uppercase">Neural Core</p><p class="text-xs font-bold uppercase">STABLE</p></div>
                 </div>
             </div>
 
@@ -65,7 +65,7 @@
                     </div>
             </div>
 
-            <div id="about-view" class="view-content hidden space-y-8">
+            <div id="about-view" class="view-content hidden space-y-8 animate-in fade-in zoom-in-95 duration-500">
                 <div class="text-center space-y-2">
                     <p class="text-[10px] text-amber-500 font-bold tracking-[0.4em] uppercase">Special Thanks To</p>
                     <h2 class="text-3xl font-bold text-white mb-2" style="font-family: 'Amiri', serif;">الله & رسول الله</h2>
@@ -145,12 +145,12 @@
                 { id: 'analyze', title: 'Risk Analyzer', action: 'deepAnalyze()', color: 'rose' },
                 { id: 'vaccine', title: 'Vaccine Lab', action: 'runVaccine()', color: 'emerald' },
                 { id: 'exif', title: 'Exif Forensic', action: 'triggerExif()', color: 'purple' },
-                { id: 'osint', title: 'OSINT Search', action: 'alert("OSINT Active")', color: 'blue' },
-                { id: 'nmap', title: 'Network Scan', action: 'alert("Nmap Ready")', color: 'cyan' }
+                { id: 'osint', title: 'OSINT Search', action: 'alert("OSINT Database Active")', color: 'blue' },
+                { id: 'nmap', title: 'Network Scan', action: 'alert("Nmap Engine Ready")', color: 'cyan' }
             ];
             document.getElementById('ghost-tools').innerHTML = tools.map(t => `
                 <div onclick="${t.action}" class="glass p-6 rounded-3xl border border-${t.color}-500/20 text-center active:scale-95 transition-all">
-                    <p class="text-[10px] font-black text-${t.color}-400 uppercase">${t.title}</p>
+                    <p class="text-[10px] font-black text-${t.color}-400 uppercase tracking-tighter">${t.title}</p>
                 </div>`).join('');
             lucide.createIcons();
         };
@@ -176,6 +176,24 @@
                 lucide.createIcons();
             });
         }
+
+        // REAL INTEL CONNECTORS
+        window.getLiveCVE = async function() {
+            const data = await VaccineVault.fetchCVE();
+            if(!data) return alert("Offline");
+            document.getElementById('res-title').innerText = "GLOBAL THREATS";
+            document.getElementById('res-body').innerText = data.map(c => `[${c.id}] ${c.summary}`).join('\n\n');
+            document.getElementById('ghost-res').classList.remove('hidden');
+        };
+
+        window.deepAnalyze = () => {
+            const p = prompt("Payload:");
+            if(!p) return;
+            const res = VaccineVault.analyze(p);
+            document.getElementById('res-title').innerText = "NEURAL REPORT";
+            document.getElementById('res-body').innerText = `Risk: ${res.score}%\nDetection: ${res.risks.join(', ')}`;
+            document.getElementById('ghost-res').classList.remove('hidden');
+        };
 
         document.addEventListener('DOMContentLoaded', () => { if(window.lucide) lucide.createIcons(); });
     </script>
