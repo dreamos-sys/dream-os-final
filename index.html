@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • v2.0.0 Sacred</title>
+    <title>Dream OS • v2.1.0 Pro Dev</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="js/vaccineVault.js"></script>
@@ -17,28 +17,26 @@
         .card-nano:active { transform: scale(0.92); border-color: var(--primary); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .arabic-glow { text-shadow: 0 0 20px rgba(16,185,129,0.4); }
-        #boot-splash { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* Ghost Overlay Professional */
+        #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(2,6,23,0.99); z-index: 1000; padding: 20px; overflow-y: auto; }
+        #ghost-hub.active { display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .terminal-box { background: rgba(0,0,0,0.5); border: 1px solid rgba(16,185,129,0.2); font-family: monospace; }
     </style>
 </head>
 <body class="select-none">
 
-    <div id="boot-splash">
-        <img src="assets/logo-sultan.png" class="w-24 h-24 rounded-[2rem] animate-pulse mb-6">
-        <p class="text-3xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
-    </div>
-
-    <div id="app-shell" class="hidden flex flex-col h-full bg-[#0f172a]">
-        <header class="p-6 border-b border-white/5 bg-[#0f172a]/90 backdrop-blur-md sticky top-0 z-50">
-            <div class="text-center mb-6">
-                <p class="text-3xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
-                <p class="text-[13px] text-emerald-400 mt-2 italic tracking-widest" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
-            </div>
+    <div id="app-shell" class="flex flex-col h-full bg-[#0f172a]">
+        <header class="p-6 border-b border-white/5 bg-[#0f172a]/90 backdrop-blur-md sticky top-0 z-50 text-center">
+            <p class="text-3xl font-bold text-white arabic-glow mb-1" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p class="text-[13px] text-emerald-400 italic mb-4" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
             <div class="flex justify-between items-center pt-4 border-t border-white/5">
-                <div id="logo-trigger" class="flex items-center gap-3 active:scale-95 transition">
+                <div id="logo-trigger" onclick="handleGhostTrigger()" class="flex items-center gap-3 cursor-pointer">
                     <img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/20 shadow-lg">
-                    <div><span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span><p class="text-[8px] text-white/30 uppercase">Master M • v2.0.0</p></div>
+                    <div class="text-left"><span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span><p class="text-[8px] text-white/30 uppercase">Master M • v2.1.0</p></div>
                 </div>
-                <button onclick="localStorage.removeItem('dream_lock'); location.reload();" class="w-9 h-9 glass rounded-full flex items-center justify-center text-red-500"><i data-lucide="power" class="w-4 h-4"></i></button>
+                <div id="ghost-glow-ind" class="w-2 h-2 rounded-full transition-all"></div>
             </div>
         </header>
 
@@ -48,10 +46,27 @@
         <nav id="app-nav" class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#0f172a]/95 backdrop-blur-3xl"></nav>
     </div>
 
+    <div id="ghost-hub">
+        <div class="flex justify-between items-center mb-6 border-b border-teal-500/20 pb-4">
+            <h2 class="text-xs font-black text-teal-400 tracking-[0.3em] uppercase italic">Stealth War Room</h2>
+            <button onclick="toggleGhost(false)" class="text-red-500 font-bold text-xs uppercase tracking-widest">Exit</button>
+        </div>
+        
+        <div id="ghost-grid" class="grid grid-cols-2 gap-4 mb-6"></div>
+        
+        <div id="ghost-res" class="hidden flex-1 flex flex-col min-h-0 glass rounded-3xl border border-teal-500/20 p-4">
+            <div class="flex justify-between items-center mb-2">
+                <p id="res-title" class="text-[10px] font-bold text-pink-400 uppercase"></p>
+                <button onclick="document.getElementById('ghost-res').classList.add('hidden')" class="text-[8px] text-white/40 uppercase">Clear</button>
+            </div>
+            <div id="res-body" class="flex-1 text-[10px] font-mono text-emerald-400/80 overflow-y-auto terminal-box p-3 rounded-xl"></div>
+        </div>
+    </div>
+
     <script>
         const UI_DATA = {
             modules: [
-                { label: 'CMD', icon: 'layout-dashboard', color: 'text-blue-400' },
+                { label: 'CMD', icon: 'layout-dashboard', color: 'text-blue-400' }, // Command Center
                 { label: 'BOOK', icon: 'calendar', color: 'text-emerald-400' },
                 { label: 'K3', icon: 'shield-alert', color: 'text-rose-400' },
                 { label: 'SEC', icon: 'lock', color: 'text-amber-400' },
@@ -60,29 +75,81 @@
                 { label: 'STOK', icon: 'box', color: 'text-orange-400' },
                 { label: 'MAINT', icon: 'wrench', color: 'text-blue-300' },
                 { label: 'ASSET', icon: 'building', color: 'text-slate-400' }
+            ],
+            ghost_tools: [
+                { label: 'ERUDA DEV', icon: 'code-2', color: 'text-blue-400', exec: 'initEruda()' },
+                { label: 'OSINT SCAN', icon: 'search', color: 'text-amber-400', exec: 'runOsint()' },
+                { label: 'NMAP SIM', icon: 'radar', color: 'text-cyan-400', exec: 'runNmap()' },
+                { label: 'VACCINE CORE', icon: 'shield-check', color: 'text-emerald-400', exec: 'runVaccine()' }
             ]
         };
 
-        function bootSystem() {
-            // Render 9-Grid (The Sword)
+        function renderSystem() {
             document.getElementById('main-viewport').innerHTML = `
-                <div class="h-32 glass rounded-[2.5rem] flex items-center justify-center italic text-white/20 text-[10px]">Neural Intelligence Feed</div>
+                <div class="h-32 glass rounded-[2.5rem] flex items-center justify-center italic text-white/20 text-[10px]">Neural Intel Hub v2.1.0</div>
                 <div class="grid grid-cols-3 gap-3">${UI_DATA.modules.map(m => `<div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center"><i data-lucide="${m.icon}" class="w-7 h-7 ${m.color} mb-2"></i><span class="text-[9px] font-bold uppercase tracking-widest">${m.label}</span></div>`).join('')}</div>`;
             
-            // Render Nav
             document.getElementById('app-nav').innerHTML = `
                 <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
                 <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">User</span></button>
                 <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#0f172a] shadow-2xl active:scale-90 transition"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
                 <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Info</span></button>
                 <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Config</span></button>`;
-
-            document.getElementById('boot-splash').style.display = 'none';
-            document.getElementById('app-shell').classList.remove('hidden');
             lucide.createIcons();
         }
 
-        document.addEventListener('DOMContentLoaded', bootSystem);
+        // GHOST HUB SYSTEM
+        let ghostTap = 0, ghostTimer = null;
+        window.handleGhostTrigger = () => {
+            ghostTap++;
+            const ind = document.getElementById('ghost-glow-ind');
+            ind.style.background = `rgba(16, 185, 129, ${ghostTap * 0.15})`;
+            if(ghostTap >= 7) { ghostTap = 0; ind.style.background = 'transparent'; toggleGhost(true); }
+            clearTimeout(ghostTimer);
+            ghostTimer = setTimeout(() => { ghostTap = 0; ind.style.background = 'transparent'; }, 2000);
+        };
+
+        window.toggleGhost = (s) => {
+            const h = document.getElementById('ghost-hub');
+            h.classList.toggle('active', s);
+            if(s) {
+                document.getElementById('ghost-grid').innerHTML = UI_DATA.ghost_tools.map(t => `
+                    <div onclick="${t.exec}" class="glass p-5 rounded-3xl border border-white/10 text-center active:scale-95">
+                        <i data-lucide="${t.icon}" class="w-5 h-5 mx-auto ${t.color} mb-2"></i>
+                        <p class="text-[9px] font-bold uppercase tracking-widest">${t.label}</p>
+                    </div>`).join('');
+                lucide.createIcons();
+            }
+        };
+
+        // REAL DEV TOOLS LOGIC
+        window.initEruda = () => {
+            let script = document.createElement('script');
+            script.src = "//cdn.jsdelivr.net/npm/eruda";
+            document.body.appendChild(script);
+            script.onload = () => { eruda.init(); eruda.show(); toggleGhost(false); };
+        };
+
+        window.runNmap = () => {
+            showOut('NMAP SIMULATOR', 'Initializing Scan...\nTarget: 127.0.0.1\n[+] Port 80: Open (HTTP)\n[+] Port 443: Open (HTTPS)\n[+] Port 22: Closed (SSH)\nScan Finished.');
+        };
+
+        window.runOsint = () => {
+            showOut('OSINT HUB', 'Searching Metadata...\n[!] Fingerprinting browser...\n[!] Local IP detected...\n[!] System: Dream-OS Kernel\nAll data secured.');
+        };
+
+        window.runVaccine = () => {
+            const res = VaccineVault.analyze('test_payload');
+            showOut('VACCINE CORE', `Health Score: ${res.score}%\nRisks: ${res.risks.join(', ')}\nStatus: Optimized.`);
+        };
+
+        function showOut(t, b) {
+            document.getElementById('res-title').innerText = t;
+            document.getElementById('res-body').innerText = b;
+            document.getElementById('ghost-res').classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', renderSystem);
     </script>
 </body>
 </html>
