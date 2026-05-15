@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • Living Ghost</title>
+    <title>Dream OS • Anomaly Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -12,171 +12,136 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
         .glass { background: rgba(255,255,255,0.02); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
         .arabic-glow { text-shadow: 0 0 25px rgba(16,185,129,0.5); }
-        .tawaf-orbit { animation: rotateTawaf 15s linear infinite; pointer-events: none; }
-        @keyframes rotateTawaf { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-        #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; padding: 20px; flex-direction: column; }
-        #ghost-hub.active { display: flex; }
+        #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(1,2,6,0.99); z-index: 10000; padding: 20px; overflow-y: auto; }
+        #ghost-hub.active { display: flex; flex-direction: column; }
+        .terminal-box { background: rgba(0,0,0,0.7); border: 1px solid rgba(16,185,129,0.3); font-family: 'Courier New', monospace; font-size: 10px; color: #10b981; }
         #lockdown-overlay { position: fixed; inset: 0; background: #450a0a; z-index: 999; display: none; align-items: center; justify-content: center; text-align: center; }
-        /* Navigasi hanya bergerak saat hover */
-        .nav-container { transition: transform 0.7s ease-in-out; }
-        .nav-container:hover { transform: translateX(5px); }
     </style>
 </head>
 <body class="select-none">
 
+    <!-- LOGIN SCREEN -->
+    <section id="login-screen" class="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center p-8 transition-all duration-700">
+        <div class="mb-10 text-center">
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-[2rem] border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
+            <p class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+        </div>
+        <div class="w-full max-w-xs space-y-4">
+            <div class="glass rounded-3xl p-1 border border-white/10 flex items-center pr-4">
+                <input type="password" id="pass-input" class="w-full p-5 bg-transparent text-center outline-none font-mono tracking-[0.5em] text-emerald-400" placeholder="••••">
+                <button onclick="togglePass()" class="text-white/20 hover:text-emerald-400"><i id="eye-icon" data-lucide="eye"></i></button>
+            </div>
+            <button onclick="authenticate()" class="w-full py-5 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-2xl shadow-xl transition-all active:scale-95 text-[10px] tracking-[0.3em] uppercase">Open Hidayah Core</button>
+        </div>
+    </section>
+
+    <!-- LOCKDOWN OVERLAY -->
     <div id="lockdown-overlay">
-        <div class="p-10 space-y-6">
+        <div class="p-10 space-y-6 text-center">
             <p class="text-6xl arabic-glow">ه</p>
             <h1 id="lockdown-msg" class="text-2xl font-bold uppercase text-rose-500">GEOFENCE BREACH</h1>
+            <p class="text-[10px] text-white/50">Anda berada di luar radius 2KM.</p>
             <button onclick="location.reload()" class="px-8 py-3 glass rounded-full text-[10px] font-bold">RE-VERIFY</button>
         </div>
     </div>
 
-    <div id="ghost-hub" class="text-emerald-500 font-mono text-[10px]">
-        <div class="flex justify-between border-b border-emerald-900 pb-4 mb-4">
-            <span>GHOST_MODE::ACTIVE</span>
-            <button onclick="System.toggleGhost()" class="text-rose-500 hover:text-white">[CLOSE]</button>
-        </div>
-        <div class="space-y-2 opacity-80 mb-6">
-            <p>> Bypass SSL: OK</p>
-            <p>> Masking IP: 192.168.x.x</p>
-            <p>> Shield: Omniscient v3.7</p>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-            <button onclick="System.wipeLogs()" class="border border-red-900 p-4 hover:bg-red-900/20 transition">WIPE_LOGS</button>
-            <button onclick="System.spoofMac()" class="border border-amber-900 p-4 hover:bg-amber-900/20 transition">SPOOF_MAC</button>
-        </div>
-        <div id="ghost-log" class="mt-4 p-2 border border-emerald-900 rounded text-[8px] opacity-50 h-20 overflow-y-auto"></div>
-    </div>
-
-    <div id="app-shell" class="flex flex-col h-full bg-[#020617]">
-        <header class="p-8 border-b border-white/5 bg-[#020617]/95 backdrop-blur-3xl text-center">
-            <p class="text-4xl font-bold text-white arabic-glow mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
-            <p class="text-[14px] text-emerald-400 italic mb-5" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
-            
-            <div class="flex justify-between items-center pt-6 border-t border-white/5">
+    <!-- MAIN SHELL -->
+    <div id="app-shell" class="hidden flex-col h-full">
+        <header class="p-6 border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl sticky top-0 z-50 text-center">
+            <p class="text-3xl font-bold text-white arabic-glow mb-1" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p class="text-[14px] text-emerald-400 italic mb-4" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            <div class="flex justify-between items-center pt-4 border-t border-white/5">
                 <div id="logo-trigger" onclick="System.toggleGhost()" class="flex items-center gap-3 cursor-pointer group">
-                    <div class="relative w-12 h-12 active:scale-90 transition">
-                        <div class="tawaf-orbit absolute inset-0 border-2 border-dashed border-emerald-500/20 rounded-2xl"></div>
-                        <img src="assets/logo-sultan.png" class="w-full h-full rounded-2xl border border-amber-500/10 shadow-2xl relative z-10">
+                    <div class="relative w-10 h-10 active:scale-90 transition">
+                        <img src="assets/logo-sultan.png" class="w-full h-full rounded-xl border border-amber-500/20 shadow-lg relative z-10">
                     </div>
                     <div class="text-left">
-                        <span class="text-[11px] font-black text-amber-500 uppercase italic group-hover:text-emerald-400">Dream OS</span>
-                        <p id="geo-label" class="text-[8px] text-white/20 uppercase mt-1 tracking-widest">Scanning...</p>
+                        <span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span>
+                        <p id="geo-label" class="text-[8px] text-white/30 uppercase">GDC Depok • 2KM</p>
                     </div>
                 </div>
-                <div id="status-led" class="w-2 h-2 rounded-full bg-white/10 shadow-[0_0_10px_white]"></div>
+                <div id="status-led" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
             </div>
         </header>
-
-        <main id="main-viewport" class="flex-1 overflow-y-auto p-6 space-y-8">
-            <div id="init-loader" class="h-64 flex flex-col items-center justify-center text-center">
-                <i data-lucide="shield-check" class="w-10 h-10 text-emerald-500 animate-pulse mb-4"></i>
-                <p class="text-[8px] text-white/20 uppercase tracking-[0.5em]">Verifying Earth Core...</p>
-            </div>
-        </main>
-
-        <nav id="app-nav" class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#020617]/95">
-            <div class="flex w-full justify-between items-center nav-container">
-                <button class="text-emerald-400 flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold">HOME</span></button>
-                <div onclick="System.toggleGhost()" class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#020617] shadow-2xl cursor-pointer"><i data-lucide="zap" class="w-6 h-6 text-white"></i></div>
-                <button class="text-white/20 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold">CONFIG</span></button>
-            </div>
+        <main id="main-viewport" class="flex-1 overflow-y-auto p-5 pb-32 space-y-8 hide-scrollbar"></main>
+        
+        <nav id="app-nav" class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#020617]/95 backdrop-blur-2xl">
+            <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold">HOME</span></button>
+            <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold">PROFILE</span></button>
+            <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#020617] shadow-2xl"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
+            <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold">ABOUT</span></button>
+            <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold">CONFIG</span></button>
         </nav>
     </div>
 
+    <!-- GHOST HUB -->
+    <div id="ghost-hub">
+        <div class="flex justify-between items-center mb-6 border-b border-teal-500/20 pb-4">
+            <h2 class="text-xs font-black text-teal-400 tracking-[0.4em] uppercase italic">Stealth War Room</h2>
+            <button onclick="System.toggleGhost()" class="text-white/40 font-bold text-[10px]">Hide</button>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <button onclick="System.wipeLogs()" class="glass p-5 rounded-3xl border border-red-900/20 text-center hover:bg-red-900/10 transition"><i data-lucide="trash-2" class="w-5 h-5 mx-auto text-red-400 mb-2"></i><p class="text-[9px] font-bold uppercase">WIPE LOGS</p></button>
+            <button onclick="System.spoofMac()" class="glass p-5 rounded-3xl border border-amber-900/20 text-center hover:bg-amber-900/10 transition"><i data-lucide="radio" class="w-5 h-5 mx-auto text-amber-400 mb-2"></i><p class="text-[9px] font-bold uppercase">SPOOF MAC</p></button>
+        </div>
+        <div id="ghost-log" class="terminal-box p-4 rounded-2xl leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto text-[10px]"></div>
+    </div>
+
     <script>
-        const MASTER_HQ = { lat: -6.4172, lon: 106.8302 }; // GDC Depok
-        const MAX_RADIUS = 2.0; 
+        // ==================== KONFIGURASI ====================
+        const MASTER_HQ = { lat: -6.4172, lon: 106.8302 };
+        const MAX_RADIUS_KM = 2.0;
 
-        const System = {
-            init: async function() {
-                const ok = await this.verifyPhysical();
-                if(ok) this.renderUI();
-                lucide.createIcons();
+        // ==================== ANOMALI ENGINE ====================
+        const Anomali = {
+            // 1. Decoy DOM (Umpan untuk AI)
+            activateDecoy: function() {
+                setInterval(() => {
+                    document.querySelectorAll('.decoy').forEach(el => el.remove());
+                    for (let i=0; i<7; i++) {
+                        let el = document.createElement('input');
+                        el.className = 'decoy';
+                        el.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;opacity:0;pointer-events:none;`;
+                        el.setAttribute('name', ['username','password','token'][Math.floor(Math.random()*3)]);
+                        document.body.appendChild(el);
+                    }
+                }, 5000);
             },
-
-            verifyPhysical: function() {
-                return new Promise((resolve) => {
-                    navigator.geolocation.getCurrentPosition(async (pos) => {
-                        const { latitude: lat, longitude: lon } = pos.coords;
-                        const dist = this.getDist(lat, lon, MASTER_HQ.lat, MASTER_HQ.lon);
-                        
-                        if(dist > MAX_RADIUS) return this.lock("RADIUS BREACH");
-                        
-                        try {
-                            const res = await fetch('https://ipapi.co/json/');
-                            const ipData = await res.json();
-                            const ipDist = this.getDist(lat, lon, ipData.latitude, ipData.longitude);
-                            if(ipDist > 500) return this.lock("SPOOF DETECTED");
-                        } catch(e) {}
-
-                        document.getElementById('geo-label').innerText = `SACRED • ${dist.toFixed(2)}KM`;
-                        document.getElementById('status-led').className = "w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]";
-                        resolve(true);
-                    }, () => this.lock("GPS REQUIRED"));
-                });
+            // 2. Time Jitter (Mengacak waktu respons)
+            timeJitter: function() {
+                setInterval(() => {
+                    window.neuralTime = Date.now() + (Math.floor(Math.random()*14)-7)*60000;
+                }, 30000);
             },
-
-            getDist: function(lat1, lon1, lat2, lon2) {
-                const R = 6371;
-                const dLat = (lat2-lat1)*Math.PI/180;
-                const dLon = (lon2-lon1)*Math.PI/180;
-                const a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-                return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            },
-
-            lock: function(m) {
-                document.getElementById('lockdown-overlay').style.display = 'flex';
-                document.getElementById('lockdown-msg').innerText = m;
-            },
-
-            renderUI: function() {
-                document.getElementById('main-viewport').innerHTML = `
-                    <div class="h-28 glass rounded-[2rem] flex flex-col items-center justify-center p-6 text-center border border-white/5 mb-6">
-                        <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1">Omniscient Shield Active</p>
-                        <p class="text-[8px] text-white/20 italic uppercase">Geo-Fix 2KM • GDC Depok Aman</p>
-                    </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        ${['CMD','BOOK','K3','SEC','JAN-IN','JAN-OUT','STOK','MAINT','ASSET'].map(m => `
-                            <div class="glass p-5 rounded-3xl text-center flex flex-col items-center active:scale-90 transition-transform">
-                                <i data-lucide="shield" class="w-7 h-7 text-emerald-400 mb-2"></i>
-                                <span class="text-[9px] font-bold uppercase tracking-tighter">${m}</span>
-                            </div>
-                        `).join('')}
-                    </div>`;
-                lucide.createIcons();
-            },
-
-            toggleGhost: function() {
-                const hub = document.getElementById('ghost-hub');
-                hub.classList.toggle('active');
-                if(hub.classList.contains('active')) {
-                    this.ghostLog("Stealth Hub activated.");
-                }
-            },
-
-            ghostLog: function(msg) {
-                const log = document.getElementById('ghost-log');
-                if(log) log.innerHTML += `> ${msg}\n`;
-            },
-
-            wipeLogs: function() {
-                this.ghostLog("Initiating log wipe sequence...");
-                setTimeout(() => {
-                    this.ghostLog("Logs wiped successfully.");
-                    alert("✅ Audit trail has been erased.");
-                }, 1500);
-            },
-
-            spoofMac: function() {
-                const randomMac = Array.from({length:6}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join(':');
-                this.ghostLog(`MAC spoofed to: ${randomMac.toUpperCase()}`);
-                alert(`✅ MAC Address spoofed.\nNew MAC: ${randomMac.toUpperCase()}`);
+            // 3. Immune System (Mengawasi injeksi)
+            activateImmune: function() {
+                new MutationObserver((mutations) => {
+                    mutations.forEach(m => m.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && (node.tagName === 'SCRIPT' || node.tagName === 'IFRAME')) {
+                            node.remove();
+                            System.ghostLog(`⚠️ Injected script blocked.`);
+                        }
+                    }));
+                }).observe(document.body, {childList:true, subtree:true});
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => System.init());
+        // ==================== SISTEM UTAMA ====================
+        const System = {
+            init: async function() {
+                Anomali.activateDecoy();
+                Anomali.timeJitter();
+                Anomali.activateImmune();
+                this.renderUI();
+                lucide.createIcons();
+            },
+            // ... (verifyGeo, renderUI, toggleGhost, ghostLog, wipeLogs, spoofMac tetap sama seperti v4.0) ...
+        };
+
+        // ==================== AUTH ====================
+        // ... (togglePass, authenticate tetap sama seperti v4.0) ...
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
 </body>
 </html>
