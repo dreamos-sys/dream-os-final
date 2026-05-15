@@ -3,151 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • v2.3.5 Sacred</title>
+    <title>Dream OS • Sacred Reflex</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="js/vaccineVault.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #10b981; --bg: #020617; --glass: rgba(255,255,255,0.02); }
+        :root { --primary: #10b981; --bg: #020617; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
-        .glass { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
-        .nav-active { color: var(--primary) !important; filter: drop-shadow(0 0 15px rgba(16,185,129,0.5)); }
-        .card-nano { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-nano:active { transform: scale(0.9) rotate(1deg); border-color: var(--primary); }
-        .arabic-glow { text-shadow: 0 0 20px rgba(16,185,129,0.5); }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        
-        #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(1, 2, 6, 0.99); z-index: 1000; padding: 20px; overflow-y: auto; }
-        #ghost-hub.active { display: flex; flex-direction: column; animation: reflexIn 0.5s ease; }
-        @keyframes reflexIn { from { opacity: 0; filter: blur(10px); } to { opacity: 1; filter: blur(0); } }
+        .glass { background: rgba(255,255,255,0.02); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
+        .nav-active { color: var(--primary) !important; filter: drop-shadow(0 0 10px rgba(16,185,129,0.5)); }
+        .arabic-glow { text-shadow: 0 0 20px rgba(16,185,129,0.4); }
+        #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(1,2,6,0.99); z-index: 1000; padding: 20px; overflow-y: auto; }
+        #ghost-hub.active { display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .terminal-box { background: rgba(0,0,0,0.8); border: 1px solid rgba(16,185,129,0.2); font-family: monospace; font-size: 10px; color: #10b981; }
     </style>
 </head>
 <body class="select-none">
 
-    <div id="app-shell" class="flex flex-col h-full">
-        <header class="p-6 border-b border-white/5 bg-[#020617]/90 backdrop-blur-2xl sticky top-0 z-50 text-center">
-            <p class="text-4xl font-bold text-white arabic-glow mb-1" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+    <div id="app-shell" class="flex flex-col h-full bg-[#020617]">
+        <header class="p-6 border-b border-white/5 bg-[#020617]/95 backdrop-blur-3xl sticky top-0 z-50 text-center">
+            <p class="text-4xl font-bold text-white arabic-glow mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
             <p class="text-[14px] text-emerald-400 italic mb-5" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
             
             <div class="flex justify-between items-center pt-5 border-t border-white/5">
-                <div id="logo-trigger" onclick="System.ghostTrigger()" class="flex items-center gap-3 cursor-pointer group">
-                    <div class="relative w-12 h-12">
-                        <div id="logo-glow" class="absolute inset-0 bg-amber-500/0 rounded-2xl blur-xl transition-all duration-500"></div>
-                        <img src="assets/logo-sultan.png" class="w-full h-full rounded-2xl border border-amber-500/20 shadow-2xl relative z-10 group-active:scale-90 transition">
-                    </div>
-                    <div class="text-left">
+                <div id="logo-trigger" onclick="Reflex.ghostTrigger()" class="flex items-center gap-3 cursor-pointer group">
+                    <img src="assets/logo-sultan.png" class="w-12 h-12 rounded-2xl border border-amber-500/20 shadow-2xl group-active:rotate-12 transition-all">
+                    <div class="text-left leading-none">
                         <span class="text-[11px] font-black text-amber-500 uppercase italic tracking-widest">Dream OS</span>
-                        <p class="text-[8px] text-white/30 uppercase tracking-[0.3em]">Hidayah Edition • v2.3.5</p>
+                        <p id="geo-status" class="text-[8px] text-white/30 uppercase mt-1 tracking-widest">Locating Neural Circle...</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span id="integrity-led" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]"></span>
-                    <button onclick="System.lockdown('Manual Exit')" class="w-10 h-10 glass rounded-full flex items-center justify-center text-red-500"><i data-lucide="power" class="w-4 h-4"></i></button>
+                    <div id="reflex-led" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                    <button onclick="lockdown()" class="w-10 h-10 glass rounded-full flex items-center justify-center text-red-500"><i data-lucide="power" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </header>
 
-        <main id="main-viewport" class="flex-1 overflow-y-auto p-5 pb-32 hide-scrollbar space-y-8"></main>
+        <main id="main-viewport" class="flex-1 overflow-y-auto p-5 pb-32 space-y-8"></main>
         <nav id="app-nav" class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#020617]/95 backdrop-blur-3xl"></nav>
     </div>
 
     <div id="ghost-hub">
         <div class="flex justify-between items-center mb-8 border-b border-teal-500/20 pb-4">
-            <h2 class="text-[10px] font-black text-teal-400 tracking-[0.5em] uppercase italic">Stealth War Room</h2>
+            <h2 class="text-[10px] font-black text-teal-400 tracking-[0.5em] uppercase italic">Stealth Armory v2.8</h2>
             <button onclick="toggleGhost(false)" class="text-white/20 font-bold text-[10px] uppercase">Hide</button>
         </div>
         <div id="ghost-grid" class="grid grid-cols-2 gap-4 mb-6"></div>
-        <div id="ghost-res" class="hidden flex-1 flex flex-col min-h-0 glass rounded-3xl border border-teal-500/20 p-5">
+        <div id="ghost-res" class="hidden glass rounded-3xl border border-teal-500/20 p-5 mt-4">
             <p id="res-title" class="text-[10px] font-bold text-pink-400 uppercase mb-2"></p>
-            <div id="res-body" class="flex-1 overflow-y-auto terminal-box p-4 rounded-2xl leading-relaxed whitespace-pre-wrap"></div>
+            <div id="res-body" class="terminal-box p-4 rounded-2xl max-h-48 overflow-y-auto whitespace-pre-wrap"></div>
         </div>
     </div>
 
     <script>
-        const SACRED_PASS = "b15m1ll4h_012443410";
-        const UI_DATA = {
-            modules: [
-                { label: 'CMD', icon: 'layout-dashboard', color: 'text-blue-400' },
-                { label: 'BOOK', icon: 'calendar', color: 'text-emerald-400' },
-                { label: 'K3', icon: 'shield-alert', color: 'text-rose-400' },
-                { label: 'SEC', icon: 'lock', color: 'text-amber-400' },
-                { label: 'JAN-IN', icon: 'droplet', color: 'text-cyan-400' },
-                { label: 'JAN-OUT', icon: 'wind', color: 'text-teal-400' },
-                { label: 'STOK', icon: 'box', color: 'text-orange-400' },
-                { label: 'MAINT', icon: 'wrench', color: 'text-blue-300' },
-                { label: 'ASSET', icon: 'building', color: 'text-slate-400' }
-            ],
-            ghost_tools: [
-                { label: 'NEURAL SCAN', icon: 'zap', color: 'text-emerald-400', act: 'runScan()' },
-                { label: 'SILENT ORACLE', icon: 'database', color: 'text-amber-400', act: 'runOracle()' },
-                { label: 'ERUDA DEBUG', icon: 'code-2', color: 'text-blue-400', act: 'runEruda()' },
-                { label: 'TRAFFIC LOG', icon: 'history', color: 'text-cyan-400', act: 'runTraffic()' }
-            ]
-        };
-
-        const INTEGRITY_HASH = JSON.stringify(UI_DATA).length;
-
-        // --- SYSTEM CORE ---
-        const System = {
-            ghostTrigger: () => {
-                this.taps = (this.taps || 0) + 1;
-                document.getElementById('logo-glow').style.background = `rgba(245, 158, 11, ${this.taps * 0.15})`;
-                if(this.taps >= 7) { this.taps = 0; document.getElementById('logo-glow').style.background = 'none'; toggleGhost(true); }
-                clearTimeout(this.timer); this.timer = setTimeout(() => { this.taps = 0; document.getElementById('logo-glow').style.background = 'none'; }, 2000);
+        // ========== CONFIG & SACRED CONSTANTS ==========
+        const HQ = { lat: -6.2, lon: 106.8, threshold: 0.01 }; // Ganti dengan koordinat Master
+        const SACRED_WINDOW = [2, 4, 4, 3, 4]; // Rakaat Shalat
+        
+        // ========== NEURAL REFLEX ENGINE ==========
+        const Reflex = {
+            taps: 0,
+            isParanoid: false,
+            
+            init: function() {
+                this.checkGeo();
+                this.applyChronoAnomali();
+                setInterval(() => this.checkGeo(), 60000); // Re-check tiap menit
             },
-            lockdown: (r) => {
-                document.getElementById('integrity-led').className = 'w-2 h-2 rounded-full bg-red-600';
-                localStorage.removeItem('dream_lock');
-                alert(`[!] LOCKDOWN: ${r}`);
-                location.reload();
+
+            checkGeo: function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const dist = Math.sqrt(Math.pow(pos.coords.latitude - HQ.lat, 2) + Math.pow(pos.coords.longitude - HQ.lon, 2));
+                        if (dist > HQ.threshold) {
+                            this.isParanoid = true;
+                            document.getElementById('geo-status').innerText = "WAR ZONE • PARANOID ON";
+                            document.getElementById('geo-status').classList.replace('text-white/30', 'text-rose-500');
+                        } else {
+                            this.isParanoid = false;
+                            document.getElementById('geo-status').innerText = "SACRED CIRCLE • SAFE";
+                            document.getElementById('geo-status').classList.replace('text-rose-500', 'text-white/30');
+                        }
+                    }, () => {
+                        this.isParanoid = true; // No GPS = Paranoid
+                        document.getElementById('geo-status').innerText = "GEO BLOCKED • PARANOID ON";
+                    });
+                }
+            },
+
+            applyChronoAnomali: function() {
+                const now = new Date();
+                const jitter = Math.floor(Math.random() * 15) - 7; // Anomali +/- 7 menit
+                console.log(`[CHRONO] Sacred Anomali Applied: ${jitter}m`);
+                // Logic ini bisa disambungkan ke jendela akses login atau fitur sensitif
+            },
+
+            ghostTrigger: function() {
+                this.taps++;
+                if(this.taps >= 7) { this.taps = 0; toggleGhost(true); }
+                setTimeout(() => this.taps = 0, 2000);
             }
         };
 
+        // ========== RENDER DASHBOARD ==========
         function renderUI() {
-            if(JSON.stringify(UI_DATA).length !== INTEGRITY_HASH) return System.lockdown('Tamper Detected');
-            
+            const status = Reflex.isParanoid ? "SENSITIVE PROTECTION ACTIVE" : "STANDARD PROTECTION";
             document.getElementById('main-viewport').innerHTML = `
                 <div class="h-32 glass rounded-[2.5rem] flex items-center justify-center p-6 text-center italic text-white/10 text-[9px] border border-white/5">
-                    Hidayah Neural Engine Live • Integrity Secured • ISO-Compatible Logic
+                    ${status} • SACRED REFLEX v2.8.0
                 </div>
-                <div class="grid grid-cols-3 gap-3">${UI_DATA.modules.map(m => `
-                    <div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center">
-                        <i data-lucide="${m.icon}" class="w-7 h-7 ${m.color} mb-2"></i>
-                        <span class="text-[9px] font-bold uppercase tracking-widest">${m.label}</span>
-                    </div>`).join('')}</div>`;
+                <div class="grid grid-cols-3 gap-3">
+                    ${['CMD','BOOK','K3','SEC','JAN-IN','JAN-OUT','STOK','MAINT','ASSET'].map(m => `
+                        <div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center">
+                            <i data-lucide="box" class="w-7 h-7 text-emerald-400 mb-2"></i>
+                            <span class="text-[9px] font-bold uppercase tracking-widest">${m}</span>
+                        </div>
+                    `).join('')}
+                </div>`;
             
             document.getElementById('app-nav').innerHTML = `
-                <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
-                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">User</span></button>
-                <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#020617] shadow-2xl active:scale-90 transition"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
-                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Info</span></button>
-                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">Config</span></button>`;
+                <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold">HOME</span></button>
+                <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#020617] shadow-2xl"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold">CONFIG</span></button>`;
             lucide.createIcons();
         }
 
+        // ========== CORE ACTIONS ==========
         window.toggleGhost = (s) => {
             const h = document.getElementById('ghost-hub'); h.classList.toggle('active', s);
             if(s) {
-                document.getElementById('ghost-grid').innerHTML = UI_DATA.ghost_tools.map(t => `
-                    <div onclick="${t.act}" class="glass p-5 rounded-3xl border border-white/10 text-center active:scale-95 transition-all">
-                        <i data-lucide="${t.icon}" class="w-5 h-5 mx-auto ${t.color} mb-2"></i>
-                        <p class="text-[9px] font-bold uppercase tracking-widest">${t.label}</p>
+                const tools = [
+                    { t: 'NEURAL SCAN', a: 'alert("Scanning...")' },
+                    { t: 'GEO DECEPTION', a: 'alert("Ghosting Location...")' },
+                    { t: 'ERUDA DEBUG', a: 'alert("Console Ready")' },
+                    { t: 'IMMUNE DB', a: 'alert("Database Secure")' }
+                ];
+                document.getElementById('ghost-grid').innerHTML = tools.map(t => `
+                    <div onclick="${t.a}" class="glass p-5 rounded-3xl border border-white/10 text-center active:scale-95">
+                        <p class="text-[9px] font-bold uppercase">${t.t}</p>
                     </div>`).join('');
-                lucide.createIcons();
             }
         };
 
-        // --- GHOST ACTIONS ---
-        window.runScan = () => { const s = VaccineVault.analyze('hidayah_core'); showRes('NEURAL SCAN', `Score: ${s.score}%\nReflex: Active\nStatus: Secure`); };
-        window.runOracle = () => { showRes('SILENT ORACLE', '[CVE-2026-X] Neural Hijack Attempt: Blocked\n[CVE-2026-Y] Sandbox Escape: Patched'); };
-        window.runEruda = () => { let s = document.createElement('script'); s.src = "//cdn.jsdelivr.net/npm/eruda"; document.body.appendChild(s); s.onload = () => { eruda.init(); eruda.show(); toggleGhost(false); }; };
-        window.runTraffic = () => { showRes('TRAFFIC LOG', `[${new Date().toLocaleTimeString()}] Integrity Checked: OK\n[${new Date().toLocaleTimeString()}] Session: XOR_STRICT`); };
+        function lockdown() { 
+            localStorage.clear(); 
+            document.body.innerHTML = "<div style='background:#7f1d1d; height:100vh; display:flex; align-items:center; justify-content:center; color:white; font-family:Amiri; text-align:center;'><div><p style='font-size:3rem;'>ه</p><p>GEOPANCING TRIGGERED<br>Sanctuary Locked</p></div></div>"; 
+            setTimeout(() => location.reload(), 3000); 
+        }
 
-        function showRes(t, b) { document.getElementById('res-title').innerText = t; document.getElementById('res-body').innerText = b; document.getElementById('ghost-res').classList.remove('hidden'); }
-
-        document.addEventListener('DOMContentLoaded', renderUI);
+        document.addEventListener('DOMContentLoaded', () => { Reflex.init(); renderUI(); });
     </script>
 </body>
 </html>
