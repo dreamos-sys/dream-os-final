@@ -209,13 +209,42 @@
         };
 
         
+        
+        window.getLiveCVE = async function() {
+            alert("📡 Connecting to Global Vulnerability Database...");
+            const data = await VaccineVault.fetchCVE();
+            if(!data) return alert("❌ Connection Failed. Check Internet.");
+            
+            const list = data.map(c => `[${c.id}]\n${c.summary.substring(0,100)}...`).join('\n\n');
+            document.getElementById('result-title').innerText = "LATEST GLOBAL THREATS";
+            document.getElementById('result-body').innerText = list;
+            document.getElementById('ghost-result-panel').classList.remove('hidden');
+        };
+
+        window.deepAnalyze = function() {
+            const p = prompt("PASTE PAYLOAD TO ANALYZE:");
+            if(!p) return;
+            const res = VaccineVault.analyze(p);
+            
+            let report = `SIGNATURE: ${res.sig}\nRISK SCORE: ${res.score}%\n\nDETECTION:\n${res.risks.join('\n') || '✅ Clean or Unknown'}`;
+            alert(report);
+            
+            document.getElementById('result-title').innerText = "NEURAL ANALYSIS REPORT";
+            document.getElementById('result-body').innerHTML = report.replace(/\n/g, '<br>');
+            document.getElementById('ghost-result-panel').classList.remove('hidden');
+        };
+
         window.openGhost = () => {
             document.getElementById('ghost-dashboard').classList.add('active');
             const tools = [
                 { id: 'exif', title: '📸 METADATA', action: 'triggerExif()', color: 'purple' },
                 { id: 'shodan', title: '🛰️ SHODAN', action: 'promptShodan()', color: 'red' },
-                { id: 'vaccine', title: '💉 VACCINE', action: 'runVaccine()', color: 'emerald' },
+                
+                { id: 'cve', title: '📡 LIVE CVE FEED', action: 'getLiveCVE()', color: 'amber' },
+                { id: 'analyze', title: '🧠 RISK ANALYZER', action: 'deepAnalyze()', color: 'rose' },
+                { id: 'vaccine', title: '💉 VACCINE LAB', action: 'runVaccine()', color: 'emerald' },
                 { id: 'extractor', title: '🔍 EXTRACTOR', action: 'runExtractor()', color: 'blue' },
+
                 { id: 'vault', title: '📜 VAULT', action: 'viewVault()', color: 'pink' },
                 { id: 'config', title: '💾 EXPORT', action: 'exportConfig()', color: 'amber' }
             ];

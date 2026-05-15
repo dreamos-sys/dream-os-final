@@ -1,33 +1,30 @@
 const VaccineVault = (function() {
     const KEY = 'dreamos_virus_vault';
     return {
-        add: function(payload, type = 'malware') {
+        // Deep Analysis: Bukan cuma simpen, tapi bedah resiko
+        analyze: function(payload) {
+            const risks = [];
+            if(/eval\(|setTimeout\(|setInterval\(/.test(payload)) risks.push("🔴 EXECUTION INJECTION");
+            if(/base64|btoa\(|atob\(/.test(payload)) risks.push("🟠 ENCODED PAYLOAD");
+            if(/document\.write|<script/.test(payload)) risks.push("🔴 DOM MANIPULATION");
+            if(/fetch\(|XMLHttpRequest|\.ajax/.test(payload)) risks.push("🟡 NETWORK EXFILTRATION");
+            
+            const sig = btoa(unescape(encodeURIComponent(payload))).substring(0, 12);
+            const score = risks.length * 25;
+            
             let vault = JSON.parse(localStorage.getItem(KEY) || '[]');
-            const sig = btoa(unescape(encodeURIComponent(payload))).substring(0, 16);
-            const existing = vault.find(v => v.signature === sig);
-            if(existing) {
-                existing.count++;
-                existing.lastSeen = new Date().toLocaleString();
-            } else {
-                vault.push({ signature: sig, payload: payload, type: type, count: 1, lastSeen: new Date().toLocaleString() });
-            }
+            vault.push({ signature: sig, score: score, risks: risks, date: new Date().toLocaleString() });
             localStorage.setItem(KEY, JSON.stringify(vault));
-            return sig;
+            
+            return { sig, score, risks };
         },
-        get: function() { return JSON.parse(localStorage.getItem(KEY) || '[]'); },
-        clear: function() { localStorage.setItem(KEY, '[]'); return true; }
+        // Fetch Real CVE Data (LIVE!)
+        fetchCVE: async function() {
+            try {
+                const response = await fetch('https://cve.circl.lu/api/last/5');
+                return await response.json();
+            } catch (e) { return null; }
+        },
+        get: function() { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
     };
 })();
-
-// Bridge untuk Log Extractor (Mobile Friendly)
-window.processLogNeural = function(rawText) {
-    const ipPattern = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g;
-    const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-    const urlPattern = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-    
-    return {
-        ips: [...new Set(rawText.match(ipPattern) || [])],
-        emails: [...new Set(rawText.match(emailPattern) || [])],
-        urls: [...new Set(rawText.match(urlPattern) || [])]
-    };
-};
