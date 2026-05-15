@@ -237,7 +237,7 @@
             const tools = [
                 { id: 'eruda', title: '🔍 ERUDA CONSOLE', desc: 'Dev tools & debugging', action: 'toggleEruda()', color: 'teal', label: 'OPEN' },
                 { id: 'sherlock', title: '👤 SHERLOCK OSINT', desc: 'Track username 400+ sites', action: 'promptSherlock()', color: 'blue', label: 'RUN' },
-                { id: 'nmap', title: '🌐 NMAP SCANNER', desc: 'Deep network scanning', action: 'copyCmd("nmap -sV -p- localhost")', color: 'emerald', label: 'COPY' },
+                { id: 'nmap', title: '🌐 NMAP INTELLIGENCE', desc: 'Advanced Network Auditor', action: 'promptNmap()', color: 'emerald', label: 'SCAN' },
                 { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Reset storage & OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
             ];
 
@@ -253,6 +253,24 @@
         };
 
         window.closeGhost = function() { document.getElementById('ghost-dashboard').classList.remove('active'); };
+
+        
+        window.promptNmap = function() {
+            const target = prompt("Masukkan IP atau Domain Target:", "localhost");
+            if(!target) return;
+            
+            const mode = prompt("Pilih Mode Scan:\n1. Quick Scan (Fast)\n2. OS & Service Detection\n3. Vulnerability Scan (Deep)", "1");
+            let cmd = "";
+            
+            switch(mode) {
+                case "2": cmd = `nmap -sV -A -T4 ${target}`; break;
+                case "3": cmd = `nmap -sV --script vuln ${target}`; break;
+                default: cmd = `nmap -F ${target}`;
+            }
+            
+            navigator.clipboard.writeText(cmd);
+            alert(`🌐 Command Nmap Mode ${mode} disalin!\nTarget: ${target}`);
+        };
 
         window.promptSherlock = function() {
             const user = prompt("Masukkan Username Target:", "sultanerwin");
