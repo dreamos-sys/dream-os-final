@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • The Honest v4.4</title>
+    <title>Dream OS • v1.0 Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -14,26 +14,21 @@
         .arabic-glow { text-shadow: 0 0 25px rgba(16,185,129,0.4); }
         .card-hover { transition: all 0.2s ease; cursor: pointer; }
         .card-hover:active { transform: scale(0.95); border-color: var(--primary); }
-        
         .pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 0 15px rgba(16,185,129,0); } }
-        
-        .nav-slide { animation: slideNav 7s infinite linear; }
-        @keyframes slideNav { 0% { transform: translateX(-8%); } 50% { transform: translateX(8%); } 100% { transform: translateX(-8%); } }
-        
         .slide-up { animation: slideUp 0.4s ease-out forwards; opacity: 0; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
         #lockdown { position: fixed; inset: 0; background: rgba(1,2,6,0.98); z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         .hide-scroll::-webkit-scrollbar { display: none; }
-        
+        #ghost-tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
         @media (prefers-reduced-motion: reduce) {
-            .nav-slide, .pulse, .slide-up { animation: none !important; opacity: 1 !important; transform: none !important; }
+            .pulse, .slide-up { animation: none !important; opacity: 1 !important; transform: none !important; }
         }
     </style>
 </head>
 <body class="select-none">
 
+    <!-- LOCKDOWN -->
     <div id="lockdown" class="flex-col p-8">
         <div class="text-6xl mb-6 arabic-glow text-emerald-500">ه</div>
         <h1 id="lockdown-msg" class="text-xl font-bold text-rose-400 uppercase tracking-wider mb-4">GEOFENCE BREACH</h1>
@@ -41,6 +36,7 @@
         <button onclick="location.reload()" class="px-6 py-3 glass rounded-full text-xs font-bold tracking-widest active:scale-95 transition">RE-VERIFY</button>
     </div>
 
+    <!-- LOGIN -->
     <section id="login" class="fixed inset-0 z-50 bg-[#010409] flex flex-col items-center justify-center p-6 transition-opacity duration-500">
         <div class="text-center mb-10 slide-up">
             <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-3xl border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
@@ -57,75 +53,54 @@
         </div>
     </section>
 
+    <!-- GHOST HUB (THE REAL TOOLS) -->
     <div id="ghost" class="fixed inset-0 bg-[#010206] z-[9999] p-6 overflow-y-auto hidden flex-col slide-up" style="animation-duration: 0.3s;">
         <div class="flex justify-between items-center mb-8 pb-4 border-b border-teal-500/20 mt-4">
             <div class="flex items-center gap-3">
                 <div class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></div>
-                <h2 class="text-[10px] font-black text-teal-400 tracking-[0.5em] uppercase">Stealth Hub</h2>
+                <h2 class="text-[10px] font-black text-teal-400 tracking-[0.5em] uppercase">Stealth War Room</h2>
             </div>
             <button onclick="toggleGhost()" class="text-white/40 text-[10px] font-bold uppercase tracking-widest active:scale-90 transition">Close</button>
         </div>
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <button onclick="wipeLogs()" class="glass p-5 rounded-2xl text-center active:scale-95 transition card-hover">
-                <i data-lucide="trash-2" class="w-6 h-6 mx-auto text-rose-400 mb-3"></i>
-                <p class="text-[9px] font-bold uppercase text-white/70">Clear Logs</p>
-            </button>
-            <button onclick="spoofId()" class="glass p-5 rounded-2xl text-center active:scale-95 transition card-hover">
-                <i data-lucide="shield-alert" class="w-6 h-6 mx-auto text-amber-400 mb-3"></i>
-                <p class="text-[9px] font-bold uppercase text-white/70">Spoof ID</p>
-            </button>
-        </div>
+        <div id="ghost-tools-grid" class="mb-6"></div>
         <div id="log" class="glass rounded-xl p-4 font-mono text-[10px] text-emerald-400 leading-relaxed whitespace-pre-wrap flex-1 overflow-y-auto bg-black/50"></div>
     </div>
 
+    <!-- MAIN SHELL -->
     <div id="app" class="hidden flex-col h-full bg-[#010409]">
         <header class="pt-12 pb-6 px-6 text-center space-y-2 relative z-40 bg-gradient-to-b from-[#010409] to-transparent">
             <h1 class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
             <p class="text-sm text-emerald-500 italic opacity-80" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
-            
             <div class="absolute top-6 right-6 flex items-center gap-2">
                 <p id="geo-loading" class="text-[8px] text-emerald-400/70 uppercase font-bold tracking-widest animate-pulse">📡 Detecting...</p>
                 <p id="geo" class="hidden text-[8px] text-white/30 uppercase font-bold tracking-widest">Scanning</p>
                 <div id="led" class="w-2 h-2 rounded-full bg-amber-500 pulse"></div>
             </div>
         </header>
-
         <main id="viewport" class="flex-1 overflow-y-auto px-6 pb-32 space-y-6 hide-scroll">
-            
             <div class="glass rounded-2xl p-4 slide-up" style="animation-delay:0.1s">
                 <p class="text-[9px] text-white/50 leading-relaxed text-center uppercase tracking-widest font-bold">
                     <span class="text-amber-400">Status:</span> UI Prototype • Client-Side Only
                 </p>
             </div>
-
             <div id="grid" class="grid grid-cols-3 gap-3 slide-up" style="animation-delay:0.2s"></div>
         </main>
-
         <nav class="fixed bottom-0 inset-x-0 h-28 px-4 flex justify-between items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/90 to-transparent">
-            <div class="flex w-full justify-between items-center nav-slide">
-                <button onclick="navAlert('HOME')" class="text-emerald-400 flex flex-col items-center gap-1.5 active:scale-90 transition">
-                    <i data-lucide="home" class="w-5 h-5"></i><span class="text-[8px] font-bold">HOME</span>
-                </button>
-                <button onclick="navAlert('PROFILE')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition">
-                    <i data-lucide="user" class="w-5 h-5"></i><span class="text-[8px] font-bold">PROFILE</span>
-                </button>
-                
-                <div id="sentinel" onclick="tapLogo()" class="relative z-50 w-16 h-16 -mt-12 bg-emerald-600 rounded-full flex items-center justify-center border-[5px] border-[#010409] shadow-[0_0_15px_#10b981] pulse cursor-pointer active:scale-90 transition mx-2">
+            <div class="flex w-full justify-between items-center">
+                <button onclick="navAlert('HOME')" class="text-emerald-400 flex flex-col items-center gap-1.5 active:scale-90 transition"><i data-lucide="home" class="w-5 h-5"></i><span class="text-[8px] font-bold">HOME</span></button>
+                <button onclick="navAlert('PROFILE')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition"><i data-lucide="user" class="w-5 h-5"></i><span class="text-[8px] font-bold">PROFILE</span></button>
+                <div id="sentinel" onclick="tapLogo()" class="z-50 w-16 h-16 -mt-12 bg-emerald-600 rounded-full flex items-center justify-center border-[5px] border-[#010409] shadow-[0_0_15px_#10b981] pulse cursor-pointer active:scale-90 transition mx-2">
                     <span class="text-3xl font-bold text-white arabic-glow select-none" style="font-family: 'Amiri', serif;">ه</span>
                 </div>
-
-                <button onclick="navAlert('ABOUT')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition">
-                    <i data-lucide="info" class="w-5 h-5"></i><span class="text-[8px] font-bold">ABOUT</span>
-                </button>
-                <button onclick="navAlert('CONFIG')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition">
-                    <i data-lucide="settings" class="w-5 h-5"></i><span class="text-[8px] font-bold">CONFIG</span>
-                </button>
+                <button onclick="navAlert('ABOUT')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition"><i data-lucide="info" class="w-5 h-5"></i><span class="text-[8px] font-bold">ABOUT</span></button>
+                <button onclick="navAlert('CONFIG')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[8px] font-bold">CONFIG</span></button>
             </div>
         </nav>
     </div>
 
     <script>
-        const HQ = { lat: -6.4172, lon: 106.8302 }; // GDC Depok
+        // ==================== KONFIGURASI ====================
+        const HQ = { lat: -6.4172, lon: 106.8302 };
         const RADIUS_KM = 2.0;
         const MODULES = [
             { id: 'cmd', label: 'CMD', icon: 'terminal' }, { id: 'book', label: 'BOOK', icon: 'calendar' },
@@ -135,6 +110,74 @@
             { id: 'asset', label: 'ASSET', icon: 'building' }
         ];
 
+        // ==================== REAL GHOST TOOLS ====================
+        const GhostTools = [
+            { label: 'Eruda Debug', icon: 'terminal', color: 'text-emerald-400', action: () => {
+                let s = document.createElement('script'); s.src = '//cdn.jsdelivr.net/npm/eruda';
+                document.body.appendChild(s); s.onload = () => { eruda.init(); eruda.show(); toggleGhost(); };
+            }},
+            { label: 'Cookie Inspector', icon: 'cookie', color: 'text-amber-400', action: () => {
+                const cookies = document.cookie || '(tidak ada cookie)';
+                log(`🍪 Cookies:\n${cookies}`);
+            }},
+            { label: 'Session Vault', icon: 'key', color: 'text-cyan-400', action: () => {
+                const items = [];
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const k = sessionStorage.key(i);
+                    items.push(`${k}: ${sessionStorage.getItem(k).substring(0, 50)}...`);
+                }
+                log(`🔐 Session Storage:\n${items.join('\n') || '(kosong)'}`);
+            }},
+            { label: 'Local DB Explorer', icon: 'database', color: 'text-purple-400', action: () => {
+                const items = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    items.push(`${k}: ${localStorage.getItem(k).substring(0, 50)}...`);
+                }
+                log(`🗄️ Local Storage:\n${items.join('\n') || '(kosong)'}`);
+            }},
+            { label: 'Hash Calculator', icon: 'hash', color: 'text-blue-400', action: async () => {
+                const input = prompt('Masukkan teks untuk di-hash (SHA-256):');
+                if (!input) return;
+                const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+                const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+                log(`🔢 SHA-256:\n${hex}`);
+            }},
+            { label: 'Password Generator', icon: 'lock', color: 'text-rose-400', action: () => {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+                const pass = Array.from({length:16}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+                log(`🔑 Generated Password:\n${pass}`);
+            }},
+            { label: 'Network Probe', icon: 'globe', color: 'text-teal-400', action: async () => {
+                const url = prompt('Masukkan URL untuk probe:');
+                if (!url) return;
+                try {
+                    const res = await fetch(url, { method: 'HEAD' });
+                    log(`🌐 ${url}\nStatus: ${res.status} ${res.statusText}\nHeaders: ${res.headers.get('content-type') || 'N/A'}`);
+                } catch(e) {
+                    log(`🌐 ${url}\nError: ${e.message}`);
+                }
+            }},
+            { label: 'Geo Intel', icon: 'map-pin', color: 'text-emerald-400', action: () => {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const dist = haversine(pos.coords.latitude, pos.coords.longitude, HQ.lat, HQ.lon);
+                    log(`📍 Koordinat: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}\n📏 Jarak ke GDC: ${dist.toFixed(2)} km`);
+                }, () => log('📍 GPS tidak tersedia.'));
+            }},
+            { label: '1001 Shalawat', icon: 'heart', color: 'text-pink-400', action: () => {
+                log('🕌 1001 Shalawat Payload Sent.\nاَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ\n(Divine Protocol Accepted)');
+            }},
+            { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
+                if (confirm('⚠️ Hapus SEMUA data? Ini tidak bisa dikembalikan!')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    log('☠️ All data wiped. Reloading...');
+                    setTimeout(() => location.reload(), 1000);
+                }
+            }},
+        ];
+
+        // ==================== FUNGSI DASAR ====================
         const haversine = (lat1, lon1, lat2, lon2) => {
             const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -143,7 +186,18 @@
 
         const log = (msg) => {
             const el = document.getElementById('log');
-            if(el) { el.innerHTML += `> ${new Date().toLocaleTimeString()} | ${msg}\n`; el.scrollTop = el.scrollHeight; }
+            if(el) { el.innerHTML += `> ${new Date().toLocaleTimeString()} | ${msg}\n\n`; el.scrollTop = el.scrollHeight; }
+        };
+
+        const renderGhostTools = () => {
+            const grid = document.getElementById('ghost-tools-grid');
+            grid.innerHTML = GhostTools.map(t => `
+                <button onclick="(${t.action.toString()})()" class="glass p-4 rounded-2xl text-center active:scale-95 transition card-hover flex flex-col items-center gap-2">
+                    <i data-lucide="${t.icon}" class="w-6 h-6 ${t.color}"></i>
+                    <span class="text-[9px] font-bold uppercase text-white/70">${t.label}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
         };
 
         window.togglePass = () => {
@@ -158,7 +212,6 @@
             const pass = document.getElementById('pass').value;
             if(pass !== 'b15m1ll4h_012443410') { alert('Password Salah'); return; }
             if(!navigator.geolocation) { lockdown('GPS Terblokir'); return; }
-            
             document.getElementById('login').style.opacity = '0';
             setTimeout(async () => {
                 document.getElementById('login').style.display = 'none';
@@ -176,7 +229,6 @@
                     const geoEl = document.getElementById('geo');
                     const ledEl = document.getElementById('led');
                     geoEl.classList.remove('hidden');
-                    
                     if(dist <= RADIUS_KM) {
                         geoEl.textContent = `SACRED • ${dist.toFixed(1)}KM`;
                         ledEl.className = 'w-2 h-2 rounded-full bg-emerald-500 pulse shadow-[0_0_8px_#10b981]';
@@ -215,7 +267,7 @@
                 </div>
             `).join('');
             lucide.createIcons();
-            log('Soul of Dream OS v4.4 Restored.');
+            log('Soul of Dream OS v1.0 Final Restored.');
         };
 
         window.openModule = (id) => { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); };
@@ -228,9 +280,13 @@
             clearTimeout(tapTimer); tapTimer = setTimeout(() => taps = 0, 2000);
         };
 
-        window.toggleGhost = () => { const hub = document.getElementById('ghost'); hub.classList.toggle('hidden'); if(!hub.classList.contains('hidden')) lucide.createIcons(); };
-        window.wipeLogs = () => { log('Purging logs...'); setTimeout(() => { document.getElementById('log').innerHTML = ''; alert('Logs Cleared!'); }, 500); };
-        window.spoofId = () => { const id = Math.random().toString(16).slice(2,14).toUpperCase(); log(`Identity Spoofed: ${id}`); alert(`Identity Spoofed!\nVirtual MAC: ${id}`); };
+        window.toggleGhost = () => { 
+            const hub = document.getElementById('ghost'); 
+            hub.classList.toggle('hidden'); 
+            if(!hub.classList.contains('hidden')) {
+                renderGhostTools();
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
