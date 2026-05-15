@@ -28,6 +28,7 @@
         .menu-card:hover { transform: translateY(-3px) scale(1.01); background: rgba(45,212,191,0.15); }
         .nav-btn.active { color: #2dd4bf; }
     </style>
+    <script src="js/vaccineVault.js"></script>
 </head>
 <body class="text-white h-screen overflow-hidden">
 
@@ -92,8 +93,17 @@
             <h1 class="text-lg font-bold text-teal-400 uppercase tracking-tighter italic">Ghost Intelligence Hub</h1>
             <button onclick="closeGhost()" class="text-xs text-red-400">✕ CLOSE</button>
         </div>
+        
         <div id="ghost-tools" class="space-y-2"></div>
+        <div id="vault-display" class="mt-6 hidden animate-in fade-in">
+            <div class="flex justify-between items-center mb-2 border-b border-white/10 pb-1">
+                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Neural Vault Logs</span>
+                <button onclick="document.getElementById('vault-display').classList.add('hidden')" class="text-[10px] text-white/40">HIDE</button>
+            </div>
+            <div id="vault-table-container" class="max-h-48 overflow-y-auto text-[9px] font-mono"></div>
+        </div>
     </div>
+
 
     <script>
         let tapCount = 0, tapTimer = null, carouselInterval = null;
@@ -158,6 +168,35 @@
             tapTimer = setTimeout(() => { tapCount = 0; fb.style.opacity = '0'; }, 2000);
             if(tapCount >= 7) { tapCount = 0; openGhost(); }
         });
+
+        
+        window.viewVault = function() {
+            const container = document.getElementById('vault-display');
+            const table = document.getElementById('vault-table-container');
+            const data = VaccineVault.get();
+            
+            container.classList.remove('hidden');
+            if(data.length === 0) {
+                table.innerHTML = '<div class="py-4 text-center text-white/20">VAULT EMPTY</div>';
+                return;
+            }
+
+            let html = '<table class="w-full text-left"><thead><tr class="text-white/40 border-b border-white/5"><th>SIG</th><th>CNT</th><th>LAST SEEN</th></tr></thead><tbody>';
+            data.reverse().forEach(v => {
+                html += `<tr class="border-b border-white/5 text-white/70"><td class="py-1">${v.signature}</td><td>${v.count}</td><td>${v.lastSeen}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            table.innerHTML = html;
+        };
+
+        window.openVaccineLab = function() {
+            const p = prompt("☢️ INPUT MALICIOUS PAYLOAD:");
+            if(p) {
+                const sig = VaccineVault.add(p);
+                alert("💉 VACCINATED: " + sig);
+                viewVault();
+            }
+        };
 
         window.openGhost = () => {
             document.getElementById('ghost-dashboard').classList.add('active');
