@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • Anomaly Engine v4.2</title>
+    <title>Dream OS • The Soul v4.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -12,140 +12,121 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
         .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
         .arabic-glow { text-shadow: 0 0 25px rgba(16,185,129,0.4); }
-        .card-hover { transition: all 0.2s ease; }
-        .card-hover:active { transform: scale(0.98); border-color: var(--primary); }
+        .card-hover { transition: all 0.2s ease; cursor: pointer; }
+        .card-hover:active { transform: scale(0.95); border-color: var(--primary); }
+        
+        /* Sentinel & LED Pulse */
         .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 0 15px rgba(16,185,129,0); } }
+        
+        /* 7-Second Nav Slide RESTORED */
+        .nav-slide { animation: slideNav 7s infinite linear; }
+        @keyframes slideNav { 0% { transform: translateX(-8%); } 50% { transform: translateX(8%); } 100% { transform: translateX(-8%); } }
+        
+        .slide-up { animation: slideUp 0.4s ease-out forwards; opacity: 0; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
         #lockdown { position: fixed; inset: 0; background: rgba(1,2,6,0.98); z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         .hide-scroll::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="select-none">
 
-    <!-- LOCKDOWN OVERLAY -->
     <div id="lockdown" class="flex-col p-8">
-        <div class="text-6xl mb-6 arabic-glow">ه</div>
-        <h1 id="lockdown-msg" class="text-xl font-bold text-rose-400 uppercase tracking-wider mb-4">GEOFENCE CHECK</h1>
-        <p class="text-sm text-white/50 mb-8">Verifying location...</p>        <button onclick="location.reload()" class="px-6 py-3 glass rounded-full text-sm hover:bg-white/10 transition">RE-VERIFY</button>
+        <div class="text-6xl mb-6 arabic-glow text-emerald-500">ه</div>
+        <h1 id="lockdown-msg" class="text-xl font-bold text-rose-400 uppercase tracking-wider mb-4">GEOFENCE BREACH</h1>
+        <p class="text-[10px] text-white/50 mb-8 tracking-widest uppercase">Off-Grid Area Detected</p>
+        <button onclick="location.reload()" class="px-6 py-3 glass rounded-full text-xs font-bold tracking-widest active:scale-95 transition">RE-VERIFY</button>
     </div>
 
-    <!-- LOGIN SCREEN -->
     <section id="login" class="fixed inset-0 z-50 bg-[#010409] flex flex-col items-center justify-center p-6 transition-opacity duration-500">
         <div class="text-center mb-10 slide-up">
-            <img src="assets/logo-sultan.png" class="w-20 h-20 mx-auto rounded-2xl border border-amber-500/20 shadow-lg mb-4" onerror="this.style.display='none'">
-            <p class="text-3xl font-bold text-white arabic-glow" style="font-family:'Amiri',serif">بِسْمِ اللهِ</p>
-            <p class="text-xs text-emerald-400/70 mt-1" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-3xl border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
+            <p class="text-4xl font-bold text-white arabic-glow" style="font-family:'Amiri',serif">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p class="text-sm text-emerald-500/70 mt-2 italic" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
         </div>
         <div class="w-full max-w-xs space-y-4 slide-up" style="animation-delay:0.1s">
             <div class="glass rounded-2xl p-1 flex items-center pr-3">
-                <input type="password" id="pass" class="flex-1 p-4 bg-transparent text-center outline-none font-mono tracking-widest text-emerald-400 placeholder-white/20" placeholder="••••">
+                <input type="password" id="pass" class="flex-1 p-4 bg-transparent text-center outline-none font-mono tracking-[0.5em] text-emerald-400 placeholder-white/20" placeholder="••••">
                 <button onclick="togglePass()" class="p-2 text-white/30 hover:text-emerald-400 transition"><i id="eye" data-lucide="eye"></i></button>
             </div>
-            <button onclick="login()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-xl shadow-lg transition active:scale-95 text-xs tracking-wider uppercase">Access Core</button>
-            <p class="text-[10px] text-white/30 text-center">Demo UI • Client-side auth only</p>
+            <button onclick="login()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl shadow-lg transition active:scale-95 text-[10px] tracking-widest uppercase">Access Core</button>
+            <p class="text-[9px] text-white/30 text-center uppercase tracking-widest">Demo UI • Local Auth</p>
         </div>
     </section>
 
-    <!-- MAIN APP -->
-    <div id="app" class="hidden flex-col h-full">
-        <!-- Header -->
-        <header class="p-5 border-b border-white/5 bg-[#010409]/95 backdrop-blur sticky top-0 z-40">
-            <div class="flex justify-between items-center">
-                <div id="logo" onclick="tapLogo()" class="flex items-center gap-3 cursor-pointer group">
-                    <div class="relative w-9 h-9">
-                        <img src="assets/logo-sultan.png" class="w-full h-full rounded-xl border border-amber-500/20 shadow">
-                    </div>
-                    <div class="text-left">
-                        <span class="text-[10px] font-bold text-amber-500 uppercase">Dream OS</span>
-                        <p id="geo" class="text-[8px] text-white/40 uppercase">GDC • 2KM</p>
-                    </div>
-                </div>
-                <div id="led" class="w-2 h-2 rounded-full bg-emerald-500 pulse shadow-[0_0_8px_#10b981]"></div>
+    <div id="ghost" class="fixed inset-0 bg-[#010206] z-[9999] p-6 overflow-y-auto hidden flex-col slide-up" style="animation-duration: 0.3s;">
+        <div class="flex justify-between items-center mb-8 pb-4 border-b border-teal-500/20 mt-4">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></div>
+                <h2 class="text-[10px] font-black text-teal-400 tracking-[0.5em] uppercase">Stealth Hub</h2>
+            </div>
+            <button onclick="toggleGhost()" class="text-white/40 text-[10px] font-bold uppercase tracking-widest active:scale-90 transition">Close</button>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <button onclick="wipeLogs()" class="glass p-5 rounded-2xl text-center active:scale-95 transition card-hover">
+                <i data-lucide="trash-2" class="w-6 h-6 mx-auto text-rose-400 mb-3"></i>
+                <p class="text-[9px] font-bold uppercase text-white/70">Clear Logs</p>
+            </button>
+            <button onclick="spoofId()" class="glass p-5 rounded-2xl text-center active:scale-95 transition card-hover">
+                <i data-lucide="shield-alert" class="w-6 h-6 mx-auto text-amber-400 mb-3"></i>
+                <p class="text-[9px] font-bold uppercase text-white/70">Spoof ID</p>
+            </button>
+        </div>
+        <div id="log" class="glass rounded-xl p-4 font-mono text-[10px] text-emerald-400 leading-relaxed whitespace-pre-wrap flex-1 overflow-y-auto bg-black/50"></div>
+    </div>
+
+    <div id="app" class="hidden flex-col h-full bg-[#010409]">
+        <header class="pt-12 pb-6 px-6 text-center space-y-2 relative z-40 bg-gradient-to-b from-[#010409] to-transparent">
+            <h1 class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
+            <p class="text-sm text-emerald-500 italic opacity-80" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            <div class="absolute top-6 right-6 flex items-center gap-2">
+                <p id="geo" class="text-[8px] text-white/30 uppercase font-bold tracking-widest">Scanning</p>
+                <div id="led" class="w-2 h-2 rounded-full bg-emerald-500 pulse"></div>
             </div>
         </header>
 
-        <!-- Content -->
-        <main id="viewport" class="flex-1 overflow-y-auto p-5 pb-28 space-y-6 hide-scroll">
-            <!-- Stats Card -->
-            <div class="glass rounded-2xl p-4 slide-up">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-xs font-semibold">System Status</h3>
-                    <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Active</span>
-                </div>
-                <div class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-white/5 p-3 rounded-xl">
-                        <p class="text-[10px] text-white/50 mb-1">Modules</p>
-                        <p class="text-lg font-bold">9</p>                    </div>
-                    <div class="bg-white/5 p-3 rounded-xl">
-                        <p class="text-[10px] text-white/50 mb-1">Uptime</p>
-                        <p class="text-lg font-bold text-emerald-400">99.9%</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Module Grid -->
-            <div id="grid" class="grid grid-cols-3 gap-3"></div>
-
-            <!-- Info Card -->
+        <main id="viewport" class="flex-1 overflow-y-auto px-6 pb-32 space-y-6 hide-scroll">
+            
             <div class="glass rounded-2xl p-4 slide-up" style="animation-delay:0.1s">
-                <p class="text-[10px] text-white/50 leading-relaxed">
-                    <strong class="text-emerald-400">Note:</strong> This is a UI demo. Real security requires server-side validation. Geo-fencing & auth are client-side only for demonstration.
+                <p class="text-[9px] text-white/50 leading-relaxed text-center uppercase tracking-widest font-bold">
+                    <span class="text-emerald-400">Status:</span> UI Prototype • Client-Side Only
                 </p>
             </div>
+
+            <div id="grid" class="grid grid-cols-3 gap-3 slide-up" style="animation-delay:0.2s"></div>
         </main>
 
-        <!-- Nav -->
-        <nav class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-20 px-6 flex justify-between items-center z-40 bg-[#010409]/95 backdrop-blur">
-            <button class="flex flex-col items-center gap-1 text-emerald-400">
-                <i data-lucide="home" class="w-5 h-5"></i>
-                <span class="text-[8px] font-medium">HOME</span>
-            </button>
-            <button class="flex flex-col items-center gap-1 text-white/40">
-                <i data-lucide="user" class="w-5 h-5"></i>
-                <span class="text-[8px] font-medium">PROFILE</span>
-            </button>
-            <div class="w-11 h-11 bg-emerald-500 rounded-full flex items-center justify-center -mt-8 border-4 border-[#010409] shadow-lg">
-                <i data-lucide="qr-code" class="w-5 h-5 text-white"></i>
+        <nav class="fixed bottom-0 inset-x-0 h-28 px-4 flex justify-between items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/90 to-transparent">
+            <div class="flex w-full justify-between items-center nav-slide">
+                <button onclick="navAlert('HOME')" class="text-emerald-400 flex flex-col items-center gap-1.5 active:scale-90 transition">
+                    <i data-lucide="home" class="w-5 h-5"></i><span class="text-[8px] font-bold">HOME</span>
+                </button>
+                <button onclick="navAlert('PROFILE')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition">
+                    <i data-lucide="user" class="w-5 h-5"></i><span class="text-[8px] font-bold">PROFILE</span>
+                </button>
+                
+                <div id="sentinel" onclick="tapLogo()" class="relative z-50 w-16 h-16 -mt-12 bg-emerald-600 rounded-full flex items-center justify-center border-[5px] border-[#010409] shadow-[0_0_15px_#10b981] pulse cursor-pointer active:scale-90 transition mx-2">
+                    <span class="text-3xl font-bold text-white arabic-glow select-none" style="font-family: 'Amiri', serif;">ه</span>
+                </div>
+
+                <button onclick="navAlert('ABOUT')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition">
+                    <i data-lucide="info" class="w-5 h-5"></i><span class="text-[8px] font-bold">ABOUT</span>
+                </button>
+                <button onclick="navAlert('CONFIG')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition">
+                    <i data-lucide="settings" class="w-5 h-5"></i><span class="text-[8px] font-bold">CONFIG</span>
+                </button>
             </div>
-            <button class="flex flex-col items-center gap-1 text-white/40">
-                <i data-lucide="info" class="w-5 h-5"></i>
-                <span class="text-[8px] font-medium">ABOUT</span>
-            </button>
-            <button class="flex flex-col items-center gap-1 text-white/40">
-                <i data-lucide="settings" class="w-5 h-5"></i>
-                <span class="text-[8px] font-medium">CONFIG</span>
-            </button>
         </nav>
     </div>
 
-    <!-- GHOST HUB -->
-    <div id="ghost" class="fixed inset-0 bg-[#010206] z-50 p-5 overflow-y-auto hidden flex-col slide-up">
-        <div class="flex justify-between items-center mb-6 pb-4 border-b border-teal-500/20">
-            <h2 class="text-xs font-bold text-teal-400 tracking-wider uppercase">Stealth Hub</h2>
-            <button onclick="toggleGhost()" class="text-white/40 text-xs font-medium hover:text-white transition">Close</button>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-5">            <button onclick="wipeLogs()" class="glass p-4 rounded-xl text-center hover:bg-red-900/10 transition card-hover">
-                <i data-lucide="trash-2" class="w-5 h-5 mx-auto text-red-400 mb-2"></i>
-                <p class="text-[9px] font-medium uppercase text-white/70">Clear Logs</p>
-            </button>
-            <button onclick="spoofId()" class="glass p-4 rounded-xl text-center hover:bg-amber-900/10 transition card-hover">
-                <i data-lucide="shield-alert" class="w-5 h-5 mx-auto text-amber-400 mb-2"></i>
-                <p class="text-[9px] font-medium uppercase text-white/70">Spoof ID</p>
-            </button>
-        </div>
-        <div id="log" class="glass rounded-xl p-3 font-mono text-[10px] text-emerald-400/90 leading-relaxed whitespace-pre-wrap flex-1 overflow-y-auto bg-black/30"></div>
-    </div>
-
     <script>
-        // CONFIG
-        const HQ = { lat: -6.4172, lon: 106.8302 };
+        const HQ = { lat: -6.4172, lon: 106.8302 }; // GDC Depok
         const RADIUS_KM = 2.0;
         const MODULES = [
             { id: 'cmd', label: 'CMD', icon: 'terminal' },
             { id: 'book', label: 'BOOK', icon: 'calendar' },
-            { id: 'k3', label: 'K3', icon: 'shield-check' },
+            { id: 'k3', label: 'K3', icon: 'shield-alert' },
             { id: 'sec', label: 'SEC', icon: 'lock' },
             { id: 'in', label: 'IN', icon: 'log-in' },
             { id: 'out', label: 'OUT', icon: 'log-out' },
@@ -154,7 +135,6 @@
             { id: 'asset', label: 'ASSET', icon: 'building' }
         ];
 
-        // UTILS
         const haversine = (lat1, lon1, lat2, lon2) => {
             const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -163,26 +143,22 @@
 
         const log = (msg) => {
             const el = document.getElementById('log');
-            if(el) {
-                el.innerHTML += `> ${new Date().toLocaleTimeString()} | ${msg}\n`;
-                el.scrollTop = el.scrollHeight;
-            }
+            if(el) { el.innerHTML += `> ${new Date().toLocaleTimeString()} | ${msg}\n`; el.scrollTop = el.scrollHeight; }
         };
 
-        // AUTH
         window.togglePass = () => {
             const inp = document.getElementById('pass'), eye = document.getElementById('eye');
             const isPass = inp.type === 'password';
             inp.type = isPass ? 'text' : 'password';
             eye.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
-            lucide.createIcons();        };
+            lucide.createIcons();
+        };
 
         window.login = async () => {
             const pass = document.getElementById('pass').value;
-            if(pass !== 'b15m1ll4h_012443410') { alert('Access Denied'); return; }
+            if(pass !== 'b15m1ll4h_012443410') { alert('Password Salah'); return; }
             
-            // Geo check (client-side demo only)
-            if(!navigator.geolocation) { lockdown('Geolocation unavailable'); return; }
+            if(!navigator.geolocation) { lockdown('GPS Terblokir'); return; }
             
             document.getElementById('login').style.opacity = '0';
             setTimeout(async () => {
@@ -191,21 +167,20 @@
                 document.getElementById('login').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
                 initApp();
-            }, 300);
+            }, 500);
         };
 
         const verifyGeo = () => new Promise(resolve => {
             navigator.geolocation.getCurrentPosition(pos => {
                 const dist = haversine(pos.coords.latitude, pos.coords.longitude, HQ.lat, HQ.lon);
                 if(dist <= RADIUS_KM) {
-                    document.getElementById('geo').textContent = `SACRED • ${dist.toFixed(2)}km`;
-                    document.getElementById('led').className = 'w-2 h-2 rounded-full bg-emerald-500 pulse shadow-[0_0_8px_#10b981]';
+                    document.getElementById('geo').textContent = `SACRED • ${dist.toFixed(1)}KM`;
                     resolve(true);
                 } else {
-                    lockdown(`OUT OF BOUNDS: ${dist.toFixed(1)}km`);
+                    lockdown(`OFF-GRID: ${dist.toFixed(1)}KM`);
                     resolve(false);
                 }
-            }, () => { lockdown('Location error'); resolve(false); }, { enableHighAccuracy: true, timeout: 8000 });
+            }, () => { lockdown('GPS ERROR'); resolve(false); }, { enableHighAccuracy: true });
         });
 
         const lockdown = (msg) => {
@@ -213,32 +188,35 @@
             document.getElementById('lockdown').style.display = 'flex';
         };
 
-        // APP INIT
         const initApp = () => {
-            // Render modules
-            const grid = document.getElementById('grid');
-            grid.innerHTML = MODULES.map(m => `
-                <div class="glass p-4 rounded-xl text-center flex flex-col items-center justify-center aspect-square card-hover cursor-pointer" onclick="openModule('${m.id}')">
-                    <i data-lucide="${m.icon}" class="w-6 h-6 text-emerald-400/70 mb-2"></i>
-                    <span class="text-[9px] font-medium text-white/80">${m.label}</span>
+            document.getElementById('grid').innerHTML = MODULES.map(m => `
+                <div class="glass p-5 rounded-2xl text-center flex flex-col items-center justify-center aspect-square card-hover cursor-pointer" onclick="openModule('${m.id}')">
+                    <i data-lucide="${m.icon}" class="w-6 h-6 text-emerald-400/80 mb-3"></i>
+                    <span class="text-[9px] font-bold tracking-widest text-white/80">${m.label}</span>
                 </div>
             `).join('');
             lucide.createIcons();
-            log('Dream OS v4.2 initialized • UI demo mode');        };
-
-        window.openModule = (id) => {
-            log(`Opening module: ${id.toUpperCase()}`);
-            alert(`${id.toUpperCase()} module - Demo UI only`);
+            log('Soul of Dream OS v4.3 Restored.');
         };
 
-        // GHOST HUB
+        window.openModule = (id) => {
+            log(`Module accessed: ${id.toUpperCase()}`);
+            alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`);
+        };
+
+        window.navAlert = (name) => {
+            log(`Nav clicked: ${name}`);
+            alert(`Navigasi ke: ${name}\n(Mode UI Demo)`);
+        };
+
+        // GHOST HUB (7-TAP PADA SENTINEL TENGAH)
         let taps = 0, tapTimer;
         window.tapLogo = () => {
             taps++;
             if(taps >= 7) {
                 taps = 0;
                 toggleGhost();
-                log('Ghost Hub activated (7-tap)');
+                log('Stealth Hub Override (7-Tap) Accepted.');
             }
             clearTimeout(tapTimer);
             tapTimer = setTimeout(() => taps = 0, 2000);
@@ -251,25 +229,17 @@
         };
 
         window.wipeLogs = () => {
-            log('Clearing local logs...');
-            setTimeout(() => {
-                document.getElementById('log').innerHTML = '';
-                alert('✅ Local logs cleared (demo only)');
-                log('Logs cleared');
-            }, 500);
+            log('Purging logs...');
+            setTimeout(() => { document.getElementById('log').innerHTML = ''; alert('Logs Cleared!'); }, 500);
         };
 
         window.spoofId = () => {
             const id = Math.random().toString(16).slice(2,14).toUpperCase();
-            log(`ID spoofed: ${id} (demo only)`);
-            alert(`✅ ID spoofed (demo)\nNew: ${id}`);
+            log(`Identity Spoofed: ${id}`);
+            alert(`Identity Spoofed!\nVirtual MAC: ${id}`);
         };
 
-        // INIT
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            log('Dream OS v4.2 loaded');
-        });
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
 </body>
 </html>
