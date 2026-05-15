@@ -238,7 +238,10 @@
                 { id: 'eruda', title: '🔍 ERUDA CONSOLE', desc: 'Dev tools & debugging', action: 'toggleEruda()', color: 'teal', label: 'OPEN' },
                 { id: 'sherlock', title: '👤 SHERLOCK OSINT', desc: 'Track username 400+ sites', action: 'promptSherlock()', color: 'blue', label: 'RUN' },
                 { id: 'nmap', title: '🌐 NMAP INTELLIGENCE', desc: 'Advanced Network Auditor', action: 'promptNmap()', color: 'emerald', label: 'SCAN' },
+                
+                { id: 'dorking', title: '🔎 GOOGLE DORKING', desc: 'Find Sensitive Info/Files', action: 'promptDorking()', color: 'amber', label: 'GEN' },
                 { id: 'wipe', title: '🗑️ WIPE SYSTEM', desc: 'Reset storage & OS', action: 'wipeData()', color: 'red', label: 'CLEAR' }
+
             ];
 
             document.getElementById('ghost-tools').innerHTML = tools.map(t => `
@@ -255,6 +258,20 @@
         window.closeGhost = function() { document.getElementById('ghost-dashboard').classList.remove('active'); };
 
         
+        
+        window.promptDorking = function() {
+            const target = prompt("Masukkan Domain/Target Dorking:", "example.com");
+            if(!target) return;
+            const type = prompt("Pilih Jenis Dork:\n1. File Sensitif (PDF/Doc)\n2. Directory Listing\n3. Config/Log Files", "1");
+            let dork = "";
+            if(type === "2") dork = `site:${target} intitle:index.of`;
+            else if(type === "3") dork = `site:${target} ext:log OR ext:cfg OR ext:ini`;
+            else dork = `site:${target} filetype:pdf OR filetype:doc OR filetype:xls`;
+            
+            const url = `https://www.google.com/search?q=${encodeURIComponent(dork)}`;
+            if(confirm(`🚀 Dork Generated: ${dork}\nBuka di Google?`)) window.open(url, '_blank');
+        };
+
         window.promptNmap = function() {
             const target = prompt("Masukkan IP atau Domain Target:", "localhost");
             if(!target) return;
