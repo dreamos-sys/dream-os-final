@@ -94,14 +94,24 @@
             <button onclick="closeGhost()" class="text-xs text-red-400">✕ CLOSE</button>
         </div>
         
-        <div id="ghost-tools" class="space-y-2"></div>
-        <div id="vault-display" class="mt-6 hidden animate-in fade-in">
-            <div class="flex justify-between items-center mb-2 border-b border-white/10 pb-1">
-                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Neural Vault Logs</span>
-                <button onclick="document.getElementById('vault-display').classList.add('hidden')" class="text-[10px] text-white/40">HIDE</button>
-            </div>
-            <div id="vault-table-container" class="max-h-48 overflow-y-auto text-[9px] font-mono"></div>
+        
+        <div id="ghost-tools" class="grid grid-cols-2 gap-2 mb-4"></div>
+        
+        <div id="neural-status" class="glass p-3 rounded-xl mb-4 text-[9px] border border-teal-500/20">
+            <div class="flex justify-between mb-1"><span>STORAGE</span><span id="st-val">--</span></div>
+            <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden"><div id="st-bar" class="bg-teal-500 h-full w-0"></div></div>
+            <div class="flex justify-between mt-2"><span>NET:</span><span id="net-val" class="text-emerald-400">CHECKING...</span></div>
         </div>
+
+        <div id="ghost-result-panel" class="hidden glass p-3 rounded-xl animate-in slide-in-from-bottom-2">
+            <div class="flex justify-between items-center mb-2 border-b border-white/5 pb-1">
+                <span id="result-title" class="text-[10px] font-bold text-pink-400 uppercase">RESULT</span>
+                <button onclick="document.getElementById('ghost-result-panel').classList.add('hidden')" class="text-[10px] text-white/30">✕</button>
+            </div>
+            <div id="result-body" class="max-h-48 overflow-y-auto text-[9px] font-mono text-white/70"></div>
+        </div>
+    </div>
+
     </div>
 
 
@@ -198,7 +208,65 @@
             }
         };
 
+        
         window.openGhost = () => {
+            document.getElementById('ghost-dashboard').classList.add('active');
+            const tools = [
+                { id: 'exif', title: '📸 METADATA', action: 'triggerExif()', color: 'purple' },
+                { id: 'shodan', title: '🛰️ SHODAN', action: 'promptShodan()', color: 'red' },
+                { id: 'vaccine', title: '💉 VACCINE', action: 'runVaccine()', color: 'emerald' },
+                { id: 'extractor', title: '🔍 EXTRACTOR', action: 'runExtractor()', color: 'blue' },
+                { id: 'vault', title: '📜 VAULT', action: 'viewVault()', color: 'pink' },
+                { id: 'config', title: '💾 EXPORT', action: 'exportConfig()', color: 'amber' }
+            ];
+            document.getElementById('ghost-tools').innerHTML = tools.map(t => `
+                <div class="glass p-2 rounded-lg border border-${t.color}-500/20 text-center active:scale-95 transition" onclick="${t.action}">
+                    <div class="font-bold text-${t.color}-400 text-[10px] uppercase">${t.title}</div>
+                </div>`).join('');
+            refreshGhostStatus();
+        };
+
+        window.refreshGhostStatus = () => {
+            const used = (JSON.stringify(localStorage).length / 1024).toFixed(2);
+            document.getElementById('st-val').innerText = used + ' KB';
+            document.getElementById('st-bar').style.width = Math.min(100, (used/50)) + '%';
+            document.getElementById('net-val').innerText = navigator.onLine ? 'ONLINE' : 'OFFLINE';
+        };
+
+        window.runExtractor = () => {
+            const log = prompt("PASTE LOG MENTAH (Wireshark/Spider/Nmap):");
+            if(!log) return;
+            const res = window.processLogNeural(log);
+            document.getElementById('result-title').innerText = "Extraction Result";
+            document.getElementById('result-body').innerHTML = `IPs: ${res.ips.length}<br>Emails: ${res.emails.length}<br>URLs: ${res.urls.length}<hr class="my-1 border-white/5">` + res.ips.join('<br>');
+            document.getElementById('ghost-result-panel').classList.remove('hidden');
+        };
+
+        window.runVaccine = () => {
+            const p = prompt("☢️ INPUT PAYLOAD TO VACCINATE:");
+            if(p) {
+                const sig = VaccineVault.add(p);
+                alert("💉 VACCINATED: " + sig);
+                viewVault();
+            }
+        };
+
+        window.viewVault = () => {
+            const data = VaccineVault.get();
+            document.getElementById('result-title').innerText = "Vaccine Vault Logs";
+            document.getElementById('result-body').innerHTML = data.length ? data.map(v => `[${v.signature}] ${v.lastSeen}`).join('<br>') : "VAULT EMPTY";
+            document.getElementById('ghost-result-panel').classList.remove('hidden');
+        };
+
+        window.exportConfig = () => {
+            const blob = new Blob([JSON.stringify(localStorage)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `dreamos_backup_${Date.now()}.json`;
+            a.click();
+            alert("✅ Config Exported!");
+        };
+
             document.getElementById('ghost-dashboard').classList.add('active');
             const tools = [
                 { id: 'exif', title: '📸 METADATA INTEL', desc: 'Read GPS & Device Info', action: 'triggerExif()', color: 'purple' },
