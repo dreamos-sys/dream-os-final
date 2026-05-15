@@ -1,354 +1,216 @@
 <!DOCTYPE html>
-<html lang="id" dir="ltr" class="dark">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f172a">
-    <title>Dream OS • v1.3.3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dream OS • v1.4.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <script src="js/vaccineVault.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); background-size: 400% 400%; animation: gradient 15s ease infinite; min-height: 100vh; }
-        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        .glass-pearl { background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); }
-        .view { display: none; } .view.active { display: flex; }
-        .carousel-slide { display: none; animation: fadeIn 0.3s; }
-        .carousel-slide.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; cursor: pointer; }
-        .dot.active { background: #2dd4bf; width: 24px; border-radius: 4px; }
-        #ghost-dashboard { display: none; position: fixed; inset: 0; background: #020617; z-index: 9999; overflow-y: auto; padding: 20px; border-top: 2px solid #2dd4bf; }
-        #ghost-dashboard.active { display: block; animation: slideUp 0.3s; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; height: 100vh; overflow: hidden; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .glass-pearl { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        .nav-btn.active { color: #2dd4bf; transform: translateY(-2px); }
+        #ghost-dashboard { display: none; position: fixed; inset: 0; background: rgba(2,6,23,0.98); z-index: 9999; padding: 20px; overflow-y: auto; }
+        #ghost-dashboard.active { display: block; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .menu-card { transition: all 0.3s ease; background: rgba(45,212,191,0.08); }
-        .menu-card:hover { transform: translateY(-3px) scale(1.01); background: rgba(45,212,191,0.15); }
-        .nav-btn.active { color: #2dd4bf; }
     </style>
-    <script src="js/vaccineVault.js"></script>
 </head>
-<body class="text-white h-screen overflow-hidden">
+<body>
 
-    <section id="login-page" class="view active flex-col items-center justify-center h-full p-6 text-center">
-        <div id="dream-logo" class="mb-6 cursor-pointer select-none group relative">
-            <img src="assets/logo-sultan.png" class="w-32 h-32 rounded-3xl shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-4">
-            <p class="text-sm text-amber-500 font-semibold tracking-[0.3em]">DREAM OS <span class="text-emerald-400">v1.3.3</span></p>
-            <div id="tap-feedback" class="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] text-teal-400 font-mono opacity-0">TAP</div>
+    <section id="login-page" class="flex flex-col items-center justify-center h-full p-6">
+        <div id="dream-logo" class="mb-8 cursor-pointer active:scale-95 transition">
+            <img src="assets/logo-sultan.png" class="w-24 h-24 rounded-3xl shadow-2xl mb-4 border border-amber-500/20">
+            <p class="text-[10px] text-amber-500 font-bold tracking-[0.4em] text-center">DREAM OS</p>
         </div>
-        <h1 class="text-3xl text-amber-500/90 mb-2" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ</h1>
-        <div class="glass p-6 rounded-3xl w-full max-w-xs">
-            <div class="relative mb-4">
-                <input type="password" id="access-key" class="w-full p-4 bg-white/10 rounded-2xl text-center border border-white/20 outline-none" placeholder="Access Key">
-                <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-xl">👁️</button>
-            </div>
-            <button class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold uppercase rounded-2xl" onclick="handleLogin()">ACCESS SYSTEM</button>
+        <div class="glass p-6 rounded-3xl w-full max-w-xs border border-white/10">
+            <input type="password" id="access-key" class="w-full p-4 bg-white/5 rounded-2xl text-center mb-4 border border-white/10 outline-none focus:border-emerald-500 transition" placeholder="ENTER ACCESS KEY">
+            <button onclick="handleLogin()" class="w-full py-4 bg-emerald-600 rounded-2xl font-bold text-xs tracking-widest hover:bg-emerald-500 transition">ACCESS SYSTEM</button>
         </div>
     </section>
 
-    <div id="dashboard" class="view flex-col h-full overflow-hidden" style="display:none;">
-        <header class="px-3 py-2 glass border-b border-white/10 shrink-0 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <img src="assets/logo-sultan.png" class="w-9 h-9 rounded-lg">
-                <h1 class="text-sm font-bold">Dream OS <span class="text-[9px] block text-teal-300">Sultan Edition</span></h1>
+    <div id="dashboard" class="hidden flex-col h-full">
+        <header class="p-4 flex justify-between items-center border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">💎</div>
+                <div>
+                    <h1 class="text-xs font-bold tracking-tight">DREAM OS <span class="text-white/40 font-normal">v1.4.5</span></h1>
+                    <p class="text-[9px] text-emerald-500 uppercase font-mono">Secure Session Active</p>
+                </div>
             </div>
-            <button onclick="handleLogout()" class="p-1.5 text-white/60"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+            <button onclick="location.reload()" class="p-2 text-white/20"><i data-lucide="log-out" class="w-4 h-4"></i></button>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-3 pb-24" id="main-content-wrapper">
-            <div id="home-view" class="space-y-3">
-                <div class="glass-pearl rounded-2xl p-4 grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-white/5 p-3 rounded-xl">
-                        <p class="text-[10px] text-white/60 mb-1 uppercase">Sultan Assets</p>
-                        <p class="text-xl font-bold text-emerald-400 tracking-tighter">Rp 5.0M</p>
+        <main class="flex-1 overflow-y-auto p-4 pb-24">
+            <div id="home-view" class="space-y-4">
+                <div class="glass-pearl p-5 rounded-3xl border border-white/10">
+                    <p class="text-[10px] text-white/40 uppercase mb-1">Welcome back, Mr. M</p>
+                    <h2 class="text-xl font-bold">System Status: <span class="text-emerald-400">Optimal</span></h2>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass p-4 rounded-2xl">
+                        <p class="text-[9px] text-white/40 mb-1">NETWORK</p>
+                        <p class="text-sm font-bold text-teal-400">ENCRYPTED</p>
                     </div>
-                    <div class="bg-white/5 p-3 rounded-xl">
-                        <p class="text-[10px] text-white/60 mb-1 uppercase">System</p>
-                        <p class="text-xl font-bold text-teal-400 tracking-tighter">ONLINE</p>
+                    <div class="glass p-4 rounded-2xl">
+                        <p class="text-[9px] text-white/40 mb-1">UPTIME</p>
+                        <p class="text-sm font-bold text-blue-400">99.9%</p>
                     </div>
                 </div>
-                <div class="glass rounded-2xl overflow-hidden" id="carousel-container">
-                    <div id="carousel-slides" class="p-4 min-h-[140px] text-sm"></div>
-                    <div class="carousel-dots flex justify-center gap-2 mt-2 pb-2" id="carousel-dots"></div>
-                </div>
-                <div class="grid grid-cols-3 gap-3" id="menu-grid"></div>
             </div>
-            <div id="command-center" style="display:none;">
-                <button onclick="goHome()" class="mb-3 text-[10px] bg-emerald-600/20 px-3 py-2 rounded-xl text-emerald-400 border border-emerald-500/20">← BACK TO HOME</button>
-                <div id="command-content-body"></div>
+
+            <div id="command-center" class="hidden animate-in fade-in">
+                <div id="command-content-body" class="space-y-4">
+                    <div class="text-center py-20 text-white/20 text-xs">Loading Command Modules...</div>
+                </div>
+            </div>
+
+            <div id="config-view" class="hidden">
+                <div class="glass p-6 rounded-3xl text-center">
+                    <i data-lucide="settings" class="w-8 h-8 mx-auto mb-3 text-white/20"></i>
+                    <p class="text-xs text-white/40">Settings are locked for Stealth Mode.</p>
+                </div>
+            </div>
+
+            <div id="about-view" class="hidden space-y-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-xl font-bold text-amber-500" style="font-family: 'Amiri', serif;">Special Thanks To:</h2>
+                    <p class="text-2xl text-emerald-400 font-bold" style="font-family: 'Amiri', serif;">الله & رسول الله</p>
+                    <p class="text-[9px] text-white/30 uppercase tracking-[0.2em] mt-2 italic">The Power Soul of Shalawat</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass-pearl p-4 rounded-2xl border border-teal-500/20 text-center">
+                        <div class="text-xl mb-1">🕶️</div>
+                        <h4 class="text-[10px] font-bold text-teal-400 uppercase">Mr. M</h4>
+                        <p class="text-[8px] text-white/40 italic">Mastermind</p>
+                    </div>
+                    <div class="glass-pearl p-4 rounded-2xl border border-blue-500/20 text-center">
+                        <div class="text-xl mb-1">🧐</div>
+                        <h4 class="text-[10px] font-bold text-blue-400 uppercase">Mr. Deepseek</h4>
+                        <p class="text-[8px] text-white/40 italic">Logic Core</p>
+                    </div>
+                    <div class="glass-pearl p-4 rounded-2xl border border-purple-500/20 text-center">
+                        <div class="text-xl mb-1">💅</div>
+                        <h4 class="text-[10px] font-bold text-purple-400 uppercase">My Sis Qwen</h4>
+                        <p class="text-[8px] text-white/40 italic">Bawel One</p>
+                    </div>
+                    <div class="glass-pearl p-4 rounded-2xl border border-emerald-500/20 text-center">
+                        <div class="text-xl mb-1">💅</div>
+                        <h4 class="text-[10px] font-bold text-emerald-400 uppercase">My Sis Gemini</h4>
+                        <p class="text-[8px] text-white/40 italic">Bawel Two</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="glass p-3 rounded-xl flex justify-between items-center border border-white/5">
+                        <span class="text-[10px] font-bold text-white/70 uppercase">Bpk. Hanung Budianto, SE</span>
+                        <span class="text-[8px] text-white/30">KABAG UMUM</span>
+                    </div>
+                    <div class="glass p-3 rounded-xl flex justify-between items-center border border-white/5">
+                        <span class="text-[10px] font-bold text-white/70 uppercase">Erwin</span>
+                        <span class="text-[8px] text-white/30">KOORDINATOR UMUM</span>
+                    </div>
+                </div>
             </div>
         </main>
 
-        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass flex justify-around items-center h-14 z-50 bg-[#0f172a]/95" style="display: none;">
-            <button class="nav-btn text-teal-400" onclick="navClick('home', this)"><i data-lucide="home" class="w-5 h-5"></i></button>
-            <button class="nav-btn text-white/40" onclick="navClick('menu', this)"><i data-lucide="layout-grid" class="w-5 h-5"></i></button>
-            <button class="nav-btn text-white/40" onclick="navClick('config', this)"><i data-lucide="settings" class="w-5 h-5"></i></button>
+        <nav class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-20 px-6 flex justify-between items-center z-40 bg-[#0f172a]/90 backdrop-blur-xl">
+            <button onclick="navClick('home', this)" class="nav-btn text-teal-400 flex flex-col items-center gap-1">
+                <i data-lucide="home" class="w-5 h-5"></i><span class="text-[8px]">HOME</span>
+            </button>
+            <button onclick="navClick('menu', this)" class="nav-btn text-white/40 flex flex-col items-center gap-1">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i><span class="text-[8px]">COMMAND</span>
+            </button>
+            <button onclick="navClick('search', this)" class="nav-btn text-white/40 flex flex-col items-center gap-1">
+                <i data-lucide="search" class="w-5 h-5"></i><span class="text-[8px]">OSINT</span>
+            </button>
+            <button onclick="navClick('config', this)" class="nav-btn text-white/40 flex flex-col items-center gap-1">
+                <i data-lucide="settings" class="w-5 h-5"></i><span class="text-[8px]">CONFIG</span>
+            </button>
+            <button onclick="navClick('about', this)" class="nav-btn text-white/40 flex flex-col items-center gap-1">
+                <i data-lucide="users" class="w-5 h-5"></i><span class="text-[8px]">ABOUT</span>
+            </button>
         </nav>
     </div>
 
     <div id="ghost-dashboard">
-        <div class="flex justify-between items-center mb-6 pb-2 border-b border-teal-500/30">
-            <h1 class="text-lg font-bold text-teal-400 uppercase tracking-tighter italic">Ghost Intelligence Hub</h1>
-            <button onclick="closeGhost()" class="text-xs text-red-400">✕ CLOSE</button>
+        <div class="flex justify-between items-center mb-6 border-b border-teal-500/20 pb-2">
+            <h2 class="text-xs font-bold text-teal-400 tracking-widest italic uppercase">Stealth Hub Intelligence</h2>
+            <button onclick="closeGhost()" class="text-red-400 text-xs font-bold">✕</button>
         </div>
-        
-        
-        <div id="ghost-tools" class="grid grid-cols-2 gap-2 mb-4"></div>
-        
-        <div id="neural-status" class="glass p-3 rounded-xl mb-4 text-[9px] border border-teal-500/20">
-            <div class="flex justify-between mb-1"><span>STORAGE</span><span id="st-val">--</span></div>
-            <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden"><div id="st-bar" class="bg-teal-500 h-full w-0"></div></div>
-            <div class="flex justify-between mt-2"><span>NET:</span><span id="net-val" class="text-emerald-400">CHECKING...</span></div>
-        </div>
-
-        <div id="ghost-result-panel" class="hidden glass p-3 rounded-xl animate-in slide-in-from-bottom-2">
-            <div class="flex justify-between items-center mb-2 border-b border-white/5 pb-1">
-                <span id="result-title" class="text-[10px] font-bold text-pink-400 uppercase">RESULT</span>
-                <button onclick="document.getElementById('ghost-result-panel').classList.add('hidden')" class="text-[10px] text-white/30">✕</button>
+        <div id="ghost-tools" class="grid grid-cols-2 gap-3">
             </div>
-            <div id="result-body" class="max-h-48 overflow-y-auto text-[9px] font-mono text-white/70"></div>
+        <div id="ghost-result-panel" class="hidden mt-6 glass p-4 rounded-2xl border border-white/10">
+            <div class="flex justify-between items-center mb-2 border-b border-white/5 pb-1">
+                <span id="result-title" class="text-[10px] font-bold text-pink-400">RESULT</span>
+            </div>
+            <div id="result-body" class="text-[9px] font-mono text-white/60 overflow-x-auto"></div>
         </div>
     </div>
-
-    </div>
-
 
     <script>
-        let tapCount = 0, tapTimer = null, carouselInterval = null;
+        let tapCount = 0, tapTimer = null;
 
-        // --- AUTH ---
-        window.togglePassword = () => { const i = document.getElementById('access-key'); i.type = i.type === 'password' ? 'text' : 'password'; };
         window.handleLogin = () => {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
-            document.getElementById('bottom-nav').style.display = 'flex';
-            initDashboard();
-        };
-        window.handleLogout = () => location.reload();
-
-        // --- DASHBOARD ---
-        function initDashboard() {
-            const slides = [
-                { icon: 'hand', title: 'SULTAN COMMAND', text: 'Sistem operasional siap dijalankan.' },
-                { icon: 'shield-check', title: 'SECURITY STATUS', text: 'All encrypted. Ghost mode active.' },
-                { icon: 'gift', title: 'HARI INI', text: '🎂 Selamat Ultah Pak Budi!' }
-            ];
-            document.getElementById('carousel-slides').innerHTML = slides.map((s,i) => `
-                <div class="carousel-slide ${i===0?'active':''}">
-                    <div class="flex items-center gap-2 mb-1 text-teal-400 font-bold text-[10px] uppercase">
-                        <i data-lucide="${s.icon}" class="w-3 h-3"></i><span>${s.title}</span>
-                    </div>
-                    <p class="text-xs text-white/60">${s.text}</p>
-                </div>`).join('');
-            
-            const items = ['Command', 'Booking', 'K3', 'Security', 'Janitor', 'Asset'];
-            document.getElementById('menu-grid').innerHTML = items.map(m => `
-                <div class="menu-card glass p-4 rounded-2xl text-center" onclick="handleMenuClick('${m}')">
-                    <div class="text-[10px] font-bold uppercase tracking-widest">${m}</div>
-                </div>`).join('');
             if(window.lucide) lucide.createIcons();
+        };
+
+        window.navClick = (view, btn) => {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-teal-400', 'text-white/40'));
+            btn.classList.replace('text-white/40', 'text-teal-400');
+            
+            const views = ['home-view', 'command-center', 'config-view', 'about-view'];
+            views.forEach(v => document.getElementById(v).style.display = 'none');
+            
+            const targetId = view === 'home' ? 'home-view' : (view === 'menu' ? 'command-center' : view + '-view');
+            const targetEl = document.getElementById(targetId);
+            if(targetEl) targetEl.style.display = 'block';
+
+            if(view === 'menu') loadCommandModule();
+        };
+
+        function loadCommandModule() {
+            fetch('js/modules/command.html').then(r => r.text()).then(html => {
+                document.getElementById('command-content-body').innerHTML = html;
+                const scripts = document.getElementById('command-content-body').querySelectorAll('script');
+                scripts.forEach(s => { const n = document.createElement('script'); n.textContent = s.textContent; document.body.appendChild(n); });
+            });
         }
 
-        window.handleMenuClick = (l) => {
-            if(l === 'Command') {
-                fetch('js/modules/command.html').then(r => r.text()).then(h => {
-                    document.getElementById('command-content-body').innerHTML = h;
-                    document.getElementById('home-view').style.display = 'none';
-                    document.getElementById('command-center').style.display = 'block';
-                    // Re-run script in modular file
-                    const scripts = document.getElementById('command-content-body').querySelectorAll('script');
-                    scripts.forEach(s => { const n = document.createElement('script'); n.textContent = s.textContent; document.body.appendChild(n); });
-                });
-            } else alert(l + " Ready!");
-        };
-
-        window.goHome = () => {
-            document.getElementById('home-view').style.display = 'block';
-            document.getElementById('command-center').style.display = 'none';
-        };
-
-        // --- GHOST ENGINE (REAL LOGIC) ---
+        // GHOST ACTIVATION
         document.getElementById('dream-logo').addEventListener('click', () => {
             tapCount++;
-            const fb = document.getElementById('tap-feedback');
-            fb.innerText = `TAP ${tapCount}/7`; fb.style.opacity = '1';
-            if(tapTimer) clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; fb.style.opacity = '0'; }, 2000);
             if(tapCount >= 7) { tapCount = 0; openGhost(); }
+            clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => tapCount = 0, 2000);
         });
-
-        
-        window.viewVault = function() {
-            const container = document.getElementById('vault-display');
-            const table = document.getElementById('vault-table-container');
-            const data = VaccineVault.get();
-            
-            container.classList.remove('hidden');
-            if(data.length === 0) {
-                table.innerHTML = '<div class="py-4 text-center text-white/20">VAULT EMPTY</div>';
-                return;
-            }
-
-            let html = '<table class="w-full text-left"><thead><tr class="text-white/40 border-b border-white/5"><th>SIG</th><th>CNT</th><th>LAST SEEN</th></tr></thead><tbody>';
-            data.reverse().forEach(v => {
-                html += `<tr class="border-b border-white/5 text-white/70"><td class="py-1">${v.signature}</td><td>${v.count}</td><td>${v.lastSeen}</td></tr>`;
-            });
-            html += '</tbody></table>';
-            table.innerHTML = html;
-        };
-
-        window.openVaccineLab = function() {
-            const p = prompt("☢️ INPUT MALICIOUS PAYLOAD:");
-            if(p) {
-                const sig = VaccineVault.add(p);
-                alert("💉 VACCINATED: " + sig);
-                viewVault();
-            }
-        };
-
-        
-        
-        window.getLiveCVE = async function() {
-            alert("📡 Connecting to Global Vulnerability Database...");
-            const data = await VaccineVault.fetchCVE();
-            if(!data) return alert("❌ Connection Failed. Check Internet.");
-            
-            const list = data.map(c => `[${c.id}]\n${c.summary.substring(0,100)}...`).join('\n\n');
-            document.getElementById('result-title').innerText = "LATEST GLOBAL THREATS";
-            document.getElementById('result-body').innerText = list;
-            document.getElementById('ghost-result-panel').classList.remove('hidden');
-        };
-
-        window.deepAnalyze = function() {
-            const p = prompt("PASTE PAYLOAD TO ANALYZE:");
-            if(!p) return;
-            const res = VaccineVault.analyze(p);
-            
-            let report = `SIGNATURE: ${res.sig}\nRISK SCORE: ${res.score}%\n\nDETECTION:\n${res.risks.join('\n') || '✅ Clean or Unknown'}`;
-            alert(report);
-            
-            document.getElementById('result-title').innerText = "NEURAL ANALYSIS REPORT";
-            document.getElementById('result-body').innerHTML = report.replace(/\n/g, '<br>');
-            document.getElementById('ghost-result-panel').classList.remove('hidden');
-        };
 
         window.openGhost = () => {
             document.getElementById('ghost-dashboard').classList.add('active');
             const tools = [
-                { id: 'exif', title: '📸 METADATA', action: 'triggerExif()', color: 'purple' },
-                { id: 'shodan', title: '🛰️ SHODAN', action: 'promptShodan()', color: 'red' },
-                
-                { id: 'cve', title: '📡 LIVE CVE FEED', action: 'getLiveCVE()', color: 'amber' },
-                { id: 'analyze', title: '🧠 RISK ANALYZER', action: 'deepAnalyze()', color: 'rose' },
-                { id: 'vaccine', title: '💉 VACCINE LAB', action: 'runVaccine()', color: 'emerald' },
-                { id: 'extractor', title: '🔍 EXTRACTOR', action: 'runExtractor()', color: 'blue' },
-
-                { id: 'vault', title: '📜 VAULT', action: 'viewVault()', color: 'pink' },
-                { id: 'config', title: '💾 EXPORT', action: 'exportConfig()', color: 'amber' }
+                { id: 'cve', title: 'LATEST CVE', action: 'getLiveCVE()', color: 'amber' },
+                { id: 'analyze', title: 'ANALYZER', action: 'deepAnalyze()', color: 'rose' },
+                { id: 'vaccine', title: 'VACCINE LAB', action: 'runVaccine()', color: 'emerald' },
+                { id: 'exif', title: 'EXIF INTEL', action: 'triggerExif()', color: 'purple' }
             ];
             document.getElementById('ghost-tools').innerHTML = tools.map(t => `
-                <div class="glass p-2 rounded-lg border border-${t.color}-500/20 text-center active:scale-95 transition" onclick="${t.action}">
-                    <div class="font-bold text-${t.color}-400 text-[10px] uppercase">${t.title}</div>
-                </div>`).join('');
-            refreshGhostStatus();
-        };
-
-        window.refreshGhostStatus = () => {
-            const used = (JSON.stringify(localStorage).length / 1024).toFixed(2);
-            document.getElementById('st-val').innerText = used + ' KB';
-            document.getElementById('st-bar').style.width = Math.min(100, (used/50)) + '%';
-            document.getElementById('net-val').innerText = navigator.onLine ? 'ONLINE' : 'OFFLINE';
-        };
-
-        window.runExtractor = () => {
-            const log = prompt("PASTE LOG MENTAH (Wireshark/Spider/Nmap):");
-            if(!log) return;
-            const res = window.processLogNeural(log);
-            document.getElementById('result-title').innerText = "Extraction Result";
-            document.getElementById('result-body').innerHTML = `IPs: ${res.ips.length}<br>Emails: ${res.emails.length}<br>URLs: ${res.urls.length}<hr class="my-1 border-white/5">` + res.ips.join('<br>');
-            document.getElementById('ghost-result-panel').classList.remove('hidden');
-        };
-
-        window.runVaccine = () => {
-            const p = prompt("☢️ INPUT PAYLOAD TO VACCINATE:");
-            if(p) {
-                const sig = VaccineVault.add(p);
-                alert("💉 VACCINATED: " + sig);
-                viewVault();
-            }
-        };
-
-        window.viewVault = () => {
-            const data = VaccineVault.get();
-            document.getElementById('result-title').innerText = "Vaccine Vault Logs";
-            document.getElementById('result-body').innerHTML = data.length ? data.map(v => `[${v.signature}] ${v.lastSeen}`).join('<br>') : "VAULT EMPTY";
-            document.getElementById('ghost-result-panel').classList.remove('hidden');
-        };
-
-        window.exportConfig = () => {
-            const blob = new Blob([JSON.stringify(localStorage)], {type: 'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `dreamos_backup_${Date.now()}.json`;
-            a.click();
-            alert("✅ Config Exported!");
-        };
-
-            document.getElementById('ghost-dashboard').classList.add('active');
-            const tools = [
-                { id: 'exif', title: '📸 METADATA INTEL', desc: 'Read GPS & Device Info', action: 'triggerExif()', color: 'purple' },
-                { id: 'sherlock', title: '👤 SHERLOCK', desc: 'Copy OSINT command', action: 'promptSherlock()', color: 'blue' },
-                { id: 'nmap', title: '🌐 NMAP', desc: 'Copy Network Scanner', action: 'promptNmap()', color: 'emerald' },
-                
-                
-                
-                { id: 'parser', title: '🧠 NEURAL PARSER', desc: 'Deep Log Analysis (Real Logic)', action: 'openParser()', color: 'pink', label: 'ANALYZE' },
-                { id: 'spider', title: '🕷️ SPIDER RECON', desc: 'Automated OSINT Crawler', action: 'copyCmd("spiderfoot -l 127.0.0.1:5001")', color: 'blue', label: 'WEB' },
-
-                { id: 'sniffer', title: '🦈 PACKET SNIFFER', desc: 'Live Traffic Analysis (Tshark)', action: 'copyCmd("tshark -i any -V")', color: 'indigo', label: 'PCAP' },
-                { id: 'shodan', title: '🛰️ SHODAN INTEL', desc: 'IoT & Vuln Scanner', action: 'promptShodan()', color: 'red', label: 'HUNT' },
-
-                { id: 'dorking', title: '🔎 GOOGLE DORKING', desc: 'Google Search Intelligence', action: 'promptDorking()', color: 'amber', label: 'RUN' }
-
-            ];
-            document.getElementById('ghost-tools').innerHTML = tools.map(t => `
-                <div class="glass p-3 rounded-xl border border-${t.color}-500/20 flex justify-between items-center" onclick="${t.action}">
-                    <div><div class="font-bold text-${t.color}-400 text-xs">${t.title}</div><div class="text-[9px] text-white/40">${t.desc}</div></div>
-                    <div class="text-[10px] text-${t.color}-300 uppercase">Run</div>
+                <div onclick="${t.action}" class="glass p-4 rounded-xl border border-${t.color}-500/20 text-center active:scale-95 transition">
+                    <span class="text-[10px] font-bold text-${t.color}-400 uppercase">${t.title}</span>
                 </div>`).join('');
         };
 
         window.closeGhost = () => document.getElementById('ghost-dashboard').classList.remove('active');
+        
+        // VACCINE & INTEL DUMMY FOR NOW
+        window.runVaccine = () => alert("VACCINE LAB ACTIVE");
+        window.deepAnalyze = () => alert("ANALYZER READY");
+        window.getLiveCVE = () => alert("CVE FETCHING...");
 
-        // REAL EXIF LOGIC
-        window.triggerExif = () => {
-            const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
-            input.onchange = e => {
-                const file = e.target.files[0]; if(!file) return;
-                console.log("Processing:", file.name);
-                EXIF.getData(file, function() {
-                    const tags = EXIF.getAllTags(this);
-                    if(Object.keys(tags).length === 0) return alert("❌ No Metadata Found! (File may be stripped)");
-                    alert(`🔍 INTEL FOUND:\nDevice: ${tags.Model || 'N/A'}\nDateTime: ${tags.DateTime || 'N/A'}\nResolution: ${tags.PixelXDimension}x${tags.PixelYDimension}\nGPS: ${tags.GPSLatitude ? 'DETECTED' : 'NONE'}`);
-                    console.table(tags);
-                });
-            };
-            input.click();
-        };
-
-        window.promptSherlock = () => {
-            const u = prompt("Username:"); if(u) { navigator.clipboard.writeText(`sherlock ${u}`); alert("Copied!"); }
-        };
-        window.promptNmap = () => {
-            const i = prompt("Target IP:"); if(i) { navigator.clipboard.writeText(`nmap -sV ${i}`); alert("Copied!"); }
-        };
-        window.promptDorking = () => {
-            const d = prompt("Domain:"); if(d) window.open(`https://www.google.com/search?q=site:${d}+filetype:log`, '_blank');
-        };
-
-        console.log("✅ Dream OS v1.3.3.1 - Zero Dummy Policy");
+        document.addEventListener('DOMContentLoaded', () => { if(window.lucide) lucide.createIcons(); });
     </script>
 </body>
 </html>
