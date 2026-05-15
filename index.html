@@ -205,10 +205,40 @@
 
         window.closeGhost = () => document.getElementById('ghost-dashboard').classList.remove('active');
         
-        // VACCINE & INTEL DUMMY FOR NOW
-        window.runVaccine = () => alert("VACCINE LAB ACTIVE");
-        window.deepAnalyze = () => alert("ANALYZER READY");
-        window.getLiveCVE = () => alert("CVE FETCHING...");
+        
+        window.getLiveCVE = async function() {
+            alert("📡 Connecting to Global Vulnerability Database...");
+            const data = await VaccineVault.fetchCVE();
+            if(!data) return alert("❌ Connection Failed.");
+            const list = data.map(c => `[${c.id}]
+${c.summary.substring(0,80)}...`).join('
+
+');
+            document.getElementById('result-title').innerText = "LATEST GLOBAL THREATS";
+            document.getElementById('result-body').innerText = list;
+            document.getElementById('ghost-result-panel').classList.remove('hidden');
+        };
+
+        window.deepAnalyze = function() {
+            const p = prompt("PASTE PAYLOAD TO ANALYZE:");
+            if(!p) return;
+            const res = VaccineVault.analyze(p);
+            let report = `SIGNATURE: ${res.sig}
+RISK SCORE: ${res.score}%
+DETECTION: ${res.risks.join(', ') || 'Clean'}`;
+            document.getElementById('result-title').innerText = "NEURAL ANALYSIS REPORT";
+            document.getElementById('result-body').innerText = report;
+            document.getElementById('ghost-result-panel').classList.remove('hidden');
+        };
+
+        window.runVaccine = function() {
+            const p = prompt("☢️ INPUT PAYLOAD TO VACCINATE:");
+            if(p) {
+                const sig = btoa(p).substring(0,12);
+                alert("💉 VACCINATED: " + sig);
+            }
+        };
+
 
         document.addEventListener('DOMContentLoaded', () => { if(window.lucide) lucide.createIcons(); });
     </script>
