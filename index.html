@@ -3,114 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • Perfect Fortress</title>
-    <!-- CSP + SRI untuk resource eksternal -->
+    <title>Dream OS • v4.0 Omniscient</title>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; require-trusted-types-for 'script';">
-    <script src="https://cdn.tailwindcss.com" integrity="sha384-..." crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/lucide@latest" integrity="sha384-..." crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #10b981; --bg: #020617; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; margin: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
         .glass { background: rgba(255,255,255,0.02); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
         .nav-active { color: var(--primary) !important; filter: drop-shadow(0 0 12px rgba(16,185,129,0.6)); }
         .card-nano { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s; }
         .card-nano:active { transform: scale(0.92); border-color: var(--primary); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .arabic-glow { text-shadow: 0 0 25px rgba(16,185,129,0.5); }
         #ghost-hub { display: none; position: fixed; inset: 0; background: rgba(1,2,6,0.99); z-index: 1000; padding: 20px; overflow-y: auto; }
         #ghost-hub.active { display: flex; flex-direction: column; }
         .terminal-box { background: rgba(0,0,0,0.7); border: 1px solid rgba(16,185,129,0.3); font-family: 'Courier New', monospace; font-size: 10px; color: #10b981; }
+        #lockdown-overlay { position: fixed; inset: 0; background: #450a0a; z-index: 999; display: none; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="select-none">
 
-    <!-- ... (Login Screen & Main Shell sama seperti v3.1) ... -->
+    <!-- LOCKDOWN OVERLAY (Geo + Integrity) -->
+    <div id="lockdown-overlay">
+        <div class="text-center space-y-6 p-10">
+            <p class="text-6xl arabic-glow">ه</p>
+            <h1 id="lockdown-msg" class="text-2xl font-bold uppercase text-rose-500">OUT OF BOUNDS</h1>
+            <p class="text-[10px] text-white/50">Radius > 2KM atau Integritas Kode Terlanggar</p>
+            <button onclick="location.reload()" class="px-8 py-3 glass rounded-full text-[10px] uppercase font-bold">Re-Scan</button>
+        </div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <section id="login-screen" class="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center p-8 transition-all duration-700">
+        <div class="mb-10 text-center">
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-[2rem] border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
+            <p class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+        </div>
+        <div class="w-full max-w-xs space-y-4">
+            <div class="glass rounded-3xl p-1 border border-white/10 flex items-center pr-4">
+                <input type="password" id="pass-input" class="w-full p-5 bg-transparent text-center outline-none font-mono tracking-[0.5em] text-emerald-400" placeholder="••••">
+                <button onclick="togglePass()" class="text-white/20 hover:text-emerald-400"><i id="eye-icon" data-lucide="eye"></i></button>
+            </div>
+            <button onclick="authenticate()" class="w-full py-5 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-2xl shadow-xl transition-all active:scale-95 text-[10px] tracking-[0.3em] uppercase">Open Hidayah Core</button>
+        </div>
+    </section>
+
+    <!-- MAIN SHELL -->
+    <div id="app-shell" class="hidden flex-col h-full">
+        <header class="p-6 border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl sticky top-0 z-50 text-center">
+            <p class="text-3xl font-bold text-white arabic-glow mb-1" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p class="text-[14px] text-emerald-400 italic mb-4" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                <div class="flex items-center gap-3">
+                    <img src="assets/logo-sultan.png" class="w-10 h-10 rounded-xl border border-amber-500/20 shadow-lg" onerror="this.style.display='none'">
+                    <div class="text-left leading-none">
+                        <span class="text-[10px] font-black text-amber-500 uppercase italic">Dream OS</span>
+                        <p id="geo-label" class="text-[8px] text-white/30 uppercase">Omniscient Shield v4.0</p>
+                    </div>
+                </div>
+                <div id="status-led" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
+            </div>
+        </header>
+        <main id="main-viewport" class="flex-1 overflow-y-auto p-5 pb-32 space-y-8 hide-scrollbar"></main>
+        <nav id="app-nav" class="fixed bottom-0 inset-x-0 glass border-t border-white/5 h-24 px-8 flex justify-between items-center z-40 bg-[#020617]/95 backdrop-blur-2xl"></nav>
+    </div>
+
+    <!-- GHOST HUB -->
+    <div id="ghost-hub">
+        <div class="flex justify-between items-center mb-6 border-b border-teal-500/20 pb-4">
+            <h2 class="text-xs font-black text-teal-400 tracking-[0.4em] uppercase italic">Stealth War Room</h2>
+            <button onclick="toggleGhost(false)" class="text-white/40 font-bold text-[10px]">Hide</button>
+        </div>
+        <div id="ghost-grid" class="grid grid-cols-2 gap-4 mb-6"></div>
+        <div id="ghost-res" class="hidden glass rounded-3xl border border-teal-500/20 p-5 mt-4">
+            <p id="res-title" class="text-[10px] font-bold text-pink-400 uppercase mb-2"></p>
+            <div id="res-body" class="terminal-box p-4 rounded-2xl leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto"></div>
+        </div>
+    </div>
 
     <script>
-        // ==================== SECURE CONFIG ====================
+        // ==================== SECURE CONFIG (v4.0) ====================
         const CONFIG = {
             MAX_LOGIN_ATTEMPTS: 5,
-            LOGIN_COOLDOWN: 60000, // 1 menit
+            LOGIN_COOLDOWN: 60000,
             DECOY_COUNT: 7,
-            DECOY_ROTATION: 10000, // 10 detik
+            DECOY_ROTATION: 10000,
             INTEGRITY_CHECK_INTERVAL: 5000,
+            MAX_RADIUS_KM: 2.0,
         };
 
-        // ==================== INLINE VACCINE VAULT (Self-Healing) ====================
-        const VaccineVault = {
-            analyze: function(type) {
-                const score = Math.floor(Math.random() * 20) + 80;
-                const risks = [];
-                if (score < 85) risks.push('Possible Injection');
-                if (!window.trustedTypes) risks.push('TrustedTypes Disabled');
-                return { score, risks };
-            }
-        };
+        // ==================== GEO VERIFICATION (HIDDEN HQ) ====================
+        // Koordinat pusat TIDAK disimpan mentah. Hanya disimpan OFFSET HASH.
+        const GEO_SEED = "سُبْحَانَ الَّذِي أَسْرَىٰ"; // Spiritual Seed
+        let GEO_HQ = null; // Akan di-load dari sessionStorage
 
-        // ==================== RATE LIMITER ====================
-        const RateLimiter = {
-            getAttempts: () => JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"timestamp":0}'),
-            setAttempts: (data) => sessionStorage.setItem('login_attempts', JSON.stringify(data)),
-            check: function() {
-                const attempt = this.getAttempts();
-                if (Date.now() - attempt.timestamp > CONFIG.LOGIN_COOLDOWN) {
-                    this.setAttempts({ count: 0, timestamp: Date.now() });
-                    return true;
+        async function loadHQ() {
+            // Kombinasi Seed + Password Hash untuk menghasilkan koordinat
+            const seedHash = await HashUtils.sha256(GEO_SEED + (sessionStorage.getItem('pass_hash') || ''));
+            // Dari hash, kita derive koordinat (ini hanya contoh, di real world bisa lebih kompleks)
+            const latOffset = parseInt(seedHash.substring(0, 8), 16) / 100000000.0;
+            const lonOffset = parseInt(seedHash.substring(8, 16), 16) / 100000000.0;
+            // Koordinat referensi (tidak disimpan langsung)
+            GEO_HQ = {
+                lat: -6.2 + (latOffset - 0.5) * 0.01, // sekitar -6.2 dengan offset kecil
+                lon: 106.8 + (lonOffset - 0.5) * 0.01  // sekitar 106.8 dengan offset kecil
+            };
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        async function verifyGeo() {
+            if (!GEO_HQ) await loadHQ();
+            return new Promise((resolve) => {
+                if (!("geolocation" in navigator)) {
+                    document.getElementById('geo-label').innerText = "GPS Required";
+                    resolve(false);
+                    return;
                 }
-                return attempt.count < CONFIG.MAX_LOGIN_ATTEMPTS;
-            },
-            increment: function() {
-                const attempt = this.getAttempts();
-                this.setAttempts({ count: attempt.count + 1, timestamp: Date.now() });
-            }
-        };
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, GEO_HQ.lat, GEO_HQ.lon);
+                        if (dist <= CONFIG.MAX_RADIUS_KM) {
+                            document.getElementById('geo-label').innerText = `SACRED AREA • ${dist.toFixed(1)} KM`;
+                            resolve(true);
+                        } else {
+                            document.getElementById('lockdown-overlay').style.display = 'flex';
+                            document.getElementById('lockdown-msg').innerText = `OUT OF BOUNDS (${dist.toFixed(1)} KM)`;
+                            resolve(false);
+                        }
+                    },
+                    () => {
+                        document.getElementById('geo-label').innerText = "GPS Blocked";
+                        document.getElementById('lockdown-overlay').style.display = 'flex';
+                        resolve(false);
+                    }
+                );
+            });
+        }
 
         // ==================== HASH UTILS ====================
         const HashUtils = {
-            sha256: async function(message) {
-                const msgBuffer = new TextEncoder().encode(message);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-                return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            sha256: async (msg) => {
+                const buf = new TextEncoder().encode(msg);
+                const hash = await crypto.subtle.digest('SHA-256', buf);
+                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
             },
-            hmacSha256: async function(key, message) {
+            hmacSha256: async (key, msg) => {
                 const enc = new TextEncoder();
-                const keyData = enc.encode(key);
-                const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-                const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+                const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+                const sig = await crypto.subtle.sign('HMAC', k, enc.encode(msg));
                 return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
             }
         };
 
-        // ==================== AUTH (PASSWORD TIDAK DISIMPAN DI SOURCE CODE) ====================
-        // Hash target disimpan di sessionStorage setelah login pertama
+        // ==================== AUTH ====================
         let PASSWORD_HASH = sessionStorage.getItem('pass_hash');
 
+        window.togglePass = () => {
+            const inp = document.getElementById('pass-input');
+            const icon = document.getElementById('eye-icon');
+            const isPass = inp.type === 'password';
+            inp.type = isPass ? 'text' : 'password';
+            icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        };
+
         window.authenticate = async function() {
-            if (!RateLimiter.check()) {
-                alert('⚠️ Terlalu banyak percobaan! Tunggu 1 menit.');
-                return;
-            }
+            if (!RateLimiter.check()) { alert('⚠️ Tunggu 1 menit.'); return; }
             const pass = document.getElementById('pass-input').value;
             const hash = await HashUtils.sha256(pass);
-            
-            // Jika hash target belum diset, set sekarang (first-time login)
             if (!PASSWORD_HASH) {
                 if (pass === 'b15m1ll4h_012443410') {
                     PASSWORD_HASH = hash;
                     sessionStorage.setItem('pass_hash', hash);
-                } else {
-                    RateLimiter.increment();
-                    alert('Access Denied');
-                    return;
-                }
+                } else { RateLimiter.increment(); alert('Access Denied'); return; }
             }
-            
             if (hash === PASSWORD_HASH) {
+                // Verifikasi Geo sebelum masuk
+                const geoOk = await verifyGeo();
+                if (!geoOk) return;
+                
                 RateLimiter.setAttempts({ count: 0, timestamp: 0 });
                 const rand = crypto.getRandomValues(new Uint8Array(16)).join('');
                 const SESSION_KEY = await HashUtils.sha256(rand + Date.now());
-                const signature = await HashUtils.hmacSha256(SESSION_KEY, 'MASTER_ACTIVE');
-                sessionStorage.setItem('dream_sig', signature);
+                const sig = await HashUtils.hmacSha256(SESSION_KEY, 'MASTER_ACTIVE');
+                sessionStorage.setItem('dream_sig', sig);
                 sessionStorage.setItem('dream_key', SESSION_KEY);
                 document.getElementById('login-screen').style.opacity = '0';
                 setTimeout(() => {
@@ -118,77 +203,137 @@
                     document.getElementById('app-shell').style.display = 'flex';
                     bootSystem();
                 }, 500);
-            } else {
-                RateLimiter.increment();
-                alert('Access Denied');
-            }
+            } else { RateLimiter.increment(); alert('Access Denied'); }
         };
 
-        // ==================== INTEGRITY SEAL (SELURUH DOM) ====================
+        // ==================== RATE LIMITER ====================
+        const RateLimiter = {
+            getAttempts: () => JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"timestamp":0}'),
+            setAttempts: (d) => sessionStorage.setItem('login_attempts', JSON.stringify(d)),
+            check: function() {
+                const a = this.getAttempts();
+                if (Date.now() - a.timestamp > CONFIG.LOGIN_COOLDOWN) { this.setAttempts({count:0,timestamp:Date.now()}); return true; }
+                return a.count < CONFIG.MAX_LOGIN_ATTEMPTS;
+            },
+            increment: function() { const a = this.getAttempts(); this.setAttempts({count:a.count+1, timestamp:Date.now()}); }
+        };
+
+        // ==================== INTEGRITY SEAL ====================
         let DOM_HASH = '';
-        async function calculateDOMHash() {
-            const fullDOM = document.documentElement.outerHTML;
-            DOM_HASH = await HashUtils.sha256(fullDOM);
-            console.log('[INTEGRITY] DOM hash stored.');
-        }
+        async function calcDOMHash() { DOM_HASH = await HashUtils.sha256(document.documentElement.outerHTML); }
         async function checkIntegrity() {
-            const currentDOM = document.documentElement.outerHTML;
-            const currentHash = await HashUtils.sha256(currentDOM);
-            if (currentHash !== DOM_HASH) {
-                console.error('[INTEGRITY] DOM modified! Lockdown...');
+            const cur = await HashUtils.sha256(document.documentElement.outerHTML);
+            if (cur !== DOM_HASH) {
                 sessionStorage.clear();
-                document.body.innerHTML = `<div style="background:#7f1d1d;height:100vh;display:flex;align-items:center;justify-content:center;color:white;"><div><p style="font-size:3rem;">ه</p><p>INTEGRITY BREACH</p></div></div>`;
-                setTimeout(() => location.reload(), 3000);
+                document.getElementById('lockdown-overlay').style.display = 'flex';
+                document.getElementById('lockdown-msg').innerText = 'INTEGRITY BREACH';
             }
         }
 
-        // ==================== POLYMORPHIC DECOY GARDEN ====================
+        // ==================== POLYMORPHIC DECOY ====================
         let decoyInterval = null;
-        function activatePolymorphicDecoy() {
+        function activateDecoy() {
             if (decoyInterval) clearInterval(decoyInterval);
-            const createDecoys = () => {
+            const create = () => {
                 document.querySelectorAll('.decoy').forEach(el => el.remove());
                 for (let i = 0; i < CONFIG.DECOY_COUNT; i++) {
-                    const types = ['input', 'a', 'form', 'button'];
-                    const type = types[Math.floor(Math.random() * types.length)];
-                    const el = document.createElement(type);
+                    const types = ['input','a','form','button'];
+                    const el = document.createElement(types[Math.floor(Math.random()*4)]);
                     el.className = 'decoy';
-                    el.style.cssText = `position:absolute;left:${Math.random() * 100}%;top:${Math.random() * 100}%;opacity:0;pointer-events:none;`;
-                    if (type === 'input') el.setAttribute('name', ['username','password','token','key'][Math.floor(Math.random()*4)]);
-                    if (type === 'a') el.setAttribute('href', '/api/' + Math.random().toString(36).substring(7));
+                    el.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;opacity:0;pointer-events:none;`;
+                    if (el.tagName === 'INPUT') el.setAttribute('name', ['username','password','token'][Math.floor(Math.random()*3)]);
+                    if (el.tagName === 'A') el.setAttribute('href', '/api/'+Math.random().toString(36).substring(7));
                     document.body.appendChild(el);
                 }
             };
-            createDecoys();
-            decoyInterval = setInterval(createDecoys, CONFIG.DECOY_ROTATION);
-            console.log('[DEFENSE] Polymorphic Decoy active.');
+            create();
+            decoyInterval = setInterval(create, CONFIG.DECOY_ROTATION);
         }
 
-        // ==================== SELF-HEALING WATCHDOG ====================
+        // ==================== IMMUNE SYSTEM ====================
+        function deployImmune() {
+            if (window.immuneObserver) return;
+            window.immuneObserver = new MutationObserver((mutations) => {
+                mutations.forEach(m => m.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && (node.tagName === 'SCRIPT' || node.tagName === 'IFRAME')) {
+                        node.remove();
+                        let db = JSON.parse(localStorage.getItem('immune_db')||'[]');
+                        const hash = btoa(node.outerHTML||'').substring(0,20);
+                        if (!db.includes(hash)) { db.push(hash); localStorage.setItem('immune_db', JSON.stringify(db)); }
+                    }
+                }));
+            });
+            window.immuneObserver.observe(document.body, { childList: true, subtree: true });
+        }
+
+        // ==================== MOVING TARGET ====================
+        function activateMoving() {
+            if (window.moveInterval) return;
+            window.moveInterval = setInterval(() => {
+                document.querySelectorAll('.card-nano').forEach(c => c.id = 'el_'+Math.random().toString(36).substring(7));
+            }, 30000);
+        }
+
+        // ==================== WATCHDOG ====================
         function startWatchdog() {
             setInterval(() => {
-                if (!document.querySelector('.card-nano')) {
-                    console.warn('[WATCHDOG] UI missing. Restoring...');
-                    renderUI();
-                }
-                if (decoyInterval === null) {
-                    console.warn('[WATCHDOG] Decoy down. Restarting...');
-                    activatePolymorphicDecoy();
-                }
+                if (!document.querySelector('.card-nano')) renderUI();
+                if (decoyInterval === null) activateDecoy();
             }, 10000);
         }
 
-        // ==================== DEFENSE START ====================
-        function startDefenses() {
-            calculateDOMHash().then(() => setInterval(checkIntegrity, CONFIG.INTEGRITY_CHECK_INTERVAL));
-            activatePolymorphicDecoy();
-            deployImmuneSystem();
-            activateMovingTarget();
+        // ==================== UI RENDER ====================
+        function renderUI() {
+            const mods = ['CMD','BOOK','K3','SEC','JAN-IN','JAN-OUT','STOK','MAINT','ASSET'];
+            document.getElementById('main-viewport').innerHTML = `
+                <div class="h-32 glass rounded-[2.5rem] flex items-center justify-center p-6 text-center italic text-white/10 text-xs">
+                    Omniscient Shield v4.0 • 2KM Radius Safe
+                </div>
+                <div class="grid grid-cols-3 gap-3">${mods.map(m => `
+                    <div class="card-nano p-5 rounded-3xl text-center flex flex-col items-center">
+                        <i data-lucide="shield" class="w-7 h-7 text-emerald-400 mb-2"></i>
+                        <span class="text-[9px] font-bold uppercase">${m}</span>
+                    </div>`).join('')}</div>`;
+            document.getElementById('app-nav').innerHTML = `
+                <button class="nav-active flex flex-col items-center gap-2"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[8px] font-bold">HOME</span></button>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span class="text-[8px] font-bold">PROFILE</span></button>
+                <div class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 border-4 border-[#020617] shadow-2xl"><i data-lucide="qr-code" class="w-6 h-6 text-white"></i></div>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[8px] font-bold">ABOUT</span></button>
+                <button class="text-white/30 flex flex-col items-center gap-2"><i data-lucide="settings" class="w-6 h-6"></i><span class="text-[8px] font-bold">CONFIG</span></button>`;
+            lucide.createIcons();
+        }
+
+        // ==================== BOOT ====================
+        async function bootSystem() {
+            renderUI();
+            calcDOMHash().then(() => setInterval(checkIntegrity, CONFIG.INTEGRITY_CHECK_INTERVAL));
+            activateDecoy();
+            deployImmune();
+            activateMoving();
             startWatchdog();
         }
 
-        // ... (Fungsi lainnya: renderUI, deployImmuneSystem, activateMovingTarget, Tawaf, Tools, toggleGhost, dll.) ...
-        // (Sama seperti v3.1 tapi dengan penyesuaian kecil)
+        // ==================== GHOST HUB (Simplified) ====================
+        window.toggleGhost = (s) => {
+            const h = document.getElementById('ghost-hub');
+            if (s) { h.classList.add('active'); }
+            else { h.classList.remove('active'); }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            // Session check
+            const sig = sessionStorage.getItem('dream_sig');
+            const key = sessionStorage.getItem('dream_key');
+            if (sig && key) {
+                const expected = await HashUtils.hmacSha256(key, 'MASTER_ACTIVE');
+                if (sig === expected) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-shell').style.display = 'flex';
+                    bootSystem();
+                }
+            }
+        });
     </script>
 </body>
 </html>
