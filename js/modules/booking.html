@@ -1,0 +1,161 @@
+<div class="p-4 h-full overflow-y-auto">
+  <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+    <h2 class="text-lg font-bold flex items-center gap-2">📅 Booking Sarana & Prasarana</h2>
+    <button onclick="closeBooking()" class="text-white/40 text-sm">✕ Tutup</button>
+  </div>
+
+  <div class="flex flex-col gap-3 mb-5">
+    <div id="booking-error" class="bg-red-500/20 text-red-400 p-3 rounded-xl text-sm hidden"></div>
+    <input type="text" id="booking-name" placeholder="Nama Pemohon *" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10">
+    <input type="text" id="booking-divisi" placeholder="Divisi/Unit *" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10">
+    <input type="text" id="booking-phone" placeholder="No. HP" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10">
+    <select id="booking-room" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10 text-white">
+      <option value="">Pilih Ruangan / Sarana *</option>
+      <option value="Ruang Rapat Utama">Ruang Rapat Utama</option>
+      <option value="Aula GDC">Aula GDC</option>
+      <option value="Aula Serbaguna">Aula Serbaguna</option>
+      <option value="Ruang Server">Ruang Server</option>
+    </select>
+    <div class="grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs text-white/50 block mb-1">Waktu Mulai *</label>
+        <input type="datetime-local" id="booking-start" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10 w-full text-white">
+      </div>
+      <div>
+        <label class="text-xs text-white/50 block mb-1">Waktu Akhir *</label>
+        <input type="datetime-local" id="booking-end" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10 w-full text-white">
+      </div>
+    </div>
+    <textarea id="booking-desc" placeholder="Keterangan Acara" class="bg-black/30 p-3 rounded-xl text-sm border border-white/10 h-20"></textarea>
+    <button onclick="addBookingV2()" class="bg-teal-600 py-3 px-6 rounded-xl font-bold text-sm active:scale-95 transition">+ Ajukan Booking</button>
+  </div>
+  
+  <div class="flex justify-between items-center mb-2">
+    <h3 class="text-sm font-semibold">📋 Daftar Booking</h3>
+    <span class="text-xs text-white/40" id="booking-count">0</span>
+  </div>
+  <div id="booking-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+</div>
+
+<script>
+window.bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+
+function saveBookings() {
+  localStorage.setItem('dreamos_bookings', JSON.stringify(window.bookings));
+}
+
+function renderBookingList() {
+  var list = document.getElementById('booking-list');
+  if (!list) return;
+  list.innerHTML = window.bookings.map(function(b) {
+    return '<div class="bg-white/5 p-3 rounded-xl flex flex-col gap-1 '+(b.status==='approved'?'border-l-2 border-green-400':'')+'">'+
+      '<div class="flex justify-between"><span class="font-semibold text-sm">'+b.name+'</span><span class="text-xs text-white/40">'+b.divisi+'</span></div>'+
+      '<div class="text-xs text-white/60">📍 '+b.room+'</div>'+
+      '<div class="text-xs text-white/40">📅 '+new Date(b.start).toLocaleString()+' → '+new Date(b.end).toLocaleString()+'</div>'+
+      '<div class="text-xs text-white/40 italic">'+b.desc+'</div>'+
+      '<div class="flex justify-between items-center"><span class="text-xs '+ (b.status==='approved'?'text-green-400':'text-amber-400') +'">'+b.status+'</span>'+
+      (b.status==='pending' ? '<button onclick="approveBooking('+b.id+')" class="text-green-400 text-xs">✅ Setujui</button>' : '')+
+      '</div></div>';
+  }).join('');
+  document.getElementById('booking-count').innerText = window.bookings.length + ' booking';
+}
+
+window.addBookingV2 = function() {
+  var name = document.getElementById('booking-name').value.trim();
+  var divisi = document.getElementById('booking-divisi').value.trim();
+  var phone = document.getElementById('booking-phone').value.trim();
+  var room = document.getElementById('booking-room').value;
+  var start = document.getElementById('booking-start').value;
+  var end = document.getElementById('booking-end').value;
+  var desc = document.getElementById('booking-desc').value.trim();
+  var errorEl = document.getElementById('booking-error');
+  
+  if (!name || !divisi || !room || !start || !end) {
+    errorEl.innerText = 'Mohon isi semua field wajib (*)';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  if (new Date(start) >= new Date(end)) {
+    errorEl.innerText = 'Waktu Akhir harus setelah Waktu Mulai';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  
+  // Validasi
+  var startDate = new Date(start);
+  var day = startDate.getDay();
+  var startMin = startDate.getHours()*60 + startDate.getMinutes();
+  var endMin = new Date(end).getHours()*60 + new Date(end).getMinutes();
+  var role = localStorage.getItem('dreamos_role') || 'kabag';
+  
+  if (day === 0 || day === 6) {
+    if (role !== 'admin' && role !== 'direktur') {
+      errorEl.innerText = 'Sabtu & Minggu hanya bisa dibooking oleh Admin/Direktur.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+  } else {
+    if (startMin < 7*60+30 || endMin > 16*60) {
+      errorEl.innerText = 'Jam operasional hanya 07:30 - 16:00.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+  }
+  
+  if (day === 5 && (room === 'Aula GDC' || room === 'Aula Serbaguna')) {
+    if (startMin < 13*60 && endMin > 10*60+30) {
+      errorEl.innerText = 'Jumat 10:30-13:00 aula diblokir (persiapan shalat Jumat).';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+  }
+  
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (startDate < new Date(today.getTime() + 24*60*60*1000)) {
+    errorEl.innerText = 'Booking minimal untuk besok (H-1).';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  
+  // Anti double booking
+  var conflict = window.bookings.find(function(b) {
+    if (b.room !== room || b.status === 'rejected') return false;
+    return (new Date(start) < new Date(b.end) && new Date(end) > new Date(b.start));
+  });
+  if (conflict) {
+    errorEl.innerText = '⚠️ Bentrok! Ruangan sudah dibooking oleh ' + conflict.name + ' (' + conflict.divisi + ')';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  
+  window.bookings.push({
+    id: Date.now(),
+    name, divisi, phone, room, start, end, desc,
+    status: 'pending',
+    approvalLevel: 1
+  });
+  saveBookings();
+  renderBookingList();
+  // Reset form
+  document.getElementById('booking-name').value = '';
+  document.getElementById('booking-divisi').value = '';
+  document.getElementById('booking-phone').value = '';
+  document.getElementById('booking-start').value = '';
+  document.getElementById('booking-end').value = '';
+  document.getElementById('booking-desc').value = '';
+  errorEl.classList.add('hidden');
+};
+
+window.approveBooking = function(id) {
+  var b = window.bookings.find(function(x){return x.id===id});
+  if (b) { b.status = 'approved'; saveBookings(); renderBookingList(); }
+};
+
+window.closeBooking = function() {
+  document.getElementById('booking-module').style.display = 'none';
+};
+
+// Init
+renderBookingList();
+</script>
