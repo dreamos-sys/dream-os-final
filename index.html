@@ -95,7 +95,10 @@
             </div>
             <div id="grid" class="grid grid-cols-3 gap-3 slide-up" style="animation-delay:0.2s"></div>
         </main>
-        <nav class="fixed bottom-0 inset-x-0 h-28 px-4 flex justify-between items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/90 to-transparent">
+        
+<div id="command-center" class="hidden flex-1 overflow-y-auto px-6 pb-32 space-y-6 hide-scroll"></div>
+
+<nav class="fixed bottom-0 inset-x-0 h-28 px-4 flex justify-between items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/90 to-transparent">
             <div class="flex w-full justify-between items-center">
                 
                 <button onclick="navAlert('USER')" class="text-white/40 flex flex-col items-center gap-1.5 active:scale-90 transition"><i data-lucide="user" class="w-5 h-5"></i><span class="text-[8px] font-bold">USER</span></button>
@@ -283,7 +286,33 @@
             log('Soul of Dream OS v1.0 Final Restored.');
         };
 
-        window.openModule = (id) => { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); };
+        
+window.loadCommandCenter = async function() {
+    const container = document.getElementById('command-center');
+    if (!container) return;
+    try {
+        const res = await fetch('js/modules/command.html');
+        const cmdHtml = await res.text();
+        container.innerHTML = cmdHtml;
+        container.style.display = 'block';
+        // Eksekusi script di dalamnya
+        container.querySelectorAll('script').forEach(old => {
+            const ns = document.createElement('script');
+            if (old.src) {
+                ns.src = old.src;
+            } else {
+                ns.textContent = old.textContent;
+            }
+            document.body.appendChild(ns);
+            old.remove();
+        });
+        log('Command Center loaded');
+    } catch(e) {
+        log('Gagal memuat Command Center: ' + e.message);
+    }
+};
+
+window.openModule = (id) => { if (id === 'cmd') { loadCommandCenter(); } else { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); } };
         window.navAlert = (name) => { log(`Nav clicked: ${name}`); alert(`Navigasi ke: ${name}\n(Mode UI Demo)`); };
 
         let taps = 0, tapTimer;
