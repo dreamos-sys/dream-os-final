@@ -96,7 +96,7 @@
             <div id="grid" class="grid grid-cols-3 gap-3 slide-up" style="animation-delay:0.2s"></div>
         </main>
         
-<div id="command-center" class="hidden flex-1 overflow-y-auto px-6 pb-32 space-y-6 hide-scroll"></div>
+
 
 <nav class="fixed bottom-0 inset-x-0 h-28 px-4 flex justify-between items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/90 to-transparent">
             <div class="flex w-full justify-between items-center">
@@ -352,6 +352,39 @@ window.switchTab = function(tabId) {
     var activeBtn = document.querySelector('.tab-btn[onclick*="switchTab(\'' + tabId + '\'')"]');
     if (activeBtn) activeBtn.classList.add("active", "bg-teal-600/30");
 };
+</script>
+
+
+<div id="command-center" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #010409; z-index: 9999; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+  <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <button onclick="closeCommandCenter()" style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; color: white;">✕ Tutup</button>
+  </div>
+  <div id="command-content"></div>
+</div>
+<script>
+  window.closeCommandCenter = function() {
+    document.getElementById('command-center').style.display = 'none';
+  };
+  window.loadCommandCenter = async function() {
+    var container = document.getElementById('command-content');
+    if (!container) return;
+    document.getElementById('command-center').style.display = 'block';
+    try {
+      var res = await fetch('js/modules/command.html');
+      var html = await res.text();
+      container.innerHTML = html;
+      // Eksekusi ulang script
+      container.querySelectorAll('script').forEach(function(old) {
+        var ns = document.createElement('script');
+        if (old.src) { ns.src = old.src; }
+        else { ns.textContent = old.textContent; }
+        document.body.appendChild(ns);
+        old.remove();
+      });
+    } catch(e) {
+      container.innerHTML = '<p style="color: red;">Gagal memuat Command Center</p>';
+    }
+  };
 </script>
 
 </body>

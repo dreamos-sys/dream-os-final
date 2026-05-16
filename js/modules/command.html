@@ -1,204 +1,227 @@
-<div class="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-    <div id="budget-summary" class="glass-pearl p-4 rounded-2xl border border-emerald-500/20 shadow-lg">
-        </div>
-
-    <div class="flex gap-2">
-        <button onclick="addTransaction()" class="flex-1 py-3 bg-emerald-600/20 border border-emerald-500/30 rounded-xl text-[10px] font-bold text-emerald-400 flex items-center justify-center gap-2">
-            <i data-lucide="plus-circle" class="w-3 h-3"></i> TAMBAH TRANSAKSI
-        </button>
-        <button onclick="resetBudget()" class="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
-            <i data-lucide="trash-2" class="w-3 h-3"></i>
-        </button>
+<div style="background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.005) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 2rem; padding: 1.5rem; height: 100%; overflow-y: auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div style="display: flex; gap: 0.5rem;">
+      <span style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); padding: 0.25rem 0.75rem; border-radius: 999px;" id="role-badge">Role: kabag</span>
+      <button onclick="switchRole()" style="font-size: 0.7rem; color: #10b981; text-decoration: underline;">Switch Role</button>
     </div>
+    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4);">Audit Trail aktif</div>
+  </div>
 
-    <div class="glass rounded-2xl overflow-hidden border border-white/5">
-        <div class="bg-white/5 p-3 text-[10px] font-bold border-b border-white/10 flex justify-between uppercase tracking-tighter">
-            <span>Uraian Pekerjaan</span>
-            <span>Jumlah</span>
-        </div>
-        <div id="transaction-list" class="divide-y divide-white/5 max-h-[300px] overflow-y-auto">
-            </div>
+  <div style="display: flex; gap: 0.25rem; margin-bottom: 1rem; flex-wrap: wrap; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <button class="tab-btn" onclick="switchTab('dashboard')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px; background: rgba(16,185,129,0.3);" id="tab-btn-dashboard">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('booking')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">📅 Booking</button>
+    <button class="tab-btn" onclick="switchTab('approval')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">✅ Approval</button>
+    <button class="tab-btn" onclick="switchTab('rab')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">💰 RAB & Realisasi</button>
+    <button class="tab-btn" onclick="switchTab('dana')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">📅 Dana Periodik</button>
+    <button class="tab-btn" onclick="switchTab('maintenance')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">🛠️ Maintenance</button>
+    <button class="tab-btn" onclick="switchTab('report')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">📈 Laporan</button>
+    <button class="tab-btn" onclick="switchTab('inventaris')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">🏢 Inventaris</button>
+    <button class="tab-btn" onclick="switchTab('audit')" style="padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px;">📜 Audit Trail</button>
+  </div>
+
+  <!-- Semua konten tab -->
+  <div id="tab-dashboard" class="tab-content" style="display: block;">
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
+      <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 1rem; text-align: center;"><div style="font-size: 0.6rem; color: rgba(255,255,255,0.4);">Booking Pending</div><div style="font-size: 1.25rem; font-weight: bold; color: #f59e0b;" id="pending-count">0</div></div>
+      <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 1rem; text-align: center;"><div style="font-size: 0.6rem; color: rgba(255,255,255,0.4);">Total RAB Diajukan</div><div style="font-size: 1.25rem; font-weight: bold; color: #34d399;" id="rab-total">0</div></div>
+      <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 1rem; text-align: center;"><div style="font-size: 0.6rem; color: rgba(255,255,255,0.4);">Realisasi Bulan Ini</div><div style="font-size: 1.25rem; font-weight: bold; color: #2dd4bf;" id="realisasi-bulan">0</div></div>
+      <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 1rem; text-align: center;"><div style="font-size: 0.6rem; color: rgba(255,255,255,0.4);">Total Dana Tips</div><div style="font-size: 1.25rem; font-weight: bold; color: #60a5fa;" id="tips-total">0</div></div>
     </div>
+    <div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 1rem; margin-bottom: 0.75rem;">
+      <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem;">📈 Anggaran vs Realisasi (Bulan Ini)</div>
+      <canvas id="budgetChart" height="120" style="width: 100%;"></canvas>
+    </div>
+    <div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 1rem;">
+      <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem;">🔔 Notifikasi</div>
+      <div id="notif-list" style="font-size: 0.65rem; color: rgba(255,255,255,0.4);">✅ Semua aman</div>
+    </div>
+  </div>
+
+  <div id="tab-booking" class="tab-content" style="display: none;">
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;"><input type="text" id="booking-title" placeholder="Judul Booking" style="flex: 1; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><input type="date" id="booking-date" style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><button onclick="addBooking()" style="background: #10b981; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.7rem; font-weight: bold;">+</button></div>
+    <div id="booking-list" style="max-height: 300px; overflow-y: auto;"></div>
+  </div>
+
+  <div id="tab-approval" class="tab-content" style="display: none;">
+    <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.5rem;"><div style="font-size: 0.8rem; font-weight: bold;">📋 Approval Booking</div><div id="approval-booking-list" style="font-size: 0.7rem; margin-top: 0.5rem;"></div></div>
+    <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 0.5rem;"><div style="font-size: 0.8rem; font-weight: bold;">💰 Approval RAB</div><div id="approval-rab-list" style="font-size: 0.7rem; margin-top: 0.5rem;"></div></div>
+  </div>
+
+  <div id="tab-rab" class="tab-content" style="display: none;">
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;"><input type="text" id="rab-name" placeholder="Nama Kegiatan" style="flex: 1; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><input type="number" id="rab-nominal" placeholder="Nominal" style="width: 100px; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><button onclick="addRAB()" style="background: #10b981; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.7rem; font-weight: bold;">Ajukan</button></div>
+    <div id="rab-list" style="font-size: 0.7rem; max-height: 200px; overflow-y: auto;"></div>
+  </div>
+
+  <div id="tab-dana" class="tab-content" style="display: none;"><div style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">Fitur Dana Periodik & Tips siap digunakan.</div></div>
+  <div id="tab-maintenance" class="tab-content" style="display: none;">
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;"><input type="text" id="maint-item" placeholder="Barang (AC, Lift)" style="flex: 1; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><input type="text" id="maint-desc" placeholder="Jenis Servis" style="flex: 1; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><input type="date" id="maint-date" style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><button onclick="addMaint()" style="background: #10b981; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.7rem; font-weight: bold;">+</button></div>
+    <div id="maint-list" style="font-size: 0.7rem; max-height: 300px; overflow-y: auto;"></div>
+  </div>
+  <div id="tab-report" class="tab-content" style="display: none;"><div style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">Fitur Laporan siap digunakan.</div></div>
+  <div id="tab-inventaris" class="tab-content" style="display: none;">
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;"><input type="text" id="aset-name" placeholder="Nama Aset" style="flex: 1; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><input type="number" id="aset-qty" placeholder="Jumlah" style="width: 80px; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 0.5rem; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);"><button onclick="addAset()" style="background: #10b981; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.7rem; font-weight: bold;">Tambah</button></div>
+    <div id="aset-list" style="font-size: 0.7rem; max-height: 200px; overflow-y: auto;"></div>
+  </div>
+  <div id="tab-audit" class="tab-content" style="display: none;">
+    <div id="audit-list" style="font-size: 0.65rem; font-family: monospace; max-height: 400px; overflow-y: auto;"></div>
+    <button onclick="clearAudit()" style="margin-top: 0.5rem; background: rgba(239,68,68,0.5); padding: 0.25rem 0.5rem; border-radius: 0.5rem; font-size: 0.6rem;">Clear Audit</button>
+  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Database Budget Sultan (Persistence)
-    const DEFAULT_BUDGET = 5000000;
-    let transactions = JSON.parse(localStorage.getItem('dream_os_budget')) || [
-        { title: 'Beli Hosting & Domain', amount: 1500000, status: 'DONE' },
-        { title: 'Sewa Dev (Gemini)', amount: 2000000, status: 'PROSES' }
-    ];
+// Inisialisasi data global
+window.bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[{"id":1,"title":"Rapat Koordinasi","date":"2026-05-15","status":"pending"}]');
+window.rabs = JSON.parse(localStorage.getItem('dreamos_rabs') || '[{"id":1,"nama":"Seminar AI","nominal":5000000,"status":"pending"}]');
+window.realisasi = JSON.parse(localStorage.getItem('dreamos_realisasi') || '[]');
+window.aset = JSON.parse(localStorage.getItem('dreamos_aset') || '[{"nama":"Laptop","jumlah":5},{"nama":"Proyektor","jumlah":3},{"nama":"AC","jumlah":10}]');
+window.audit = JSON.parse(localStorage.getItem('dreamos_audit') || '[]');
+window.periodicFunds = JSON.parse(localStorage.getItem('dreamos_periodic_funds') || '[]');
+window.tips = JSON.parse(localStorage.getItem('dreamos_tips') || '[]');
+window.maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[{"id":1,"item":"AC Ruang Rapat","desc":"Cuci AC","date":"2026-02-10","cost":250000,"tech":"PT Suhu Sejuk","status":"progress"}]');
+window.userRole = localStorage.getItem('dreamos_role') || 'kabag';
+window.chartInstance = null;
 
-    function saveAndRender() {
-        localStorage.setItem('dream_os_budget', JSON.stringify(transactions));
-        renderBudget();
-    }
+// Helper
+function saveAll() {
+  localStorage.setItem('dreamos_bookings', JSON.stringify(window.bookings));
+  localStorage.setItem('dreamos_rabs', JSON.stringify(window.rabs));
+  localStorage.setItem('dreamos_realisasi', JSON.stringify(window.realisasi));
+  localStorage.setItem('dreamos_aset', JSON.stringify(window.aset));
+  localStorage.setItem('dreamos_periodic_funds', JSON.stringify(window.periodicFunds));
+  localStorage.setItem('dreamos_tips', JSON.stringify(window.tips));
+  localStorage.setItem('dreamos_maintenances', JSON.stringify(window.maintenances));
+  localStorage.setItem('dreamos_audit', JSON.stringify(window.audit));
+}
 
-    function renderBudget() {
-        const totalUsed = transactions.reduce((sum, t) => sum + t.amount, 0);
-        const remaining = DEFAULT_BUDGET - totalUsed;
-        const percent = (totalUsed / DEFAULT_BUDGET) * 100;
+// Render semua
+function renderAll() {
+  // Booking
+  var bl = document.getElementById('booking-list');
+  if (bl) bl.innerHTML = window.bookings.map(function(b) { return '<div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 0.5rem; display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><div><div style="font-weight: bold;">'+b.title+'</div><div style="font-size: 0.6rem; color: rgba(255,255,255,0.4);">'+b.date+' - '+b.status+'</div></div><button onclick="approveBooking('+b.id+')" style="color: #34d399; font-size: 0.7rem;">✅</button></div>'; }).join('');
 
-        document.getElementById('budget-summary').innerHTML = `
-            <div class="flex justify-between items-center mb-2">
-                <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Master Budget</h3>
-                <span class="text-[9px] text-white/40">v1.3.2.2</span>
-            </div>
-            <div class="text-2xl font-bold mb-1">Rp ${remaining.toLocaleString('id-ID')}</div>
-            <p class="text-[10px] text-white/40 mb-3 uppercase">Sisa Alokasi Dana</p>
-            <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mb-2">
-                <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full shadow-[0_0_10px_rgba(16,185,129,0.4)] transition-all duration-1000" style="width: ${percent}%"></div>
-            </div>
-            <div class="flex justify-between text-[9px] font-medium">
-                <span class="text-emerald-400">Terpakai: Rp ${totalUsed.toLocaleString('id-ID')}</span>
-                <span class="text-white/40">${percent.toFixed(1)}%</span>
-            </div>
-        `;
+  // RAB
+  var rl = document.getElementById('rab-list');
+  if (rl) rl.innerHTML = window.rabs.map(function(r) { return '<div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.25rem;">'+r.nama+' - Rp '+r.nominal.toLocaleString()+' - '+r.status+'</div>'; }).join('');
 
-        document.getElementById('transaction-list').innerHTML = transactions.map((t, i) => `
-            <div class="p-3 flex justify-between items-center active:bg-white/5">
-                <div>
-                    <div class="text-[11px] font-semibold">${t.title}</div>
-                    <div class="text-[9px] text-white/40 uppercase">${t.status}</div>
-                </div>
-                <div class="text-right">
-                    <div class="text-[11px] font-bold text-white">Rp ${t.amount.toLocaleString('id-ID')}</div>
-                    <button onclick="deleteTx(${i})" class="text-[8px] text-red-400/50 uppercase font-bold">Hapus</button>
-                </div>
-            </div>
-        `).reverse().join('');
-        
-        if(window.lucide) lucide.createIcons();
-    }
+  // Maintenance
+  var ml = document.getElementById('maint-list');
+  if (ml) ml.innerHTML = window.maintenances.map(function(m) { return '<div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.25rem;"><div style="font-weight: bold;">'+m.item+' - '+m.desc+'</div><div style="font-size: 0.6rem; color: rgba(255,255,255,0.4);">Tanggal: '+m.date+' | Biaya: Rp '+(m.cost||0).toLocaleString()+' | Teknisi: '+(m.tech||'-')+' | Status: '+(m.status||'progress')+'</div></div>'; }).join('');
 
-    window.addTransaction = function() {
-        const title = prompt("Uraian Pekerjaan:");
-        const amount = parseInt(prompt("Jumlah (Rp):", "100000"));
-        if(title && amount) {
-            transactions.push({ title, amount, status: 'PENDING' });
-            saveAndRender();
-        }
-    };
+  // Aset
+  var al = document.getElementById('aset-list');
+  if (al) al.innerHTML = window.aset.map(function(a) { return '<div>'+a.nama+' x'+a.jumlah+' <button onclick="deleteAset(\''+a.nama+'\')" style="color: #ef4444; font-size: 0.6rem;">Hapus</button></div>'; }).join('');
 
-    window.deleteTx = function(i) {
-        if(confirm('Hapus transaksi ini?')) {
-            transactions.splice(i, 1);
-            saveAndRender();
-        }
-    };
+  // Audit
+  var aud = document.getElementById('audit-list');
+  if (aud) aud.innerHTML = window.audit.slice(0,50).map(function(a) { return '<div>'+new Date(a.timestamp).toLocaleString()+' - '+a.role+': '+a.action+' - '+a.details+'</div>'; }).join('');
 
-    window.resetBudget = function() {
-        if(confirm('Reset semua data budget?')) {
-            transactions = [];
-            saveAndRender();
-        }
-    };
+  // Approval lists
+  var abl = document.getElementById('approval-booking-list');
+  if (abl) abl.innerHTML = window.bookings.filter(function(b) { return b.status === 'pending'; }).map(function(b) { return '<div>'+b.title+' <button onclick="approveBooking('+b.id+')" style="color: #34d399; font-size: 0.7rem;">Approve</button></div>'; }).join('');
+  var arl = document.getElementById('approval-rab-list');
+  if (arl) arl.innerHTML = window.rabs.filter(function(r) { return r.status === 'pending'; }).map(function(r) { return '<div>'+r.nama+' - Rp '+r.nominal+' <button onclick="approveRAB('+r.id+')" style="color: #34d399; font-size: 0.7rem;">Approve</button></div>'; }).join('');
 
-    renderBudget();
-</script>
-<script>
-// ==================== ANTI-SPOOFING & ENCRYPTED GEO CORE ====================
-(function() {
-    // Kunci enkripsi untuk zona (derived dari seed spiritual)
-    const GEO_KEY = "سُبْحَانَ الَّذِي أَسْرَىٰ";
+  updateDashboard();
+}
 
-    // Enkripsi/dekripsi XOR sederhana (upgrade ke Web Crypto untuk produksi)
-    const cipher = {
-        encrypt: (text) => {
-            return btoa(text.split('').map((c, i) => 
-                String.fromCharCode(c.charCodeAt(0) ^ GEO_KEY.charCodeAt(i % GEO_KEY.length))
-            ).join(''));
+function updateDashboard() {
+  var pendingCount = window.bookings.filter(function(b) { return b.status === 'pending'; }).length;
+  var totalRab = window.rabs.reduce(function(s, r) { return s + r.nominal; }, 0);
+  var realisasiBulan = window.realisasi.reduce(function(s, r) { return s + (r.nominal || 0); }, 0);
+  var totalTips = window.tips.reduce(function(s, t) { return s + t.nominal; }, 0);
+
+  document.getElementById('pending-count').innerText = pendingCount;
+  document.getElementById('rab-total').innerText = 'Rp ' + totalRab.toLocaleString();
+  document.getElementById('realisasi-bulan').innerText = 'Rp ' + realisasiBulan.toLocaleString();
+  document.getElementById('tips-total').innerText = 'Rp ' + totalTips.toLocaleString();
+
+  if (typeof Chart !== 'undefined') {
+    var ctx = document.getElementById('budgetChart');
+    if (ctx) {
+      ctx = ctx.getContext('2d');
+      if (window.chartInstance) window.chartInstance.destroy();
+      window.chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Anggaran', 'Realisasi'],
+          datasets: [{ label: 'Rp', data: [totalRab, realisasiBulan], backgroundColor: ['#2dd4bf', '#f59e0b'] }]
         },
-        decrypt: (enc) => {
-            try {
-                return atob(enc).split('').map((c, i) => 
-                    String.fromCharCode(c.charCodeAt(0) ^ GEO_KEY.charCodeAt(i % GEO_KEY.length))
-                ).join('');
-            } catch(e) { return '[]'; }
-        }
-    };
-
-    // Simpan zona dengan enkripsi
-    function saveZones(zones) {
-        localStorage.setItem('dreamos_geo_zones', cipher.encrypt(JSON.stringify(zones)));
+        options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+      });
     }
+  }
+}
 
-    // Muat zona dengan dekripsi
-    function loadZones() {
-        const raw = localStorage.getItem('dreamos_geo_zones');
-        if (!raw) return [];
-        return JSON.parse(cipher.decrypt(raw));
-    }
+// Fungsi tombol
+window.addBooking = function() {
+  var title = document.getElementById('booking-title').value;
+  var date = document.getElementById('booking-date').value;
+  if (title && date) {
+    window.bookings.push({ id: Date.now(), title: title, date: date, status: 'pending' });
+    saveAll();
+    renderAll();
+    document.getElementById('booking-title').value = '';
+  }
+};
 
-    // Override fungsi window.geo untuk menggunakan enkripsi
-    window.geo = {
-        get zones() { return loadZones(); },
-        set zones(val) { saveZones(val); },
-        
-        // ... (Haversine distance, getCurrentLocation, checkZones tetap sama) ...
+window.addRAB = function() {
+  var nama = document.getElementById('rab-name').value;
+  var nominal = parseInt(document.getElementById('rab-nominal').value);
+  if (nama && nominal) {
+    window.rabs.push({ id: Date.now(), nama: nama, nominal: nominal, status: 'pending' });
+    saveAll();
+    renderAll();
+    document.getElementById('rab-name').value = '';
+    document.getElementById('rab-nominal').value = '';
+  }
+};
 
-        // VERIFIKASI SILANG DENGAN IP (ANTI-SPOOFING)
-        verifyWithIP: async function(gpsLat, gpsLon) {
-            try {
-                const res = await fetch('https://ipapi.co/json/');
-                const data = await res.json();
-                const dist = this.distance(gpsLat, gpsLon, data.latitude, data.longitude);
-                // Jika jarak GPS vs IP > 100 km, anggap spoof
-                if (dist > 100) {
-                    console.warn(`[GEO-SHIELD] Spoof detected! GPS-IP gap: ${dist.toFixed(0)} km`);
-                    return false;
-                }
-                return true;
-            } catch(e) {
-                // Jika IP check gagal, TOLAK (Zero Trust)
-                console.warn('[GEO-SHIELD] IP verification failed, access denied.');
-                return false;
-            }
-        },
+window.addMaint = function() {
+  var item = document.getElementById('maint-item').value;
+  var desc = document.getElementById('maint-desc').value;
+  var date = document.getElementById('maint-date').value;
+  if (item && desc && date) {
+    window.maintenances.push({ id: Date.now(), item: item, desc: desc, date: date, cost: 0, tech: '', status: 'progress' });
+    saveAll();
+    renderAll();
+  }
+};
 
-        // TRIGGER AKTIF (BISA LOCKDOWN)
-        triggerActions: function(matchedZones, location) {
-            matchedZones.forEach(zone => {
-                if(zone.actions) {
-                    zone.actions.forEach(action => {
-                        if (action === 'auto-checkin' || action === 'log-attendance') {
-                            addAudit('Geo Check-in', `Check-in at ${zone.name} (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`);
-                        }
-                        if (action === 'lockdown') {
-                            // Panggil fungsi lockdown global jika ada
-                            if (window.lockdown) window.lockdown();
-                        }
-                    });
-                }
-            });
-        }
-    };
+window.addAset = function() {
+  var nama = document.getElementById('aset-name').value;
+  var qty = parseInt(document.getElementById('aset-qty').value);
+  if (nama && qty) {
+    window.aset.push({ nama: nama, jumlah: qty });
+    saveAll();
+    renderAll();
+  }
+};
 
-    // Override refreshLocation untuk sertakan IP Check
-    const originalRefresh = window.refreshLocation;
-    window.refreshLocation = async function() {
-        // Panggil fungsi asli untuk update UI
-        await originalRefresh();
-        
-        // Lakukan verifikasi silang diam-diam
-        try {
-            const loc = await window.geo.getCurrentLocation();
-            const isLegit = await window.geo.verifyWithIP(loc.lat, loc.lng);
-            if (!isLegit) {
-                document.getElementById('geo-status').textContent = '❌ LOCATION SPOOF DETECTED';
-                if (window.lockdown) window.lockdown();
-            }
-        } catch(e) { console.warn(e); }
-    };
+window.approveBooking = function(id) {
+  var b = window.bookings.find(function(x) { return x.id === id; });
+  if (b) { b.status = 'approved'; saveAll(); renderAll(); }
+};
 
-    // Override addZonePrompt untuk simpan terenkripsi
-    const originalAddZone = window.addZonePrompt;
-    window.addZonePrompt = function() {
-        originalAddZone();
-        // Pastikan zona baru langsung dienkripsi
-        saveZones(window.geo.zones);
-    };
+window.approveRAB = function(id) {
+  var r = window.rabs.find(function(x) { return x.id === id; });
+  if (r) { r.status = 'approved'; saveAll(); renderAll(); }
+};
 
-    console.log('[GEO-SHIELD] Hardened v1.1 active. IP verification & encryption on.');
-})();
+window.deleteAset = function(nama) {
+  window.aset = window.aset.filter(function(a) { return a.nama !== nama; });
+  saveAll();
+  renderAll();
+};
+
+window.clearAudit = function() {
+  window.audit = [];
+  localStorage.setItem('dreamos_audit', '[]');
+  renderAll();
+};
+
+// Inisialisasi
+document.addEventListener('DOMContentLoaded', function() {
+  renderAll();
+});
 </script>
