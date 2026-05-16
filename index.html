@@ -323,7 +323,30 @@ window.switchTab = function(tabId) {
             log('Soul of Dream OS v1.0 Final Restored.');
         };
 
-        window.openModule = (id) => { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); };
+        
+window.loadCommandCenter = async function() {
+    try {
+        const res = await fetch('js/modules/command.html');
+        const cmdHtml = await res.text();
+        const container = document.getElementById('command-center');
+        if (container) {
+            container.innerHTML = cmdHtml;
+            container.style.display = 'block';
+            // Paksa eksekusi script di dalamnya
+            container.querySelectorAll('script').forEach(old => {
+                const ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+                old.remove();
+            });
+            log('Command Center loaded');
+        }
+    } catch(e) {
+        log('Gagal memuat Command Center: ' + e.message);
+    }
+};
+
+window.openModule = (id) => { if (id === 'cmd') { loadCommandCenter(); } else { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); } };
         window.navAlert = (name) => { log(`Nav clicked: ${name}`); alert(`Navigasi ke: ${name}\n(Mode UI Demo)`); };
 
         let taps = 0, tapTimer;
