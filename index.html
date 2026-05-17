@@ -126,6 +126,7 @@
         const HQ = { lat: -6.4172, lon: 106.8302 };
         const RADIUS_KM = 2.0;
         const MODULES = [
+            { id: 'ai', label: 'AI', icon: 'brain' },
             { id: 'cmd', label: 'CMD', icon: 'terminal' },
             { id: 'book', label: 'BOOK', icon: 'calendar' },
             { id: 'k3', label: 'K3', icon: 'shield-alert' },
@@ -195,7 +196,9 @@
                     } else { const result = eval(cmd); log('✅ Output:\n' + JSON.stringify(result, null, 2)); }
                 } catch(e) { log('❌ Error: ' + e.message); }
             }},
-            { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
+            
+          { label: 'AI Orchestra', icon: 'music', color: 'text-pink-400', action: () => { window.loadModuleGeneric('ai-core', 'js/modules/ai-core.html'); toggleGhost(); } },
+          { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
                 if (confirm('⚠️ Hapus SEMUA data?')) { localStorage.clear(); sessionStorage.clear(); log('☠️ Wiped.'); setTimeout(() => location.reload(), 1000); }
             }},
         ];
@@ -275,7 +278,8 @@
         };
 
         window.openModule = (id) => { 
-            if (id === 'cmd') { window.loadModuleGeneric('command', 'js/modules/command.html'); }
+            if (id === 'ai') { window.loadModuleGeneric('ai-core', 'js/modules/ai-core.html'); }
+            else if (id === 'cmd') { window.loadModuleGeneric('command', 'js/modules/command.html'); }
             else if (id === 'book') { window.loadModuleGeneric('booking', 'js/modules/booking.html'); }
             else if (id === 'k3') { window.loadModuleGeneric('k3', 'js/modules/k3.html'); }
             else if (id === 'maint') { window.loadModuleGeneric('maint', 'js/modules/maintenance.html'); }
@@ -349,6 +353,18 @@
 }
 setInterval(updateSlider, 7000);
 updateSlider();
+
+
+  // Subtle hint untuk pengguna Ghost Mode
+  if (!localStorage.getItem('ghost_ai_hint_shown')) {
+    setTimeout(() => {
+      const chatBox = document.getElementById('ai-chat-box');
+      if (chatBox) {
+        chatBox.innerHTML += `<div class="text-center text-white/30 text-[10px] mt-3 italic">💡 Tips: AI Orchestra juga bisa diakses dari ikon 🧠 di Grid Utama.</div>`;
+        localStorage.setItem('ghost_ai_hint_shown', 'true');
+      }
+    }, 3000);
+  }
 
 </script>
 </body>
