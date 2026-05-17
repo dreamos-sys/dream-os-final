@@ -8,8 +8,102 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dream OS • v2.1 Tangguh • 371 baris</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com">
+  // 🎨 Dream Team Aura System
+  window.updateRoomAura = function(mode) {
+    const chatBox = document.getElementById('ai-chat-box');
+    const inputEl = document.getElementById('ai-input-ghost') || document.getElementById('ai-input');
+    const inputContainer = inputEl ? inputEl.closest('div[class*="flex"]') : null;
+    if (!chatBox) return;
+
+    // Reset
+    chatBox.style.boxShadow = '';
+    chatBox.classList.remove('aura-rainbow');
+    if (inputContainer) {
+      inputContainer.classList.remove('border-teal-500/30', 'bg-teal-950/5', 'border-cyan-500/30', 'bg-cyan-950/5', 'border-purple-500/30', 'bg-purple-950/5', 'border-white/20', 'bg-zinc-900/5', 'aura-rainbow');
+    }
+
+    // Apply
+    if (mode === 'deepseek') {
+      chatBox.style.boxShadow = '0 0 25px rgba(13,148,136,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-teal-500/30', 'bg-teal-950/5'); }
+    } else if (mode === 'gemini') {
+      chatBox.style.boxShadow = '0 0 25px rgba(6,182,212,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-cyan-500/30', 'bg-cyan-950/5'); }
+    } else if (mode === 'qwen') {
+      chatBox.style.boxShadow = '0 0 25px rgba(168,85,247,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-purple-500/30', 'bg-purple-950/5'); }
+    } else if (mode === 'all') {
+      chatBox.classList.add('aura-rainbow');
+      if (inputContainer) { inputContainer.classList.add('border-white/20', 'bg-zinc-900/5', 'aura-rainbow'); }
+    }
+  };
+
+  // Hook
+  if (typeof window.setAIMode !== 'undefined') {
+    const orig = window.setAIMode;
+    window.setAIMode = function(m) {
+      orig(m);
+      window.updateRoomAura(m);
+      const meanings = {'deepseek':'🧠 Teal = Wisdom','gemini':'👵 Cyan = Creativity','qwen':'📊 Purple = Integrity','all':'🎻 Rainbow = Unity'};
+      const tooltip = document.getElementById('aura-meaning');
+      if(tooltip && meanings[m]) {
+        tooltip.innerText = meanings[m];
+        tooltip.parentElement.style.opacity = '1';
+        setTimeout(() => { tooltip.parentElement.style.opacity = '0'; }, 2500);
+      }
+    };
+  }
+
+</script>
+    <script src="https://unpkg.com/lucide@latest">
+  // 🎨 Dream Team Aura System
+  window.updateRoomAura = function(mode) {
+    const chatBox = document.getElementById('ai-chat-box');
+    const inputEl = document.getElementById('ai-input-ghost') || document.getElementById('ai-input');
+    const inputContainer = inputEl ? inputEl.closest('div[class*="flex"]') : null;
+    if (!chatBox) return;
+
+    // Reset
+    chatBox.style.boxShadow = '';
+    chatBox.classList.remove('aura-rainbow');
+    if (inputContainer) {
+      inputContainer.classList.remove('border-teal-500/30', 'bg-teal-950/5', 'border-cyan-500/30', 'bg-cyan-950/5', 'border-purple-500/30', 'bg-purple-950/5', 'border-white/20', 'bg-zinc-900/5', 'aura-rainbow');
+    }
+
+    // Apply
+    if (mode === 'deepseek') {
+      chatBox.style.boxShadow = '0 0 25px rgba(13,148,136,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-teal-500/30', 'bg-teal-950/5'); }
+    } else if (mode === 'gemini') {
+      chatBox.style.boxShadow = '0 0 25px rgba(6,182,212,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-cyan-500/30', 'bg-cyan-950/5'); }
+    } else if (mode === 'qwen') {
+      chatBox.style.boxShadow = '0 0 25px rgba(168,85,247,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-purple-500/30', 'bg-purple-950/5'); }
+    } else if (mode === 'all') {
+      chatBox.classList.add('aura-rainbow');
+      if (inputContainer) { inputContainer.classList.add('border-white/20', 'bg-zinc-900/5', 'aura-rainbow'); }
+    }
+  };
+
+  // Hook
+  if (typeof window.setAIMode !== 'undefined') {
+    const orig = window.setAIMode;
+    window.setAIMode = function(m) {
+      orig(m);
+      window.updateRoomAura(m);
+      const meanings = {'deepseek':'🧠 Teal = Wisdom','gemini':'👵 Cyan = Creativity','qwen':'📊 Purple = Integrity','all':'🎻 Rainbow = Unity'};
+      const tooltip = document.getElementById('aura-meaning');
+      if(tooltip && meanings[m]) {
+        tooltip.innerText = meanings[m];
+        tooltip.parentElement.style.opacity = '1';
+        setTimeout(() => { tooltip.parentElement.style.opacity = '0'; }, 2500);
+      }
+    };
+  }
+
+</script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #10b981; --bg: #010409; --glass: rgba(255,255,255,0.03); }
@@ -25,11 +119,24 @@
         #lockdown { position: fixed; inset: 0; background: rgba(1,2,6,0.98); z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         #ghost-tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-        @keyframes slideNav { 
-    0%, 100% { transform: translateX(-15%); } 
+        @keyframes slideNav { 0%, 100% { transform: translateX(-15%); } 50% { transform: translateX(15%); } } 
     50% { transform: translateX(15%); } 
 } 50% { transform: translateX(3%); } }
         .animate-slide { animation: slideNav 7s infinite ease-in-out; will-change: transform; }
+    
+        /* 🎨 Dream Team Aura: Rainbow Gradient for Orchestra */
+        @keyframes aura-rainbow {
+            0% { border-color: #0d9488; box-shadow: 0 0 25px rgba(13,148,136,0.15); }
+            25% { border-color: #06b6d4; box-shadow: 0 0 25px rgba(6,182,212,0.15); }
+            50% { border-color: #a855f7; box-shadow: 0 0 25px rgba(168,85,247,0.15); }
+            75% { border-color: #ec4899; box-shadow: 0 0 25px rgba(236,72,153,0.15); }
+            100% { border-color: #0d9488; box-shadow: 0 0 25px rgba(13,148,136,0.15); }
+        }
+        .aura-rainbow {
+            animation: aura-rainbow 4s linear infinite;
+            will-change: border-color, box-shadow;
+        }
+
     </style>
 </head>
 <body class="select-none">
@@ -71,7 +178,7 @@
     <div id="app" class="hidden flex-col h-full bg-[#010409]">
         <!-- HEADER DENGAN LOGO DREAM OS -->
         <header class="pt-8 pb-3 px-6 text-center relative z-40 bg-gradient-to-b from-[#010409] to-transparent">
-            <img src="assets/logo-sultan.png" class="w-12 h-12 mx-auto rounded-2xl border border-amber-500/20 shadow-lg mb-2" onclick="tapLogo()" style="cursor:pointer;touch-action:manipulation;z-index:10001;position:relative;">
+            <img src="assets/logo-sultan.png" class="w-12 h-12 mx-auto rounded-2xl border border-amber-500/20 shadow-lg mb-2" onclick="tapLogo()" style="cursor:pointer;touch-action:manipulation;z-index:10001;position:relative;"><div id="tap-counter" class="text-[8px] text-teal-400 font-mono opacity-0 transition-opacity duration-200" style="position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);">Tap 0/7</div>
             <div id="tap-counter" class="text-[8px] text-teal-400 font-mono opacity-0 transition-opacity duration-200" style="position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);">Tap 0/7</div>
 
             <h1 class="text-2xl font-bold text-white arabic-glow" style="font-family:'Amiri',serif">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
@@ -80,7 +187,7 @@
 
         <!-- SLIDE 7 DETIK DI BAWAH HEADER -->
         <div class="px-6 py-2 overflow-hidden">
-            <div class="flex gap-4 animate-slide whitespace-nowrap min-w-[200%] text-[10px] text-white/30 uppercase tracking-widest font-bold" id="info-slider">
+            <div class="flex gap-4 animate-slide whitespace-nowrap min-w-[200%] min-w-[200%] text-[10px] text-white/30 uppercase tracking-widest font-bold" id="info-slider">
                 <span>👋 Selamat datang di Dream OS</span>
                 <span>•</span>
                 <span id="slide-booking">📅 Booking: ...</span>
@@ -130,7 +237,54 @@
         </nav>
     </div>
 
-    <script src="core.js"></script>
+    <script src="core.js">
+  // 🎨 Dream Team Aura System
+  window.updateRoomAura = function(mode) {
+    const chatBox = document.getElementById('ai-chat-box');
+    const inputEl = document.getElementById('ai-input-ghost') || document.getElementById('ai-input');
+    const inputContainer = inputEl ? inputEl.closest('div[class*="flex"]') : null;
+    if (!chatBox) return;
+
+    // Reset
+    chatBox.style.boxShadow = '';
+    chatBox.classList.remove('aura-rainbow');
+    if (inputContainer) {
+      inputContainer.classList.remove('border-teal-500/30', 'bg-teal-950/5', 'border-cyan-500/30', 'bg-cyan-950/5', 'border-purple-500/30', 'bg-purple-950/5', 'border-white/20', 'bg-zinc-900/5', 'aura-rainbow');
+    }
+
+    // Apply
+    if (mode === 'deepseek') {
+      chatBox.style.boxShadow = '0 0 25px rgba(13,148,136,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-teal-500/30', 'bg-teal-950/5'); }
+    } else if (mode === 'gemini') {
+      chatBox.style.boxShadow = '0 0 25px rgba(6,182,212,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-cyan-500/30', 'bg-cyan-950/5'); }
+    } else if (mode === 'qwen') {
+      chatBox.style.boxShadow = '0 0 25px rgba(168,85,247,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-purple-500/30', 'bg-purple-950/5'); }
+    } else if (mode === 'all') {
+      chatBox.classList.add('aura-rainbow');
+      if (inputContainer) { inputContainer.classList.add('border-white/20', 'bg-zinc-900/5', 'aura-rainbow'); }
+    }
+  };
+
+  // Hook
+  if (typeof window.setAIMode !== 'undefined') {
+    const orig = window.setAIMode;
+    window.setAIMode = function(m) {
+      orig(m);
+      window.updateRoomAura(m);
+      const meanings = {'deepseek':'🧠 Teal = Wisdom','gemini':'👵 Cyan = Creativity','qwen':'📊 Purple = Integrity','all':'🎻 Rainbow = Unity'};
+      const tooltip = document.getElementById('aura-meaning');
+      if(tooltip && meanings[m]) {
+        tooltip.innerText = meanings[m];
+        tooltip.parentElement.style.opacity = '1';
+        setTimeout(() => { tooltip.parentElement.style.opacity = '0'; }, 2500);
+      }
+    };
+  }
+
+</script>
     <script>
         const HQ = { lat: -6.4172, lon: 106.8302 };
         const RADIUS_KM = 2.0;
@@ -373,6 +527,53 @@ updateSlider();
         localStorage.setItem('ghost_ai_hint_shown', 'true');
       }
     }, 3000);
+  }
+
+
+  // 🎨 Dream Team Aura System
+  window.updateRoomAura = function(mode) {
+    const chatBox = document.getElementById('ai-chat-box');
+    const inputEl = document.getElementById('ai-input-ghost') || document.getElementById('ai-input');
+    const inputContainer = inputEl ? inputEl.closest('div[class*="flex"]') : null;
+    if (!chatBox) return;
+
+    // Reset
+    chatBox.style.boxShadow = '';
+    chatBox.classList.remove('aura-rainbow');
+    if (inputContainer) {
+      inputContainer.classList.remove('border-teal-500/30', 'bg-teal-950/5', 'border-cyan-500/30', 'bg-cyan-950/5', 'border-purple-500/30', 'bg-purple-950/5', 'border-white/20', 'bg-zinc-900/5', 'aura-rainbow');
+    }
+
+    // Apply
+    if (mode === 'deepseek') {
+      chatBox.style.boxShadow = '0 0 25px rgba(13,148,136,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-teal-500/30', 'bg-teal-950/5'); }
+    } else if (mode === 'gemini') {
+      chatBox.style.boxShadow = '0 0 25px rgba(6,182,212,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-cyan-500/30', 'bg-cyan-950/5'); }
+    } else if (mode === 'qwen') {
+      chatBox.style.boxShadow = '0 0 25px rgba(168,85,247,0.15)';
+      if (inputContainer) { inputContainer.classList.add('border-purple-500/30', 'bg-purple-950/5'); }
+    } else if (mode === 'all') {
+      chatBox.classList.add('aura-rainbow');
+      if (inputContainer) { inputContainer.classList.add('border-white/20', 'bg-zinc-900/5', 'aura-rainbow'); }
+    }
+  };
+
+  // Hook
+  if (typeof window.setAIMode !== 'undefined') {
+    const orig = window.setAIMode;
+    window.setAIMode = function(m) {
+      orig(m);
+      window.updateRoomAura(m);
+      const meanings = {'deepseek':'🧠 Teal = Wisdom','gemini':'👵 Cyan = Creativity','qwen':'📊 Purple = Integrity','all':'🎻 Rainbow = Unity'};
+      const tooltip = document.getElementById('aura-meaning');
+      if(tooltip && meanings[m]) {
+        tooltip.innerText = meanings[m];
+        tooltip.parentElement.style.opacity = '1';
+        setTimeout(() => { tooltip.parentElement.style.opacity = '0'; }, 2500);
+      }
+    };
   }
 
 </script>
