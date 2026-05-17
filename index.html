@@ -193,7 +193,72 @@
             { label: '1001 Shalawat', icon: 'heart', color: 'text-pink-400', action: () => {
                 log('🕌 1001 Shalawat Payload Sent.\nاَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ\n(Divine Protocol Accepted)');
             }},
-            { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
+            
+          { label: 'Threat Simulator', icon: 'flask-conical', color: 'text-orange-400', action: () => {
+              const tests = [
+                  { name: 'Vault Brute Force', fn: () => { for(let i=0;i<6;i++) DreamEventBus.emit('vault:unlock-failed'); return '6x vault fail triggered. Cek Immune response.'; } },
+                  { name: 'Role Violation', fn: () => { DreamEventBus.emit('web:vibration', { sensorId: 'role-violation', detail: { tab: 'approval' }, count: 3 }); return 'Role violation simulated.'; } },
+                  { name: 'Integrity Breach', fn: () => { DreamEventBus.emit('integrity:breach', [{ file: 'test.js' }]); return 'Breach simulated. Cek Vault lock.'; } },
+              ];
+              const msg = tests.map(t => `${t.name}: ${t.fn()}`).join('\n');
+              log('🧪 Threat Simulation:\n' + msg);
+          }},
+          { label: 'System Health', icon: 'activity', color: 'text-cyan-400', action: () => {
+              const h = [
+                  '📊 SYSTEM HEALTH',
+                  '───',
+                  '🛡️ Integrity: ' + (typeof DreamIntegrity !== 'undefined' ? 'Active' : 'Offline'),
+                  '🔒 Vault: ' + (typeof DreamVault !== 'undefined' ? (DreamVault.isLocked ? 'Locked' : 'Unlocked') : 'Offline'),
+                  '💀 Dead Man: ' + (typeof DreamDeadMan !== 'undefined' ? (DreamDeadMan.isArmed ? 'Armed' : 'Disarmed') : 'Offline'),
+                  '🕷️ DreamWeb: Lvl ' + (typeof DreamWeb !== 'undefined' ? DreamWeb.escalationLevel : '?'),
+                  '🧠 Sentinel: ' + (typeof DreamSentinel !== 'undefined' ? 'Session '+DreamSentinel.sessionId.slice(0,8) : 'Offline'),
+                  '📱 Fingerprint: ' + (typeof DreamFingerprint !== 'undefined' ? (DreamFingerprint.isOwnerDevice ? 'Owner' : 'Unknown') : 'Offline'),
+                  '───',
+                  '💾 localStorage: ' + localStorage.length + ' keys',
+                  '📝 Audit: ' + (JSON.parse(localStorage.getItem('dreamos_audit')||'[]')).length + ' entries',
+                  '📅 Bookings: ' + (JSON.parse(localStorage.getItem('dreamos_bookings')||'[]')).length,
+                  '🦺 K3: ' + (JSON.parse(localStorage.getItem('dreamos_k3_reports')||'[]')).length,
+              ].join('\n');
+              log(h);
+          }},
+          { label: 'Backup Manager', icon: 'archive', color: 'text-purple-400', action: () => {
+              const choice = confirm('OK=Backup (download JSON)\nCancel=Restore (upload JSON)');
+              if (choice) {
+                  const backup = {};
+                  for (let i=0; i<localStorage.length; i++) {
+                      const k = localStorage.key(i);
+                      backup[k] = localStorage.getItem(k);
+                  }
+                  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = 'dreamos-backup-' + new Date().toISOString().slice(0,10) + '.json';
+                  a.click();
+                  log('💾 Backup downloaded.');
+              } else {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.json';
+                  input.onchange = (e) => {
+                      const file = e.target.files[0];
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                          try {
+                              const data = JSON.parse(ev.target.result);
+                              if (confirm('Restore ' + Object.keys(data).length + ' keys? Ini akan menimpa data saat ini.')) {
+                                  localStorage.clear();
+                                  Object.entries(data).forEach(([k,v]) => localStorage.setItem(k, v));
+                                  log('✅ Restore complete. Reloading...');
+                                  setTimeout(() => location.reload(), 1000);
+                              }
+                          } catch(err) { log('❌ Invalid JSON'); }
+                      };
+                      reader.readAsText(file);
+                  };
+                  input.click();
+              }
+          }},
+          { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
                 if (confirm('⚠️ Hapus SEMUA data? Ini tidak bisa dikembalikan!')) {
                     localStorage.clear();
                     sessionStorage.clear();
