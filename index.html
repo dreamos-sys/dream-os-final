@@ -21,9 +21,8 @@
         #lockdown { position: fixed; inset: 0; background: rgba(1,2,6,0.98); z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         #ghost-tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-        @media (prefers-reduced-motion: reduce) {
-            .pulse, .slide-up { animation: none !important; opacity: 1 !important; transform: none !important; }
-        }
+        @keyframes slideNav { 0%, 100% { transform: translateX(-3%); } 50% { transform: translateX(3%); } }
+        .animate-slide { animation: slideNav 7s infinite ease-in-out; }
     </style>
 </head>
 <body class="select-none">
@@ -36,7 +35,7 @@
 
     <section id="login" class="fixed inset-0 z-50 bg-[#010409] flex flex-col items-center justify-center p-6 transition-opacity duration-500">
         <div class="text-center mb-10 slide-up">
-            <img id="logo-sultan" src="assets/logo-sultan.png" onclick="tapLogo()" class="w-24 h-24 mx-auto rounded-3xl border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-3xl border border-amber-500/20 shadow-2xl mb-6" onerror="this.style.display='none'">
             <p class="text-4xl font-bold text-white arabic-glow" style="font-family:'Amiri',serif">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
             <p class="text-sm text-emerald-500/70 mt-2 italic" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
         </div>
@@ -63,35 +62,74 @@
     </div>
 
     <div id="app" class="hidden flex-col h-full bg-[#010409]">
-        <header class="pt-12 pb-6 px-6 text-center space-y-2 relative z-40 bg-gradient-to-b from-[#010409] to-transparent">
-            <h1 class="text-4xl font-bold text-white arabic-glow" style="font-family: 'Amiri', serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
-            <p class="text-sm text-emerald-500 italic opacity-80" style="font-family: 'Amiri', serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
-            <div class="absolute top-6 right-6 flex items-center gap-2">
-                <p id="geo-loading" class="text-[8px] text-emerald-400/70 uppercase font-bold tracking-widest animate-pulse">📡 Detecting...</p>
-                <p id="geo" class="hidden text-[8px] text-white/30 uppercase font-bold tracking-widest">Scanning</p>
-                <div id="led" class="w-2 h-2 rounded-full bg-amber-500 pulse"></div>
-            </div>
+        <!-- HEADER DENGAN LOGO DREAM OS -->
+        <header class="pt-8 pb-3 px-6 text-center relative z-40 bg-gradient-to-b from-[#010409] to-transparent">
+            <img src="assets/logo-sultan.png" class="w-12 h-12 mx-auto rounded-2xl border border-amber-500/20 shadow-lg mb-2" onclick="tapLogo()">
+            <h1 class="text-2xl font-bold text-white arabic-glow" style="font-family:'Amiri',serif">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h1>
+            <p class="text-xs text-emerald-500/70 italic" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
         </header>
+
+        <!-- SLIDE 7 DETIK DI BAWAH HEADER -->
+        <div class="px-6 py-2 overflow-hidden">
+            <div class="flex gap-4 animate-slide whitespace-nowrap text-[10px] text-white/30 uppercase tracking-widest font-bold">
+                <span>🏢 Facility Management System</span>
+                <span>•</span>
+                <span>📅 Booking Online</span>
+                <span>•</span>
+                <span>🛡️ ISO 27001</span>
+                <span>•</span>
+                <span>🤖 AI Ready</span>
+                <span>•</span>
+                <span>🕌 Shalat Jumat Friendly</span>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
         <main id="viewport" class="flex-1 overflow-y-auto px-6 pb-32 space-y-6 hide-scroll">
             <div class="glass rounded-2xl p-4 slide-up" style="animation-delay:0.1s">
                 <p class="text-[9px] text-white/50 leading-relaxed text-center uppercase tracking-widest font-bold">
                     <span class="text-amber-400">Status:</span> UI Prototype • Client-Side Only
                 </p>
             </div>
+            <!-- 9 MODUL GRID -->
             <div id="grid" class="grid grid-cols-3 gap-3 slide-up" style="animation-delay:0.2s"></div>
         </main>
+
+        <!-- NAVIGASI 5 TOMBOL -->
+        <nav class="fixed bottom-0 inset-x-0 h-24 px-4 flex justify-center items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/95 to-transparent">
+            <div class="flex w-full max-w-md justify-between items-center">
+                <button onclick="navAlert('HOME')" class="text-emerald-400 flex flex-col items-center gap-1 active:scale-90 transition">
+                    <i data-lucide="home" class="w-5 h-5"></i><span class="text-[8px] font-bold">HOME</span>
+                </button>
+                <button onclick="navAlert('PROFILE')" class="text-white/40 flex flex-col items-center gap-1 active:scale-90 transition">
+                    <i data-lucide="user" class="w-5 h-5"></i><span class="text-[8px] font-bold">PROFILE</span>
+                </button>
+                <button onclick="navAlert('QR')" class="text-white/40 flex flex-col items-center gap-1 active:scale-90 transition">
+                    <i data-lucide="qr-code" class="w-5 h-5"></i><span class="text-[8px] font-bold">QR</span>
+                </button>
+                <button onclick="navAlert('ABOUT')" class="text-white/40 flex flex-col items-center gap-1 active:scale-90 transition">
+                    <i data-lucide="info" class="w-5 h-5"></i><span class="text-[8px] font-bold">ABOUT</span>
+                </button>
+                <button onclick="navAlert('SETTING')" class="text-white/40 flex flex-col items-center gap-1 active:scale-90 transition">
+                    <i data-lucide="settings" class="w-5 h-5"></i><span class="text-[8px] font-bold">SETTING</span>
+                </button>
+            </div>
+        </nav>
     </div>
 
     <script src="core.js"></script>
     <script>
-        // ==================== KONFIGURASI ====================
         const HQ = { lat: -6.4172, lon: 106.8302 };
         const RADIUS_KM = 2.0;
         const MODULES = [
-            { id: 'cmd', label: 'CMD', icon: 'terminal' }, { id: 'book', label: 'BOOK', icon: 'calendar' },
-            { id: 'k3', label: 'K3', icon: 'shield-alert' }, { id: 'sec', label: 'SEC', icon: 'lock' },
-            { id: 'in', label: 'IN', icon: 'log-in' }, { id: 'out', label: 'OUT', icon: 'log-out' },
-            { id: 'stok', label: 'STOK', icon: 'package' }, { id: 'maint', label: 'MAINT', icon: 'wrench' },
+            { id: 'cmd', label: 'CMD', icon: 'terminal' },
+            { id: 'book', label: 'BOOK', icon: 'calendar' },
+            { id: 'k3', label: 'K3', icon: 'shield-alert' },
+            { id: 'sec', label: 'SEC', icon: 'lock' },
+            { id: 'in', label: 'IN', icon: 'log-in' },
+            { id: 'out', label: 'OUT', icon: 'log-out' },
+            { id: 'stok', label: 'STOK', icon: 'package' },
+            { id: 'maint', label: 'MAINT', icon: 'wrench' },
             { id: 'asset', label: 'ASSET', icon: 'building' }
         ];
 
@@ -99,66 +137,6 @@
             { label: 'Eruda Debug', icon: 'terminal', color: 'text-emerald-400', action: () => {
                 let s = document.createElement('script'); s.src = '//cdn.jsdelivr.net/npm/eruda';
                 document.body.appendChild(s); s.onload = () => { eruda.init(); eruda.show(); toggleGhost(); };
-            }},
-            { label: 'Cookie Inspector', icon: 'cookie', color: 'text-amber-400', action: () => {
-                const cookies = document.cookie || '(tidak ada cookie)';
-                log(`🍪 Cookies:\n${cookies}`);
-            }},
-            { label: 'Session Vault', icon: 'key', color: 'text-cyan-400', action: () => {
-                const items = [];
-                for (let i = 0; i < sessionStorage.length; i++) {
-                    const k = sessionStorage.key(i);
-                    items.push(`${k}: ${sessionStorage.getItem(k).substring(0, 50)}...`);
-                }
-                log(`🔐 Session Storage:\n${items.join('\n') || '(kosong)'}`);
-            }},
-            { label: 'Local DB Explorer', icon: 'database', color: 'text-purple-400', action: () => {
-                const items = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const k = localStorage.key(i);
-                    items.push(`${k}: ${localStorage.getItem(k).substring(0, 50)}...`);
-                }
-                log(`🗄️ Local Storage:\n${items.join('\n') || '(kosong)'}`);
-            }},
-            { label: 'Hash Calculator', icon: 'hash', color: 'text-blue-400', action: async () => {
-                const input = prompt('Masukkan teks untuk di-hash (SHA-256):');
-                if (!input) return;
-                const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
-                const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-                log(`🔢 SHA-256:\n${hex}`);
-            }},
-            { label: 'Password Generator', icon: 'lock', color: 'text-rose-400', action: () => {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-                const pass = Array.from({length:16}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-                log(`🔑 Generated Password:\n${pass}`);
-            }},
-            { label: 'Network Probe', icon: 'globe', color: 'text-teal-400', action: async () => {
-                const url = prompt('Masukkan URL untuk probe:');
-                if (!url) return;
-                try {
-                    const res = await fetch(url, { method: 'HEAD' });
-                    log(`🌐 ${url}\nStatus: ${res.status} ${res.statusText}\nHeaders: ${res.headers.get('content-type') || 'N/A'}`);
-                } catch(e) {
-                    log(`🌐 ${url}\nError: ${e.message}`);
-                }
-            }},
-            { label: 'Geo Intel', icon: 'map-pin', color: 'text-emerald-400', action: () => {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const dist = haversine(pos.coords.latitude, pos.coords.longitude, HQ.lat, HQ.lon);
-                    log(`📍 Koordinat: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}\n📏 Jarak ke GDC: ${dist.toFixed(2)} km`);
-                }, () => log('📍 GPS tidak tersedia.'));
-            }},
-            { label: '1001 Shalawat', icon: 'heart', color: 'text-pink-400', action: () => {
-                log('🕌 1001 Shalawat Payload Sent.\nاَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ\n(Divine Protocol Accepted)');
-            }},
-            { label: 'Threat Simulator', icon: 'flask-conical', color: 'text-orange-400', action: () => {
-                const tests = [
-                    { name: 'Vault Brute Force', fn: () => { for(let i=0;i<6;i++) DreamEventBus.emit('vault:unlock-failed'); return '6x vault fail triggered.'; } },
-                    { name: 'Role Violation', fn: () => { DreamEventBus.emit('web:vibration', { sensorId: 'role-violation', detail: { tab: 'approval' }, count: 3 }); return 'Role violation simulated.'; } },
-                    { name: 'Integrity Breach', fn: () => { DreamEventBus.emit('integrity:breach', [{ file: 'test.js' }]); return 'Breach simulated.'; } },
-                ];
-                const msg = tests.map(t => `${t.name}: ${t.fn()}`).join('\n');
-                log('🧪 Threat Simulation:\n' + msg);
             }},
             { label: 'System Health', icon: 'activity', color: 'text-cyan-400', action: () => {
                 const h = [
@@ -171,8 +149,6 @@
                     '📱 Fingerprint: ' + (typeof DreamFingerprint !== 'undefined' ? (DreamFingerprint.isOwnerDevice ? 'Owner' : 'Unknown') : 'Offline'),
                     '───', '💾 localStorage: ' + localStorage.length + ' keys',
                     '📝 Audit: ' + (JSON.parse(localStorage.getItem('dreamos_audit')||'[]')).length + ' entries',
-                    '📅 Bookings: ' + (JSON.parse(localStorage.getItem('dreamos_bookings')||'[]')).length,
-                    '🦺 K3: ' + (JSON.parse(localStorage.getItem('dreamos_k3_reports')||'[]')).length,
                 ].join('\n');
                 log(h);
             }},
@@ -192,11 +168,10 @@
                         reader.onload = (ev) => {
                             try {
                                 const data = JSON.parse(ev.target.result);
-                                if (confirm('Restore ' + Object.keys(data).length + ' keys? Ini akan menimpa data saat ini.')) {
+                                if (confirm('Restore ' + Object.keys(data).length + ' keys?')) {
                                     localStorage.clear();
                                     Object.entries(data).forEach(([k,v]) => localStorage.setItem(k, v));
-                                    log('✅ Restore complete. Reloading...');
-                                    setTimeout(() => location.reload(), 1000);
+                                    log('✅ Restore complete.'); setTimeout(() => location.reload(), 1000);
                                 }
                             } catch(err) { log('❌ Invalid JSON'); }
                         };
@@ -206,39 +181,18 @@
                 }
             }},
             { label: 'Quantum Shell', icon: 'terminal-square', color: 'text-green-400', action: () => {
-                const cmd = prompt('Quantum Shell v1.0\n\nPerintah tersedia:\n• DreamOS.executeAction("nama", params)\n• DreamEventBus.emit("event", data)\n• DreamMemory.addMessage("role", "isi")\n• DreamVault.lock("pass")\n• DreamSentinel.sessionId\n• dump() - lihat semua window.Dream*\n\nMasukkan kode JS:');
+                const cmd = prompt('Quantum Shell v1.0\n\nPerintah:\n• DreamOS.executeAction("nama", params)\n• DreamEventBus.emit("event", data)\n• dump()\n\nMasukkan kode JS:');
                 if (!cmd) return;
                 try {
                     if (cmd === 'dump()') {
-                        const dreamObjects = {};
-                        for (let key of Object.keys(window)) { if (key.startsWith('Dream') && typeof window[key] === 'object') { dreamObjects[key] = Object.keys(window[key]); } }
-                        log('🔍 Dream Objects:\n' + JSON.stringify(dreamObjects, null, 2));
+                        const objs = {};
+                        for (let key of Object.keys(window)) { if (key.startsWith('Dream') && typeof window[key] === 'object') { objs[key] = Object.keys(window[key]); } }
+                        log('🔍 Dream Objects:\n' + JSON.stringify(objs, null, 2));
                     } else { const result = eval(cmd); log('✅ Output:\n' + JSON.stringify(result, null, 2)); }
                 } catch(e) { log('❌ Error: ' + e.message); }
             }},
-            { label: 'Pattern Analyzer', icon: 'bar-chart-3', color: 'text-yellow-400', action: () => {
-                const patterns = JSON.parse(localStorage.getItem('immune_patterns') || '[]');
-                const audit = JSON.parse(localStorage.getItem('dreamos_audit') || '[]');
-                const alerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
-                let report = '📈 PATTERN ANALYZER\n═══\n';
-                report += '• Serangan tercatat: ' + patterns.length + '\n';
-                report += '• Audit entries: ' + audit.length + '\n';
-                report += '• Alert aktif: ' + alerts.filter(a => !a.read).length + '\n\n';
-                if (patterns.length > 0) {
-                    const last = patterns[patterns.length-1];
-                    report += 'Serangan terakhir:\n  Waktu: ' + new Date(last.time).toLocaleString() + '\n  Level: ' + last.threatLevel + '\n  Pola: ' + JSON.stringify(last.attempts).slice(0,100) + '\n';
-                }
-                const hourMap = {};
-                audit.forEach(a => { const h = new Date(a.timestamp).getHours(); hourMap[h] = (hourMap[h] || 0) + 1; });
-                const peakHour = Object.entries(hourMap).sort((a,b) => b[1]-a[1])[0];
-                if (peakHour) report += '\nJam rawan: ' + peakHour[0] + ':00 (' + peakHour[1] + ' aktivitas)\n';
-                log(report);
-            }},
             { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
-                if (confirm('⚠️ Hapus SEMUA data? Ini tidak bisa dikembalikan!')) {
-                    localStorage.clear(); sessionStorage.clear();
-                    log('☠️ All data wiped. Reloading...'); setTimeout(() => location.reload(), 1000);
-                }
+                if (confirm('⚠️ Hapus SEMUA data?')) { localStorage.clear(); sessionStorage.clear(); log('☠️ Wiped.'); setTimeout(() => location.reload(), 1000); }
             }},
         ];
 
@@ -296,18 +250,9 @@
                         geoEl.textContent = `SACRED • ${dist.toFixed(1)}KM`;
                         ledEl.className = 'w-2 h-2 rounded-full bg-emerald-500 pulse shadow-[0_0_8px_#10b981]';
                         resolve(true);
-                    } else {
-                        lockdown(`OFF-GRID: ${dist.toFixed(1)}KM`);
-                        resolve(false);
-                    }
+                    } else { lockdown(`OFF-GRID: ${dist.toFixed(1)}KM`); resolve(false); }
                 }, 
-                err => {
-                    document.getElementById('geo-loading').classList.add('hidden');
-                    const geoEl = document.getElementById('geo'); geoEl.classList.remove('hidden');
-                    geoEl.textContent = "GPS UNAVAILABLE"; geoEl.classList.replace('text-white/30', 'text-rose-500');
-                    document.getElementById('led').className = 'w-2 h-2 rounded-full bg-rose-500 pulse shadow-[0_0_8px_#f43f5e]';
-                    lockdown('GPS ERROR / DENIED'); resolve(false);
-                }, 
+                () => { lockdown('GPS ERROR / DENIED'); resolve(false); },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         });
@@ -325,21 +270,22 @@
                 </div>
             `).join('');
             lucide.createIcons();
-            log('Soul of Dream OS v1.0 Final Restored.');
+            log('Dream OS v1.0 Ready.');
         };
 
         window.openModule = (id) => { 
-            if (id === 'cmd') { 
-                window.loadModuleGeneric('command', 'js/modules/command.html'); 
-            } else if (id === 'book') { 
-                window.loadModuleGeneric('booking', 'js/modules/booking.html'); 
-            } else if (id === 'k3') { 
-                window.loadModuleGeneric('k3', 'js/modules/k3.html'); 
-            } else { 
-                log(`Module accessed: ${id.toUpperCase()}`); 
-                alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); 
-            } 
+            if (id === 'cmd') { window.loadModuleGeneric('command', 'js/modules/command.html'); }
+            else if (id === 'book') { window.loadModuleGeneric('booking', 'js/modules/booking.html'); }
+            else if (id === 'k3') { window.loadModuleGeneric('k3', 'js/modules/k3.html'); }
+            else if (id === 'maint') { window.loadModuleGeneric('maint', 'js/modules/maintenance.html'); }
+            else if (id === 'asset') { window.loadModuleGeneric('asset', 'js/modules/asset.html'); }
+            else if (id === 'stok') { window.loadModuleGeneric('stok', 'js/modules/stok.html'); }
+            else if (id === 'sec') { window.loadModuleGeneric('sec', 'js/modules/security.html'); }
+            else if (id === 'in') { window.loadModuleGeneric('in', 'js/modules/janitor-in.html'); }
+            else if (id === 'out') { window.loadModuleGeneric('out', 'js/modules/janitor-out.html'); }
+            else { log(`Module accessed: ${id.toUpperCase()}`); alert(`Membuka Modul: ${id.toUpperCase()}\n(Mode UI Demo)`); }
         };
+
         window.navAlert = (name) => { log(`Nav clicked: ${name}`); alert(`Navigasi ke: ${name}\n(Mode UI Demo)`); };
 
         let taps = 0, tapTimer;
