@@ -258,6 +258,56 @@
                   input.click();
               }
           }},
+          
+          { label: 'Quantum Shell', icon: 'terminal-square', color: 'text-green-400', action: () => {
+              const cmd = prompt('Quantum Shell v1.0\n\nPerintah tersedia:\n• DreamOS.executeAction("nama", params)\n• DreamEventBus.emit("event", data)\n• DreamMemory.addMessage("role", "isi")\n• DreamVault.lock("pass")\n• DreamSentinel.sessionId\n• dump() - lihat semua window.Dream*\n\nMasukkan kode JS:');
+              if (!cmd) return;
+              try {
+                  if (cmd === 'dump()') {
+                      const dreamObjects = {};
+                      for (let key of Object.keys(window)) {
+                          if (key.startsWith('Dream') && typeof window[key] === 'object') {
+                              dreamObjects[key] = Object.keys(window[key]);
+                          }
+                      }
+                      log('🔍 Dream Objects:\n' + JSON.stringify(dreamObjects, null, 2));
+                  } else {
+                      const result = eval(cmd);
+                      log('✅ Output:\n' + JSON.stringify(result, null, 2));
+                  }
+              } catch(e) {
+                  log('❌ Error: ' + e.message);
+              }
+          }},
+          { label: 'Pattern Analyzer', icon: 'bar-chart-3', color: 'text-yellow-400', action: () => {
+              const patterns = JSON.parse(localStorage.getItem('immune_patterns') || '[]');
+              const audit = JSON.parse(localStorage.getItem('dreamos_audit') || '[]');
+              const alerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
+              
+              let report = '📈 PATTERN ANALYZER\n═══\n';
+              report += '• Serangan tercatat: ' + patterns.length + '\n';
+              report += '• Audit entries: ' + audit.length + '\n';
+              report += '• Alert aktif: ' + alerts.filter(a => !a.read).length + '\n\n';
+              
+              if (patterns.length > 0) {
+                  const last = patterns[patterns.length-1];
+                  report += 'Serangan terakhir:\n';
+                  report += '  Waktu: ' + new Date(last.time).toLocaleString() + '\n';
+                  report += '  Level: ' + last.threatLevel + '\n';
+                  report += '  Pola: ' + JSON.stringify(last.attempts).slice(0,100) + '\n';
+              }
+              
+              // Analisis jam rawan
+              const hourMap = {};
+              audit.forEach(a => {
+                  const h = new Date(a.timestamp).getHours();
+                  hourMap[h] = (hourMap[h] || 0) + 1;
+              });
+              const peakHour = Object.entries(hourMap).sort((a,b) => b[1]-a[1])[0];
+              if (peakHour) report += '\nJam rawan: ' + peakHour[0] + ':00 (' + peakHour[1] + ' aktivitas)\n';
+              
+              log(report);
+          }},
           { label: 'Self-Destruct', icon: 'skull', color: 'text-red-500', action: () => {
                 if (confirm('⚠️ Hapus SEMUA data? Ini tidak bisa dikembalikan!')) {
                     localStorage.clear();
