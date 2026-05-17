@@ -69,9 +69,9 @@
             <p class="text-xs text-emerald-500/70 italic" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
         </header>
 
+        
         <!-- SLIDE 7 DETIK DI BAWAH HEADER -->
         <div class="px-6 py-2 overflow-hidden">
-            
             <div class="flex gap-4 animate-slide whitespace-nowrap text-[10px] text-white/30 uppercase tracking-widest font-bold" id="info-slider">
                 <span>👋 Selamat datang di Dream OS</span>
                 <span>•</span>
@@ -87,18 +87,8 @@
                 <span>•</span>
                 <span id="slide-thanks">🎉 Apresiasi: ...</span>
             </div>
-
-                <span>🏢 Facility Management System</span>
-                <span>•</span>
-                <span>📅 Booking Online</span>
-                <span>•</span>
-                <span>🛡️ ISO 27001</span>
-                <span>•</span>
-                <span>🤖 AI Ready</span>
-                <span>•</span>
-                <span>🕌 Shalat Jumat Friendly</span>
-            </div>
         </div>
+
 
         <!-- MAIN CONTENT -->
         <main id="viewport" class="flex-1 overflow-y-auto px-6 pb-32 space-y-6 hide-scroll">
@@ -320,39 +310,48 @@
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     
   function updateSlider() {
-    const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-    const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-    const maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
-    const alerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
-    const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString().slice(0,10);
-    
-    const pendingBookings = bookings.filter(b => b.status === 'pending').length;
-    const tomorrowBookings = bookings.filter(b => b.date === tomorrow).length;
-    document.getElementById('slide-booking').innerText = `📅 Booking: ${pendingBookings} pending, ${tomorrowBookings} besok`;
-    
-    const k3Pending = k3.filter(r => r.status === 'pending').length;
-    const maintPending = maintenances.filter(m => m.status !== 'selesai').length;
-    document.getElementById('slide-k3').innerText = `🦺 K3: ${k3Pending} laporan, Maint: ${maintPending} progres`;
-    
-    // Cuaca (gratis, no API key)
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.4&longitude=106.8&current_weather=true')
-      .then(r => r.json())
-      .then(data => {
-        const w = data.current_weather;
-        document.getElementById('slide-weather').innerText = `🌤️ Cuaca: ${w.temperature}°C, ${w.weathercode}`;
-      }).catch(() => {
-        document.getElementById('slide-weather').innerText = '🌤️ Cuaca: GDC';
-      });
-    
-    const latestAlert = alerts.filter(a => !a.read).slice(-1)[0];
-    document.getElementById('slide-event').innerText = latestAlert ? `📋 ${latestAlert.msg}` : '📋 Info: Tidak ada kegiatan khusus';
-    
-    document.getElementById('slide-meeting').innerText = '🏢 Rapat: Mingguan Bagian Umum (Senin 09:00)';
-    document.getElementById('slide-thanks').innerText = '🎉 Apresiasi: Terima kasih atas kerja keras!';
-  }
-  setInterval(updateSlider, 7000);
-  updateSlider();
+    try {
+        const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+        const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+        const maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
+        const alerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
+        const now = new Date();
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString().slice(0,10);
+        
+        const pendingBookings = bookings.filter(b => b.status === 'pending').length;
+        const tomorrowBookings = bookings.filter(b => b.date === tomorrow).length;
+        const elBooking = document.getElementById('slide-booking');
+        if (elBooking) elBooking.innerText = `📅 Booking: ${pendingBookings} pending, ${tomorrowBookings} besok`;
+        
+        const k3Pending = k3.filter(r => r.status === 'pending').length;
+        const maintPending = maintenances.filter(m => m.status !== 'selesai').length;
+        const elK3 = document.getElementById('slide-k3');
+        if (elK3) elK3.innerText = `🦺 K3: ${k3Pending} laporan, Maint: ${maintPending} progres`;
+        
+        fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.4&longitude=106.8&current_weather=true')
+          .then(r => r.json())
+          .then(data => {
+            const w = data.current_weather;
+            const elWeather = document.getElementById('slide-weather');
+            if (elWeather) elWeather.innerText = `🌤️ Cuaca: ${w.temperature}°C`;
+          }).catch(() => {
+            const elWeather = document.getElementById('slide-weather');
+            if (elWeather) elWeather.innerText = '🌤️ Cuaca: GDC';
+          });
+        
+        const latestAlert = alerts.filter(a => !a.read).slice(-1)[0];
+        const elEvent = document.getElementById('slide-event');
+        if (elEvent) elEvent.innerText = latestAlert ? `📋 ${latestAlert.msg}` : '📋 Info: Tidak ada kegiatan khusus';
+        
+        const elMeeting = document.getElementById('slide-meeting');
+        if (elMeeting) elMeeting.innerText = '🏢 Rapat: Mingguan Bagian Umum (Senin 09:00)';
+        
+        const elThanks = document.getElementById('slide-thanks');
+        if (elThanks) elThanks.innerText = '🎉 Apresiasi: Terima kasih atas kerja keras!';
+    } catch(e) {}
+}
+setInterval(updateSlider, 7000);
+updateSlider();
 
 </script>
 </body>
