@@ -1,0 +1,191 @@
+<div class="p-5 h-full bg-black text-slate-100 font-sans overflow-y-auto selection:bg-red-500/30">
+  
+  <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
+    <div>
+      <h2 class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-red-400 flex items-center gap-2">
+        🦺 K3 Safety Report
+      </h2>
+      <p class="text-xs text-white/40 mt-0.5">ISO 45001 • Keselamatan & Kesehatan Kerja</p>
+    </div>
+    <button onclick="document.getElementById('k3-module').style.display='none'" class="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:bg-white/10 active:scale-90 transition-all">✕</button>
+  </div>
+
+  <div class="bg-white/[0.02] backdrop-blur-md border border-white/5 p-4 rounded-2xl gap-4 flex flex-col mb-6 shadow-2xl">
+    <div id="k3-error" class="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-xs font-medium hidden"></div>
+    <div id="k3-success" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-medium hidden"></div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <input type="text" id="k3-location" placeholder="Lokasi Kejadian *" class="bg-white/5 p-3.5 rounded-xl text-xs border border-white/5 focus:border-red-500 focus:outline-none transition-all placeholder:text-white/30">
+      
+      <select id="k3-type" class="bg-white/5 p-3.5 rounded-xl text-xs border border-white/5 focus:border-red-500 focus:outline-none transition-all text-white/80">
+        <option value="">Jenis Bahaya *</option>
+        <option value="Kerusakan Fasilitas">Kerusakan Fasilitas</option>
+        <option value="Kehilangan Aset">Kehilangan Aset</option>
+        <option value="Kebersihan/Sanitasi">Kebersihan / Sanitasi</option>
+        <option value="Potensi Celaka">Potensi Celaka Fisik</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <select id="k3-risk" class="bg-white/5 p-3.5 rounded-xl text-xs border border-white/5 focus:border-red-500 focus:outline-none transition-all text-white/80">
+        <option value="Rendah">Tingkat Risiko: Rendah</option>
+        <option value="Sedang">Tingkat Risiko: Sedang</option>
+        <option value="Tinggi">⚠️ Tingkat Risiko: Tinggi</option>
+      </select>
+
+      <label class="flex items-center justify-center gap-2 bg-white/5 rounded-xl border border-white/5 p-3 cursor-pointer select-none active:scale-95 transition-all">
+        <input type="checkbox" id="k3-emergency" class="accent-red-500 h-4 w-4">
+        <span class="text-xs font-bold text-red-400 uppercase tracking-wider">Emergency!</span>
+      </label>
+    </div>
+
+    <input type="text" id="k3-photo" placeholder="URL Bukti Foto (Opsional)" class="bg-white/5 p-3.5 rounded-xl text-xs border border-white/5 focus:border-red-500 focus:outline-none transition-all placeholder:text-white/30">
+    
+    <textarea id="k3-action" placeholder="Tindakan sementara yang sudah diambil... *" class="bg-white/5 p-3.5 rounded-xl text-xs border border-white/5 focus:border-red-500 focus:outline-none transition-all h-16 resize-none placeholder:text-white/30"></textarea>
+
+    <button onclick="submitK3Report()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 py-3.5 rounded-xl font-bold text-xs tracking-wide active:scale-[0.98] transition-all shadow-lg shadow-red-900/20 text-white">
+      Kirim Laporan K3
+    </button>
+  </div>
+
+  <div class="flex justify-between items-center mb-3 px-1">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-white/50">📋 Audit K3 Log</h3>
+    <span class="text-[11px] bg-white/5 px-2.5 py-1 rounded-full text-white/60 border border-white/5" id="k3-count">0 Laporan</span>
+  </div>
+  <div id="k3-list" class="space-y-2.5 max-h-[300px] overflow-y-auto pr-1"></div>
+</div>
+
+<script>
+(function() {
+  window.k3Reports = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+
+  function saveK3Data() {
+    localStorage.setItem('dreamos_k3_reports', JSON.stringify(window.k3Reports));
+  }
+
+  window.renderK3List = function() {
+    const list = document.getElementById('k3-list');
+    if (!list) return;
+
+    document.getElementById('k3-count').innerText = window.k3Reports.length + ' Laporan';
+
+    list.innerHTML = window.k3Reports.map(function(r) {
+      let riskBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold ${r.risk === 'Tinggi' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : r.risk === 'Sedang' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}">${r.risk}</span>`;
+      let statusColor = r.status === 'approved' ? 'text-green-400' : r.status === 'reviewed' ? 'text-blue-400' : 'text-amber-400';
+
+      return `
+        <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex flex-col gap-2 relative">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-bold text-sm text-white/90">📍 ${r.location}</span>
+              <p class="text-[11px] text-white/40 mt-0.5">${r.type}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              ${riskBadge}
+              <span class="text-[10px] text-white/30 font-mono">${new Date(r.id).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <p class="text-xs text-white/60 bg-black/20 p-2.5 rounded-lg border border-white/5 italic">⚡ Tindakan: ${r.action}</p>
+          
+          <div class="flex justify-between items-center mt-1 pt-2 border-t border-white/5 text-[11px]">
+            <span>Status: <strong class="${statusColor} uppercase text-[10px]">${r.status}</strong></span>
+            <div class="flex gap-2">
+              ${r.status === 'pending' ? `<button onclick="reviewK3(${r.id})" class="text-blue-400 font-bold hover:underline">🔍 Review</button>` : ''}
+              ${r.status === 'reviewed' ? `<button onclick="approveK3(${r.id})" class="text-green-400 font-bold hover:underline">✅ Approve</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).reverse().join('');
+  };
+
+  window.submitK3Report = function() {
+    const loc = document.getElementById('k3-location').value.trim();
+    const type = document.getElementById('k3-type').value;
+    const risk = document.getElementById('k3-risk').value;
+    const isEmergency = document.getElementById('k3-emergency').checked;
+    const photo = document.getElementById('k3-photo').value.trim();
+    const action = document.getElementById('k3-action').value.trim();
+    
+    const err = document.getElementById('k3-error');
+    const succ = document.getElementById('k3-success');
+
+    if (!loc || !type || !action) {
+      err.innerText = 'Mohon isi semua field wajib (*)';
+      err.classList.remove('hidden'); succ.classList.add('hidden');
+      return;
+    }
+
+    const now = new Date();
+    const day = now.getDay();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+
+    if (!isEmergency) {
+      if (day === 0 || day === 6 || minutes < (7*60+30) || minutes > (16*60)) {
+        err.innerText = '⚠️ Di luar jam kerja (07:30-16:00). Centang Emergency untuk melanjutkan.';
+        err.classList.remove('hidden'); succ.classList.add('hidden');
+        return;
+      }
+    }
+
+    const newReport = {
+      id: Date.now(),
+      location: loc,
+      type: type,
+      risk: risk,
+      emergency: isEmergency,
+      photo: photo,
+      action: action,
+      status: 'pending',
+      reporterRole: localStorage.getItem('dreamos_role') || 'staff'
+    };
+
+    if (risk === 'Tinggi' || isEmergency) {
+      let activeAlerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
+      activeAlerts.push({
+        id: Date.now(),
+        msg: `🚨 [K3 EMERGENCY] Risiko ${risk} di ${loc}! Jenis: ${type}.`,
+        read: false
+      });
+      localStorage.setItem('dreamos_cc_alerts', JSON.stringify(activeAlerts));
+      alert("⚠️ ALARM: Risiko Tinggi! Notifikasi dikirim ke Command Center.");
+    }
+
+    window.k3Reports.push(newReport);
+    saveK3Data();
+    window.renderK3List();
+
+    document.getElementById('k3-location').value = '';
+    document.getElementById('k3-type').value = '';
+    document.getElementById('k3-action').value = '';
+    document.getElementById('k3-photo').value = '';
+    document.getElementById('k3-emergency').checked = false;
+    
+    err.classList.add('hidden');
+    succ.innerText = '✅ Laporan K3 Berhasil Disimpan!';
+    succ.classList.remove('hidden');
+  };
+
+  window.reviewK3 = function(id) {
+    const role = localStorage.getItem('dreamos_role') || 'staff';
+    if (role !== 'koordinator' && role !== 'admin' && role !== 'kabag') {
+      alert("🔒 Hanya Koordinator yang bisa mereview.");
+      return;
+    }
+    const r = window.k3Reports.find(x => x.id === id);
+    if (r) { r.status = 'reviewed'; saveK3Data(); window.renderK3List(); }
+  };
+
+  window.approveK3 = function(id) {
+    const role = localStorage.getItem('dreamos_role') || 'staff';
+    if (role !== 'kabag' && role !== 'admin') {
+      alert("🔒 Hanya Kabag yang bisa meng-approve.");
+      return;
+    }
+    const r = window.k3Reports.find(x => x.id === id);
+    if (r) { r.status = 'approved'; saveK3Data(); window.renderK3List(); }
+  };
+
+  window.renderK3List();
+})();
+</script>
