@@ -100,7 +100,7 @@
         </main>
 
         <!-- NAVIGASI 5 TOMBOL -->
-        <nav class="fixed bottom-0 inset-x-0 h-24 px-4 flex justify-center items-center z-40 bg-gradient-to-t from-[#010409] via-[#010409]/95 to-transparent">
+        <nav class="fixed bottom-0 inset-x-0 h-24 px-4 flex justify-center items-center z-10000 bg-gradient-to-t from-[#010409] via-[#010409]/95 to-transparent">
             <div class="flex w-full max-w-md justify-between items-center">
                 <button onclick="navAlert('HOME')" class="text-emerald-400 flex flex-col items-center gap-1 active:scale-90 transition">
                     <i data-lucide="home" class="w-5 h-5"></i><span class="text-[8px] font-bold">HOME</span>
@@ -319,43 +319,32 @@
     
   function updateSlider() {
     try {
-        const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-        const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-        const maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
-        const alerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
-        const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString().slice(0,10);
+        var bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+        var k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+        var maintenances = JSON.parse(localStorage.getItem('dreamos_maintenances') || '[]');
+        var alerts = JSON.parse(localStorage.getItem('dreamos_cc_alerts') || '[]');
+        var now = new Date();
+        var tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString().slice(0,10);
         
-        const pendingBookings = bookings.filter(b => b.status === 'pending').length;
-        const tomorrowBookings = bookings.filter(b => b.date === tomorrow).length;
-        const elBooking = document.getElementById('slide-booking');
-        if (elBooking) elBooking.innerText = `📅 Booking: ${pendingBookings} pending, ${tomorrowBookings} besok`;
+        var el = document.getElementById('slide-booking');
+        if (el) { var p = bookings.filter(function(b){return b.status==='pending'}).length; var t = bookings.filter(function(b){return b.date===tomorrow}).length; el.innerText = '📅 Booking: ' + p + ' pending, ' + t + ' besok'; }
         
-        const k3Pending = k3.filter(r => r.status === 'pending').length;
-        const maintPending = maintenances.filter(m => m.status !== 'selesai').length;
-        const elK3 = document.getElementById('slide-k3');
-        if (elK3) elK3.innerText = `🦺 K3: ${k3Pending} laporan, Maint: ${maintPending} progres`;
+        el = document.getElementById('slide-k3');
+        if (el) { var kp = k3.filter(function(r){return r.status==='pending'}).length; var mp = maintenances.filter(function(m){return m.status!=='selesai'}).length; el.innerText = '🦺 K3: ' + kp + ' laporan, Maint: ' + mp + ' progres'; }
         
         fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.4&longitude=106.8&current_weather=true')
-          .then(r => r.json())
-          .then(data => {
-            const w = data.current_weather;
-            const elWeather = document.getElementById('slide-weather');
-            if (elWeather) elWeather.innerText = `🌤️ Cuaca: ${w.temperature}°C`;
-          }).catch(() => {
-            const elWeather = document.getElementById('slide-weather');
-            if (elWeather) elWeather.innerText = '🌤️ Cuaca: GDC';
-          });
+          .then(function(r){return r.json()})
+          .then(function(data){ var elW = document.getElementById('slide-weather'); if (elW) elW.innerText = '🌤️ Cuaca: ' + data.current_weather.temperature + '°C'; })
+          .catch(function(){ var elW = document.getElementById('slide-weather'); if (elW) elW.innerText = '🌤️ Cuaca: GDC'; });
         
-        const latestAlert = alerts.filter(a => !a.read).slice(-1)[0];
-        const elEvent = document.getElementById('slide-event');
-        if (elEvent) elEvent.innerText = latestAlert ? `📋 ${latestAlert.msg}` : '📋 Info: Tidak ada kegiatan khusus';
+        el = document.getElementById('slide-event');
+        if (el) { var la = alerts.filter(function(a){return !a.read}).slice(-1)[0]; el.innerText = la ? '📋 ' + la.msg : '📋 Info: Tidak ada kegiatan khusus'; }
         
-        const elMeeting = document.getElementById('slide-meeting');
-        if (elMeeting) elMeeting.innerText = '🏢 Rapat: Mingguan Bagian Umum (Senin 09:00)';
+        el = document.getElementById('slide-meeting');
+        if (el) el.innerText = '🏢 Rapat: Mingguan Bagian Umum (Senin 09:00)';
         
-        const elThanks = document.getElementById('slide-thanks');
-        if (elThanks) elThanks.innerText = '🎉 Apresiasi: Terima kasih atas kerja keras!';
+        el = document.getElementById('slide-thanks');
+        if (el) el.innerText = '🎉 Apresiasi: Terima kasih atas kerja keras!';
     } catch(e) {}
 }
 setInterval(updateSlider, 7000);
