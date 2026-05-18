@@ -60,6 +60,82 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
         };
         document.addEventListener('DOMContentLoaded', initDynamicPrayer);
 
+
+        // =========================================================
+        // SEMANTIC CORE i18n & THEME ENGINE (v2.7 Alpha)
+        // =========================================================
+        window.toggleDarkMode = () => {
+            const isDark = document.documentElement.classList.toggle('dark-theme');
+            const btn = document.getElementById('live-theme');
+            if (btn) btn.textContent = isDark ? '🌙 Dark' : '☀️ Light';
+            console.log("🌓 Theme Toggled. Dark Mode state:", isDark);
+        };
+
+        let currentLang = 'ina';
+        window.toggleLang = () => {
+            const langs = ['ina', 'eng', 'chn'];
+            currentLang = langs[(langs.indexOf(currentLang) + 1) % langs.length];
+            
+            // Update Label Badge Utama
+            const langLabels = { ina: "🇮🇩 INA", eng: "🇺🇸 ENG", chn: "🇨🇳 CHN" };
+            const langBtn = document.getElementById('live-lang');
+            if (langBtn) langBtn.textContent = langLabels[currentLang];
+            
+            // Update Subtitle Profile Card
+            const versionLabels = { ina: "Limited Edition 2026", eng: "Premium Edition 2026", chn: "2026 限量特别版" };
+            const vEl = document.getElementById('live-version-label');
+            if (vEl) vEl.textContent = versionLabels[currentLang];
+            
+            // 1. Terjemahkan 9 Ikon Grid Utama pake pencarian ONCLICK (Sangat Kuat!)
+            const gridMapping = {
+                cmd: { ina: 'CMD', eng: 'CMD', chn: '数据仪表' },
+                book: { ina: 'Booking', eng: 'Booking', chn: '预约管理' },
+                k3: { ina: 'K3', eng: 'K3', chn: '安全K3' },
+                sec: { ina: 'Security', eng: 'Security', chn: '安全防卫' },
+                in: { ina: 'Janitor In', eng: 'Janitor In', chn: '室内保洁' },
+                out: { ina: 'Janitor Out', eng: 'Janitor Out', chn: '室外保洁' },
+                stok: { ina: 'Stok', eng: 'Stock', chn: '库存管理' },
+                maint: { ina: 'Maint', eng: 'Maint', chn: '系统维护' },
+                asset: { ina: 'Asset', eng: 'Asset', chn: '资产管理' }
+            };
+            Object.keys(gridMapping).forEach(id => {
+                const target = document.querySelector(`[onclick="openMod('${id}')"] div:last-child`);
+                if (target) target.textContent = gridMapping[id][currentLang];
+            });
+
+            // 2. Terjemahkan Bottom Nav Bar pake pencarian NAVALERT ONCLICK
+            const navMapping = {
+                USER: { ina: 'User', eng: 'User', chn: '用户' },
+                MENU: { ina: 'Menu', eng: 'Menu', chn: '菜单' },
+                HOME: { ina: 'Home', eng: 'Home', chn: '首页' },
+                INFO: { ina: 'Info', eng: 'Info', chn: '信息' },
+                SETTINGS: { ina: 'Set', eng: 'Settings', chn: '设置' }
+            };
+            Object.keys(navMapping).forEach(id => {
+                const target = document.querySelector(`[onclick="navAlert('${id}')"] span:last-child`);
+                if (target) target.textContent = navMapping[id][currentLang];
+            });
+
+            // 3. Terjemahkan Array Data Carousel
+            const carouselTitles = {
+                ina: ["Today's Booking", "K3 Status", "Dream AI", "Security", "Asset Mgmt", "Lightning", "Power Soul"],
+                eng: ["Today's Booking", "K3 Status", "Dream AI", "Security", "Asset Management", "Lightning Strike", "Power Soul"],
+                chn: ["今日预约", "安全K3状态", "梦想AI核心", "防卫安全", "资产管理", "雷击反击系统", "灵魂祝福"]
+            };
+            const carouselDescs = {
+                ina: ["No bookings", "All normal", "Quantum active", "Watcher active", "ISO 55001", "Strike armed", "Shalawat mapped"],
+                eng: ["No bookings", "All normal", "Quantum active", "Watcher active", "ISO 55001", "Strike armed", "Shalawat mapped"],
+                chn: ["暂无预约项", "一切指标正常", "量子核心运行中", "守卫全时监控", "符合ISO 55001标准", "反击雷电已就绪", "祝福映射完成"]
+            };
+            if (typeof slides !== 'undefined') {
+                slides.forEach((slide, i) => {
+                    if(carouselTitles[currentLang] && carouselTitles[currentLang][i]) slide.t = carouselTitles[currentLang][i];
+                    if(carouselDescs[currentLang] && carouselDescs[currentLang][i]) slide.d = carouselDescs[currentLang][i];
+                });
+                if (typeof renderSlide === 'function') renderSlide();
+            }
+        };
+
 </script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -93,7 +169,28 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
       .dark-mode nav { background-color: #1e293b !important; border-color: #334155 !important; }
       .dark-mode button:not(.bg-emerald-600):not(.bg-red-50) { background-color: #334155 !important; color: #ffffff !important; border-color: #475569 !important; }
 
+
+  /* ABSOLUTE DARK THEME ARCHITECT (v2.7) */
+  html.dark-theme, html.dark-theme body, html.dark-theme #main-app, html.dark-theme #login-screen {
+    background-color: #0f172a !important; color: #f8fafc !important;
+  }
+  html.dark-theme .glass-card, html.dark-theme .bg-gray-50, html.dark-theme .bg-gray-100 {
+    background-color: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important;
+  }
+  html.dark-theme .text-gray-900, html.dark-theme h1, html.dark-theme h2, html.dark-theme h3 {
+    color: #ffffff !important;
+  }
+  html.dark-theme .text-gray-700, html.dark-theme .text-gray-500, html.dark-theme p, html.dark-theme span {
+    color: #cbd5e1 !important;
+  }
+  html.dark-theme nav {
+    background-color: #1e293b !important; border-color: #334155 !important;
+  }
+  html.dark-theme button:not(.bg-emerald-600):not(.bg-red-50) {
+    background-color: #334155 !important; color: #ffffff !important; border-color: #475569 !important;
+  }
 </style>
+
 </head>
 <body class="bg-white h-screen flex flex-col overflow-hidden select-none">
 
@@ -140,7 +237,7 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
                     <img src="assets/logo-sultan.png" onclick="tapLogo()" class="w-9 h-9 rounded-xl drop-shadow-md cursor-pointer" onclick="tapLogo()" onerror="this.style.display='none'">
                     <div>
                         <h2 class="text-gray-900 font-bold text-sm">Dream OS <span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded ml-1">v1.0</span></h2>
-                        <p class="text-xs text-gray-500">Limited Edition 2026</p>
+                        <p class="text-xs text-gray-500" id="live-version-label">Limited Edition 2026</p>
                     </div>
                 </div>
                 <div class="flex gap-2 overflow-x-auto pb-1">
