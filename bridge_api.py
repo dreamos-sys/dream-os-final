@@ -89,3 +89,25 @@ if __name__ == '__main__':
     print(f"🔐 API Key: {API_KEY}")
     print(f"🕌 Bi idznillah — Bridge ready!\n")
     app.run(host='0.0.0.0', port=5000, debug=False)
+
+# === BIOMETRIC AUTH LAYER (Alpha) ===
+@app.route('/api/auth/biometric', methods=['POST'])
+@require_api_key
+def biometric_auth():
+    try:
+        data = request.json or {}
+        finger_hash = data.get('finger_hash')  # Dari Termux Fingerprint API
+        prayer_time = data.get('prayer_time')  # Dari jadwal shalat API
+        location = data.get('location')        # GPS coordinates
+        
+        # Validate: fingerprint + prayer time + location must match
+        if not all([finger_hash, prayer_time, location]):
+            return jsonify({"error": "Incomplete auth data"}), 400
+        
+        # Check against stored "spiritual binding"
+        stored = load_spiritual_binding()  # Dari localStorage/secure storage
+        if spiritual_match(finger_hash, prayer_time, location, stored):
+            return jsonify({"status": "authenticated", "access": "granted"}), 200
+        return jsonify({"error": "Spiritual binding mismatch"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
