@@ -115,21 +115,27 @@
         // GHOST MODE (7-tap logo)
         let taps = 0, tapTimer;
         window.tapLogo = () => {
-            taps++;
-            const counter = document.getElementById('tap-counter');
-            if (counter) { 
-                counter.textContent = 'Tap ' + taps + '/7'; 
-                counter.style.opacity = '1'; 
-                setTimeout(() => { counter.style.opacity = '0'; }, 1500); 
-            }
-            if (taps >= 7) { 
-                taps = 0; 
-                document.getElementById('ghost-hub').style.display = 'flex'; 
-                renderGhostTools(); 
-            }
-            clearTimeout(tapTimer); 
-            tapTimer = setTimeout(() => { taps = 0; }, 2000);
-        };
+    taps++;
+    const counter = document.getElementById('tap-counter');
+    if (counter) {
+        counter.textContent = 'Tap ' + taps + '/7';
+        counter.style.opacity = '1';
+        counter.style.transition = 'opacity 0.3s';
+        setTimeout(() => { counter.style.opacity = '0'; }, 1500);
+    }
+    if (taps >= 7) {
+        taps = 0;
+        const ghost = document.getElementById('ghost-hub');
+        if (ghost) {
+            ghost.style.display = 'flex';
+            renderGhostTools();
+        }
+        const mainApp = document.getElementById('main-app');
+        if (mainApp) mainApp.style.display = 'none';
+    }
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { taps = 0; }, 2000);
+};
 
         // GHOST TOOLS
         const GhostTools = [
@@ -156,12 +162,12 @@
         };
 
         const renderGhostTools = () => {
-            const grid = document.getElementById('ghost-tools-grid');
-            if (!grid) return;
-            grid.innerHTML = GhostTools.map(t => 
-                '<button onclick="(' + t.action.toString() + ')()" class="glass p-3 rounded-2xl text-center active:scale-95 transition"><span class="text-2xl">' + t.icon + '</span><p class="text-[9px] font-bold mt-1">' + t.label + '</p></button>'
-            ).join('');
-        };
+    const grid = document.getElementById('ghost-tools-grid');
+    if (!grid) return;
+    grid.innerHTML = GhostTools.map(t => 
+        '<button onclick="(' + t.action.toString() + ')()" class="glass p-3 rounded-2xl text-center active:scale-95 transition hover:bg-white/10"><span class="text-2xl">' + t.icon + '</span><p class="text-[9px] font-bold mt-1">' + t.label + '</p></button>'
+    ).join('');
+};
 
         // MODULE LOADER
         window.openMod = (id) => {
