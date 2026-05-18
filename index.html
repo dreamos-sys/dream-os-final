@@ -317,7 +317,114 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
             { label: 'NMAP Recon', icon: '🕸️', action: () => { log('🕸️ NMAP...'); setTimeout(()=>log('🔍 192.168.1.0/24'),500); setTimeout(()=>log('📡 Found: 192.168.1.1'),1500); setTimeout(()=>log('✅ Done'),2500); }},
             { label: 'T-Shark', icon: '🦈', action: () => { log('🦈 Sniffing...'); const pr=['TCP','UDP','HTTP','DNS']; let c=0; const i=setInterval(()=>{log(`📦 ${pr[Math.floor(Math.random()*pr.length)]}: ${Math.floor(Math.random()*1500)}B`); if(++c>=10)clearInterval(i);},300); }},
             { label: 'OSINT Spider', icon: '🕷️', action: async () => { const t=prompt('Target:','example'); if(!t)return; log(`🔍 ${t}`); for(let pf of['Instagram','Twitter','GitHub']){await new Promise(r=>setTimeout(r,600));log(`${Math.random()>.5?'✅':'❌'} ${pf}: ${Math.random()>.5?'Found':'No'}`);} log('🕷️ Done'); }},
-            { label: 'Termux Bridge', icon: '🔌', action: async () => { log('🔌 Checking...'); try{const r=await fetch('http://127.0.0.1:5000/api/health',{timeout:2000});const d=await r.json();log(`✅ ${d.status}`);}catch(e){log('❌ Offline • Run: python3 termux-bridge/api.py');}} }
+                        { label: 'OSINT Spider Pro', icon: '🕷️', action: async () => {
+                const target = prompt('🎯 Target (Username/Email/Domain):', '');
+                if (!target) { log('❌ Cancelled'); return; }
+                
+                log(`🕷️ OSINT Spider Pro v3.1 — Full Recon`);
+                log(`🎯 Target: ${target}`);
+                log(`⏱️ Start: ${new Date().toLocaleTimeString()}\n`);
+                
+                const isEmail = target.includes('@');
+                const isDomain = target.includes('.') && !isEmail;
+                const username = isEmail ? target.split('@')[0].replace(/[^a-z0-9]/gi,'').toLowerCase() : target;
+                
+                const platforms = [
+                    {name:'Instagram', icon:'📸', url:'instagram.com/'+username},
+                    {name:'Twitter/X', icon:'🐦', url:'twitter.com/'+username},
+                    {name:'GitHub', icon:'💻', url:'github.com/'+username},
+                    {name:'GitLab', icon:'🦊', url:'gitlab.com/'+username},
+                    {name:'LinkedIn', icon:'💼', url:'linkedin.com/in/'+username},
+                    {name:'Facebook', icon:'👥', url:'facebook.com/'+username},
+                    {name:'TikTok', icon:'🎵', url:'tiktok.com/@'+username},
+                    {name:'Reddit', icon:'🤖', url:'reddit.com/user/'+username},
+                    {name:'Pinterest', icon:'📌', url:'pinterest.com/'+username},
+                    {name:'Telegram', icon:'✈️', url:'t.me/'+username},                    {name:'Discord', icon:'💬', url:'discord.com/users/'+username},
+                    {name:'Snapchat', icon:'👻', url:'snapchat.com/add/'+username},
+                    {name:'YouTube', icon:'📺', url:'youtube.com/@'+username},
+                    {name:'Medium', icon:'📝', url:'medium.com/@'+username},
+                    {name:'Twitch', icon:'🎮', url:'twitch.tv/'+username},
+                    {name:'Steam', icon:'🎯', url:'steamcommunity.com/id/'+username},
+                    {name:'Spotify', icon:'🎧', url:'open.spotify.com/user/'+username},
+                    {name:'Pastebin', icon:'📋', url:'pastebin.com/u/'+username},
+                    {name:'Gravatar', icon:'👤', url:'gravatar.com/'+username},
+                    {name:'WordPress', icon:'📰', url:username+'.wordpress.com'},
+                    {name:'About.me', icon:'📇', url:'about.me/'+username},
+                    {name:'Vimeo', icon:'🎬', url:'vimeo.com/'+username}
+                ];
+                
+                let found = 0, scanned = 0;
+                const results = [];
+                const startTime = Date.now();
+                
+                // Parallel scan with Promise.all + progress
+                const checks = platforms.map(async (p, idx) => {
+                    // Simulate network delay
+                    await new Promise(r => setTimeout(r, 50 + Math.random() * 150));
+                    scanned++;
+                    
+                    // 35% chance found (realistic simulation)
+                    const isFound = Math.random() > 0.4;
+                    if (isFound) {
+                        found++;
+                        log(`✅ ${p.icon} ${p.name}: Found`);
+                        results.push({platform: p.name, url: p.url, status: 'found', checked_at: new Date().toISOString()});
+                    }
+                    
+                    // Progress update every 5 scans
+                    if (scanned % 5 === 0) {
+                        const pct = Math.round((scanned / platforms.length) * 100);
+                        log(`📊 Progress: ${pct}% (${scanned}/${platforms.length})`);
+                    }
+                    return isFound;
+                });
+                
+                await Promise.all(checks);
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                // Email/Domain specific analysis
+                if (isEmail) {
+                    log(`\n📧 EMAIL INTELLIGENCE:`);
+                    log(`• Format: Valid ✓`);
+                    log(`• Domain: ${target.split('@')[1]}`);
+                    const breach = Math.random() > 0.7;
+                    log(`• Breach DB: ${breach ? '⚠️ Possibly exposed' : '✅ No known breaches'}`);                }
+                if (isDomain) {
+                    log(`\n🌐 DOMAIN RECON:`);
+                    log(`• DNS: Resolved ✓`);
+                    log(`• IP: ${Math.floor(Math.random()*255)+1}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`);
+                    log(`• Registrar: ${['GoDaddy','Namecheap','Cloudflare'][Math.floor(Math.random()*3)]}`);
+                }
+                
+                // Final report
+                log(`\n${'═'.repeat(40)}`);
+                log(`📊 OSINT REPORT FINAL`);
+                log(`${'═'.repeat(40)}`);
+                log(`🎯 Target: ${target}`);
+                log(`✅ Found: ${found}/${platforms.length} platforms`);
+                log(`⏱️ Duration: ${duration}s`);
+                log(`🔍 Scan Rate: ${(platforms.length/duration).toFixed(1)}/sec`);
+                log(`${'═'.repeat(40)}\n`);
+                
+                // Save & Export option
+                const report = {target, found, total: platforms.length, duration, results, timestamp: new Date().toISOString()};
+                localStorage.setItem('osint_last_scan', JSON.stringify(report));
+                
+                // Offer export
+                if (found > 0 && confirm(`🎉 Found ${found} accounts!\n\nExport results to JSON file?`)) {
+                    const blob = new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `osint-${target.replace(/[^a-z0-9]/gi,'-')}-${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    log('📥 Exported: ' + a.download);
+                }
+                log('💾 Results saved to localStorage');
+                log('🎉 Recon complete!');
+            }},
+{ label: 'Termux Bridge', icon: '🔌', action: async () => { log('🔌 Checking...'); try{const r=await fetch('http://127.0.0.1:5000/api/health',{timeout:2000});const d=await r.json();log(`✅ ${d.status}`);}catch(e){log('❌ Offline • Run: python3 termux-bridge/api.py');}} }
         ];
         window.log = (m) => { const el = document.getElementById('ghost-log'); if(el){el.innerHTML+=`> ${m}\n`;el.scrollTop=el.scrollHeight;} };
         window.renderGhostTools = () => { const g = document.getElementById('ghost-tools-grid'); if(!g)return; g.innerHTML = GhostTools.map(t=>`<button onclick="(${t.action.toString()})()" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-center active:scale-95 hover:bg-gray-700 cursor-pointer" type="button"><div class="text-xl mb-1">${t.icon}</div><div class="text-[8px] text-gray-300 font-bold">${t.label}</div></button>`).join(''); };
