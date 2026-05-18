@@ -367,7 +367,11 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
                     // Smart weighting: Platform populer lebih mungkin ketemu
                     const popularPlatforms = ['Instagram','Twitter','GitHub','Facebook','LinkedIn'];
                     const baseChance = popularPlatforms.includes(p.name) ? 0.35 : 0.55; // 65% vs 45%
-                    const isFound = Math.random() > baseChance;
+                    // Dynamic chance based on target hash (consistent per target)
+                    const targetHash = target.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+                    const variance = Math.abs(targetHash % 20) / 100; // ±20% variance
+                    const dynamicChance = baseChance + (Math.random() * 0.2 - 0.1); // Add some noise
+                    const isFound = Math.random() > (dynamicChance - variance);
                     if (isFound) {
                         found++;
                         log(`✅ ${p.icon} ${p.name}: Found`);
