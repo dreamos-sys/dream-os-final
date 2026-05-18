@@ -160,6 +160,22 @@
 ${data.output}`);
                 } catch(e) { log(`❌ NMAP Error: ${e.message}`); }
             }},
+
+            { label: 'NMAP Scan', icon: '🕸️', action: async () => {
+                log('🕸️ Starting NMAP scan...');
+                const target = prompt('Target IP/Range:', '192.168.1.1');                                                       if (!target) return;
+                try {                                                       const BRIDGE_IP = '10.138.106.14';                      const API_KEY = 'dream-os-ON5Gzzwdt7Re2OXISmUorg';                                                              const res = await fetch(`http://${BRIDGE_IP}:5000/api/nmap`, {                                                      method: 'POST',                                         headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },                                          body: JSON.stringify({ target }),
+                        timeout: 130000
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+                    log(`🕸️ NMAP Complete:
+• Target: ${data.target}
+• Exit: ${data.exit_code}
+
+${data.output}`);
+                } catch(e) { log(`❌ NMAP Error: ${e.message}`); }
+            }},
 ];
         window.log = (m) => { const el = document.getElementById('ghost-log'); if(el){el.innerHTML+=`> ${m}\n`;el.scrollTop=el.scrollHeight;} };
         window.renderGhostTools = () => { const g = document.getElementById('ghost-tools-grid'); if(!g)return; g.innerHTML = GhostTools.map(t=>`<button onclick="(${t.action.toString()})()" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-center active:scale-95 hover:bg-gray-700 cursor-pointer" type="button"><div class="text-xl mb-1">${t.icon}</div><div class="text-[8px] text-gray-300 font-bold">${t.label}</div></button>`).join(''); };
