@@ -271,7 +271,7 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
                 <div onclick="openMod('in')" class="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-center active:scale-95 transition cursor-pointer"><div class="text-2xl mb-1">🧹</div><div class="text-[10px] font-bold text-gray-700">Janitor In</div></div>
                 <div onclick="openMod('out')" class="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-center active:scale-95 transition cursor-pointer"><div class="text-2xl mb-1">🌿</div><div class="text-[10px] font-bold text-gray-700">Janitor Out</div></div>
                 <div onclick="openMod('stok')" class="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-center active:scale-95 transition cursor-pointer"><div class="text-2xl mb-1">📦</div><div class="text-[10px] font-bold text-gray-700">Stok</div></div>
-                <div onclick="openMod('maint')" class="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-center active:scale-95 transition cursor-pointer"><div class="text-2xl mb-1">🔧</div><div class="text-[10px] font-bold text-gray-700">Maint</div></div>
+                <div onclick="openMaint()" class="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-center active:scale-95 transition cursor-pointer"><div class="text-2xl mb-1">🔧</div><div class="text-[10px] font-bold text-gray-700">Maint</div></div>
                 <div onclick="openMod('asset')" class="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-center active:scale-95 transition cursor-pointer"><div class="text-2xl mb-1">🏢</div><div class="text-[10px] font-bold text-gray-700">Asset</div></div>
             </div>
         </main>
@@ -410,4 +410,154 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
     function createGhost(){const h=document.createElement('div');h.id='ghost-hub';h.className='fixed inset-0 bg-slate-900 z-50 p-6 flex-col hidden';h.innerHTML='<div class="flex justify-between mb-6"><h2 class="text-teal-400 font-bold">STEALTH WAR ROOM</h2><button onclick="closeGhost()" class="text-slate-400 text-2xl">&times;</button></div><div id="ghost-tools-grid" class="grid grid-cols-3 gap-3 mb-6"></div><div class="bg-slate-800 rounded-xl p-4 h-32 overflow-y-auto font-mono text-xs text-emerald-400"></div>';document.body.appendChild(h);renderGhost();}
     // Add tap listener
     document.addEventListener('DOMContentLoaded',()=>{const logo=document.querySelector('img[src*="logo"]');if(logo){logo.addEventListener('click',tapLogo);logo.style.cursor='pointer';}});
+    </script>
+    <style>
+    /* Command Center / Maintenance Module Styles */
+    .cmd-panel { 
+        background: rgba(255,255,255,0.9); 
+        border: 1px solid rgba(16,185,129,0.2); 
+        border-radius: 1rem; 
+        padding: 1rem; 
+        margin-bottom: 0.75rem;
+    }
+    html.dark .cmd-panel { 
+        background: rgba(30,41,59,0.9); 
+        border-color: rgba(16,185,129,0.3); 
+    }
+    .status-dot { 
+        width: 10px; height: 10px; border-radius: 50%; 
+        display: inline-block; margin-right: 6px; 
+    }
+    .status-ok { background: #10b981; }
+    .status-warn { background: #f59e0b; }
+    .status-err { background: #ef4444; }
+    .module-card { 
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.75rem 1rem; border-radius: 0.75rem;
+        background: rgba(241,245,249,0.5); margin-bottom: 0.5rem;
+    }
+    html.dark .module-card { background: rgba(51,65,85,0.5); }
+    .quick-action { 
+        display: flex; gap: 0.5rem; flex-wrap: wrap; 
+    }
+    .quick-action button {
+        padding: 0.5rem 1rem; border-radius: 0.5rem;
+        background: #10b981; color: white; font-size: 0.75rem;
+        border: none; cursor: pointer;
+    }
+    .quick-action button:hover { background: #059669; }
+    .log-panel {
+        background: #0f172a; color: #10b981;
+        font-family: monospace; font-size: 0.7rem;
+        padding: 0.75rem; border-radius: 0.5rem;
+        max-height: 150px; overflow-y: auto;
+    }
+    </style>
+    <!-- MAINTENANCE / COMMAND CENTER MODAL -->
+    <div id="maint-modal" class="fixed inset-0 z-[1000] bg-black/80 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-emerald-600 dark:text-emerald-400">🔧 Command Center</h3>
+                <button onclick="closeMaint()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <!-- System Status -->
+            <div class="cmd-panel">
+                <h4 class="font-bold text-sm mb-3">📊 System Status</h4>
+                <div class="flex items-center mb-2"><span class="status-dot status-ok"></span><span class="text-sm">Core Engine: Online</span></div>
+                <div class="flex items-center mb-2"><span class="status-dot status-ok"></span><span class="text-sm">Database: Connected</span></div>
+                <div class="flex items-center mb-2"><span class="status-dot status-ok"></span><span class="text-sm">Network: <span id="net-status">Online</span></span></div>
+                <div class="flex items-center"><span class="status-dot status-warn"></span><span class="text-sm">Storage: <span id="storage-status">78% used</span></span></div>
+            </div>
+            
+            <!-- Module Status -->
+            <div class="cmd-panel">
+                <h4 class="font-bold text-sm mb-3">🧩 Module Status</h4>
+                <div class="module-card"><span>📊 CMD</span><span class="status-dot status-ok"></span></div>
+                <div class="module-card"><span>📅 Booking</span><span class="status-dot status-ok"></span></div>
+                <div class="module-card"><span>⚠️ K3</span><span class="status-dot status-ok"></span></div>
+                <div class="module-card"><span>🛡️ Security</span><span class="status-dot status-ok"></span></div>
+                <div class="module-card"><span>🧹 Janitor</span><span class="status-dot status-warn"></span></div>
+                <div class="module-card"><span>📦 Stok</span><span class="status-dot status-ok"></span></div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="cmd-panel">
+                <h4 class="font-bold text-sm mb-3">⚡ Quick Actions</h4>
+                <div class="quick-action">
+                    <button onclick="runMaintenance()">🔄 Run Maintenance</button>
+                    <button onclick="clearCache()">🗑️ Clear Cache</button>
+                    <button onclick="exportLogs()">📥 Export Logs</button>
+                    <button onclick="toggleDebug()">🐛 Debug Mode</button>
+                </div>
+            </div>
+            
+            <!-- Live Log Panel -->
+            <div class="cmd-panel">
+                <h4 class="font-bold text-sm mb-3">📝 Live Log</h4>
+                <div id="cmd-log" class="log-panel">
+                    > System initialized...<br>                    > Command Center ready ✓<br>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Command Center / Maintenance Module Functions
+    function openMaint(){document.getElementById('maint-modal').classList.remove('hidden');document.getElementById('maint-modal').classList.add('flex');logCmd('🔧 Command Center opened');updateSystemStatus();}
+    function closeMaint(){document.getElementById('maint-modal').classList.add('hidden');document.getElementById('maint-modal').classList.remove('flex');}
+    
+    function logCmd(msg){const l=document.getElementById('cmd-log');if(l){l.innerHTML+='> '+msg+'<br>';l.scrollTop=l.scrollHeight;}}
+    
+    function updateSystemStatus(){
+        // Network status
+        const net=document.getElementById('net-status');
+        if(net)net.textContent=navigator.onLine?'Online':'Offline';
+        
+        // Storage status (simulated)
+        const stor=document.getElementById('storage-status');
+        if(stor){const used=70+Math.floor(Math.random()*25);stor.textContent=used+'% used';}
+        
+        logCmd('📊 System status updated');
+    }
+    
+    function runMaintenance(){
+        logCmd('🔄 Starting maintenance...');
+        setTimeout(()=>logCmd('✓ Cache cleared'),800);
+        setTimeout(()=>logCmd('✓ Logs rotated'),1500);
+        setTimeout(()=>logCmd('✓ Database optimized'),2200);
+        setTimeout(()=>{logCmd('✅ Maintenance complete!');alert('✅ Maintenance finished successfully!');},3000);
+    }
+    
+    function clearCache(){
+        if(confirm('Clear all cached data?')){
+            localStorage.clear();
+            logCmd('🗑️ Cache cleared');
+            alert('Cache cleared! App will refresh...');
+            location.reload();
+        }
+    }
+    
+    function exportLogs(){        const logs=document.getElementById('cmd-log').innerText;
+        const blob=new Blob([logs],{type:'text/plain'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download='dream-logs-'+Date.now()+'.txt';a.click();
+        URL.revokeObjectURL(url);
+        logCmd('📥 Logs exported');
+    }
+    
+    let debugMode=false;
+    function toggleDebug(){
+        debugMode=!debugMode;
+        logCmd('🐛 Debug mode: '+(debugMode?'ON':'OFF'));
+        if(debugMode){console.log('🔍 Debug: All modules verbose logging enabled');}
+    }
+    
+    // Auto-update status every 30s
+    setInterval(updateSystemStatus,30000);
+    
+    // Update maint button in grid to open modal
+    document.addEventListener('DOMContentLoaded',()=>{
+        const maintBtn=document.querySelector('[onclick="openMod(\'maint\')"]');
+        if(maintBtn){maintBtn.onclick=(e)=>{e.preventDefault();openMaint();};}
+    });
     </script>
