@@ -342,6 +342,244 @@ window.clearMaintLogs = function() {
     }
 };
 
+
+// =========================================================
+// ULTIMATE INTEGRATED BOOKING SYSTEM v1.3 (Sound & K3 Rules)
+// =========================================================
+window.openBooking = function() {
+    const oldModal = document.getElementById('booking-modal');
+    if (oldModal) oldModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'booking-modal';
+    modal.className = 'fixed inset-0 z-[10000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto';
+    
+    // List item peralatan tambahan biar rapi di-render
+    const equipments = [
+        "Kursi Futura", "Kursi Chitose", "Meja Siswa", "Meja Panjang", 
+        "Meja Oshin", "Taplak Meja", "Projektor", "Screen Projektor", 
+        "TV", "Sound System", "Sound Portable", "Sound Portable Display (Karaoke)", 
+        "Mic Wireless", "AC Portable"
+    ];
+
+    const eqCheckboxes = equipments.map(eq => `
+        <label class="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700/50 text-[10px] text-slate-700 dark:text-slate-300 cursor-pointer">
+            <input type="checkbox" name="equipment" value="${eq}" class="rounded text-emerald-600 focus:ring-0">
+            <span>${eq}</span>
+        </label>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-5xl max-h-[95vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📅</span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            Form Booking Sarana 
+                            <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-normal">v1.3 Liquid Crystal</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Pusat Registrasi Pemesanan Ruangan & Inventaris</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('booking-modal').remove()" class="text-slate-400 hover:text-red-500 transition text-2xl px-2">&times;</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 bg-slate-50 dark:bg-slate-950">
+                
+                <form id="booking-form" onsubmit="window.submitBooking(event)" class="lg:col-span-7 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-1.5">📋 Detail Pengajuan</h4>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Nama Pemohon *</label>
+                            <input type="text" id="book-person" readonly value="Developer" class="w-full text-xs p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border rounded-lg outline-none font-medium">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Divisi</label>
+                            <input type="text" readonly value="developer" class="w-full text-xs p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border rounded-lg outline-none font-medium">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">No. HP *</label>
+                        <input type="text" id="book-phone" required placeholder="08xx-xxxx-xxxx" class="w-full text-xs p-2 border rounded-lg bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-emerald-500">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Pilih Sarana *</label>
+                        <select id="book-asset" required class="w-full text-xs p-2 border rounded-lg bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white outline-none">
+                            <option value="">-- Pilih Sarana --</option>
+                            <option value="Ruang Meeting Utama">🤝 Ruang Meeting Utama</option>
+                            <option value="Aula Serbaguna">🏢 Aula Serbaguna</option>
+                            <option value="Kendaraan Operasional">🚗 Kendaraan Operasional</option>
+                            <option value="Area Tamu VIP">☕ Area Tamu VIP</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Tanggal *</label>
+                            <input type="date" id="book-date" required class="w-full text-xs p-2 border rounded-lg bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white outline-none">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Jam Mulai *</label>
+                            <input type="time" id="book-time-start" required class="w-full text-xs p-2 border rounded-lg bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white outline-none">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Jam Selesai *</label>
+                            <input type="time" id="book-time-end" required class="w-full text-xs p-2 border rounded-lg bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white outline-none">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase block">Peralatan Tambahan</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[110px] overflow-y-auto border border-slate-200 dark:border-slate-700 p-2 rounded-lg bg-slate-50/50 dark:bg-slate-950/50">
+                            ${eqCheckboxes}
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Keperluan (opsional)</label>
+                        <textarea id="book-purpose" rows="2" placeholder="Jelaskan keperluan booking..." class="w-full text-xs p-2 border rounded-lg bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white outline-none resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg transition active:scale-[0.98] cursor-pointer">
+                        🚀 AJUKAN BOOKING
+                    </button>
+                </form>
+
+                <div class="lg:col-span-5 flex flex-col gap-3">
+                    <div class="bg-amber-50/60 dark:bg-slate-900 p-4 rounded-xl border border-amber-200/50 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-[10px] leading-relaxed">
+                        <h4 class="font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">ℹ️ Informasi Aturan Pangkalan:</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Jam operasional: <strong>07:30 - 16:00</strong> (Senin-Jumat)</li>
+                            <li>Sabtu: <strong>Optional</strong> (untuk team umum)</li>
+                            <li>Minggu & Tanggal Merah: <strong class="text-red-500">LIBUR</strong></li>
+                            <li>Jumat <span class="underline">10:30-13:00</span>: Aula & Serbaguna <strong>tidak tersedia</strong> (Shalat Jumat)</li>
+                            <li>Booking minimal <strong>H-1</strong></li>
+                            <li class="text-emerald-700 dark:text-emerald-400 font-medium">⚡ Sound Portable & Sound Display Karaoke tersedia!</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex-1 flex flex-col max-h-[220px] lg:max-h-none overflow-hidden">
+                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-1.5 mb-2">📊 Live Active Queue</h4>
+                        <div id="booking-list-container" class="flex-1 overflow-y-auto space-y-2 text-[11px]">
+                            </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    window.renderBookings();
+};
+
+window.renderBookings = function() {
+    const container = document.getElementById('booking-list-container');
+    if (!container) return;
+
+    let bookings = JSON.parse(localStorage.getItem('dream_os_bookings_v1') || '[]');
+    if (bookings.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-slate-400 py-6 font-mono text-[10px]">
+                📭 No bookings today<br>Pangkalan steril jaya.
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = bookings.map((b, idx) => `
+        <div class="p-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-lg">
+            <div class="flex justify-between font-bold text-emerald-600 dark:text-emerald-400 text-[10px]">
+                <span>📌 ${b.asset}</span>
+                <span>⏱️ ${b.time_start} - ${b.time_end}</span>
+            </div>
+            <p class="text-slate-600 dark:text-slate-400 mt-0.5 text-[10px] font-mono">📅 ${b.date} | ${b.purpose || '-'}</p>
+            ${b.equip && b.equip.length > 0 ? `<p class="text-[9px] text-teal-600 dark:text-teal-400 mt-1">📦 Gears: ${b.equip.join(', ')}</p>` : ''}
+        </div>
+    `).join('');
+};
+
+window.submitBooking = function(e) {
+    e.preventDefault();
+    
+    const asset = document.getElementById('book-asset').value;
+    const dateInput = document.getElementById('book-date').value;
+    const time_start = document.getElementById('book-time-start').value;
+    const time_end = document.getElementById('book-time-end').value;
+    const purpose = document.getElementById('book-purpose').value.trim();
+    
+    // Ambil checkbox peralatan tambahan yang dicentang
+    const checkedBoxes = document.querySelectorAll('input[name="equipment"]:checked');
+    const equip = Array.from(checkedBoxes).map(cb => cb.value);
+
+    // =========================================================
+    // 🛡️ ENFORCEMENT ENGINE K3: VALIDASI ATURAN SAKRAL PANGKALAN
+    // =========================================================
+    const bookDate = new Date(dateInput);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    // Rule 1: Minimal H-1 Booking
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 1);
+    if (bookDate < minDate) {
+        alert("❌ PANGKALAN REJECT: Pengajuan Booking minimal dilakukan H-1!");
+        return;
+    }
+
+    // Rule 2: Libur Hari Minggu
+    if (bookDate.getDay() === 0) {
+        alert("❌ PANGKALAN REJECT: Hari Minggu operasional LIBUR TOTAL!");
+        return;
+    }
+
+    // Rule 3: Blokade Shalat Jumat untuk Aula / Serbaguna
+    if (bookDate.getDay() === 5 && (asset === "Aula Serbaguna")) {
+        const startVal = parseInt(time_start.replace(':', ''));
+        const endVal = parseInt(time_end.replace(':', ''));
+        // Bracket jumat 10:30 (1030) sampai 13:00 (1300)
+        if ((startVal >= 1030 && startVal <= 1300) || (endVal >= 1030 && endVal <= 1300) || (startVal <= 1030 && endVal >= 1300)) {
+            alert("🕌 SHALAWAT ENFORCEMENT: Aula Serbaguna TIDAK TERSEDIA pada jam 10:30-13:00 demi kelancaran ibadah Shalat Jumat!");
+            return;
+        }
+    }
+
+    const newBooking = { asset, date: dateInput, time_start, time_end, person: "Developer", purpose, equip };
+    let bookings = JSON.parse(localStorage.getItem('dream_os_bookings_v1') || '[]');
+    bookings.unshift(newBooking);
+    localStorage.setItem('dream_os_bookings_v1', JSON.stringify(bookings));
+
+    // =========================================================
+    // 🔥 CORE SINKRONISASI: Paksa Tembak Command Center Slide 2
+    // =========================================================
+    if (window.slides && window.slides[1]) {
+        window.slides[1].d = `Latest: ${asset} - (${time_start})`;
+        if(typeof renderSlide === 'function') renderSlide();
+    }
+
+    if (window.notifySuccess) {
+        window.notifySuccess("Booking Berhasil & CMD Slide 2 Ter-update!");
+    } else {
+        alert("✅ Booking Berhasil Diajukan!");
+    }
+
+    window.renderBookings();
+    document.getElementById('booking-form').reset();
+};
+
+// Fungsi auto-link saat booting awal halaman pangkalan
+const syncBookingToCMD = () => {
+    let bookings = JSON.parse(localStorage.getItem('dream_os_bookings_v1') || '[]');
+    if (bookings.length > 0 && window.slides && window.slides[1]) {
+        window.slides[1].d = `Latest: ${bookings[0].asset} - (${bookings[0].time_start})`;
+        if(typeof renderSlide === 'function') renderSlide();
+    }
+};
+document.addEventListener('DOMContentLoaded', () => setTimeout(syncBookingToCMD, 1000));
+
 </script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
