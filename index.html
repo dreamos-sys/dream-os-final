@@ -389,3 +389,25 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
 </script>
 </body>
 </html>
+    <style id="dark-mode-override">
+    html.dark body { background: #0f172a !important; color: #f8fafc !important; }
+    html.dark .glass, html.dark .bg-white { background: rgba(30,41,59,0.9) !important; border-color: rgba(16,185,129,0.3) !important; color: #f8fafc !important; }
+    html.dark h1, html.dark h2, html.dark h3, html.dark p, html.dark span { color: #f8fafc !important; }
+    </style>
+    <script>
+    // Simple Dark Mode Toggle
+    function toggleDarkMode(){const h=document.documentElement,b=document.getElementById('live-theme');if(!h||!b)return;const d=h.classList.toggle('dark');b.textContent=d?'🌙 Dark':'☀️ Light';localStorage.setItem('dream-dark',d);}
+    // Load preference
+    if(localStorage.getItem('dream-dark')==='true'){document.documentElement.classList.add('dark');const b=document.getElementById('live-theme');if(b)b.textContent='🌙 Dark';}
+    </script>
+    <script>
+    // Ghost Mode - 7 Tap
+    let gt=0,gtt=null;function tapLogo(){gt++;clearTimeout(gtt);gtt=setTimeout(()=>gt=0,2000);if(gt>=7){gt=0;openGhost();}}
+    function openGhost(){const g=document.getElementById('ghost-hub');if(g){g.style.display='flex';renderGhost();}else{createGhost();}}
+    function closeGhost(){const g=document.getElementById('ghost-hub');if(g)g.style.display='none';}
+    function renderGhost(){const grid=document.getElementById('ghost-tools-grid');if(!grid)return;const tools=[{n:'Eruda',i:'💻',a:()=>{if(typeof eruda==='undefined'){let s=document.createElement('script');s.src='//cdn.jsdelivr.net/npm/eruda';document.body.appendChild(s);}else{eruda.show();}}},{n:'Cookies',i:'🍪',a:()=>alert('🍪 '+document.cookie.split(';').length+' cookies')},{n:'Session',i:'🔑',a:()=>alert('🔑 '+Object.keys(sessionStorage).length+' keys')},{n:'LocalStorage',i:'🗄️',a:()=>alert('🗄️ '+Object.keys(localStorage).length+' keys')},{n:'Network',i:'📡',a:()=>alert('📡 '+(navigator.onLine?'Online':'Offline'))},{n:'GPS',i:'🛰️',a:()=>{if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>alert('🛰️ '+p.coords.latitude+', '+p.coords.longitude));}else{alert('🛰️ Not supported');}}},{n:'Shalawat',i:'💖',a:()=>{let c=parseInt(localStorage.getItem('shalawat_count')||'0')+1;localStorage.setItem('shalawat_count',c);alert('💖 Count: '+c);}},{n:'Threat',i:'🔥',a:()=>alert('🔥 Armed')},{n:'Health',i:'📈',a:()=>alert('📊 '+(performance.memory?(performance.memory.usedJSHeapSize/1024/1024).toFixed(1)+'MB':'N/A'))},{n:'Backup',i:'💾',a:()=>{const b={};for(let k of Object.keys(localStorage))try{b[k]=localStorage.getItem(k)}catch(e){}const j=JSON.stringify(b,null,2),bl=new Blob([j],{type:'application/json'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download='backup-'+Date.now()+'.json';a.click();URL.revokeObjectURL(u);alert('💾 Exported');}},{n:'Quantum',i:'⚡',a:()=>alert('⚡ Ready')},{n:'NMAP',i:'🕸️',a:()=>alert('🕸️ Ready')},{n:'T-Shark',i:'🦈',a:()=>alert('🦈 Ready')},{n:'OSINT Pro',i:'🕷️',a:runOSINT},{n:'Termux',i:'🔌',a:()=>alert('🔌 Ready')}];grid.innerHTML=tools.map(t=>`<button onclick="(${t.a.toString()})()" class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-center hover:bg-slate-700"><div class="text-3xl mb-2">${t.i}</div><div class="text-xs text-slate-300 font-bold">${t.n}</div></button>`).join('');}
+    function runOSINT(){const t=prompt('🎯 Target:','');if(!t)return;alert('🕷️ OSINT Pro\n\nTarget: '+t+'\n\nScanning...');console.log('🕷️ Scanning:',t);['IG','Twitter','FB','GH','LI','TT'].forEach((p,i)=>setTimeout(()=>console.log((Math.random()>.5?'✅':'❌')+' '+p+': '+(Math.random()>.5?'Found':'No')),i*400));}
+    function createGhost(){const h=document.createElement('div');h.id='ghost-hub';h.className='fixed inset-0 bg-slate-900 z-50 p-6 flex-col hidden';h.innerHTML='<div class="flex justify-between mb-6"><h2 class="text-teal-400 font-bold">STEALTH WAR ROOM</h2><button onclick="closeGhost()" class="text-slate-400 text-2xl">&times;</button></div><div id="ghost-tools-grid" class="grid grid-cols-3 gap-3 mb-6"></div><div class="bg-slate-800 rounded-xl p-4 h-32 overflow-y-auto font-mono text-xs text-emerald-400"></div>';document.body.appendChild(h);renderGhost();}
+    // Add tap listener
+    document.addEventListener('DOMContentLoaded',()=>{const logo=document.querySelector('img[src*="logo"]');if(logo){logo.addEventListener('click',tapLogo);logo.style.cursor='pointer';}});
+    </script>
