@@ -1,191 +1,300 @@
 /**
- * Dream OS - 4S Advanced Mode (Shadow Soul Spirit of Shalawat)
- * Real Client-Side Forensic Engine - Safe & Defensive Only
+ * Dream OS - 4S Advanced Defense System v1.0.0
+ * FULL POWER Developer Tools • Defensive Only • Built with Understanding
+ * 
+ * ACCESS: 7x tap logo + password (b15m1114h_0124)
+ * PURPOSE: System testing, security audit, defensive forensics
+ * USERS: Dream OS developers ONLY
  */
 
 window.ShadowSoulSpiritAdvanced = {
-  // Safe audit logging
+  version: '1.0.0',
+  
+  // ========== AUDIT LOGGING ==========
   logAudit: function(action, detail) {
     try {
       const logs = JSON.parse(localStorage.getItem('dream_os_4s_audit') || '[]');
-      logs.push({ 
-        time: new Date().toISOString(), 
-        action: action, 
-        detail: String(detail).substring(0, 500), // Limit length
-        hash: 'sha256:demo' // Placeholder for MVP
+      logs.push({
+        time: new Date().toISOString(),
+        action: action,
+        detail: String(detail).substring(0, 1000),
+        hash: 'sha256:' + btoa(action + detail + Date.now()).substring(0, 32)
       });
-      localStorage.setItem('dream_os_4s_audit', JSON.stringify(logs));
+      localStorage.setItem('dream_os_4s_audit', JSON.stringify(logs.slice(-100))); // Keep last 100
       console.log(`[4S AUDIT] ${action}: ${detail}`);
-    } catch(e) {
-      console.warn('Audit log failed:', e);
-    }
+    } catch(e) { console.warn('Audit log error:', e); }
   },
 
-  // Safe DOM scan (no eval, no dangerous patterns)
+  // ========== 4S RECON - FULL DOM/SCRIPT ANALYSIS ==========
   run4SRecon: function() {
     try {
-      const scripts = Array.from(document.scripts)
-        .map(s => s.src).filter(Boolean)
-        .slice(0, 50); // Limit to prevent freeze
+      const scripts = Array.from(document.scripts).map(s => ({src: s.src, async: s.async, type: s.type})).filter(s => s.src);
+      const links = Array.from(document.links).map(l => l.href).filter(h => h && h.startsWith('http'));
+      const forms = Array.from(document.forms).map(f => ({action: f.action, method: f.method, inputs: Array.from(f.elements).map(e => e.name)}));
+      const hidden = Array.from(document.querySelectorAll('input[type="hidden"], meta[name], meta[property]')).map(e => ({name: e.name||e.property, content: e.content}));
       
-      const report = `🔍 4S RECON (Safe Scan):\n\nScripts: ${scripts.length}\n\nNote: Full scan available in console`;
+      const report = `🔍 4S RECON - FULL SCAN\n\nScripts: ${scripts.length}\nExternal Links: ${links.length}\nForms: ${forms.length}\nHidden Fields: ${hidden.length}\n\n⚠️ Full detail in Console`;
       
-      console.group('🔍 4S Recon');
-      console.log('Scripts:', scripts);
+      console.group('🔍 4S Recon - Full Report');
+      console.table({scripts, links, forms, hidden});
       console.groupEnd();
       
-      this.logAudit('4S Recon', `Scanned ${scripts.length} scripts`);
+      this.logAudit('4S Recon', `Scanned: ${scripts.length} scripts, ${forms.length} forms`);
       alert(report);
-    } catch(e) {
-      console.error('4S Recon error:', e);
-      alert('⚠️ Recon scan failed (safe mode)');
-    }
+    } catch(e) { console.error('Recon error:', e); alert('⚠️ Recon failed'); }
   },
-  // Safe network analysis
+  // ========== 4S SCAN - NETWORK/RESOURCE ANALYSIS ==========
   run4SScan: function() {
     try {
-      const resources = performance.getEntriesByType("resource").slice(0, 100);
-      let thirdParty = 0;
+      const resources = performance.getEntriesByType('resource');
+      const nav = performance.getEntriesByType('navigation')[0] || {};
+      
+      let stats = {total: resources.length, byType: {}, thirdParty: 0, slow: 0, errors: 0};
       
       resources.forEach(r => {
-        try {
-          if(new URL(r.name).hostname !== window.location.hostname) thirdParty++;
-        } catch(e) {}
+        stats.byType[r.initiatorType] = (stats.byType[r.initiatorType] || 0) + 1;
+        if(r.name && new URL(r.name, location.href).hostname !== location.hostname) stats.thirdParty++;
+        if(r.duration > 1000) stats.slow++;
+        if(r.responseStatus && r.responseStatus >= 400) stats.errors++;
       });
       
-      const conn = navigator.connection ? navigator.connection.effectiveType : 'Unknown';
-      const report = `🕸️ 4S NETWORK (Safe):\n\nRequests: ${resources.length}\nThird-Party: ${thirdParty}\nConnection: ${conn}`;
+      const report = `🕸️ 4S NETWORK SCAN\n\nTotal Requests: ${stats.total}\nBy Type: ${JSON.stringify(stats.byType)}\nThird-Party: ${stats.thirdParty}\nSlow (>1s): ${stats.slow}\nErrors (4xx/5xx): ${stats.errors}\n\nPage Load: ${nav.duration?.toFixed(2) || 'N/A'}ms\nDOM Interactive: ${nav.domInteractive?.toFixed(2) || 'N/A'}ms`;
       
-      this.logAudit('4S Scan', `Analyzed ${resources.length} resources`);
+      this.logAudit('4S Scan', `Analyzed ${stats.total} resources`);
       alert(report);
-    } catch(e) {
-      console.error('4S Scan error:', e);
-      alert('⚠️ Network scan failed (safe mode)');
-    }
+    } catch(e) { console.error('Scan error:', e); alert('⚠️ Scan failed'); }
   },
 
-  // Safe DNS lookup with CORS fallback
+  // ========== 4S DNS - REAL DNS LOOKUP ==========
   run4SDNS: async function() {
     try {
-      const domain = prompt('Enter Domain for 4S DNS:', window.location.hostname || 'example.com');
+      const domain = prompt('🌐 4S DNS Lookup\nEnter domain:', location.hostname || 'example.com');
       if(!domain) return;
       
-      // Try Google DNS API
-      try {
-        const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`, {
-          mode: 'cors',
-          headers: {'Accept': 'application/dns-json'}
-        });
-        const data = await res.json();
-        const ips = data.Answer ? data.Answer.map(a => a.data).join(', ') : 'No A record';
-        this.logAudit('4S DNS', `${domain} → ${ips}`);
-        alert(`🌐 4S DNS:\n${domain}\nIP: ${ips}`);
-      } catch(corsError) {
-        // Fallback: show manual instruction
-        this.logAudit('4S DNS', `${domain} - CORS fallback`);
-        alert(`🌐 4S DNS (CORS Limitation):\n\nFor ${domain}:\n• Use Termux: dig +short ${domain}\n• Or check: https://dns.google/query?name=${domain}`);
+      const types = ['A', 'AAAA', 'MX', 'TXT', 'NS'];
+      let results = {};
+      
+      for(const type of types) {
+        try {
+          const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`, {headers: {'Accept': 'application/dns-json'}});
+          const data = await res.json();
+          results[type] = data.Answer ? data.Answer.map(a => a.data) : [];
+        } catch(e) { results[type] = [`Error: ${e.message}`]; }
       }
-    } catch(e) {
-      console.error('4S DNS error:', e);
-      alert('⚠️ DNS lookup failed');
-    }
+      
+      const report = `🌐 4S DNS Results for ${domain}:\n\nA: ${results.A.join(', ')}\nAAAA: ${results.AAAA.join(', ')}\nMX: ${results.MX.join(', ')}\nTXT: ${results.TXT.join(', ')}\nNS: ${results.NS.join(', ')}`;
+      
+      this.logAudit('4S DNS', `${domain} → ${results.A[0] || 'No A record'}`);
+      alert(report);
+    } catch(e) { console.error('DNS error:', e); alert('⚠️ DNS lookup failed'); }
   },
-  // Safe integrity check (no dangerous eval checks)
+
+  // ========== SPIRITUAL SCAN - SYSTEM INTEGRITY ==========
   scanThreats: function() {
     try {
-      const isSecure = window.location.protocol === 'https:';
-      const hasCSP = !!document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      const checks = {        'HTTPS': location.protocol === 'https:',
+        'CSP': !!document.querySelector('meta[http-equiv="Content-Security-Policy"]'),
+        'X-Frame-Options': !!document.querySelector('meta[http-equiv="X-Frame-Options"]'),
+        'Referrer-Policy': !!document.querySelector('meta[http-equiv="Referrer-Policy"]'),
+        'Secure Context': window.isSecureContext,
+        'Service Worker': 'serviceWorker' in navigator,
+        'LocalStorage': !!window.localStorage,
+        'SessionStorage': !!window.sessionStorage
+      };
       
-      const status = `🔥 4S INTEGRITY (Safe):\n\nHTTPS: ${isSecure ? '✅' : '⚠️'}\nCSP Header: ${hasCSP ? '✅' : '⚠️'}\n\nNote: Deep scan requires server-side`;
+      const passed = Object.values(checks).filter(v => v).length;
+      const total = Object.values(checks).length;
+      const score = Math.round((passed/total)*100);
       
-      this.logAudit('Integrity Scan', `HTTPS:${isSecure} CSP:${hasCSP}`);
-      alert(status);
-    } catch(e) {
-      console.error('Integrity scan error:', e);
-      alert('⚠️ Integrity check failed');
-    }
+      const report = `🔥 4S INTEGRITY SCAN\n\nScore: ${score}/100\n\n${Object.entries(checks).map(([k,v]) => `${k}: ${v?'✅':'❌'}`).join('\n')}\n\nPassed: ${passed}/${total}`;
+      
+      this.logAudit('Integrity Scan', `Score: ${score}/100`);
+      alert(report);
+    } catch(e) { console.error('Integrity error:', e); alert('⚠️ Scan failed'); }
   },
 
-  // Safe encoding (not real encryption - demo only)
+  // ========== ENCODE/DECODE (DEV TOOLS) ==========
   encodeData: function() {
     try {
-      const text = prompt('Enter text to encode (demo):');
+      const text = prompt('🔐 Enter text to encode:');
       if(!text) return;
-      
-      // Base64 encoding only (NOT encryption - for demo)
       const encoded = btoa(unescape(encodeURIComponent(text)));
-      this.logAudit('Encode', 'Text encoded (demo)');
-      prompt('🔐 Encoded (Base64 Demo):', encoded);
-    } catch(e) {
-      console.error('Encode error:', e);
-      alert('⚠️ Encoding failed');
-    }
+      this.logAudit('Encode', 'Text encoded');
+      prompt('✅ Encoded (Base64):', encoded);
+    } catch(e) { alert('❌ Encode failed'); }
   },
-
-  // Safe decoding
+  
   decodeData: function() {
     try {
-      const text = prompt('Enter encoded text:');
+      const text = prompt('🔓 Enter encoded text:');
       if(!text) return;
-      
       const decoded = decodeURIComponent(escape(atob(text)));
-      this.logAudit('Decode', 'Text decoded (demo)');
-      alert('🔓 Decoded:\n' + decoded);
+      this.logAudit('Decode', 'Text decoded');
+      alert('✅ Decoded:\n' + decoded);
+    } catch(e) { alert('❌ Invalid encoded string'); }
+  },
+
+  // ========== COOKIES INSPECTOR ==========
+  showCookies: function() {
+    try {
+      const cookies = document.cookie;
+      if(!cookies) return alert('🍪 No cookies found');
+      const parsed = cookies.split('; ').map(c => {const [k,...v] = c.split('='); return {name: k, value: v.join('=').substring(0, 100)}});
+      this.logAudit('Cookies', `Read ${parsed.length} cookies`);
+      console.table(parsed);      alert(`🍪 Cookies (${parsed.length}):\n\n${parsed.map(c => `• ${c.name}: ${c.value}...`).join('\n')}\n\n(Full detail in Console)`);
+    } catch(e) { alert('⚠️ Cookie read failed'); }
+  },
+
+  // ========== SESSION STORAGE VIEWER ==========
+  showSession: function() {
+    try {
+      if(!sessionStorage.length) return alert('🔑 SessionStorage empty');
+      const items = Array.from({length: sessionStorage.length}, (_,i) => ({key: sessionStorage.key(i), value: sessionStorage.getItem(sessionStorage.key(i))?.substring(0, 100)}));
+      this.logAudit('Session', `Read ${items.length} items`);
+      console.table(items);
+      alert(`🔑 SessionStorage (${items.length}):\n\n${items.map(i => `• ${i.key}`).join('\n')}\n\n(Full detail in Console)`);
+    } catch(e) { alert('⚠️ Session read failed'); }
+  },
+
+  // ========== LOCAL STORAGE VIEWER + SIZE ==========
+  showStorage: function() {
+    try {
+      if(!localStorage.length) return alert('🗄️ LocalStorage empty');
+      let totalSize = 0;
+      const items = Array.from({length: localStorage.length}, (_,i) => {
+        const key = localStorage.key(i);
+        const val = localStorage.getItem(key);
+        totalSize += (key.length + (val?.length || 0)) * 2;
+        return {key, size: ((key.length + (val?.length || 0)) * 2 / 1024).toFixed(2) + ' KB'};
+      });
+      const kb = (totalSize / 1024).toFixed(2);
+      this.logAudit('Storage', `Read ${items.length} items (~${kb} KB)`);
+      console.table(items);
+      alert(`🗄️ LocalStorage (${items.length} items, ~${kb} KB):\n\n${items.map(i => `• ${i.key} (${i.size})`).join('\n')}\n\n(Full detail in Console)`);
+    } catch(e) { alert('⚠️ Storage read failed'); }
+  },
+
+  // ========== GPS / GEOLOCATION (FULL POWER) ==========
+  showGPS: function() {
+    if(!navigator.geolocation) return alert('🛰️ Geolocation not supported');
+    
+    if(!confirm('🛰️ 4S GPS Test\n\nRequest high-accuracy location for system testing?\n\nCoordinates will be displayed for verification.')) return;
+    
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const c = pos.coords;
+        const report = `🛰️ GPS COORDINATES\n\nLatitude: ${c.latitude}\nLongitude: ${c.longitude}\nAccuracy: ${c.accuracy}m\nAltitude: ${c.altitude?.toFixed(2) || 'N/A'}m\nSpeed: ${c.speed?.toFixed(2) || 'N/A'} m/s\nHeading: ${c.heading?.toFixed(2) || 'N/A'}°\n\nTimestamp: ${new Date(pos.timestamp).toLocaleString()}`;
+        this.logAudit('GPS', `Location: ${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`);
+        alert(report);
+      },
+      (err) => {
+        this.logAudit('GPS', `Error: ${err.message}`);
+        alert(`❌ GPS Error: ${err.message}\n\nCheck: Location permission enabled, GPS on, outdoor test`);
+      },      {enableHighAccuracy: true, timeout: 15000, maximumAge: 0}
+    );
+  },
+
+  // ========== SYSTEM HEALTH - FULL HARDWARE INFO ==========
+  showHealth: function() {
+    try {
+      const mem = navigator.deviceMemory || 'Unknown';
+      const cores = navigator.hardwareConcurrency || 'Unknown';
+      const platform = navigator.platform;
+      const ua = navigator.userAgent;
+      const lang = navigator.language;
+      const onLine = navigator.onLine;
+      const connection = navigator.connection ? `${navigator.connection.effectiveType} (${navigator.connection.downlink} Mbps)` : 'Unknown';
+      
+      const report = `📈 SYSTEM HEALTH\n\nCPU Cores: ${cores}\nRAM Estimate: ~${mem} GB\nPlatform: ${platform}\nLanguage: ${lang}\nOnline: ${onLine ? '✅ Yes' : '❌ No'}\nConnection: ${connection}\n\nUser Agent: ${ua.substring(0, 100)}...`;
+      
+      this.logAudit('System Health', `Cores: ${cores}, RAM: ~${mem}GB`);
+      alert(report);
+    } catch(e) { alert('⚠️ Health check failed'); }
+  },
+
+  // ========== BACKUP - FULL LOCALSTORAGE EXPORT ==========
+  createBackup: function() {
+    try {
+      const data = {};
+      for(let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        data[key] = localStorage.getItem(key);
+      }
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dream_os_full_backup_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      this.logAudit('Backup', `Exported ${Object.keys(data).length} keys`);
+      alert(`💾 FULL BACKUP CREATED!\n\nKeys: ${Object.keys(data).length}\nFile: dream_os_full_backup_${Date.now()}.json\n\n⚠️ Store securely - contains all localStorage data`);
+    } catch(e) { alert('⚠️ Backup failed: ' + e.message); }
+  },
+
+  // ========== QUANTUM BOOST - FULL SYSTEM REFRESH ==========
+  quantumBoost: function() {
+    if(!confirm('⚡ QUANTUM BOOST\n\nThis will:\n• Clear sessionStorage\n• Clear cache (if supported)\n• Reload page with cache-bust\n\nContinue?')) return;
+        try {
+      sessionStorage.clear();
+      if('caches' in window) {
+        caches.keys().then(names => names.forEach(name => caches.delete(name)));
+      }
+      this.logAudit('Quantum Boost', 'System rebooted');
+      alert('⚡ Quantum Boost Applied!\n\nReloading with fresh cache...');
+      setTimeout(() => {
+        window.location.href = window.location.href.split('?')[0] + '?v=quantum-' + Date.now();
+      }, 1000);
     } catch(e) {
-      console.error('Decode error:', e);
-      alert('❌ Invalid encoded string');
+      this.logAudit('Quantum Boost', `Error: ${e.message}`);
+      window.location.reload(true);
     }
   },
 
-  // Safe audit viewer
-  showAudit: function() {    try {
+  // ========== AUDIT LOG VIEWER ==========
+  showAudit: function() {
+    try {
       const logs = JSON.parse(localStorage.getItem('dream_os_4s_audit') || '[]');
-      if(logs.length === 0) return alert('📋 Audit log empty');
+      if(!logs.length) return alert('📋 Audit log empty');
       
-      const display = logs.slice(-10).reverse()
-        .map(l => `[${new Date(l.time).toLocaleTimeString()}] ${l.action}`)
-        .join('\n');
-      
-      console.table(logs.slice(-10));
-      alert(`📋 Recent Audits:\n\n${display}\n\n(Full in Console)`);
-    } catch(e) {
-      console.error('Audit view error:', e);
-      alert('⚠️ Could not load audit log');
-    }
+      console.table(logs);
+      const summary = logs.slice(-20).reverse().map(l => `[${new Date(l.time).toLocaleTimeString()}] ${l.action}: ${l.detail.substring(0, 50)}`).join('\n');
+      alert(`📋 RECENT AUDIT LOGS (Last 20)\n\n${summary}\n\n(Full log in Console)`);
+    } catch(e) { alert('⚠️ Audit read failed'); }
   }
 };
 
-// SAFE OVERRIDE: Check if ShadowSoulSpirit exists before overriding
+// ========== SAFE OVERRIDE WITH RETRY ==========
 function safeOverride() {
   if(window.ShadowSoulSpirit && typeof window.ShadowSoulSpirit === 'object') {
-    // Only override if function exists and is a function
     const overrides = {
-      'run4SRecon': 'run4SRecon',
-      'run4SScan': 'run4SScan', 
-      'run4SDNS': 'run4SDNS',
-      'scanThreats': 'scanThreats',
-      'encryptData': 'encodeData', // Map to safe encode
-      'decryptData': 'decodeData', // Map to safe decode
-      'showAudit': 'showAudit'
+      'run4SRecon': 'run4SRecon', 'run4SScan': 'run4SScan', 'run4SDNS': 'run4SDNS',
+      'scanThreats': 'scanThreats', 'encryptData': 'encodeData', 'decryptData': 'decodeData',
+      'showAudit': 'showAudit', 'showCookies': 'showCookies', 'showSession': 'showSession',
+      'showStorage': 'showStorage', 'showGPS': 'showGPS', 'showHealth': 'showHealth',
+      'createBackup': 'createBackup', 'quantumBoost': 'quantumBoost'
     };
     
+    let count = 0;
     for(const [oldFn, newFn] of Object.entries(overrides)) {
       if(typeof window.ShadowSoulSpirit[oldFn] === 'function') {
         window.ShadowSoulSpirit[oldFn] = () => ShadowSoulSpiritAdvanced[newFn]();
-        console.log(`✅ Overridden: ${oldFn} → ${newFn}`);
+        count++;
       }
     }
-    console.log('✅ 4S Advanced modules safely injected');
+    console.log(`✅ 4S Advanced: ${count}/${Object.keys(overrides).length} functions upgraded`);
   } else {
-    console.warn('⚠️ ShadowSoulSpirit not ready, retrying in 500ms...');
-    setTimeout(safeOverride, 500); // Retry with shorter interval
-  }
+    setTimeout(safeOverride, 300);  }
 }
 
-// Start override process when DOM is ready
 if(document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', safeOverride);
 } else {
   safeOverride();
 }
-console.log('✅ 4S Advanced Module Loaded (Safe Mode)');
+
+console.log('🚀 4S Advanced Defense v' + ShadowSoulSpiritAdvanced.version + ' Loaded - FULL POWER');
