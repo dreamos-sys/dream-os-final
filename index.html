@@ -292,6 +292,126 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
         document.addEventListener('DOMContentLoaded', () => {
             checkBioSupport();
         });
+    
+        // =========================================================
+        // i18n & DARK MODE TOGGLE FUNCTIONS (v2.9 FIX)
+        // =========================================================
+        
+        // Dark Mode Toggle
+        window.toggleDarkMode = () => {
+            console.log('🌓 Dark Mode Toggle Clicked!');
+            const html = document.documentElement;
+            const btn = document.getElementById('live-theme');
+            
+            if (!html || !btn) {
+                console.error('❌ Elements not found!');
+                return;
+            }
+            
+            const isDark = html.classList.toggle('dark-theme');
+            btn.textContent = isDark ? '🌙 Dark' : '☀️ Light';
+            btn.classList.toggle('bg-slate-700', isDark);
+            btn.classList.toggle('text-white', isDark);            
+            localStorage.setItem('dream-os-dark-mode', isDark);
+            console.log('🌓 Dark Mode:', isDark ? 'ON' : 'OFF');
+        };
+
+        // i18n Language Toggle
+        window.toggleLang = () => {
+            console.log('🌐 i18n Toggle Clicked!');
+            const langs = ['ina', 'eng', 'chn'];
+            let currentLang = localStorage.getItem('dream-os-lang') || 'ina';
+            currentLang = langs[(langs.indexOf(currentLang) + 1) % langs.length];
+            localStorage.setItem('dream-os-lang', currentLang);
+            
+            // Update badge
+            const langLabels = { ina: "🇮🇩 INA", eng: "🇺🇸 ENG", chn: "🇨🇳 CHN" };
+            const langBtn = document.getElementById('live-lang');
+            if (langBtn) langBtn.textContent = langLabels[currentLang];
+            
+            // Update version label
+            const versionLabels = { 
+                ina: "Limited Edition 2026", 
+                eng: "Premium Edition 2026", 
+                chn: "2026 限量特别版" 
+            };
+            const vEl = document.getElementById('live-version-label');
+            if (vEl) vEl.textContent = versionLabels[currentLang];
+            
+            // Update grid modules
+            const gridMapping = {
+                cmd: { ina: 'CMD', eng: 'CMD', chn: '数据仪表' },
+                book: { ina: 'Booking', eng: 'Booking', chn: '预约管理' },
+                k3: { ina: 'K3', eng: 'K3', chn: '安全K3' },
+                sec: { ina: 'Security', eng: 'Security', chn: '安全防卫' },
+                in: { ina: 'Janitor In', eng: 'Janitor In', chn: '室内保洁' },
+                out: { ina: 'Janitor Out', eng: 'Janitor Out', chn: '室外保洁' },
+                stok: { ina: 'Stok', eng: 'Stock', chn: '库存管理' },
+                maint: { ina: 'Maint', eng: 'Maint', chn: '系统维护' },
+                asset: { ina: 'Asset', eng: 'Asset', chn: '资产管理' }
+            };
+            
+            Object.keys(gridMapping).forEach(id => {
+                const target = document.querySelector(`[onclick="openMod('${id}')"] div:last-child`);
+                if (target) target.textContent = gridMapping[id][currentLang];
+            });
+
+            // Update nav bar
+            const navMapping = {
+                USER: { ina: 'User', eng: 'User', chn: '用户' },
+                MENU: { ina: 'Menu', eng: 'Menu', chn: '菜单' },
+                HOME: { ina: 'Home', eng: 'Home', chn: '首页' },                INFO: { ina: 'Info', eng: 'Info', chn: '信息' },
+                SETTINGS: { ina: 'Set', eng: 'Settings', chn: '设置' }
+            };
+            
+            Object.keys(navMapping).forEach(id => {
+                const target = document.querySelector(`[onclick="navAlert('${id}')"] span:last-child`);
+                if (target) target.textContent = navMapping[id][currentLang];
+            });
+
+            // Update carousel
+            const carouselTitles = {
+                ina: ["Today's Booking", "K3 Status", "Dream AI", "Security", "Asset Mgmt", "Lightning", "Power Soul"],
+                eng: ["Today's Booking", "K3 Status", "Dream AI", "Security", "Asset Management", "Lightning Strike", "Power Soul"],
+                chn: ["今日预约", "安全K3状态", "梦想AI核心", "防卫安全", "资产管理", "雷击反击系统", "灵魂祝福"]
+            };
+            const carouselDescs = {
+                ina: ["No bookings", "All normal", "Quantum active", "Watcher active", "ISO 55001", "Strike armed", "Shalawat mapped"],
+                eng: ["No bookings", "All normal", "Quantum active", "Watcher active", "ISO 55001", "Strike armed", "Shalawat mapped"],
+                chn: ["暂无预约项", "一切指标正常", "量子核心运行中", "守卫全时监控", "符合ISO 55001标准", "反击雷电已就绪", "祝福映射完成"]
+            };
+            
+            if (typeof slides !== 'undefined' && typeof renderSlide === 'function') {
+                slides.forEach((slide, i) => {
+                    if(carouselTitles[currentLang] && carouselTitles[currentLang][i]) slide.t = carouselTitles[currentLang][i];
+                    if(carouselDescs[currentLang] && carouselDescs[currentLang][i]) slide.d = carouselDescs[currentLang][i];
+                });
+                renderSlide();
+            }
+            
+            console.log('🌐 Language changed to:', currentLang);
+        };
+
+        // Load saved preferences on init
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load dark mode preference
+            const savedDark = localStorage.getItem('dream-os-dark-mode') === 'true';
+            if (savedDark) {
+                document.documentElement.classList.add('dark-theme');
+                const themeBtn = document.getElementById('live-theme');
+                if (themeBtn) themeBtn.textContent = '🌙 Dark';
+            }
+            
+            // Load language preference
+            const savedLang = localStorage.getItem('dream-os-lang') || 'ina';
+            const langBtn = document.getElementById('live-lang');
+            if (langBtn && savedLang !== 'ina') {
+                const langLabels = { ina: "🇮🇩 INA", eng: "🇺 ENG", chn: "🇨🇳 CHN" };
+                langBtn.textContent = langLabels[savedLang];
+            }
+                        console.log('✅ i18n & Dark Mode initialized');
+        });
+
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -417,7 +537,7 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
                     <div class="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] text-gray-700 flex items-center gap-1 shrink-0" id="live-prayer">☀️ Dzuhur</div>
                     <div class="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] text-gray-700 flex items-center gap-1 shrink-0" id="live-time">🕒 00:00:00</div>
                     <div class="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] text-gray-700 flex items-center gap-1 shrink-0" id="live-battery">🔋 --%</div>
-                    <button onclick="toggleLang()" class="bg-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] text-gray-600 flex items-center gap-1 shrink-0 cursor-pointer" id="live-lang">🇮🇩 INA</button><button onclick="toggleDarkMode()" class="bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] text-gray-700 flex items-center gap-1 shrink-0 cursor-pointer" id="live-theme">☀️ Light</button>
+                    <button onclick="toggleLang()" class="bg-gray-200 rounded-lg cursor-pointer px-2.5 py-1.5 text-[10px] text-gray-600 flex items-center gap-1 shrink-0 cursor-pointer" id="live-lang">🇮🇩 INA</button><button onclick="toggleDarkMode()" class="bg-gray-100 border cursor-pointer border-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] text-gray-700 flex items-center gap-1 shrink-0 cursor-pointer" id="live-theme">☀️ Light</button>
                     <button onclick="location.reload()" class="bg-red-50 border border-red-100 rounded-lg px-2.5 py-1.5 text-[10px] text-red-600 shrink-0 cursor-pointer">🚪 Logout</button>
                 </div>
             </div>
