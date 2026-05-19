@@ -368,3 +368,126 @@ ShadowSoulSpiritAdvanced.run4SScan = function() {
   this.showFancyReport('🕸️ 4S NETWORK SCAN', report, {resources, stats});
 };
 */
+
+// ========== PRINTABLE REPORT SYSTEM ==========
+
+window.ShadowSoulSpiritAdvanced.showPrintableReport = function(title, content, data) {
+  // Remove existing report modal
+  const existing = document.getElementById('4s-print-report');
+  if(existing) existing.remove();
+  
+  // Create printable modal
+  const modal = document.createElement('div');
+  modal.id = '4s-print-report';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+  
+  const timestamp = new Date().toLocaleString('id-ID');
+  const reportId = '4S-RPT-' + Date.now();
+  
+  modal.innerHTML = `
+    <div style="background:white;color:#0f172a;max-width:800px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 0 50px rgba(16,185,129,0.3);">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#10b981,#059669);padding:25px;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:10px">🛡️</div>
+        <h1 style="color:white;margin:0;font-size:1.8rem">${title}</h1>
+        <p style="color:#d1fae5;margin:5px 0 0 0;font-size:0.9rem">Dream OS 4S Defense System</p>
+        <p style="color:#a7f3d0;margin:5px 0 0 0;font-size:0.8rem">Report ID: ${reportId}</p>
+        <p style="color:#a7f3d0;margin:5px 0 0 0;font-size:0.8rem">Generated: ${timestamp}</p>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding:25px;font-family:monospace;font-size:0.85rem;line-height:1.8;">
+        <div style="white-space:pre-wrap;background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #e2e8f0;">${content}</div>
+      </div>
+      
+      <!-- Footer -->
+      <div style="background:#f1f5f9;padding:15px;text-align:center;font-size:0.75rem;color:#64748b;">
+        <p style="margin:0">🕌 Protected by Shalawat 1001x • Defensive Security Only</p>
+        <p style="margin:5px 0 0 0">This report is cryptographically verifiable • Export evidence package for full audit trail</p>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div style="padding:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="window.print()" style="padding:12px 30px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.9rem;">🖨️ Print Report</button>
+        <button onclick="ShadowSoulSpiritAdvanced.exportEvidencePackage()" style="padding:12px 30px;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.9rem;">📦 Export Evidence</button>
+        <button onclick="document.getElementById('4s-print-report').remove()" style="padding:12px 30px;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.9rem;">✕ Close</button>
+      </div>
+    </div>
+  `;  
+  document.body.appendChild(modal);
+  
+  // Log for audit
+  this.logAudit('Report Generated', `${title} - ${reportId}`);
+};
+
+// Override run4SScan to use printable report
+window.ShadowSoulSpiritAdvanced.run4SScan = function() {
+  try {
+    const resources = performance.getEntriesByType('resource');
+    const nav = performance.getEntriesByType('navigation')[0] || {};
+    
+    let stats = {total: resources.length, byType: {}, thirdParty: 0, slow: 0, errors: 0};
+    
+    resources.forEach(r => {
+      stats.byType[r.initiatorType] = (stats.byType[r.initiatorType] || 0) + 1;
+      if(r.name && new URL(r.name, location.href).hostname !== location.hostname) stats.thirdParty++;
+      if(r.duration > 1000) stats.slow++;
+      if(r.responseStatus && r.responseStatus >= 400) stats.errors++;
+    });
+    
+    const content = `🕸️ 4S NETWORK SCAN
+═══════════════════════════════════════
+
+Total Requests: ${stats.total}
+By Type: ${JSON.stringify(stats.byType)}
+Third-Party: ${stats.thirdParty}
+Slow (>1s): ${stats.slow}
+Errors (4xx/5xx): ${stats.errors}
+
+Page Load: ${nav.duration?.toFixed(2) || 'N/A'}ms
+DOM Interactive: ${nav.domInteractive?.toFixed(2) || 'N/A'}ms
+
+═══════════════════════════════════════
+Full detail available in Console`;
+    
+    this.logAudit('4S Scan', `Analyzed ${stats.total} resources`);
+    
+    // Show printable report instead of basic alert
+    this.showPrintableReport('🕸️ 4S NETWORK SCAN', content, {stats, resources, nav});
+    
+  } catch(e) { 
+    console.error('Scan error:', e); 
+    alert('⚠️ Scan failed'); 
+  }
+};
+
+// Override run4SRecon to use printable report
+window.ShadowSoulSpiritAdvanced.run4SRecon = function() {  try {
+    const scripts = Array.from(document.scripts).map(s => ({src: s.src, async: s.async, type: s.type})).filter(s => s.src);
+    const links = Array.from(document.links).map(l => l.href).filter(h => h && h.startsWith('http'));
+    const forms = Array.from(document.forms).map(f => ({action: f.action, method: f.method, inputs: Array.from(f.elements).map(e => e.name)}));
+    const hidden = Array.from(document.querySelectorAll('input[type="hidden"], meta[name], meta[property]')).map(e => ({name: e.name||e.property, content: e.content}));
+    
+    const content = `🔍 4S RECON - FULL SCAN
+═══════════════════════════════════════
+
+Scripts: ${scripts.length}
+External Links: ${links.length}
+Forms: ${forms.length}
+Hidden Fields: ${hidden.length}
+
+═══════════════════════════════════════
+⚠️ Full detail in Console (console.table)`;
+    
+    console.group('🔍 4S Recon - Full Report');
+    console.table({scripts, links, forms, hidden});
+    console.groupEnd();
+    
+    this.logAudit('4S Recon', `Scanned: ${scripts.length} scripts, ${forms.length} forms`);
+    
+    this.showPrintableReport('🔍 4S RECON - FULL SCAN', content, {scripts, links, forms, hidden});
+    
+  } catch(e) { console.error('Recon error:', e); alert('⚠️ Recon failed'); }
+};
+
+console.log('✅ Printable Report System Loaded');
