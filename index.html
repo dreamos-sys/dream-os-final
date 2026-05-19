@@ -136,6 +136,212 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
             }
         };
 
+
+// =========================================================
+// FACILITY & ASSET MAINTENANCE ENGINE PRO (ISO 55001 v1.1)
+// =========================================================
+window.openMaint = function() {
+    // 1. Bersihkan modal lama jika ada duplikasi
+    const oldModal = document.getElementById('maint-modal');
+    if (oldModal) oldModal.remove();
+
+    // 2. Deteksi otomatis Bracket Jam Kerja (07:30 - 16:00)
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const currentTimeVal = (currentHour * 100) + currentMin;
+    const isWorkingHours = (currentTimeVal >= 730 && currentTimeVal <= 1600);
+
+    // 3. Buat Container Modal Responsif (Split-Screen Layout ala Dashboard SPJ)
+    const modal = document.createElement('div');
+    modal.id = 'maint-modal';
+    modal.className = 'fixed inset-0 z-[10000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto';
+    
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl max-h-[95vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all transform scale-100">
+            <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🔧</span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            Facility Maintenance Pro
+                            <span class="text-[9px] bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-0.5 rounded font-mono font-normal">ISO 55001:2014</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Asset Management & Work Order Tracking System</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('maint-modal').remove()" class="text-slate-400 hover:text-red-500 transition text-2xl px-2">&times;</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-50 dark:bg-slate-950">
+                
+                <form id="maint-ticket-form" onsubmit="window.submitMaintTicket(event)" class="md:col-span-5 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-1.5 mb-2">📋 Create Work Order</h4>
+                        
+                        <div class="p-2 rounded-lg text-[10px] ${isWorkingHours ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100' : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100'} mb-2">
+                            ${isWorkingHours ? '🟢 <strong>Status K3:</strong> Inside Standard Working Hours (07:30 - 16:00)' : '⚠️ <strong>Auto-Restriction Alert:</strong> Outside Work Hours. Requires Emergency Validation Override!'}
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Fasilitas / Lokasi Aset</label>
+                            <input type="text" id="maint-asset" required placeholder="Contoh: AC Aula Barat, Jalur PCB Pompa" class="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-teal-500 outline-none">
+                        </div>
+
+                        <div class="space-y-1 mt-2">
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Kategori Kerusakan</label>
+                            <select id="maint-category" class="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white outline-none">
+                                <option value="HVAC / Air Conditioner">❄️ HVAC / Pendingin</option>
+                                <option value="Electrical System">⚡ Kelistrikan / Panel</option>
+                                <option value="Plumbing & Water System">🚰 Pipa & Air Bersih</option>
+                                <option value="Civil / Infrastructure">🏢 Infrastruktur Gedung</option>
+                                <option value="Janitor / Sanitasi">🧹 Janitor (Indoor/Outdoor)</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1 mt-2">
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Tingkat Urgensi</label>
+                            <select id="maint-urgency" class="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white outline-none">
+                                <option value="Low">🟢 Low / Pemeliharaan Rutin</option>
+                                <option value="Medium">🟡 Medium / Gangguan Ringan</option>
+                                <option value="High">🟠 High / Butuh Penanganan Cepat</option>
+                                <option value="CRITICAL">🔴 CRITICAL / EMERGENCY PURGE</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div>
+                                <label class="text-[9px] font-bold text-slate-500 block uppercase">Pelapor (Applicant)</label>
+                                <input type="text" id="maint-reporter" readonly value="Erwinsyah" class="w-full text-[11px] p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-medium">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-bold text-slate-500 block uppercase">Verifikator (Approver)</label>
+                                <input type="text" id="maint-approver" readonly value="Hanung Budianto S. E" class="w-full text-[11px] p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-medium">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 mt-2">
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Deskripsi Kerusakan & Kronologi</label>
+                            <textarea id="maint-desc" required rows="3" placeholder="Tulis rincian kerusakan aset secara detail di sini..." class="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-teal-500 outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full mt-3 py-2.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-xl shadow-lg transition active:scale-[0.98] cursor-pointer">
+                        🔒 Emit Secure Work Order (SPJ)
+                    </button>
+                </form>
+
+                <div class="md:col-span-7 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col h-[400px] md:h-auto">
+                    <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-1.5 mb-2">
+                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">📋 Live Audit Trail & SPJ Logs</h4>
+                        <button onclick="window.clearMaintLogs()" type="button" class="text-[9px] bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded cursor-pointer transition">Purge Records</button>
+                    </div>
+                    
+                    <div id="maint-live-orders" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+                        </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    window.renderMaintTickets();
+};
+
+// Fungsi Render Dinamis Berkas Work Order dari localStorage
+window.renderMaintTickets = function() {
+    const listContainer = document.getElementById('maint-live-orders');
+    if (!listContainer) return;
+
+    let tickets = JSON.parse(localStorage.getItem('dream_os_maint_v1') || '[]');
+    
+    if (tickets.length === 0) {
+        listContainer.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12">
+                <span class="text-3xl mb-1">📭</span>
+                <p class="text-[11px]">Belum ada tiket perawatan terdaftar.</p>
+                <p class="text-[9px] text-slate-400">Seluruh berkas SPJ baru yang dikirim Erwinsyah akan terindeks real-time di sini.</p>
+            </div>
+        `;
+        return;
+    }
+
+    listContainer.innerHTML = tickets.map((t, idx) => {
+        const badgeColors = {
+            Low: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+            Medium: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+            High: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300',
+            CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 animation-pulse'
+        };
+
+        return `
+            <div class="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-xl relative group">
+                <div class="flex justify-between items-start gap-2">
+                    <div>
+                        <span class="text-[9px] font-mono font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded">WO-#012${idx}</span>
+                        <h5 class="font-bold text-slate-900 dark:text-white mt-1 text-[11px]">${t.asset}</h5>
+                    </div>
+                    <span class="text-[8px] font-bold px-1.5 py-0.5 rounded ${badgeColors[t.urgency] || badgeColors.Low}">${t.urgency}</span>
+                </div>
+                <p class="text-slate-600 dark:text-slate-400 text-[10px] mt-1 leading-relaxed">${t.desc}</p>
+                
+                <div class="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/60 flex justify-between items-center text-[9px] text-slate-400">
+                    <div>👷‍♂️ Pemohon: <span class="text-slate-600 dark:text-slate-300 font-medium">${t.reporter}</span></div>
+                    <div>🕒 ${t.time}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+// Fungsi Eksekusi Submit Form Laporan
+window.submitMaintTicket = function(e) {
+    e.preventDefault();
+    
+    const asset = document.getElementById('maint-asset').value.trim();
+    const category = document.getElementById('maint-category').value;
+    const urgency = document.getElementById('maint-urgency').value;
+    const reporter = document.getElementById('maint-reporter').value;
+    const approver = document.getElementById('maint-approver').value;
+    const desc = document.getElementById('maint-desc').value.trim();
+    
+    if (!asset || !desc) return;
+
+    // Ambil waktu lokal pangkalan secara presisi
+    const now = new Date();
+    const timestampStr = `${now.toLocaleDateString('id-ID')} | ${now.toLocaleTimeString('id-ID')}`;
+
+    const newTicket = { asset, category, urgency, reporter, approver, desc, time: timestampStr };
+
+    let currentTickets = JSON.parse(localStorage.getItem('dream_os_maint_v1') || '[]');
+    currentTickets.unshift(newTicket); // Simpan tiket baru di posisi paling atas (Stack)
+    
+    localStorage.setItem('dream_os_maint_v1', JSON.stringify(currentTickets));
+
+    // Reset Form Input
+    document.getElementById('maint-asset').value = '';
+    document.getElementById('maint-desc').value = '';
+
+    // Trigger Notification System bawaan pangkalan
+    if (window.notifySuccess) {
+        window.notifySuccess(`Tiket WO-#012${currentTickets.length-1} Berhasil Di-Emit Ke Sistem!`);
+    } else {
+        alert("✅ Tiket SPJ Perawatan Berhasil Diproses!");
+    }
+
+    // Refresh Tampilan Tabel Sebelah Kanan
+    window.renderMaintTickets();
+};
+
+// Fungsi Purge Database Tiket Perawatan
+window.clearMaintLogs = function() {
+    if (confirm("🚨 Apakah Anda yakin ingin membersihkan seluruh arsip Audit Trail SPJ Perawatan?")) {
+        localStorage.removeItem('dream_os_maint_v1');
+        window.renderMaintTickets();
+        if (window.notifyWarning) window.notifyWarning("Database log perawatan dibersihkan!");
+    }
+};
+
 </script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
