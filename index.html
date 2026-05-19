@@ -249,6 +249,24 @@ window.openMaint = function() {
 };
 
 // Fungsi Render Dinamis Berkas Work Order dari localStorage
+
+// Command Center: Listen for booking events and update UI
+if (typeof window.renderMaintTickets === 'function') {
+    DreamEventBus.on('booking:created', (data) => {
+        console.log('👻 Ghost Mode: New booking detected');
+        // Could update a "Recent Bookings" panel in Ghost Mode
+        const panel = document.querySelector('#ghost-booking-feed');
+        if (panel) {
+            const entry = document.createElement('div');
+            entry.className = 'text-[10px] text-emerald-400 py-1 border-b border-slate-700';
+            entry.innerHTML = `📅 ${data.sarana} • ${data.tgl} • ${data.nama}`;
+            panel.prepend(entry);
+            if (panel.children.length > 10) panel.lastChild.remove();
+        }
+    });
+}
+
+
 window.renderMaintTickets = function() {
     const listContainer = document.getElementById('maint-live-orders');
     if (!listContainer) return;
@@ -589,6 +607,83 @@ const syncBookingToCMD = () => {
 };
 document.addEventListener('DOMContentLoaded', () => setTimeout(syncBookingToCMD, 1000));
 
+
+// =========================================================
+// DREAM OS EVENT BUS v1.0 (Module Integration Layer)
+// =========================================================
+const DreamEventBus = {
+    listeners: {},
+    
+    // Subscribe to event
+    on(event, callback) {
+        if (!this.listeners[event]) this.listeners[event] = [];
+        this.listeners[event].push(callback);
+        console.log(`📡 Subscribed to: ${event}`);
+    },
+    
+    // Unsubscribe
+    off(event, callback) {
+        if (this.listeners[event]) {
+            this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+        }
+    },
+    
+    // Emit event with payload
+    emit(event, payload = {}) {
+        console.log(`📡 Emitting: ${event}`, payload);
+        
+        // Save to localStorage for persistence
+        const events = JSON.parse(localStorage.getItem('dream_os_events') || '[]');
+        events.unshift({ event, payload, timestamp: new Date().toISOString() });
+        if (events.length > 100) events.pop(); // Keep last 100
+        localStorage.setItem('dream_os_events', JSON.stringify(events));
+        
+        // Notify all listeners
+        if (this.listeners[event]) {
+            this.listeners[event].forEach(cb => {
+                try { cb(payload); } catch(e) { console.error('Event callback error:', e); }
+            });
+        }        
+        // Also trigger global custom event for vanilla JS compatibility
+        document.dispatchEvent(new CustomEvent('dream-os:' + event, { detail: payload }));
+    },
+    
+    // Get recent events
+    getHistory(event = null, limit = 10) {
+        const events = JSON.parse(localStorage.getItem('dream_os_events') || '[]');
+        if (event) return events.filter(e => e.event === event).slice(0, limit);
+        return events.slice(0, limit);
+    },
+    
+    // Clear history
+    clearHistory() {
+        localStorage.removeItem('dream_os_events');
+        console.log('🗑️ Event history cleared');
+    }
+};
+
+// Make globally available
+window.DreamEventBus = DreamEventBus;
+
+// Auto-init: Listen for system-wide events
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔗 Dream Event Bus initialized');
+    
+    // Example: Listen for new bookings from any module
+    DreamEventBus.on('booking:created', (data) => {
+        console.log('📅 New booking detected:', data);
+        if (window.notifySuccess) {
+            window.notifySuccess(`📅 Booking baru: ${data.sarana} - ${data.tgl}`);
+        }
+    });
+    
+    // Example: Listen for system lock changes
+    DreamEventBus.on('system:lock_changed', (data) => {
+        console.log('🔒 System lock updated:', data);
+        // Could update UI globally if needed
+    });
+});
+
 </script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -776,7 +871,78 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(syncBookingToCMD,
         window.renderGhostTools = () => { const g = document.getElementById('ghost-tools-grid'); if(!g)return; g.innerHTML = GhostTools.map(t=>`<button onclick="(${t.action.toString()})()" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-center active:scale-95 hover:bg-gray-700 cursor-pointer" type="button"><div class="text-xl mb-1">${t.icon}</div><div class="text-[8px] text-gray-300 font-bold">${t.label}</div></button>`).join(''); };
 
         // CAROUSEL
-        const slides = [{t:"Today's Booking",d:"No bookings"},{t:"K3 Status",d:"All normal"},{t:"Dream AI",d:"Quantum active"},{t:"Security",d:"Watcher active"},{t:"Asset Mgmt",d:"ISO 55001"},{t:"Lightning",d:"Strike armed"},{t:"Power Soul",d:"Shalawat mapped"}]; let curr=0; const renderSlide = () => { document.getElementById('carousel-title').textContent = slides[curr].t; document.getElementById('carousel-desc').textContent = slides[curr].d; document.getElementById('carousel-dots').innerHTML = slides.map((_,i)=>`<div class="w-1.5 h-1.5 rounded-full ${i===curr?'bg-emerald-500 scale-125':'bg-gray-300'}"></div>`).join(''); }; window.nextSlide = () => { curr=(curr+1)%slides.length; renderSlide(); }; window.prevSlide = () => { curr=(curr-1+slides.length)%slides.length; renderSlide(); }; setInterval(window.nextSlide,7000); renderSlide();
+        // Quick Booking Slide Integration
+
+// Quick Booking Slide Content (Slide 2)
+const quickBookingSlide = {
+    t: "⚡ Quick Booking",
+    d: "Form singkat untuk booking cepat sarana & peralatan",
+    html: `
+        <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+            <form id="quick-booking-form" class="space-y-2" onsubmit="handleQuickBooking(event)">
+                <select name="sarana" required class="w-full text-xs p-2 rounded bg-slate-900 border border-slate-600 text-white">
+                    <option value="">-- Pilih Sarana --</option>
+                    <option value="Aula SMP">Aula SMP</option>
+                    <option value="Aula SMA">Aula SMA</option>
+                    <option value="Saung Besar">Saung Besar</option>
+                    <option value="Serbaguna">Serbaguna</option>
+                    <option value="Lapangan Basket">Lapangan Basket</option>
+                </select>
+                <input type="date" name="tgl" required min="${new Date().toISOString().split('T')[0]}" class="w-full text-xs p-2 rounded bg-slate-900 border border-slate-600 text-white">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="time" name="jam_mulai" required min="07:30" max="16:00" value="08:00" class="text-xs p-2 rounded bg-slate-900 border border-slate-600 text-white">
+                    <input type="time" name="jam_selesai" required min="07:30" max="16:00" value="10:00" class="text-xs p-2 rounded bg-slate-900 border border-slate-600 text-white">
+                </div>
+                <input type="text" name="nama" placeholder="Nama Pemohon" required class="w-full text-xs p-2 rounded bg-slate-900 border border-slate-600 text-white">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded transition">
+                    📤 Ajukan Cepat
+                </button>
+            </form>
+            <p class="text-[10px] text-slate-400 mt-2 text-center">
+                ⏰ Operasional: 07:30-16:00 • Jumat 10:30-13:00 Aula/Serbaguna unavailable
+            </p>
+        </div>
+    `
+};
+
+// Quick booking handler
+window.handleQuickBooking = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
+    
+    // Validate basic rules
+    const now = new Date();
+    const currentHour = now.getHours() + now.getMinutes()/60;
+    if (currentHour > 16 && !['kabag_umum','koord_umum'].includes(window.currentUser?.role)) {
+        if (window.notifyError) window.notifyError('Sistem booking tutup setelah 16:00');
+        return;
+    }
+    
+    // Emit to Event Bus
+    DreamEventBus.emit('booking:quick_submitted', {        ...data,
+        submitted_at: new Date().toISOString(),
+        user: window.currentUser?.name || 'Unknown'
+    });
+    
+    // Show confirmation
+    if (window.notifySuccess) {
+        window.notifySuccess('✅ Booking cepat terkirim! Menunggu approval.');
+    }
+    
+    // Reset form
+    form.reset();
+    
+    // Optional: Save to localStorage for later sync
+    const pending = JSON.parse(localStorage.getItem('dream_os_pending_bookings') || '[]');
+    pending.unshift({ ...data, id: Date.now(), status: 'pending' });
+    localStorage.setItem('dream_os_pending_bookings', JSON.stringify(pending));
+    
+    console.log('⚡ Quick booking submitted:', data);
+};
+
+
+const slides = [{t:"Today's Booking",d:"No bookings"},{t:"K3 Status",d:"All normal"},{t:"Dream AI",d:"Quantum active"},{t:"Security",d:"Watcher active"},{t:"Asset Mgmt",d:"ISO 55001"},{t:"Lightning",d:"Strike armed"},{t:"Power Soul",d:"Shalawat mapped"}]; let curr=0; const renderSlide = () => { document.getElementById('carousel-title').textContent = slides[curr].t; document.getElementById('carousel-desc').textContent = slides[curr].d; document.getElementById('carousel-dots').innerHTML = slides.map((_,i)=>`<div class="w-1.5 h-1.5 rounded-full ${i===curr?'bg-emerald-500 scale-125':'bg-gray-300'}"></div>`).join(''); }; window.nextSlide = () => { curr=(curr+1)%slides.length; renderSlide(); }; window.prevSlide = () => { curr=(curr-1+slides.length)%slides.length; renderSlide(); }; setInterval(window.nextSlide,7000); renderSlide();
 
         // NAV & MODULES
         window.openMod = (id) => alert(`Module: ${id.toUpperCase()}\n(Full loading in v2.0)`); window.navAlert = (n) => { if(n==='HOME')alert('Home Active'); else alert(`Nav: ${n}`); };
