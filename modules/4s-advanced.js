@@ -333,3 +333,38 @@ ShadowSoulSpiritAdvanced.run4SScan = function() {
   this.showFancyReport('🕸️ 4S NETWORK SCAN', report, {resources, stats});
 };
 */
+
+// ========== FANCY REPORT MODAL (Optional UI Upgrade) ==========
+window.ShadowSoulSpiritAdvanced.showFancyReport = function(title, content, consoleData) {
+  // Remove existing modal
+  const existing = document.getElementById('4s-fancy-modal');
+  if(existing) existing.remove();
+  
+  // Create modal
+  const modal = document.createElement('div');
+  modal.id = '4s-fancy-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  
+  modal.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:2px solid #10b981;border-radius:16px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;color:white;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 20px;border-bottom:1px solid #334155;">
+        <h3 style="color:#10b981;margin:0;font-size:1.2rem">${title}</h3>
+        <button onclick="document.getElementById('4s-fancy-modal').remove()" style="background:#ef4444;color:white;border:none;padding:5px 15px;border-radius:6px;cursor:pointer;font-weight:700">✕</button>
+      </div>
+      <div style="padding:20px;font-family:monospace;font-size:0.85rem;white-space:pre-wrap;">${content}</div>
+      <div style="padding:0 20px 20px 20px;text-align:center;">
+        <button onclick="console.table(${JSON.stringify(consoleData || {})});document.getElementById('4s-fancy-modal').remove()" style="background:#10b981;color:white;border:none;padding:10px 25px;border-radius:8px;cursor:pointer;font-weight:700">📊 View in Console</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+};
+
+// Override alert calls to use fancy modal (optional - uncomment to enable)
+/*
+ShadowSoulSpiritAdvanced.run4SScan = function() {
+  // ... existing scan logic ...
+  this.showFancyReport('🕸️ 4S NETWORK SCAN', report, {resources, stats});
+};
+*/
