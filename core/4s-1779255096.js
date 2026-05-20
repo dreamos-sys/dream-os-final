@@ -32,3 +32,4 @@ window.FourSUI = {
     document.getElementById('closeBtn').onclick = () => this.cleanup();
   }
 };
+console.log('FORCE LOAD v1779267578');
