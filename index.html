@@ -80,7 +80,6 @@
         </nav>
     </div>
 
-    
     <!-- 4S CYBERPUNK DEV OPS CENTER -->
     <div id="ghost-hub" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0f1419 100%);overflow:hidden;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
         <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(45,212,191,0.1) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(139,92,246,0.1) 0%,transparent 50%);pointer-events:none;"></div>
@@ -271,38 +270,67 @@
     </div>
 
     <script>
-        // Clock & Metrics
-        setInterval(()=>{const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('id-ID');},1000);
-        setInterval(()=>{document.getElementById('cpu').textContent=Math.floor(Math.random()*25+5)+'%';document.getElementById('mem').textContent=Math.floor(Math.random()*15+40)+'%';},3000);
-        
-        // Terminal
-        window.execCmd=()=>{const i=document.getElementById('term-in'),c=i.value.trim();if(c){log('> '+c);procCmd(c);i.value='';}};
-        window.procCmd=(c)=>{const cmds={help:'Commands: help,status,scan,clear,exit',status:'System: OPERATIONAL | Threat: LOW',scan:'[SCANNING]...',clear:(clearLogs(),'Logs cleared'),exit:(setTimeout(hideGhostHub,500),'Closing...'),whoami:'Ghost Architect',date:new Date().toLocaleString('id-ID')};const r=cmds[c.toLowerCase()]||'Unknown. Type help';if(typeof r==='string')log(r);else r();};
-        
-        // Tool Functions
-        window.open4SMode=()=>{log('🕌 Opening 4S Mode...');if(typeof ShadowSoulSpirit!=='undefined')ShadowSoulSpirit.open4SMode();else{log('⚠️ Loading 4S module...');const s=document.createElement('script');s.src='js/modules/4s-developer.js';s.onload=()=>{log('✅ 4S module loaded');ShadowSoulSpirit.open4SMode();};document.head.appendChild(s);}};
-        window.openEruda=()=>{log('💻 Initializing Eruda...');if(typeof eruda==='undefined'){const s=document.createElement('script');s.src='//cdn.jsdelivr.net/npm/eruda';document.body.appendChild(s);s.onload=()=>{eruda.init();eruda.show();log('✅ Eruda Console activated');};}else{eruda.show();log('✅ Eruda Console activated');}};
-        window.openOSINT=()=>{log('🕷️ Opening OSINT Framework...');};
+        // ========== LOGIN ==========
+        window.togglePass = () => { const inp = document.getElementById('pass'); if (inp) inp.type = inp.type === 'password' ? 'text' : 'password'; };
+        window.login = () => { if (document.getElementById('pass').value !== 'b15m1ll4h_012443410') { alert('❌ Password Salah!'); return; } document.getElementById('login-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('login-screen').style.display = 'none'; document.getElementById('main-app').style.display = 'flex'; startAutoSlide(); }, 300); };
+
+        // ========== GHOST MODE ==========
+        let taps = 0, tapTimer;
+        window.tapLogo = () => { taps++; const c = document.getElementById('tap-counter'); if(c){c.textContent='Tap '+taps+'/7';c.style.opacity='1';setTimeout(()=>c.style.opacity='0',1500);} if(taps>=7){taps=0; openGhostHub();} clearTimeout(tapTimer); tapTimer=setTimeout(()=>taps=0,2000); };
+        window.openGhostHub = () => { const hub = document.getElementById('ghost-hub'); if(hub){ hub.style.display='flex'; } };
+        window.hideGhostHub = () => { const hub = document.getElementById('ghost-hub'); if(hub) hub.style.display='none'; };
+
+        // ========== AUTO-SLIDE ==========
+        let currentSlide = 0;
+        const slides = [
+            { content: '<p class="text-gray-600 text-sm font-medium">No bookings today</p>' },
+            { content: '<p class="text-emerald-600 text-sm font-bold">System Status: All Clear</p>' },
+            { content: '<p class="text-gray-600 text-sm font-medium">Next maintenance: Tomorrow</p>' }
+        ];
+        window.updateSlider = () => { const slider = document.getElementById('booking-slider'); const dots = document.getElementById('slider-dots'); if (!slider) return; slider.innerHTML = slides[currentSlide].content; dots.innerHTML = slides.map((_, i) => `<span class="w-2 h-2 rounded-full ${i===currentSlide?'bg-emerald-500':'bg-gray-300'}"></span>`).join(''); };
+        window.nextSlide = () => { currentSlide = (currentSlide + 1) % slides.length; updateSlider(); };
+        window.prevSlide = () => { currentSlide = (currentSlide - 1 + slides.length) % slides.length; updateSlider(); };
+        let autoSlideInterval;
+        window.startAutoSlide = () => { if (autoSlideInterval) clearInterval(autoSlideInterval); autoSlideInterval = setInterval(nextSlide, 7000); };
+
+        // ========== MODULE LOADER ==========
+        window.openMod = (id) => { alert('Module: ' + id.toUpperCase() + ' (Coming soon)'); };
+        window.nav = (name) => { if (name !== 'HOME') alert('Navigasi: ' + name); };
+
+        // ========== 4S TOOLS ==========
+        window.open4SMode=()=>{ log('🕌 Opening 4S Mode...'); if(typeof ShadowSoulSpirit!=='undefined'){ ShadowSoulSpirit.open4SMode(); } else { log('⚠️ Loading 4S module...'); const s=document.createElement('script'); s.src='js/modules/4s-developer.js'; s.onload=()=>{ log('✅ 4S module loaded'); ShadowSoulSpirit.open4SMode(); }; document.head.appendChild(s); } };
+        window.openEruda=()=>{ log('💻 Initializing Eruda...'); if(typeof eruda==='undefined'){ const s=document.createElement('script'); s.src='//cdn.jsdelivr.net/npm/eruda'; document.body.appendChild(s); s.onload=()=>{ eruda.init(); eruda.show(); log('✅ Eruda Console activated'); }; } else { eruda.show(); log('✅ Eruda Console activated'); } };
+        window.openOSINT=()=>{ log('🕷️ Opening OSINT Framework...'); };
         window.checkCookies=()=>log('🍪 Cookies: '+document.cookie.split(';').length+' active');
         window.checkSession=()=>log('🔑 Session: '+sessionStorage.length+' keys');
         window.checkLocalDB=()=>log('🗄️ LocalStorage: '+localStorage.length+' entries');
         window.checkNetwork=()=>log('📡 '+(navigator.onLine?'🟢 Online':'🔴 Offline'));
-        window.checkGPS=()=>{log('🛰️ Requesting GPS...');if('geolocation'in navigator)navigator.geolocation.getCurrentPosition(p=>log('🛰️ Position: '+p.coords.latitude.toFixed(4)+', '+p.coords.longitude.toFixed(4)),e=>log('🛰️ GPS: '+e.message));else log('🛰️ GPS not supported');};
-        window.shalawatCounter=()=>{let c=parseInt(localStorage.getItem('shalawat_count')||'0')+1;localStorage.setItem('shalawat_count',c);log('💖 Shalawat Counter: '+c+'x');};
-        window.threatScan=()=>{log('🔥 Initiating threat scan...');setTimeout(()=>log('🔥 Scan complete: No threats detected'),2000);};
-        window.systemHealth=()=>{log('📊 System Health: OPTIMAL');log('📊 Memory: '+(performance.memory?(performance.memory.usedJSHeapSize/1024/1024).toFixed(2)+'MB':'N/A'));};
-        window.backupData=()=>{log('💾 Creating backup...');const d={ls:{},ss:{},ts:new Date().toISOString()};for(let k in localStorage)d.ls[k]=localStorage.getItem(k);for(let k in sessionStorage)d.ss[k]=sessionStorage.getItem(k);const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='dream-os-backup-'+Date.now()+'.json';a.click();log('💾 Backup created successfully');};
-        window.quantumBoost=()=>{log('⚡ Activating Quantum Boost...');sessionStorage.clear();log('⚡ Session cleared. Performance optimized.');};
+        window.checkGPS=()=>{ log('🛰️ Requesting GPS...'); if('geolocation'in navigator) navigator.geolocation.getCurrentPosition(p=>log('🛰️ Position: '+p.coords.latitude.toFixed(4)+', '+p.coords.longitude.toFixed(4)), e=>log('🛰️ GPS: '+e.message)); else log('🛰️ GPS not supported'); };
+        window.shalawatCounter=()=>{ let c=parseInt(localStorage.getItem('shalawat_count')||'0')+1; localStorage.setItem('shalawat_count',c); log('💖 Shalawat Counter: '+c+'x'); };
+        window.threatScan=()=>{ log('🔥 Initiating threat scan...'); setTimeout(()=>log('🔥 Scan complete: No threats detected'),2000); };
+        window.systemHealth=()=>{ log('📊 System Health: OPTIMAL'); log('📊 Memory: '+(performance.memory?(performance.memory.usedJSHeapSize/1024/1024).toFixed(2)+'MB':'N/A')); };
+        window.backupData=()=>{ log('💾 Creating backup...'); const d={ls:{},ss:{},ts:new Date().toISOString()}; for(let k in localStorage) d.ls[k]=localStorage.getItem(k); for(let k in sessionStorage) d.ss[k]=sessionStorage.getItem(k); const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a'); a.href=u; a.download='dream-os-backup-'+Date.now()+'.json'; a.click(); log('💾 Backup created successfully'); };
+        window.quantumBoost=()=>{ log('⚡ Activating Quantum Boost...'); sessionStorage.clear(); log('⚡ Session cleared. Performance optimized.'); };
         window.runNMAP=()=>log('🕸️ NMAP: Network scanner ready');
         window.runTShark=()=>log('🦈 T-Shark: Packet analyzer ready');
         window.runOSINT=()=>log('🔍 OSINT: Intelligence module active');
         window.checkBridge=()=>log('🔌 Bridge: Connected to Dream OS Core');
         window.clearLogs=()=>document.getElementById('ghost-log').innerHTML='<div style="color:#64748b">> Logs cleared</div>';
-        window.exportReport=()=>{log('📄 Generating report...');setTimeout(()=>log('📄 Report exported'),1500);};
-        window.fullScan=()=>{log('🔍 Initiating full system scan...');setTimeout(()=>log('✅ Scan complete: System clean'),3000);};
-        window.emergencyLock=()=>{log('🔒 EMERGENCY LOCK ACTIVATED');setTimeout(()=>{hideGhostHub();location.reload();},1000);};
-        window.log=(m)=>{const e=document.getElementById('ghost-log');if(e){const d=document.createElement('div');d.textContent=m;d.style.animation='fadeIn 0.3s ease';e.appendChild(d);e.scrollTop=e.scrollHeight;}};
+        window.exportReport=()=>{ log('📄 Generating report...'); setTimeout(()=>log('📄 Report exported'),1500); };
+        window.fullScan=()=>{ log('🔍 Initiating full system scan...'); setTimeout(()=>log('✅ Scan complete: System clean'),3000); };
+        window.emergencyLock=()=>{ log('🔒 EMERGENCY LOCK ACTIVATED'); setTimeout(()=>{ hideGhostHub(); location.reload(); },1000); };
+        window.log=(m)=>{ const e=document.getElementById('ghost-log'); if(e){ const d=document.createElement('div'); d.textContent=m; d.style.animation='fadeIn 0.3s ease'; e.appendChild(d); e.scrollTop=e.scrollHeight; } };
+
+        // ========== CLOCK & METRICS ==========
+        setInterval(()=>{ const n=new Date(); const clockEl = document.getElementById('clock'); if(clockEl) clockEl.textContent=n.toLocaleTimeString('id-ID'); },1000);
+        setInterval(()=>{ const cpuEl = document.getElementById('cpu'); if(cpuEl) cpuEl.textContent=Math.floor(Math.random()*25+5)+'%'; const memEl = document.getElementById('mem'); if(memEl) memEl.textContent=Math.floor(Math.random()*15+40)+'%'; },3000);
+
+        // Terminal
+        window.execCmd=()=>{ const i=document.getElementById('term-in'),c=i.value.trim(); if(c){ log('> '+c); procCmd(c); i.value=''; } };
+        window.procCmd=(c)=>{ const cmds={help:'Commands: help,status,scan,clear,exit',status:'System: OPERATIONAL | Threat: LOW',scan:'[SCANNING]...',clear:(clearLogs(),'Logs cleared'),exit:(setTimeout(hideGhostHub,500),'Closing...'),whoami:'Ghost Architect',date:new Date().toLocaleString('id-ID')}; const r=cmds[c.toLowerCase()]||'Unknown. Type help'; if(typeof r==='string') log(r); else r(); };
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => { updateSlider(); });
     </script>
-</body>
 </body>
 </html>
