@@ -64,6 +64,37 @@ window.hideGhostHub = () => {
 window.injectGhostTools = () => {
     const grid = document.getElementById('ghost-tools-inject');
     if (!grid) return;
+    // Hapus isi lama dulu (hindari double)
+    grid.innerHTML = '';
+    
+    const tools = [
+        { l: '4S Mode', i: '🕌', c: '#2dd4bf', a: () => { if(typeof ShadowSoulSpirit!=='undefined')ShadowSoulSpirit.open4SMode();else{const s=document.createElement('script');s.src='js/modules/4s-developer.js';s.onload=()=>ShadowSoulSpirit.open4SMode();document.head.appendChild(s);} } },
+        { l: 'Eruda', i: '💻', c: '#3b82f6', a: () => { if(typeof eruda=='undefined'){const s=document.createElement('script');s.src='//cdn.jsdelivr.net/npm/eruda';document.body.appendChild(s);s.onload=()=>eruda.init();}else eruda.show(); } },
+        { l: 'Cookie', i: '🍪', c: '#f59e0b', a: () => log('🍪 Cookies: '+document.cookie.split(';').length) },
+        { l: 'Session', i: '🔑', c: '#8b5cf6', a: () => log('🔑 Session: '+sessionStorage.length+' keys') },
+        { l: 'LocalDB', i: '🗄️', c: '#06b6d4', a: () => log('🗄️ Local: '+localStorage.length+' keys') },
+        { l: 'Network', i: '📡', c: '#10b981', a: () => log('📡 '+(navigator.onLine?'Online':'Offline')) },
+        { l: 'GPS', i: '🛰️', c: '#ef4444', a: () => { navigator.geolocation.getCurrentPosition(p=>log('🛰️ '+p.coords.latitude.toFixed(4)+','+p.coords.longitude.toFixed(4)),e=>log('🛰️ '+e.message)); } },
+        { l: 'Shalawat', i: '💖', c: '#ec4899', a: () => { let c=parseInt(localStorage.getItem('shalawat_count')||'0')+1; localStorage.setItem('shalawat_count',c); log('💖 '+c); } },
+        { l: 'Threat', i: '🔥', c: '#f97316', a: () => log('🔥 Armed') },
+        { l: 'Health', i: '📊', c: '#22c55e', a: () => log('📊 OK') },
+        { l: 'Backup', i: '💾', c: '#6366f1', a: () => log('💾 Ready') },
+        { l: 'Quantum', i: '⚡', c: '#eab308', a: () => log('⚡ Active') },
+        { l: 'NMAP', i: '🕸️', c: '#8b5cf6', a: () => log('🕸️ Ready') },
+        { l: 'Shark', i: '🦈', c: '#06b6d4', a: () => log('🦈 Ready') },
+        { l: 'OSINT', i: '🕷️', c: '#ec4899', a: () => log('🕷️ Ready') },
+        { l: 'Bridge', i: '🔌', c: '#10b981', a: () => log('🔌 Connected') }
+    ];
+    
+    grid.innerHTML = tools.map(t => 
+        `<button onclick="(${t.a.toString()})()" style="background:#1e293b;border:2px solid ${t.c};border-radius:12px;padding:16px 8px;text-align:center;cursor:pointer;color:white;min-height:75px;transition:all 0.2s;" onmouseenter="this.style.background='#2d3a4a'" onmouseleave="this.style.background='#1e293b'">
+            <div style="font-size:2rem;margin-bottom:6px;">${t.i}</div>
+            <div style="font-size:0.65rem;font-weight:600;color:#94a3b8;">${t.l}</div>
+        </button>`
+    ).join('');
+};
+    const grid = document.getElementById('ghost-tools-inject');
+    if (!grid) return;
     
     const tools = [
         { l: '4S', i: '🕌', a: () => { if(typeof ShadowSoulSpirit!=='undefined')ShadowSoulSpirit.open4SMode();else{const s=document.createElement('script');s.src='js/modules/4s-developer.js';s.onload=()=>ShadowSoulSpirit.open4SMode();document.head.appendChild(s);} } },
