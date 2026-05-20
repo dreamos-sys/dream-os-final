@@ -213,9 +213,97 @@ window.openMod = (id) => {
         });
         return;
     }
-    var names = {cmd:'Command Center',book:'Booking',k3:'K3 Safety',in:'Janitor Indoor',out:'Janitor Outdoor',maint:'Maintenance',sec:'Security',stok:'Stok',asset:'Asset'};
+    if (id === 'sec') {
+        let container = document.getElementById('security-module');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'security-module';
+            container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0f172a;';
+            document.body.appendChild(container);
+        }
+        container.style.display = 'block';
+        fetch('js/modules/security.html').then(function(r){return r.text();}).then(function(h){
+            container.innerHTML = h;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(old){
+                var ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+            });
+        }).catch(function(){
+            container.innerHTML = '<div style="color:red;padding:2rem;text-align:center;">Gagal memuat modul Security</div>';
+        });
+        return;
+    }
+    if (id === 'stok') {
+        let container = document.getElementById('stok-module');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'stok-module';
+            container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0f172a;';
+            document.body.appendChild(container);
+        }
+        container.style.display = 'block';
+        fetch('js/modules/stok.html').then(function(r){return r.text();}).then(function(h){
+            container.innerHTML = h;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(old){
+                var ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+            });
+        }).catch(function(){
+            container.innerHTML = '<div style="color:red;padding:2rem;text-align:center;">Gagal memuat modul Stok</div>';
+        });
+        return;
+    }
+    if (id === 'asset') {
+        let container = document.getElementById('asset-module');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'asset-module';
+            container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0f172a;';
+            document.body.appendChild(container);
+        }
+        container.style.display = 'block';
+        fetch('js/modules/asset.html').then(function(r){return r.text();}).then(function(h){
+            container.innerHTML = h;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(old){
+                var ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+            });
+        }).catch(function(){
+            container.innerHTML = '<div style="color:red;padding:2rem;text-align:center;">Gagal memuat modul Asset</div>';
+        });
+        return;
+    }
+    if (id === 'cmd') {
+        let container = document.getElementById('cmd-module');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'cmd-module';
+            container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0f172a;';
+            document.body.appendChild(container);
+        }
+        container.style.display = 'block';
+        fetch('js/modules/commandcenter.html').then(function(r){return r.text();}).then(function(h){
+            container.innerHTML = h;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(old){
+                var ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+            });
+        }).catch(function(){
+            container.innerHTML = '<div style="color:red;padding:2rem;text-align:center;">Gagal memuat Command Center</div>';
+        });
+        return;
+    }
+    var names = {cmd:'Command Center',book:'Booking',k3:'K3 Safety',in:'Janitor Indoor',out:'Janitor Outdoor',maint:'Maintenance',sec:'Security',stok:'Stok & Inventaris',asset:'Asset & Gudang'};
     alert('📂 ' + (names[id]||id.toUpperCase()) + '\n\nComing soon in v2.0');
-};;;;;;
+};;;;;;;;;;
 window.nav = (name) => { if (name !== 'HOME') alert('Navigasi: ' + name); };
 
 // Log

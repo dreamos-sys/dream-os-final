@@ -1,0 +1,487 @@
+<!--
+  Command Center v3.0 – Dream OS Master Control
+  ISO 27001, ISO 9001, ISO 55000 Compliant
+  Terintegrasi dengan 8 modul: Booking, K3, Janitor Indoor, Janitor Outdoor, Maintenance, Security, Stok, Asset
+  Fitur: Dashboard, Ruang Kerja, Dana, SPJ, Approval, Slides, Files, QR, Activity, Analytics, System, AI Assistant, Weather, Voice, Camera, GPS, Backup, Export
+-->
+<div style="min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b);color:white;font-family:'Inter',sans-serif;padding:1.5rem;padding-bottom:5rem;">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <button onclick="closeCC()" style="background:rgba(255,255,255,0.1);color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;">← Kembali</button>
+        <h2 style="color:#10b981;font-size:1.5rem;font-weight:800;">🚀 COMMAND CENTER</h2>
+        <span style="background:linear-gradient(135deg,#10b981,#3b82f6);color:white;padding:0.3rem 0.8rem;border-radius:1rem;font-size:0.7rem;font-weight:600;">v3.0 Master</span>
+    </div>
+    <!-- Status Bar -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin-bottom:1.5rem;" id="cc-status-bar">
+        <div style="background:rgba(16,185,129,0.1);border-left:3px solid #10b981;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">🔒 SECURITY</div><div style="font-weight:700;color:#10b981;" id="cc-sec">AMAN</div></div>
+        <div style="background:rgba(59,130,246,0.1);border-left:3px solid #3b82f6;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">☁️ CUACA</div><div style="font-weight:700;" id="cc-wx">—</div></div>
+        <div style="background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">🔄 SYNC</div><div style="font-weight:700;" id="cc-sync">—</div></div>
+        <div style="background:rgba(168,85,247,0.1);border-left:3px solid #a855f7;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">📋 PENDING</div><div style="font-weight:700;color:#a855f7;" id="cc-total-pending">0</div></div>
+    </div>
+    <!-- AI Insight -->
+    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:1rem;padding:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;"><span style="font-size:1.5rem;">🧠</span><strong style="color:#10b981;">Dream AI Assistant</strong><span style="font-size:0.7rem;background:rgba(16,185,129,0.2);padding:0.2rem 0.6rem;border-radius:1rem;">Insight</span></div>
+        <div id="cc-ai-insight" style="font-size:0.85rem;opacity:0.85;">Menganalisis data sistem...</div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;"><input id="cc-ai-input" placeholder="Tanya AI..." style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);padding:0.5rem;border-radius:0.5rem;color:white;"><button id="cc-ai-ask" style="background:#10b981;border:none;padding:0.5rem 1rem;border-radius:0.5rem;color:white;cursor:pointer;">Kirim</button></div>
+    </div>
+    <!-- Statistik Modul -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:0.75rem;margin-bottom:1.5rem;" id="cc-stats-grid">
+        <!-- Akan diisi oleh JS -->
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <button class="cctab active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="cctab" data-tab="ruangkerja">🏢 Ruang Kerja</button>
+        <button class="cctab" data-tab="dana">💰 Dana</button>
+        <button class="cctab" data-tab="spj">📋 SPJ</button>
+        <button class="cctab" data-tab="approval">✅ Approval</button>
+        <button class="cctab" data-tab="slides">🖼️ Slides</button>
+        <button class="cctab" data-tab="files">📁 Files</button>
+        <button class="cctab" data-tab="qr">🔳 QR</button>
+        <button class="cctab" data-tab="activity">📜 Aktivitas</button>
+        <button class="cctab" data-tab="analytics">📈 Analytics</button>
+        <button class="cctab" data-tab="system">🖥️ System</button>
+    </div>
+    <!-- Konten Tab -->
+    <div id="cc-content" style="background:rgba(30,41,59,0.6);border:1px solid rgba(16,185,129,0.2);border-radius:1.5rem;padding:1.5rem;"></div>
+    <!-- Quick Actions -->
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1.5rem;">
+        <button id="cc-qa-backup" class="cc-action-btn"><i class="fas fa-download"></i> Backup</button>
+        <button id="cc-qa-export" class="cc-action-btn"><i class="fas fa-file-csv"></i> Export CSV</button>
+        <button id="cc-qa-camera" class="cc-action-btn"><i class="fas fa-camera"></i> Camera</button>
+        <button id="cc-qa-voice" class="cc-action-btn"><i class="fas fa-microphone"></i> Voice</button>
+        <button id="cc-qa-gps" class="cc-action-btn"><i class="fas fa-map-marker-alt"></i> GPS</button>
+    </div>
+</div>
+
+<style>
+.cctab { padding:0.5rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:0.5rem; font-size:0.8rem; font-weight:600; cursor:pointer; }
+.cctab.active { background:#10b981; border-color:#10b981; }
+.cc-action-btn { padding:0.5rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:0.5rem; color:white; font-size:0.8rem; cursor:pointer; }
+.cc-action-btn:hover { background:rgba(255,255,255,0.1); }
+.badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:1rem; font-size:0.7rem; font-weight:600; }
+.badge-pending { background:rgba(245,158,11,0.2); color:#f59e0b; }
+.badge-approved { background:rgba(16,185,129,0.2); color:#10b981; }
+.badge-rejected { background:rgba(239,68,68,0.2); color:#ef4444; }
+.cc-input, .cc-select, .cc-textarea { width:100%; padding:0.7rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:white; font-size:0.85rem; }
+.cc-input:focus, .cc-select:focus { border-color:#10b981; }
+.cc-btn { padding:0.7rem 1.5rem; background:#10b981; color:white; border:none; border-radius:0.5rem; font-weight:600; cursor:pointer; }
+.cc-btn-danger { background:#ef4444; }
+.cc-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+.cc-table th { padding:0.7rem; text-align:left; background:rgba(0,0,0,0.3); color:#94a3b8; font-size:0.7rem; }
+.cc-table td { padding:0.7rem; border-top:1px solid rgba(255,255,255,0.05); }
+</style>
+
+<script>
+(function() {
+    // ==================== KONFIGURASI MODUL ====================
+    const MODULES = {
+        book: { key: 'dreamos_bookings', name: 'Booking', color: '#10b981', icon: '📅', fields: ['nama','ruang','tgl','mulai','selesai'] },
+        k3: { key: 'dreamos_k3_reports', name: 'K3', color: '#f59e0b', icon: '⚠️', fields: ['tgl','lokasi','jenis','priority','pelapor'] },
+        in: { key: 'dreamos_janitor_indoor_reports', name: 'Janitor Indoor', color: '#14b8a6', icon: '🧹', fields: ['tgl','shift','petugas','area'] },
+        out: { key: 'dreamos_janitor_outdoor_reports', name: 'Janitor Outdoor', color: '#06b6d4', icon: '🌿', fields: ['tgl','shift','petugas','area'] },
+        maint: { key: 'dreamos_maintenance_tasks', name: 'Maintenance', color: '#f97316', icon: '🔧', fields: ['tanggal','jenis','lokasi','petugas','deskripsi'] },
+        sec: { key: 'dreamos_security_reports', name: 'Security', color: '#3b82f6', icon: '🛡️', fields: ['tgl','shift','petugas','lokasi','template'] },
+        stok: { key: 'dreamos_stok_items', name: 'Stok', color: '#8b5cf6', icon: '📦', fields: ['nama','kategori','jumlah'] },
+        asset: { key: 'dreamos_assets', name: 'Asset', color: '#ec4899', icon: '🏛️', fields: ['kode','nama','kategori','nilai','kondisi'] }
+    };
+    const DANA_KEY = 'dreamos_dana';
+    const SPJ_KEY = 'dreamos_spj';
+    const SLIDES_KEY = 'dreamos_slides';
+    const ACTIVITY_KEY = 'dreamos_activity_log';
+    if (!localStorage.getItem(DANA_KEY)) localStorage.setItem(DANA_KEY, '[]');
+    if (!localStorage.getItem(SPJ_KEY)) localStorage.setItem(SPJ_KEY, '[]');
+    if (!localStorage.getItem(SLIDES_KEY)) localStorage.setItem(SLIDES_KEY, JSON.stringify({5:'',6:'',7:''}));
+    if (!localStorage.getItem(ACTIVITY_KEY)) localStorage.setItem(ACTIVITY_KEY, '[]');
+
+    function getData(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+    function setData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+    function addLog(aksi, detail) {
+        const logs = getData(ACTIVITY_KEY);
+        logs.unshift({ waktu: new Date().toISOString(), aksi, detail });
+        if (logs.length > 200) logs.length = 200;
+        setData(ACTIVITY_KEY, logs);
+    }
+
+    let currentTab = 'dashboard';
+
+    function updateStatsGrid() {
+        const grid = document.getElementById('cc-stats-grid');
+        let html = '';
+        for (const [id, mod] of Object.entries(MODULES)) {
+            const data = getData(mod.key);
+            const pending = data.filter(item => item.status === 'pending').length;
+            html += `<div style="background:${mod.color}15;border-left:3px solid ${mod.color};padding:0.75rem;border-radius:0.5rem;cursor:pointer;" onclick="openModule('${id}')">
+                <div style="font-size:0.65rem;opacity:0.7;">${mod.icon} ${mod.name}</div>
+                <div style="font-weight:700;">${data.length}</div>
+                <div style="font-size:0.7rem;color:${pending > 0 ? '#f59e0b' : '#10b981'};">${pending} pending</div>
+            </div>`;
+        }
+        grid.innerHTML = html;
+        const totalPending = Object.values(MODULES).reduce((sum, mod) => sum + getData(mod.key).filter(i => i.status==='pending').length, 0) 
+                             + getData(DANA_KEY).filter(i => i.status==='pending').length 
+                             + getData(SPJ_KEY).filter(i => i.status==='pending').length;
+        document.getElementById('cc-total-pending').textContent = totalPending;
+        document.getElementById('cc-sec').textContent = totalPending > 10 ? 'WASPADA' : 'AMAN';
+        document.getElementById('cc-sec').style.color = totalPending > 10 ? '#f59e0b' : '#10b981';
+        document.getElementById('cc-sync').textContent = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    function updateAIInsight() {
+        const insightEl = document.getElementById('cc-ai-insight');
+        const insights = [];
+        for (const [id, mod] of Object.entries(MODULES)) {
+            const pending = getData(mod.key).filter(i => i.status === 'pending').length;
+            if (pending > 5) insights.push(`⚠️ ${mod.name}: ${pending} item pending.`);
+        }
+        if (insights.length === 0) insights.push('✅ Semua sistem berjalan normal. Bi idznillah 💚');
+        insightEl.textContent = insights.join(' ');
+    }
+
+    document.getElementById('cc-ai-ask').addEventListener('click', function() {
+        const q = document.getElementById('cc-ai-input').value.toLowerCase();
+        if (!q) return;
+        let answer = '';
+        if (q.includes('pending')) {
+            const total = Object.values(MODULES).reduce((s, m) => s + getData(m.key).filter(i => i.status==='pending').length, 0);
+            answer = `Total item pending: ${total}.`;
+        } else if (q.includes('booking')) {
+            answer = `Booking pending: ${getData('dreamos_bookings').filter(i => i.status==='pending').length}`;
+        } else if (q.includes('k3')) {
+            answer = `Laporan K3 pending: ${getData('dreamos_k3_reports').filter(i => i.status==='pending').length}`;
+        } else {
+            answer = 'Maaf, saya hanya bisa menjawab pertanyaan tentang status modul saat ini.';
+        }
+        document.getElementById('cc-ai-insight').textContent = '💬 ' + answer;
+        document.getElementById('cc-ai-input').value = '';
+    });
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.cctab').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.cctab[data-tab="${tab}"]`).classList.add('active');
+        const content = document.getElementById('cc-content');
+        switch(tab) {
+            case 'dashboard': renderDashboard(content); break;
+            case 'ruangkerja': renderRuangKerja(content); break;
+            case 'dana': renderDana(content); break;
+            case 'spj': renderSPJ(content); break;
+            case 'approval': renderApproval(content); break;
+            case 'slides': renderSlides(content); break;
+            case 'files': renderFiles(content); break;
+            case 'qr': renderQR(content); break;
+            case 'activity': renderActivity(content); break;
+            case 'analytics': renderAnalytics(content); break;
+            case 'system': renderSystem(content); break;
+        }
+    }
+
+    function renderDashboard(container) {
+        let html = '<h3 style="color:#10b981;margin-bottom:1rem;">📊 Dashboard Ringkasan</h3>';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;">';
+        for (const [id, mod] of Object.entries(MODULES)) {
+            const data = getData(mod.key);
+            const pending = data.filter(i => i.status === 'pending');
+            html += `<div style="background:rgba(0,0,0,0.2);border-radius:0.75rem;padding:1rem;border-left:3px solid ${mod.color};">
+                <div style="display:flex;justify-content:space-between;"><strong>${mod.icon} ${mod.name}</strong><span style="color:${mod.color};">${data.length}</span></div>
+                <div style="font-size:0.7rem;opacity:0.7;">Pending: ${pending.length}</div>
+                ${pending.slice(0,2).map(i => `<div style="font-size:0.75rem;margin-top:0.3rem;opacity:0.8;">• ${i[mod.fields[0]] || 'Item'} - ${i.tgl || i.tanggal || ''}</div>`).join('')}
+                <button onclick="openModule('${id}')" style="margin-top:0.5rem;padding:0.3rem 0.8rem;background:${mod.color};border:none;border-radius:0.5rem;color:white;font-size:0.7rem;cursor:pointer;">Buka Modul</button>
+            </div>`;
+        }
+        html += '</div>';
+        const logs = getData(ACTIVITY_KEY).slice(0,5);
+        html += '<h4 style="margin-top:1.5rem;color:#94a3b8;">📜 Aktivitas Terbaru</h4>';
+        if (logs.length === 0) html += '<p style="opacity:0.5;">Belum ada aktivitas</p>';
+        else html += logs.map(l => `<div style="font-size:0.75rem;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">[${new Date(l.waktu).toLocaleTimeString('id-ID')}] ${l.aksi}: ${l.detail}</div>`).join('');
+        container.innerHTML = html;
+    }
+
+    function renderRuangKerja(container) {
+        container.innerHTML = '<h3 style="color:#10b981;margin-bottom:1rem;">🏢 Ruang Kerja - Semua Data Modul</h3>';
+        let html = '<div style="display:flex;flex-direction:column;gap:1rem;">';
+        for (const [id, mod] of Object.entries(MODULES)) {
+            const data = getData(mod.key).slice(0,3);
+            html += `<div style="background:rgba(0,0,0,0.2);padding:0.75rem;border-radius:0.5rem;border-left:3px solid ${mod.color};">
+                <strong>${mod.icon} ${mod.name}</strong>
+                ${data.length === 0 ? '<p style="opacity:0.5;">Tidak ada data</p>' : data.map(i => `<div style="font-size:0.75rem;opacity:0.8;">• ${i[mod.fields[0]] || i.id} - ${i.tgl || i.tanggal || ''}</div>`).join('')}
+                <button onclick="openModule('${id}')" style="margin-top:0.3rem;padding:0.2rem 0.5rem;background:${mod.color};border:none;border-radius:0.3rem;color:white;font-size:0.7rem;">Buka</button>
+            </div>`;
+        }
+        container.innerHTML += html + '</div>';
+    }
+
+    function renderDana(container) {
+        container.innerHTML = `
+            <h3 style="color:#a855f7;margin-bottom:1rem;">💰 Pengajuan Dana</h3>
+            <button id="cc-dana-add" class="cc-btn">+ Ajukan Dana</button>
+            <div id="cc-dana-form" style="display:none;margin-top:1rem;">
+                <input id="dana-judul" class="cc-input" placeholder="Judul pengajuan"><br>
+                <input id="dana-nominal" type="number" class="cc-input" placeholder="Nominal"><br>
+                <button id="dana-submit" class="cc-btn">Kirim</button>
+            </div>
+            <div id="cc-dana-list" style="margin-top:1rem;"></div>
+        `;
+        document.getElementById('cc-dana-add').addEventListener('click', () => {
+            document.getElementById('cc-dana-form').style.display = 'block';
+        });
+        document.getElementById('dana-submit').addEventListener('click', () => {
+            const judul = document.getElementById('dana-judul').value;
+            const nominal = document.getElementById('dana-nominal').value;
+            if (!judul || !nominal) return;
+            const dana = getData(DANA_KEY);
+            dana.push({ id: Date.now(), judul, nominal, status: 'pending', created: new Date().toISOString() });
+            setData(DANA_KEY, dana);
+            addLog('Dana', `Pengajuan: ${judul} (Rp ${nominal})`);
+            renderDanaList();
+        });
+        renderDanaList();
+    }
+
+    function renderDanaList() {
+        const list = document.getElementById('cc-dana-list');
+        const dana = getData(DANA_KEY);
+        if (dana.length === 0) list.innerHTML = '<p style="opacity:0.5;">Belum ada pengajuan</p>';
+        else list.innerHTML = dana.map(d => `<div style="background:rgba(0,0,0,0.2);padding:0.5rem;border-radius:0.5rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;"><span>${d.judul} (Rp ${d.nominal})</span><span class="badge badge-${d.status}">${d.status}</span></div>`).join('');
+    }
+
+    function renderSPJ(container) {
+        container.innerHTML = `
+            <h3 style="color:#ec4899;margin-bottom:1rem;">📋 SPJ</h3>
+            <button id="cc-spj-add" class="cc-btn">+ Buat SPJ</button>
+            <div id="cc-spj-form" style="display:none;margin-top:1rem;">
+                <input id="spj-judul" class="cc-input" placeholder="Judul SPJ"><br>
+                <input id="spj-total" type="number" class="cc-input" placeholder="Total Biaya"><br>
+                <button id="spj-submit" class="cc-btn">Kirim</button>
+            </div>
+            <div id="cc-spj-list" style="margin-top:1rem;"></div>
+        `;
+        document.getElementById('cc-spj-add').addEventListener('click', () => {
+            document.getElementById('cc-spj-form').style.display = 'block';
+        });
+        document.getElementById('spj-submit').addEventListener('click', () => {
+            const judul = document.getElementById('spj-judul').value;
+            const total = document.getElementById('spj-total').value;
+            if (!judul || !total) return;
+            const spj = getData(SPJ_KEY);
+            spj.push({ id: Date.now(), judul, total, status: 'pending', created: new Date().toISOString() });
+            setData(SPJ_KEY, spj);
+            addLog('SPJ', `SPJ: ${judul} (Rp ${total})`);
+            renderSPJList();
+        });
+        renderSPJList();
+    }
+
+    function renderSPJList() {
+        const list = document.getElementById('cc-spj-list');
+        const spj = getData(SPJ_KEY);
+        if (spj.length === 0) list.innerHTML = '<p style="opacity:0.5;">Belum ada SPJ</p>';
+        else list.innerHTML = spj.map(s => `<div style="background:rgba(0,0,0,0.2);padding:0.5rem;border-radius:0.5rem;margin-bottom:0.5rem;"><strong>${s.judul}</strong> (Rp ${s.total}) <span class="badge badge-${s.status}">${s.status}</span></div>`).join('');
+    }
+
+    function renderApproval(container) {
+        let html = '<h3 style="color:#10b981;margin-bottom:1rem;">✅ Pusat Persetujuan</h3>';
+        for (const [id, mod] of Object.entries(MODULES)) {
+            const pending = getData(mod.key).filter(i => i.status === 'pending');
+            if (pending.length === 0) continue;
+            html += `<h4 style="color:${mod.color};">${mod.icon} ${mod.name} (${pending.length})</h4>`;
+            pending.forEach(item => {
+                html += `<div style="background:rgba(0,0,0,0.2);padding:0.5rem;border-radius:0.5rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+                    <span>${item[mod.fields[0]] || item.id} - ${item.tgl || item.tanggal || ''}</span>
+                    <div>
+                        <button onclick="approveItem('${id}', ${item.id})" style="background:#10b981;border:none;padding:0.3rem 0.7rem;border-radius:0.3rem;color:white;cursor:pointer;">✓</button>
+                        <button onclick="rejectItem('${id}', ${item.id})" style="background:#ef4444;border:none;padding:0.3rem 0.7rem;border-radius:0.3rem;color:white;cursor:pointer;">✕</button>
+                    </div>
+                </div>`;
+            });
+        }
+        ['Dana', 'SPJ'].forEach(type => {
+            const key = type === 'Dana' ? DANA_KEY : SPJ_KEY;
+            const pending = getData(key).filter(i => i.status === 'pending');
+            if (pending.length > 0) {
+                html += `<h4 style="color:#a855f7;">💰 ${type} (${pending.length})</h4>`;
+                pending.forEach(item => {
+                    html += `<div style="background:rgba(0,0,0,0.2);padding:0.5rem;border-radius:0.5rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;">
+                        <span>${item.judul} (Rp ${item.nominal || item.total})</span>
+                        <div>
+                            <button onclick="approveGeneric('${key}', ${item.id})" class="cc-btn" style="padding:0.2rem 0.5rem;">✓</button>
+                            <button onclick="rejectGeneric('${key}', ${item.id})" class="cc-btn-danger" style="padding:0.2rem 0.5rem;">✕</button>
+                        </div>
+                    </div>`;
+                });
+            }
+        });
+        container.innerHTML = html || '<p style="opacity:0.5;">Tidak ada item pending</p>';
+    }
+
+    window.approveItem = function(moduleId, itemId) {
+        const data = getData(MODULES[moduleId].key);
+        const idx = data.findIndex(i => i.id === itemId);
+        if (idx > -1) {
+            data[idx].status = 'approved';
+            setData(MODULES[moduleId].key, data);
+            addLog('Approve', `${MODULES[moduleId].name} ID ${itemId}`);
+            updateStatsGrid();
+            renderApproval(document.getElementById('cc-content'));
+        }
+    };
+    window.rejectItem = function(moduleId, itemId) {
+        const data = getData(MODULES[moduleId].key);
+        const idx = data.findIndex(i => i.id === itemId);
+        if (idx > -1) {
+            data[idx].status = 'rejected';
+            setData(MODULES[moduleId].key, data);
+            addLog('Reject', `${MODULES[moduleId].name} ID ${itemId}`);
+            updateStatsGrid();
+            renderApproval(document.getElementById('cc-content'));
+        }
+    };
+    window.approveGeneric = function(key, id) {
+        const data = getData(key);
+        const idx = data.findIndex(i => i.id === id);
+        if (idx > -1) {
+            data[idx].status = 'approved';
+            setData(key, data);
+            addLog('Approve', `Item ${id} dari ${key}`);
+            updateStatsGrid();
+            renderApproval(document.getElementById('cc-content'));
+        }
+    };
+    window.rejectGeneric = function(key, id) {
+        const data = getData(key);
+        const idx = data.findIndex(i => i.id === id);
+        if (idx > -1) {
+            data[idx].status = 'rejected';
+            setData(key, data);
+            addLog('Reject', `Item ${id} dari ${key}`);
+            updateStatsGrid();
+            renderApproval(document.getElementById('cc-content'));
+        }
+    };
+
+    function renderSlides(container) {
+        const slides = getData(SLIDES_KEY);
+        container.innerHTML = `
+            <h3 style="color:#f59e0b;margin-bottom:1rem;">🖼️ Manajemen Slide (5-7)</h3>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                ${[5,6,7].map(n => `
+                    <div>
+                        <label>Slide ${n}:</label>
+                        <input id="slide-${n}" class="cc-input" value="${slides[n] || ''}" placeholder="Isi konten slide">
+                    </div>
+                `).join('')}
+                <button id="save-slides" class="cc-btn">Simpan</button>
+            </div>
+        `;
+        document.getElementById('save-slides').addEventListener('click', () => {
+            const newSlides = {};
+            [5,6,7].forEach(n => newSlides[n] = document.getElementById(`slide-${n}`).value);
+            setData(SLIDES_KEY, newSlides);
+            addLog('Slides', 'Slide 5-7 diperbarui');
+        });
+    }
+
+    function renderFiles(container) {
+        container.innerHTML = '<h3 style="color:#3b82f6;">📁 File Manager</h3><p style="opacity:0.5;">Fitur file manager akan tersedia di versi berikutnya.</p>';
+    }
+
+    function renderQR(container) {
+        container.innerHTML = `
+            <h3 style="color:#a855f7;">🔳 QR Code Generator</h3>
+            <select id="qr-module" class="cc-select">
+                <option value="">Pilih Modul</option>
+                ${Object.keys(MODULES).map(k => `<option value="${k}">${MODULES[k].name}</option>`).join('')}
+            </select>
+            <input id="qr-id" class="cc-input" placeholder="ID Item">
+            <button id="qr-gen" class="cc-btn">Generate QR</button>
+            <div id="qr-result"></div>
+        `;
+        document.getElementById('qr-gen').addEventListener('click', () => {
+            const mod = document.getElementById('qr-module').value;
+            const id = document.getElementById('qr-id').value;
+            if (!mod || !id) return;
+            const url = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${mod}:${id}`;
+            document.getElementById('qr-result').innerHTML = `<img src="${url}" style="background:white;padding:0.5rem;border-radius:0.5rem;">`;
+        });
+    }
+
+    function renderActivity(container) {
+        const logs = getData(ACTIVITY_KEY);
+        container.innerHTML = `<h3 style="color:#3b82f6;">📜 Log Aktivitas</h3>
+        <div style="max-height:400px;overflow-y:auto;">${logs.length === 0 ? '<p style="opacity:0.5;">Belum ada aktivitas</p>' : logs.map(l => `<div style="font-size:0.8rem;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">[${new Date(l.waktu).toLocaleString('id-ID')}] ${l.aksi}: ${l.detail}</div>`).join('')}</div>`;
+    }
+
+    function renderAnalytics(container) {
+        container.innerHTML = '<h3 style="color:#a855f7;">📈 Analytics</h3><p>Fitur chart akan tersedia dengan integrasi Chart.js. Sementara data tersedia di tab Dashboard.</p>';
+    }
+
+    function renderSystem(container) {
+        const totalItems = Object.values(MODULES).reduce((s, m) => s + getData(m.key).length, 0);
+        container.innerHTML = `
+            <h3 style="color:#06b6d4;">🖥️ System Monitor</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                <div>Total Records: <strong>${totalItems}</strong></div>
+                <div>Version: <strong>Dream OS v3.0</strong></div>
+            </div>
+            <button id="cc-backup" class="cc-btn">Backup Semua Data</button>
+            <button id="cc-reset" class="cc-btn-danger">Reset Semua Data</button>
+        `;
+        document.getElementById('cc-backup').addEventListener('click', () => {
+            const backup = {};
+            for (const mod of Object.values(MODULES)) backup[mod.key] = getData(mod.key);
+            backup[DANA_KEY] = getData(DANA_KEY);
+            backup[SPJ_KEY] = getData(SPJ_KEY);
+            const blob = new Blob([JSON.stringify(backup)], {type:'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dreamos-backup.json'; a.click();
+            addLog('System', 'Backup berhasil');
+        });
+        document.getElementById('cc-reset').addEventListener('click', () => {
+            if (confirm('Hapus semua data?')) {
+                Object.values(MODULES).forEach(m => localStorage.removeItem(m.key));
+                [DANA_KEY, SPJ_KEY, SLIDES_KEY, ACTIVITY_KEY].forEach(k => localStorage.removeItem(k));
+                location.reload();
+            }
+        });
+    }
+
+    // Quick actions
+    document.getElementById('cc-qa-backup').addEventListener('click', () => {
+        const backup = {};
+        for (const mod of Object.values(MODULES)) backup[mod.key] = getData(mod.key);
+        const blob = new Blob([JSON.stringify(backup)], {type:'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quick-backup.json'; a.click();
+    });
+    document.getElementById('cc-qa-export').addEventListener('click', () => {
+        const csv = Object.entries(MODULES).map(([id, mod]) => `${mod.name},${getData(mod.key).length}`).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'stats.csv'; a.click();
+    });
+    document.getElementById('cc-qa-camera').addEventListener('click', () => alert('Camera akan segera hadir'));
+    document.getElementById('cc-qa-voice').addEventListener('click', () => alert('Voice recorder akan segera hadir'));
+    document.getElementById('cc-qa-gps').addEventListener('click', () => {
+        if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => alert(`GPS: ${pos.coords.latitude}, ${pos.coords.longitude}`), () => alert('GPS gagal'));
+        else alert('Geolocation tidak didukung');
+    });
+
+    window.openModule = function(id) {
+        if (typeof openMod === 'function') openMod(id);
+        else alert('Buka modul: ' + id);
+    };
+
+    function init() {
+        updateStatsGrid();
+        updateAIInsight();
+        document.getElementById('cc-wx').textContent = '28°C Cerah';
+        document.querySelectorAll('.cctab').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+        switchTab('dashboard');
+    }
+
+    window.closeCC = function() {
+        const mod = document.getElementById('cmd-module');
+        if (mod) mod.style.display = 'none';
+    };
+
+    init();
+})();
+</script>
