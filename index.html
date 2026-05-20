@@ -171,7 +171,9 @@ window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('T
 
         // GHOST MODE
         let taps = 0, tapTimer;
-        window.tapLogo = () => { taps++; const c = document.getElementById('tap-counter'); if(c){c.textContent='Tap '+taps+'/7';c.style.opacity='1';setTimeout(()=>c.style.opacity='0',1500);} if(taps>=7){taps=0;alert('👻 Ghost Mode activated! (Tools grid coming soon)');} clearTimeout(tapTimer); tapTimer=setTimeout(()=>taps=0,2000); };
+        window.tapLogo = () => { taps++; const c = document.getElementById('tap-counter'); if(c){c.textContent='Tap '+taps+'/7';c.style.opacity='1';setTimeout(()=>c.style.opacity='0',1500);} if(taps>=7){taps=0; openGhostHub();} clearTimeout(tapTimer); tapTimer=setTimeout(()=>taps=0,2000); };
+window.openGhostHub = () => { const hub = document.getElementById('ghost-hub'); if(hub){ hub.style.display='flex'; renderGhostTools(); } };
+window.hideGhostHub = () => { const hub = document.getElementById('ghost-hub'); if(hub) hub.style.display='none'; };
 
         // AUTO-SLIDE
         let currentSlide = 0;
@@ -206,5 +208,53 @@ function renderOsintTree(data,container){container.innerHTML='';function createN
 window.runRealTool=(tool)=>{if(tool==='OSINT'){openToolView(tool);}else{alert('Tool '+tool+' triggered');}};
 
 </script>
+
+<!-- GHOST HUB -->
+<div id="ghost-hub" style="display:none; position:fixed; inset:0; z-index:99999; background:#010206; padding:20px; overflow-y:auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #1e293b; padding-bottom:10px;">
+    <h2 style="color:#2dd4bf; font-size:1rem; font-weight:800;">🕌 Stealth War Room (4S)</h2>
+    <button onclick="hideGhostHub()" style="color:white; background:none; border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+  </div>
+  <div id="ghost-tools-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;"></div>
+  <div id="ghost-log" style="background:rgba(0,0,0,0.5); border-radius:12px; padding:15px; font-family:monospace; font-size:0.7rem; color:#2dd4bf; height:150px; overflow-y:auto;"></div>
+</div>
+
+<script>
+// 15 Ghost Tools + 4S Mode
+const GhostTools = [
+    { label: '4S Mode', icon: '🕌', action: () => {
+        if (typeof ShadowSoulSpirit !== 'undefined') { ShadowSoulSpirit.open4SMode(); }
+        else {
+            let s = document.createElement('script');
+            s.src = 'js/modules/4s-developer.js';
+            s.onload = () => { ShadowSoulSpirit.open4SMode(); };
+            document.head.appendChild(s);
+        }
+    }},
+    { label: 'Eruda', icon: '💻', action: () => { let s=document.createElement('script'); s.src='//cdn.jsdelivr.net/npm/eruda'; document.body.appendChild(s); s.onload=()=>{eruda.init();eruda.show();} }},
+    { label: 'Cookie', icon: '🍪', action: () => log('🍪 Cookies: '+document.cookie.split(';').length) },
+    { label: 'Session', icon: '🔑', action: () => log('🔑 Session: '+sessionStorage.length+' keys') },
+    { label: 'LocalDB', icon: '🗄️', action: () => log('🗄️ Local: '+localStorage.length+' keys') },
+    { label: 'Network', icon: '📡', action: () => log('📡 Online') },
+    { label: 'Geo', icon: '🛰️', action: () => { navigator.geolocation.getCurrentPosition(p=>log('🛰️ Lat:'+p.coords.latitude.toFixed(4)+' Lng:'+p.coords.longitude.toFixed(4)),e=>log('🛰️ GPS: Denied')); }},
+    { label: 'Shalawat', icon: '💖', action: () => { let c=parseInt(localStorage.getItem('shalawat_count')||'0')+1; localStorage.setItem('shalawat_count',c); log('💖 Shalawat: '+c); }},
+    { label: 'Threat', icon: '🔥', action: () => log('🔥 Armed') },
+    { label: 'Health', icon: '📈', action: () => log('📊 OK') },
+    { label: 'Backup', icon: '💾', action: () => log('💾 Ready') },
+    { label: 'Quantum', icon: '⚡', action: () => log('⚡ Active') },
+    { label: 'NMAP', icon: '🕸️', action: () => log('🕸️ Ready') },
+    { label: 'T-Shark', icon: '🦈', action: () => log('🦈 Ready') },
+    { label: 'OSINT', icon: '🕷️', action: () => log('🕷️ Ready') },
+    { label: 'Bridge', icon: '🔌', action: () => log('🔌 Connected') }
+];
+
+const log = (msg) => { const el = document.getElementById('ghost-log'); if(el){el.innerHTML+='> '+msg+'\n';el.scrollTop=el.scrollHeight;} };
+const renderGhostTools = () => {
+    const grid = document.getElementById('ghost-tools-grid');
+    if(!grid) return;
+    grid.innerHTML = GhostTools.map(t => '<button onclick="('+t.action.toString()+')()" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px;text-align:center;cursor:pointer;color:white;"><div style="font-size:1.5rem;">'+t.icon+'</div><div style="font-size:0.6rem;font-weight:600;margin-top:4px;">'+t.label+'</div></button>').join('');
+};
+</script>
+
 </body>
 </html>
