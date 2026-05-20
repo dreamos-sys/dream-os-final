@@ -1,100 +1,182 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dream OS - Ghost Auditor</title>
-    <script src="https://cdn.tailwindcss.com">
-// =========================================================
-// DREAM OS EVENT BUS v1.0 (Module Integration Layer)
-// =========================================================
-const DreamEventBus = {
-    listeners: {},
-    
-    // Subscribe to event
-    on(event, callback) {
-        if (!this.listeners[event]) this.listeners[event] = [];
-        this.listeners[event].push(callback);
-        console.log(`📡 Subscribed to: ${event}`);
-    },
-    
-    // Unsubscribe
-    off(event, callback) {
-        if (this.listeners[event]) {
-            this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
-        }
-    },
-    
-    // Emit event with payload
-    emit(event, payload = {}) {
-        console.log(`📡 Emitting: ${event}`, payload);
-        
-        // Save to localStorage for persistence
-        const events = JSON.parse(localStorage.getItem('dream_os_events') || '[]');
-        events.unshift({ event, payload, timestamp: new Date().toISOString() });
-        if (events.length > 100) events.pop(); // Keep last 100
-        localStorage.setItem('dream_os_events', JSON.stringify(events));
-        
-        // Notify all listeners
-        if (this.listeners[event]) {
-            this.listeners[event].forEach(cb => {
-                try { cb(payload); } catch(e) { console.error('Event callback error:', e); }
-            });
-        }        
-        // Also trigger global custom event for vanilla JS compatibility
-        document.dispatchEvent(new CustomEvent('dream-os:' + event, { detail: payload }));
-    },
-    
-    // Get recent events
-    getHistory(event = null, limit = 10) {
-        const events = JSON.parse(localStorage.getItem('dream_os_events') || '[]');
-        if (event) return events.filter(e => e.event === event).slice(0, limit);
-        return events.slice(0, limit);
-    },
-    
-    // Clear history
-    clearHistory() {
-        localStorage.removeItem('dream_os_events');
-        console.log('🗑️ Event history cleared');
-    }
-};
-
-// Make globally available
-window.DreamEventBus = DreamEventBus;
-
-// Auto-init: Listen for system-wide events
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔗 Dream Event Bus initialized');
-    
-    // Example: Listen for new bookings from any module
-    DreamEventBus.on('booking:created', (data) => {
-        console.log('📅 New booking detected:', data);
-        if (window.notifySuccess) {
-            window.notifySuccess(`📅 Booking baru: ${data.sarana} - ${data.tgl}`);
-        }
-    });
-    
-    // Example: Listen for system lock changes
-    DreamEventBus.on('system:lock_changed', (data) => {
-        console.log('🔒 System lock updated:', data);
-        // Could update UI globally if needed
-    });
-});
-
-</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dream OS • v1.0 Limited Edition 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #010409; color: white; height: 100vh; overflow: hidden; font-family: sans-serif; }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%); 
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-light { 
+            background: rgba(255,255,255,0.85); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(16,185,129,0.25);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .arabic-glow { 
+            text-shadow: 0 0 20px rgba(16,185,129,0.3); 
+        }
+        .module-card {
+            transition: all 0.3s ease;
+        }
+        .module-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(16,185,129,0.2);
+        }
     </style>
 </head>
-<body>
-    <div id="main-app" class="flex flex-col h-full items-center justify-center">
-        <h1 class="text-white font-bold text-2xl">SISTEM ONLINE</h1>
-        <p class="text-teal-400">Pangkalan Siap Tempur</p>
+<body class="min-h-screen">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-100 via-white to-emerald-50">
+        <div class="text-center mb-10">
+            <img src="assets/logo-sultan.png" class="w-24 h-24 mx-auto rounded-3xl border-2 border-amber-400/40 shadow-2xl mb-6 cursor-pointer" onclick="tapLogo()" onerror="this.style.display='none'">
+            <p class="text-5xl font-bold text-emerald-600 arabic-glow mb-3" style="font-family:'Amiri',serif">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p class="text-lg text-emerald-600/80 italic" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            <p class="text-xs text-gray-500 mt-4 font-semibold">Dream OS • v1.0 Limited Edition 2026</p>
+        </div>        <div class="w-full max-w-xs space-y-4">
+            <div class="glass-light rounded-2xl p-1 flex items-center pr-3">
+                <input type="password" id="pass" class="flex-1 p-4 bg-white/60 text-center outline-none font-mono tracking-[0.3em] text-emerald-600 placeholder-gray-400 rounded-xl" placeholder="••••">
+                <button onclick="togglePass()" class="p-2 text-gray-400 hover:text-emerald-600 transition"><span id="eye">👁️</span></button>
+            </div>
+            <button onclick="login()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 text-sm tracking-widest uppercase">Access Core</button>
+        </div>
+        <div id="tap-counter" class="text-xs text-emerald-600 font-mono mt-4 opacity-0 font-semibold">Tap 0/7</div>
     </div>
-    <script>console.log("Sistem Berjalan");</script>
-<script src="modules/ghost-developer.js"></script>
-<script src="modules/notification-system.js"></script>
-<script src="modules/ai-core.js"></script>
+
+    <!-- MAIN APP -->
+    <div id="main-app" style="display:none;" class="flex-col min-h-screen">
+        <!-- SPIRITUAL HEADER -->
+        <header class="glass-light pt-8 pb-4 px-6 text-center border-b-2 border-emerald-500/20 sticky top-0 z-40">
+            <img src="assets/logo-sultan.png" class="w-16 h-16 mx-auto rounded-2xl border-2 border-amber-400/40 shadow-lg mb-3 cursor-pointer" onclick="tapLogo()">
+            <p class="text-4xl font-bold text-emerald-600 arabic-glow mb-2" style="font-family:'Amiri',serif">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p class="text-sm text-emerald-600/70 italic" style="font-family:'Amiri',serif">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</p>
+            <div class="flex justify-center gap-3 mt-4 text-xs">
+                <span class="glass-light px-3 py-2 rounded-xl font-semibold">🕌 <span id="prayer-time">Dzuhur</span></span>
+                <span class="glass-light px-3 py-2 rounded-xl font-semibold">⏱️ <span id="countdown">00:00:00</span></span>
+                <span class="glass-light px-3 py-2 rounded-xl font-semibold">🔋 <span id="battery">47%</span></span>
+            </div>
+        </header>
+
+        <main class="flex-1 px-6 py-6 space-y-6 pb-32">
+            <!-- TODAY'S BOOKING -->
+            <div class="glass-light rounded-3xl p-6 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <button onclick="prevSlide()" class="w-10 h-10 rounded-full glass-light flex items-center justify-center text-gray-600 hover:text-emerald-600 transition font-bold">◀</button>
+                    <h3 class="text-sm font-bold text-emerald-600 uppercase tracking-widest">Today's Booking</h3>
+                    <button onclick="nextSlide()" class="w-10 h-10 rounded-full glass-light flex items-center justify-center text-gray-600 hover:text-emerald-600 transition font-bold">▶</button>
+                </div>
+                <div id="booking-slider" class="text-center py-4">
+                    <p class="text-gray-600 text-sm font-medium">No bookings today</p>
+                </div>
+                <div class="flex justify-center gap-2 mt-3" id="slider-dots"></div>
+            </div>
+
+            <!-- MODULES GRID - 3 COLUMNS -->
+            <div class="grid grid-cols-3 gap-4">
+                <div onclick="openMod('ai')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">🧠</span>
+                    <p class="text-xs font-bold text-gray-700">AI Core</p>
+                    <span class="text-[8px] text-orange-500 font-bold block mt-1">LTD</span>
+                </div>
+                <div onclick="openMod('cmd')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">📊</span>
+                    <p class="text-xs font-bold text-gray-700">CMD</p>
+                </div>
+                <div onclick="openMod('book')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">                    <span class="text-3xl block mb-2">📅</span>
+                    <p class="text-xs font-bold text-gray-700">Booking</p>
+                </div>
+                <div onclick="openMod('k3')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">⚠️</span>
+                    <p class="text-xs font-bold text-gray-700">K3</p>
+                </div>
+                <div onclick="openMod('sec')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">🛡️</span>
+                    <p class="text-xs font-bold text-gray-700">Security</p>
+                </div>
+                <div onclick="openMod('in')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">🧹</span>
+                    <p class="text-xs font-bold text-gray-700">Janitor In</p>
+                </div>
+                <div onclick="openMod('out')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">🌿</span>
+                    <p class="text-xs font-bold text-gray-700">Janitor Out</p>
+                </div>
+                <div onclick="openMod('stok')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">📦</span>
+                    <p class="text-xs font-bold text-gray-700">Stok</p>
+                </div>
+                <div onclick="openMod('maint')" class="module-card glass-light p-5 rounded-2xl text-center cursor-pointer">
+                    <span class="text-3xl block mb-2">🔧</span>
+                    <p class="text-xs font-bold text-gray-700">Maintenance</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- BOTTOM NAV -->
+        <nav class="fixed bottom-0 inset-x-0 h-16 bg-white/95 border-t-2 border-gray-200 flex justify-around items-center z-40">
+            <button onclick="nav('HOME')" class="text-emerald-600 flex flex-col items-center">
+                <span class="text-xl">🏠</span>
+                <span class="text-[10px] font-bold">Home</span>
+            </button>
+            <button onclick="nav('PROFILE')" class="text-gray-400 hover:text-emerald-600 flex flex-col items-center transition">
+                <span class="text-xl">👤</span>
+                <span class="text-[10px] font-bold">Profile</span>
+            </button>
+            <button onclick="nav('QR')" class="text-gray-400 hover:text-emerald-600 flex flex-col items-center transition">
+                <span class="text-xl">📱</span>
+                <span class="text-[10px] font-bold">QR</span>
+            </button>
+            <button onclick="nav('ABOUT')" class="text-gray-400 hover:text-emerald-600 flex flex-col items-center transition">
+                <span class="text-xl">ℹ️</span>
+                <span class="text-[10px] font-bold">About</span>
+            </button>
+            <button onclick="nav('SETTING')" class="text-gray-400 hover:text-emerald-600 flex flex-col items-center transition">
+                <span class="text-xl">⚙️</span>                <span class="text-[10px] font-bold">Setting</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // LOGIN
+        window.togglePass = () => { const inp = document.getElementById('pass'); if (inp) inp.type = inp.type === 'password' ? 'text' : 'password'; };
+        window.login = () => { if (document.getElementById('pass').value !== 'b15m1ll4h_012443410') { alert('❌ Password Salah!'); return; } document.getElementById('login-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('login-screen').style.display = 'none'; document.getElementById('main-app').style.display = 'flex'; startAutoSlide(); }, 300); };
+
+        // GHOST MODE
+        let taps = 0, tapTimer;
+        window.tapLogo = () => { taps++; const c = document.getElementById('tap-counter'); if(c){c.textContent='Tap '+taps+'/7';c.style.opacity='1';setTimeout(()=>c.style.opacity='0',1500);} if(taps>=7){taps=0;alert('👻 Ghost Mode activated! (Tools grid coming soon)');} clearTimeout(tapTimer); tapTimer=setTimeout(()=>taps=0,2000); };
+
+        // AUTO-SLIDE
+        let currentSlide = 0;
+        const slides = [
+            { content: '<p class="text-gray-600 text-sm font-medium">No bookings today</p>' },
+            { content: '<p class="text-emerald-600 text-sm font-bold">System Status: All Clear</p>' },
+            { content: '<p class="text-gray-600 text-sm font-medium">Next maintenance: Tomorrow</p>' }
+        ];
+        window.updateSlider = () => {
+            const slider = document.getElementById('booking-slider');
+            const dots = document.getElementById('slider-dots');
+            if (!slider) return;
+            slider.innerHTML = slides[currentSlide].content;
+            dots.innerHTML = slides.map((_, i) => `<span class="w-2 h-2 rounded-full ${i===currentSlide?'bg-emerald-500':'bg-gray-300'}"></span>`).join('');
+        };
+        window.nextSlide = () => { currentSlide = (currentSlide + 1) % slides.length; updateSlider(); };
+        window.prevSlide = () => { currentSlide = (currentSlide - 1 + slides.length) % slides.length; updateSlider(); };
+        let autoSlideInterval;
+        window.startAutoSlide = () => { if (autoSlideInterval) clearInterval(autoSlideInterval); autoSlideInterval = setInterval(nextSlide, 7000); };
+
+        // MODULE LOADER
+        window.openMod = (id) => { alert('Module: ' + id + ' (Coming soon)'); };
+        window.nav = (name) => { if (name !== 'HOME') alert('Navigasi: ' + name); };
+
+        // INIT
+        document.addEventListener('DOMContentLoaded', () => { updateSlider(); });
+    </script>
 </body>
 </html>
