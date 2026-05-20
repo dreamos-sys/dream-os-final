@@ -1,4 +1,4 @@
-console.log("⚙️ Dream OS 4S Core v1.5 - THE TOTAL AWAKENING!");
+console.log("⚙️ Dream OS 4S Core v1.6 - THE REAL AWAKENING!");
 
 // SUNTIK STYLING INSTANT CYBERPUNK
 const stylePatch = document.createElement('style');
@@ -8,16 +8,15 @@ stylePatch.innerHTML = `
 `;
 document.head.appendChild(stylePatch);
 
-// LANGSUNG BAJAK FUNGSI BAWAAN SASIS SEBELUM DIKLIK USER
+// BAJAK FUNGSI SHOWAUDIT BAWAAN SASIS
 if (window.ShadowSoulSpirit) {
-  // Bajak fungsi alert lama biar langsung mekarin dashboard pro
-  window.ShadowSoulSpirit.run4SScan = function() {
+  window.ShadowSoulSpirit.showAudit = function() {
     window.FourSUI.showISOAuditReport();
   };
-  console.log("🎯 Bawaan sasis ShadowSoulSpirit.run4SScan BERHASIL DIBAJAK!");
+  console.log("🎯 KABEL UTAMA ShadowSoulSpirit.showAudit BERHASIL DIBAJAK!");
 }
 
-// ARSITEKTUR UTAMA MODAL ISO 27001 CYBERPUNK (100% LENGKAP TANPA POTONGAN)
+// ARSITEKTUR MODAL ISO 27001 CYBERPUNK (100% UTUH & LENGKAP)
 window.FourSUI = {
   showISOAuditReport: async function() {
     const old = document.getElementById('fours-custom-modal'); if(old) old.remove();
