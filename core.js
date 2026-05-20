@@ -127,6 +127,28 @@ window.injectGhostTools = () => {
 window.renderDashboard = () => {
     const grid = document.getElementById('module-grid');
     if (!grid) return;
+    
+    const modules = [
+        { i: '📊', n: 'CMD Center', id: 'cmd', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#3b82f6', s: '0 0 20px rgba(59,130,246,0.3)' },
+        { i: '📅', n: 'Booking', id: 'book', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#f59e0b', s: '0 0 20px rgba(245,158,11,0.3)' },
+        { i: '⚠️', n: 'K3 Safety', id: 'k3', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#ef4444', s: '0 0 20px rgba(239,68,68,0.3)' },
+        { i: '🛡️', n: 'Security', id: 'sec', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#8b5cf6', s: '0 0 20px rgba(139,92,246,0.3)' },
+        { i: '🧹', n: 'Jan In', id: 'in', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#10b981', s: '0 0 20px rgba(16,185,129,0.3)' },
+        { i: '🌿', n: 'Jan Out', id: 'out', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#22c55e', s: '0 0 20px rgba(34,197,94,0.3)' },
+        { i: '📦', n: 'Stok', id: 'stok', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#eab308', s: '0 0 20px rgba(234,179,8,0.3)' },
+        { i: '🔧', n: 'Maint', id: 'maint', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#f97316', s: '0 0 20px rgba(249,115,22,0.3)' },
+        { i: '🏢', n: 'Asset', id: 'asset', g: 'linear-gradient(135deg,#1e293b,#0f172a)', b: '#06b6d4', s: '0 0 20px rgba(6,182,212,0.3)' }
+    ];
+    
+    grid.innerHTML = modules.map(m => 
+        `<div onclick="openMod('${m.id}')" style="background:${m.g};border:2px solid ${m.b}40;border-radius:1rem;padding:1.25rem 0.75rem;text-align:center;cursor:pointer;transition:all 0.3s;box-shadow:${m.s};" onmouseenter="this.style.transform='translateY(-4px)';this.style.borderColor='${m.b}';this.style.boxShadow='${m.s}, 0 8px 30px ${m.b}40';" onmouseleave="this.style.transform='translateY(0)';this.style.borderColor='${m.b}40';this.style.boxShadow='${m.s}';">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">${m.i}</div>
+            <p style="color:#e2e8f0;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">${m.n}</p>
+        </div>`
+    ).join('');
+};
+    const grid = document.getElementById('module-grid');
+    if (!grid) return;
     const modules = [
         { i: '📊', n: 'CMD', id: 'cmd' },
         { i: '📅', n: 'Booking', id: 'book' },
