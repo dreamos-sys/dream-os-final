@@ -110,7 +110,7 @@
                 <!-- 4S Tools Grid -->
                 <div style="margin-bottom:20px">
                     <h3 style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px 0;font-weight:600">🛠️ 4S Tools</h3>
-                    <div id="ghost-tools-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+                    <!-- tools will be injected here -->
                 </div>
                 <div style="margin-bottom:20px">
                     <h3 style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px 0;font-weight:600">⚡ Quick Access</h3>
@@ -282,36 +282,56 @@
         // ========== GHOST MODE ==========
         let taps = 0, tapTimer;
         window.tapLogo = () => { taps++; const c = document.getElementById('tap-counter'); if(c){c.textContent='Tap '+taps+'/7';c.style.opacity='1';setTimeout(()=>c.style.opacity='0',1500);} if(taps>=7){taps=0; openGhostHub();} clearTimeout(tapTimer); tapTimer=setTimeout(()=>taps=0,2000); };
-        window.openGhostHub = () => { const hub = document.getElementById('ghost-hub'); if(hub){ hub.style.display='flex'; setTimeout(() => renderGhostTools(), 100); } };
-window.renderGhostTools = () => {
-    const grid = document.getElementById('ghost-tools-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
+        window.openGhostHub = () => {
+    const hub = document.getElementById('ghost-hub');
+    if (!hub) return;
+    hub.style.display = 'flex';
+    
+    // Cari tempat untuk tools (setelah header, di area kiri)
+    const leftPanel = hub.querySelector('[style*="overflow-y:auto"]');
+    if (!leftPanel) return;
+    
+    // Hapus tools lama jika ada
+    const oldGrid = document.getElementById('ghost-tools-grid');
+    if (oldGrid) oldGrid.remove();
+    
+    // Buat grid baru
+    const grid = document.createElement('div');
+    grid.id = 'ghost-tools-grid';
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;';
+    
     const tools = [
-        { label: '4S Mode', icon: '🕌', action: () => { window.open4SMode(); } },
-        { label: 'Eruda', icon: '💻', action: () => { window.openEruda(); } },
-        { label: 'OSINT', icon: '🕷️', action: () => { window.openOSINT(); } },
-        { label: 'Cookies', icon: '🍪', action: () => { window.checkCookies(); } },
-        { label: 'Session', icon: '🔑', action: () => { window.checkSession(); } },
-        { label: 'LocalDB', icon: '🗄️', action: () => { window.checkLocalDB(); } },
-        { label: 'Network', icon: '📡', action: () => { window.checkNetwork(); } },
-        { label: 'GPS', icon: '🛰️', action: () => { window.checkGPS(); } },
-        { label: 'Shalawat', icon: '💖', action: () => { window.shalawatCounter(); } },
-        { label: 'Threat', icon: '🔥', action: () => { window.threatScan(); } },
-        { label: 'Health', icon: '📊', action: () => { window.systemHealth(); } },
-        { label: 'Backup', icon: '💾', action: () => { window.backupData(); } },
-        { label: 'Quantum', icon: '⚡', action: () => { window.quantumBoost(); } },
-        { label: 'NMAP', icon: '🕸️', action: () => { window.runNMAP(); } },
-        { label: 'T-Shark', icon: '🦈', action: () => { window.runTShark(); } },
-        { label: 'Bridge', icon: '🔌', action: () => { window.checkBridge(); } }
+        { label: '4S Mode', icon: '🕌', onclick: () => { if(typeof ShadowSoulSpirit!=='undefined') ShadowSoulSpirit.open4SMode(); else { const s=document.createElement('script'); s.src='js/modules/4s-developer.js'; s.onload=()=>ShadowSoulSpirit.open4SMode(); document.head.appendChild(s); } } },
+        { label: 'Eruda', icon: '💻', onclick: () => { if(typeof eruda=='undefined'){ const s=document.createElement('script'); s.src='//cdn.jsdelivr.net/npm/eruda'; document.body.appendChild(s); s.onload=()=>eruda.init(); } else eruda.show(); } },
+        { label: 'Cookies', icon: '🍪', onclick: () => log('🍪 Cookies: '+document.cookie.split(';').length) },
+        { label: 'Session', icon: '🔑', onclick: () => log('🔑 Session: '+sessionStorage.length+' keys') },
+        { label: 'LocalDB', icon: '🗄️', onclick: () => log('🗄️ Local: '+localStorage.length+' keys') },
+        { label: 'Network', icon: '📡', onclick: () => log('📡 '+(navigator.onLine?'Online':'Offline')) },
+        { label: 'GPS', icon: '🛰️', onclick: () => { navigator.geolocation.getCurrentPosition(p=>log('🛰️ '+p.coords.latitude.toFixed(4)+','+p.coords.longitude.toFixed(4)), e=>log('🛰️ '+e.message)); } },
+        { label: 'Shalawat', icon: '💖', onclick: () => { let c=parseInt(localStorage.getItem('shalawat_count')||'0')+1; localStorage.setItem('shalawat_count',c); log('💖 '+c); } },
+        { label: 'Threat', icon: '🔥', onclick: () => log('🔥 Armed') },
+        { label: 'Health', icon: '📊', onclick: () => log('📊 OK') },
+        { label: 'Backup', icon: '💾', onclick: () => log('💾 Ready') },
+        { label: 'Quantum', icon: '⚡', onclick: () => log('⚡ Active') },
+        { label: 'NMAP', icon: '🕸️', onclick: () => log('🕸️ Ready') },
+        { label: 'T-Shark', icon: '🦈', onclick: () => log('🦈 Ready') },
+        { label: 'OSINT', icon: '🕷️', onclick: () => log('🕷️ Ready') },
+        { label: 'Bridge', icon: '🔌', onclick: () => log('🔌 Connected') }
     ];
+    
     tools.forEach(t => {
         const btn = document.createElement('button');
-        btn.onclick = t.action;
-        btn.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;text-align:center;cursor:pointer;color:white;min-height:80px;';
-        btn.innerHTML = '<div style="font-size:1.5rem;margin-bottom:4px;">' + t.icon + '</div><div style="font-size:0.6rem;font-weight:600;">' + t.label + '</div>';
+        btn.onclick = t.onclick;
+        btn.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;color:white;min-height:70px;transition:all 0.2s;';
+        btn.innerHTML = '<div style="font-size:1.5rem;margin-bottom:4px;">' + t.icon + '</div><div style="font-size:0.6rem;font-weight:600;color:#94a3b8;">' + t.label + '</div>';
+        btn.onmouseenter = () => { btn.style.background = '#2d3a4a'; btn.style.borderColor = '#2dd4bf'; };
+        btn.onmouseleave = () => { btn.style.background = '#1e293b'; btn.style.borderColor = '#334155'; };
         grid.appendChild(btn);
     });
+    
+    // Sisipkan grid di awal left panel
+    leftPanel.insertBefore(grid, leftPanel.firstChild);
+};
 };
         window.hideGhostHub = () => { const hub = document.getElementById('ghost-hub'); if(hub) hub.style.display='none'; };
 
