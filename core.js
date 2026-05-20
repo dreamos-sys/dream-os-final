@@ -147,9 +147,31 @@ window.openMod = (id) => {
         });
         return;
     }
-    var names = {cmd:'Command Center',book:'Booking',k3:'K3 Safety',sec:'Security',in:'Janitor In',out:'Janitor Out',stok:'Stok',maint:'Maintenance',asset:'Asset'};
+    if (id === 'in') {
+        let container = document.getElementById('janitor-in-module');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'janitor-in-module';
+            container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0f172a;';
+            document.body.appendChild(container);
+        }
+        container.style.display = 'block';
+        fetch('js/modules/janitor-indoor.html').then(function(r){return r.text();}).then(function(h){
+            container.innerHTML = h;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(old){
+                var ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+            });
+        }).catch(function(){
+            container.innerHTML = '<div style="color:red;padding:2rem;text-align:center;">Gagal memuat modul Janitor Indoor</div>';
+        });
+        return;
+    }
+    var names = {cmd:'Command Center',book:'Booking',k3:'K3 Safety',in:'Janitor Indoor',sec:'Security',out:'Janitor Out',stok:'Stok',maint:'Maintenance',asset:'Asset'};
     alert('📂 ' + (names[id]||id.toUpperCase()) + '\n\nComing soon in v2.0');
-};;;
+};;;;
 window.nav = (name) => { if (name !== 'HOME') alert('Navigasi: ' + name); };
 
 // Log
