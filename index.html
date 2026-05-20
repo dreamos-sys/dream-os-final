@@ -4,7 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dream OS - Ghost Auditor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+// =========================================================
+// DREAM OS EVENT BUS v1.0 (Module Integration Layer)
+// =========================================================
+const DreamEventBus = {
+    listeners: {},
+    
+    // Subscribe to event
+    on(event, callback) {
+        if (!this.listeners[event]) this.listeners[event] = [];
+        this.listeners[event].push(callback);
+        console.log(`📡 Subscribed to: ${event}`);
+    },
+    
+    // Unsubscribe
+    off(event, callback) {
+        if (this.listeners[event]) {
+            this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+        }
+    },
+    
+    // Emit event with payload
+    emit(event, payload = {}) {
+        console.log(`📡 Emitting: ${event}`, payload);
+        
+        // Save to localStorage for persistence
+        const events = JSON.parse(localStorage.getItem('dream_os_events') || '[]');
+        events.unshift({ event, payload, timestamp: new Date().toISOString() });
+        if (events.length > 100) events.pop(); // Keep last 100
+        localStorage.setItem('dream_os_events', JSON.stringify(events));
+        
+        // Notify all listeners
+        if (this.listeners[event]) {
+            this.listeners[event].forEach(cb => {
+                try { cb(payload); } catch(e) { console.error('Event callback error:', e); }
+            });
+        }        
+        // Also trigger global custom event for vanilla JS compatibility
+        document.dispatchEvent(new CustomEvent('dream-os:' + event, { detail: payload }));
+    },
+    
+    // Get recent events
+    getHistory(event = null, limit = 10) {
+        const events = JSON.parse(localStorage.getItem('dream_os_events') || '[]');
+        if (event) return events.filter(e => e.event === event).slice(0, limit);
+        return events.slice(0, limit);
+    },
+    
+    // Clear history
+    clearHistory() {
+        localStorage.removeItem('dream_os_events');
+        console.log('🗑️ Event history cleared');
+    }
+};
+
+// Make globally available
+window.DreamEventBus = DreamEventBus;
+
+// Auto-init: Listen for system-wide events
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔗 Dream Event Bus initialized');
+    
+    // Example: Listen for new bookings from any module
+    DreamEventBus.on('booking:created', (data) => {
+        console.log('📅 New booking detected:', data);
+        if (window.notifySuccess) {
+            window.notifySuccess(`📅 Booking baru: ${data.sarana} - ${data.tgl}`);
+        }
+    });
+    
+    // Example: Listen for system lock changes
+    DreamEventBus.on('system:lock_changed', (data) => {
+        console.log('🔒 System lock updated:', data);
+        // Could update UI globally if needed
+    });
+});
+
+</script>
     <style>
         body { background: #010409; color: white; height: 100vh; overflow: hidden; font-family: sans-serif; }
         .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
