@@ -97,7 +97,6 @@ window.renderDashboard = () => {
     const grid = document.getElementById('module-grid');
     if (!grid) return;
     const modules = [
-        { i: '🧠', n: 'AI Core', id: 'ai' },
         { i: '📊', n: 'CMD', id: 'cmd' },
         { i: '📅', n: 'Booking', id: 'book' },
         { i: '⚠️', n: 'K3', id: 'k3' },
@@ -105,7 +104,8 @@ window.renderDashboard = () => {
         { i: '🧹', n: 'Jan In', id: 'in' },
         { i: '🌿', n: 'Jan Out', id: 'out' },
         { i: '📦', n: 'Stok', id: 'stok' },
-        { i: '🔧', n: 'Maint', id: 'maint' }
+        { i: '🔧', n: 'Maint', id: 'maint' },
+        { i: '🏢', n: 'Asset', id: 'asset' }
     ];
     grid.innerHTML = modules.map(m => 
         `<div onclick="openMod('${m.id}')" class="glass-light p-4 rounded-2xl text-center cursor-pointer">
