@@ -303,7 +303,7 @@ window.openMod = (id) => {
     }
     var names = {cmd:'Command Center',book:'Booking',k3:'K3 Safety',in:'Janitor Indoor',out:'Janitor Outdoor',maint:'Maintenance',sec:'Security',stok:'Stok & Inventaris',asset:'Asset & Gudang'};
     alert('📂 ' + (names[id]||id.toUpperCase()) + '\n\nComing soon in v2.0');
-};;;;;;;;;;
+};;;;;;;;;;;;
 window.nav = (name) => { if (name !== 'HOME') alert('Navigasi: ' + name); };
 
 // Log
