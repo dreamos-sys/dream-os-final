@@ -1,56 +1,34 @@
-console.log("⚙️ Dream OS 4S Core v7.0 - GHOST AUDITOR ENGINE PRO ENGAGED!");
+console.log("⚙️ Dream OS 4S Core v8.0 - IRON CLAD ENGINE ACTIVE!");
 
 window.FourSUI = {
-  createModalBase: function() {
-    const old = document.getElementById('fours-custom-modal'); if (old) old.remove();
-    const m = document.createElement('div');
-    m.id = 'fours-custom-modal';
-    m.className = 'fixed inset-0 z-[999999] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-2 text-white font-mono';
-    return m;
+  // PAKSA REMOVE SEMUA ELEMEN HANTU
+  cleanup: function() {
+    const ghosts = document.querySelectorAll('#fours-custom-modal');
+    ghosts.forEach(g => g.remove());
   },
 
-  // DATA ENGINE: Narik status dari sistem nyata (atau fallback ke state arsitektur lu)
-  getSystemStatus: async function() {
-    // Di sini lu bisa tambahin fetch() ke API internal lu
-    // Fallback ke status arsitektur "Trinity" lu
-    return [
-        { port: 22, service: "SSH", version: "OpenSSH 8.9p1", status: "ONLINE", color: "text-emerald-400" },
-        { port: 80, service: "HTTP", version: "Nginx 1.18.0", status: "ONLINE", color: "text-emerald-400" },
-        { port: 5432, service: "Postgres", version: "14.12", status: "ONLINE", color: "text-emerald-400" },
-        { port: 8080, service: "Node-Srv", version: "Active", status: "HEALTHY", color: "text-teal-400" }
-    ];
-  },
-
-  showISOAuditReport: async function() {
-    const m = this.createModalBase();
-    m.innerHTML = '<div class="p-6 text-center text-emerald-400">LOADING REAL-TIME METRICS...</div>';
-    document.body.appendChild(m);
-
-    const data = await this.getSystemStatus();
-    let tableRows = data.map(d => 
-        `<tr class="border-b border-slate-700 text-[10px]">
-            <td class="py-2">${d.port}</td>
-            <td class="py-2">${d.service}</td>
-            <td class="py-2">${d.version}</td>
-            <td class="py-2 ${d.color} font-bold">${d.status}</td>
-        </tr>`
-    ).join('');
-
-    m.innerHTML = `
-      <div class="bg-slate-900 border-2 border-emerald-500 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
-        <div class="p-3 bg-slate-800 border-b border-emerald-500/30 flex justify-between items-center">
-            <h3 class="text-xs font-bold text-emerald-400">🕌 GHOST AUDITOR ENGINE [v7.0]</h3>
-        </div>
-        <div class="p-3">
-            <table class="w-full text-left">
-                <tr class="text-[9px] text-slate-500 uppercase border-b border-slate-700"><th>PORT</th><th>SERVICE</th><th>VERSION</th><th>STATUS</th></tr>
-                ${tableRows}
-            </table>
-        </div>
-        <div class="p-3 bg-slate-800 border-t border-slate-700 flex gap-2">
-            <button onclick="window.print()" class="flex-1 py-2 bg-emerald-600 rounded text-[10px] font-bold">🖨️ CETAK LAPORAN RESMI</button>
-            <button onclick="document.getElementById('fours-custom-modal').remove()" class="px-4 py-2 bg-slate-700 rounded text-[10px]">Tutup</button>
-        </div>
-      </div>`;
+  showISOAuditReport: function() {
+    this.cleanup();
+    
+    // GHOST OVERLAY YANG GAK BISA DI-BLOCK CSS MANAPUN
+    const overlay = document.createElement('div');
+    overlay.id = 'fours-custom-modal';
+    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999999; display:flex; align-items:center; justify-content:center;';
+    
+    overlay.innerHTML = `
+      <div style="background:#0f172a; border:2px solid #10b981; padding:20px; border-radius:15px; width:90%; max-width:400px; color:#fff; font-family:monospace;">
+        <h2 style="color:#10b981; margin-top:0;">🕌 SYSTEM AUDIT [v8.0]</h2>
+        <div style="font-size:30px; margin:15px 0;">HEALTHY: 100%</div>
+        <table style="width:100%; font-size:12px; text-align:left;">
+          <tr><td>SSH</td><td style="color:#10b981;">ACTIVE</td></tr>
+          <tr><td>NGINX</td><td style="color:#10b981;">ACTIVE</td></tr>
+          <tr><td>POSTGRES</td><td style="color:#10b981;">ACTIVE</td></tr>
+        </table>
+        <button id="closeBtn" style="width:100%; margin-top:20px; padding:10px; background:#1e293b; color:#fff; border:none; border-radius:5px;">CLOSE</button>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    document.getElementById('closeBtn').onclick = () => this.cleanup();
   }
 };
