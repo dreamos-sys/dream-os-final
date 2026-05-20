@@ -125,9 +125,31 @@ window.openMod = (id) => {
         });
         return;
     }
+    if (id === 'k3') {
+        let container = document.getElementById('k3-module');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'k3-module';
+            container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0f172a;';
+            document.body.appendChild(container);
+        }
+        container.style.display = 'block';
+        fetch('js/modules/k3.html').then(function(r){return r.text();}).then(function(h){
+            container.innerHTML = h;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(old){
+                var ns = document.createElement('script');
+                ns.textContent = old.textContent;
+                document.body.appendChild(ns);
+            });
+        }).catch(function(){
+            container.innerHTML = '<div style="color:red;padding:2rem;text-align:center;">Gagal memuat modul K3</div>';
+        });
+        return;
+    }
     var names = {cmd:'Command Center',book:'Booking',k3:'K3 Safety',sec:'Security',in:'Janitor In',out:'Janitor Out',stok:'Stok',maint:'Maintenance',asset:'Asset'};
     alert('📂 ' + (names[id]||id.toUpperCase()) + '\n\nComing soon in v2.0');
-};;
+};;;
 window.nav = (name) => { if (name !== 'HOME') alert('Navigasi: ' + name); };
 
 // Log
