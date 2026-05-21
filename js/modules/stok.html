@@ -4,4 +4,478 @@
   Kebutuhan: Harian, Mingguan, Bulanan
   Standar: ISO 9001 (Manajemen Mutu), ISO 55000 (Manajemen Aset)
 -->
-... (tempelkan seluruh kode stok di sini) ...
+<div style="min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b);color:white;font-family:'Inter',sans-serif;padding:1.5rem;padding-bottom:5rem;">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <button onclick="closeStok()" style="background:rgba(255,255,255,0.1);color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;">← Kembali</button>
+        <h2 style="color:#06b6d4;font-size:1.5rem;font-weight:800;">📦 STOK & INVENTARIS</h2>
+        <span style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:white;padding:0.3rem 0.8rem;border-radius:1rem;font-size:0.7rem;font-weight:600;">ISO 9001</span>
+    </div>
+    <!-- Status Bar -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;margin-bottom:1.5rem;" id="stok-status-bar">
+        <div style="background:rgba(6,182,212,0.1);border-left:3px solid #06b6d4;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">TOTAL ITEM</div><div style="font-weight:700;" id="stok-total">0</div></div>
+        <div style="background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">STOK RENDAH</div><div style="font-weight:700;color:#f59e0b;" id="stok-rendah">0</div></div>
+        <div style="background:rgba(239,68,68,0.1);border-left:3px solid #ef4444;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">RUSAK/BERAT</div><div style="font-weight:700;color:#ef4444;" id="stok-rusak">0</div></div>
+        <div style="background:rgba(59,130,246,0.1);border-left:3px solid #3b82f6;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">PERMINTAAN</div><div style="font-weight:700;" id="stok-pending-req">0</div></div>
+    </div>
+    <!-- Tabs Navigasi -->
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <button class="stok-tab active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="stok-tab" data-tab="list">📋 Daftar Stok</button>
+        <button class="stok-tab" data-tab="add">➕ Tambah Barang</button>
+        <button class="stok-tab" data-tab="request">📝 Permintaan</button>
+        <button class="stok-tab" data-tab="history">📜 Riwayat</button>
+        <button class="stok-tab" data-tab="condition">🔧 Kondisi</button>
+        <button class="stok-tab" data-tab="export">📤 Export</button>
+    </div>
+    <!-- Konten Dinamis -->
+    <div id="stok-content" style="background:rgba(30,41,59,0.6);border:1px solid rgba(6,182,212,0.2);border-radius:1.5rem;padding:1.5rem;"></div>
+</div>
+
+<style>
+    .stok-tab { padding:0.5rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:0.5rem; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .stok-tab:hover { background:rgba(6,182,212,0.1); }
+    .stok-tab.active { background:#06b6d4; color:white; border-color:#06b6d4; }
+    .stok-input, .stok-select, .stok-textarea { width:100%; padding:0.7rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:white; font-size:0.85rem; outline:none; }
+    .stok-input:focus, .stok-select:focus { border-color:#06b6d4; }
+    .stok-btn { padding:0.7rem 1.5rem; background:#06b6d4; color:white; border:none; border-radius:0.5rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .stok-btn:hover { opacity:0.9; }
+    .stok-btn-outline { background:transparent; border:1px solid #06b6d4; color:#06b6d4; }
+    .stok-btn-danger { background:#ef4444; }
+    .badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:1rem; font-size:0.7rem; font-weight:600; }
+    .badge-indoor { background:rgba(6,182,212,0.2); color:#06b6d4; }
+    .badge-outdoor { background:rgba(20,184,166,0.2); color:#14b8a6; }
+    .badge-maintenance { background:rgba(249,115,22,0.2); color:#f97316; }
+    .badge-sipil { background:rgba(139,92,246,0.2); color:#8b5cf6; }
+    .badge-baik { background:rgba(16,185,129,0.2); color:#10b981; }
+    .badge-rusak { background:rgba(239,68,68,0.2); color:#ef4444; }
+    .badge-perbaikan { background:rgba(245,158,11,0.2); color:#f59e0b; }
+    .table-stok { width:100%; border-collapse:collapse; font-size:0.85rem; }
+    .table-stok th { padding:0.7rem; text-align:left; background:rgba(0,0,0,0.3); color:#94a3b8; font-size:0.7rem; }
+    .table-stok td { padding:0.7rem; border-top:1px solid rgba(255,255,255,0.05); }
+    .table-stok tr:hover td { background:rgba(255,255,255,0.02); }
+</style>
+
+<script>
+(function() {
+    // Konfigurasi
+    const KATEGORI = ['janitor-indoor', 'janitor-outdoor', 'maintenance', 'sipil'];
+    const KATEGORI_LABEL = {
+        'janitor-indoor': '🧹 Janitor Indoor',
+        'janitor-outdoor': '🌿 Janitor Outdoor',
+        'maintenance': '🔧 Maintenance',
+        'sipil': '🏗️ Sipil/Tukang'
+    };
+    const KEBUTUHAN = ['harian', 'mingguan', 'bulanan'];
+    const KEBUTUHAN_LABEL = { 'harian': 'Harian', 'mingguan': 'Mingguan', 'bulanan': 'Bulanan' };
+    const KONDISI = ['baik', 'rusak_ringan', 'rusak_berat', 'perbaikan'];
+
+    const STOK_KEY = 'dreamos_stok_items';
+    const REQ_KEY = 'dreamos_stok_requests';
+
+    // State
+    let items = JSON.parse(localStorage.getItem(STOK_KEY) || '[]');
+    let requests = JSON.parse(localStorage.getItem(REQ_KEY) || '[]');
+
+    function saveItems() { localStorage.setItem(STOK_KEY, JSON.stringify(items)); }
+    function saveRequests() { localStorage.setItem(REQ_KEY, JSON.stringify(requests)); }
+
+    window.closeStok = function() {
+        const mod = document.getElementById('stok-module');
+        if (mod) mod.style.display = 'none';
+    };
+
+    // Update status bar
+    function updateStatusBar() {
+        document.getElementById('stok-total').textContent = items.length;
+        document.getElementById('stok-rendah').textContent = items.filter(i => i.jumlah <= i.minimal_stok).length;
+        document.getElementById('stok-rusak').textContent = items.filter(i => i.kondisi === 'rusak_berat' || i.kondisi === 'rusak_ringan').length;
+        document.getElementById('stok-pending-req').textContent = requests.filter(r => r.status === 'pending').length;
+    }
+
+    // Render konten berdasarkan tab
+    function renderTab(tab) {
+        const content = document.getElementById('stok-content');
+        switch(tab) {
+            case 'dashboard': renderDashboard(content); break;
+            case 'list': renderList(content); break;
+            case 'add': renderAddForm(content); break;
+            case 'request': renderRequest(content); break;
+            case 'history': renderHistory(content); break;
+            case 'condition': renderCondition(content); break;
+            case 'export': renderExport(content); break;
+        }
+    }
+
+    function renderDashboard(container) {
+        const total = items.length;
+        const rendah = items.filter(i => i.jumlah <= i.minimal_stok).length;
+        const rusak = items.filter(i => i.kondisi !== 'baik').length;
+        const pendingReq = requests.filter(r => r.status === 'pending').length;
+
+        let html = '<h3 style="color:#06b6d4;margin-bottom:1rem;">📊 Ringkasan Inventaris</h3>';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">';
+        html += `<div><strong>Total Barang:</strong> ${total}</div>`;
+        html += `<div><strong>Stok Rendah:</strong> <span style="color:#f59e0b;">${rendah}</span></div>`;
+        html += `<div><strong>Alat Rusak:</strong> <span style="color:#ef4444;">${rusak}</span></div>`;
+        html += `<div><strong>Permintaan Pending:</strong> ${pendingReq}</div>`;
+        html += '</div>';
+
+        // Per kategori
+        html += '<h4 style="margin-top:1rem;">Per Kategori</h4>';
+        KATEGORI.forEach(kat => {
+            const count = items.filter(i => i.kategori === kat).length;
+            html += `<div style="margin:0.3rem 0;">${KATEGORI_LABEL[kat]}: <strong>${count}</strong> item</div>`;
+        });
+
+        // Per kebutuhan
+        html += '<h4 style="margin-top:1rem;">Per Jenis Kebutuhan</h4>';
+        KEBUTUHAN.forEach(keb => {
+            const count = items.filter(i => i.jenis_kebutuhan === keb).length;
+            html += `<div style="margin:0.3rem 0;">${KEBUTUHAN_LABEL[keb]}: <strong>${count}</strong> item</div>`;
+        });
+
+        // Alert stok rendah
+        if (rendah > 0) {
+            html += '<div style="margin-top:1rem;padding:1rem;background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;border-radius:0.5rem;"><strong>⚠️ Stok Rendah:</strong><ul style="margin:0.5rem 0 0 1rem;">';
+            items.filter(i => i.jumlah <= i.minimal_stok).forEach(i => {
+                html += `<li>${i.nama} (${i.jumlah} ${i.satuan})</li>`;
+            });
+            html += '</ul></div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    function renderList(container) {
+        let html = '<h3 style="color:#06b6d4;margin-bottom:1rem;">📋 Daftar Stok Barang</h3>';
+        html += '<div style="display:flex;gap:0.5rem;margin-bottom:1rem;"><input type="text" id="stok-search" class="stok-input" placeholder="Cari..." style="flex:1;"><select id="stok-filter-kat" class="stok-select" style="width:200px;"><option value="">Semua Kategori</option>';
+        KATEGORI.forEach(k => html += `<option value="${k}">${KATEGORI_LABEL[k]}</option>`);
+        html += '</select></div>';
+        html += '<div style="overflow-x:auto;"><table class="table-stok"><thead><tr><th>Nama</th><th>Kategori</th><th>Kebutuhan</th><th>Jumlah</th><th>Satuan</th><th>Min</th><th>Kondisi</th><th>Lokasi</th><th>Aksi</th></tr></thead><tbody id="stok-list-body"></tbody></table></div>';
+        container.innerHTML = html;
+
+        function refreshList() {
+            const search = document.getElementById('stok-search').value.toLowerCase();
+            const kat = document.getElementById('stok-filter-kat').value;
+            const filtered = items.filter(i => {
+                const matchSearch = !search || i.nama.toLowerCase().includes(search);
+                const matchKat = !kat || i.kategori === kat;
+                return matchSearch && matchKat;
+            });
+            const tbody = document.getElementById('stok-list-body');
+            tbody.innerHTML = filtered.map(i => {
+                const rendah = i.jumlah <= i.minimal_stok ? 'style="color:#f59e0b;font-weight:bold;"' : '';
+                return `<tr>
+                    <td>${i.nama}</td>
+                    <td><span class="badge badge-${i.kategori === 'janitor-indoor' ? 'indoor' : i.kategori === 'janitor-outdoor' ? 'outdoor' : i.kategori === 'maintenance' ? 'maintenance' : 'sipil'}">${KATEGORI_LABEL[i.kategori]?.split(' ')[1] || i.kategori}</span></td>
+                    <td>${KEBUTUHAN_LABEL[i.jenis_kebutuhan] || '-'}</td>
+                    <td ${rendah}>${i.jumlah}</td>
+                    <td>${i.satuan || '-'}</td>
+                    <td>${i.minimal_stok || 0}</td>
+                    <td><span class="badge badge-${i.kondisi === 'baik' ? 'baik' : i.kondisi.includes('rusak') ? 'rusak' : 'perbaikan'}">${i.kondisi}</span></td>
+                    <td>${i.lokasi || '-'}</td>
+                    <td>
+                        <button class="stok-btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="editStokItem('${i.id}')">✏️</button>
+                        <button class="stok-btn-danger" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="hapusStokItem('${i.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('stok-search').addEventListener('input', refreshList);
+        document.getElementById('stok-filter-kat').addEventListener('change', refreshList);
+        refreshList();
+    }
+
+    function renderAddForm(container, editId = null) {
+        const item = editId ? items.find(i => i.id == editId) : null;
+        container.innerHTML = `
+            <h3 style="color:#06b6d4;margin-bottom:1rem;">${item ? '✏️ Edit Barang' : '➕ Tambah Barang Baru'}</h3>
+            <form id="stok-form" style="display:grid;gap:1rem;">
+                <input type="hidden" id="stok-id" value="${item ? item.id : ''}">
+                <div><label style="font-size:0.75rem;color:#94a3b8;">Nama Barang *</label><input type="text" id="stok-nama" class="stok-input" required value="${item ? item.nama : ''}"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Kategori *</label><select id="stok-kategori" class="stok-select" required>${KATEGORI.map(k => `<option value="${k}" ${item && item.kategori === k ? 'selected' : ''}>${KATEGORI_LABEL[k]}</option>`).join('')}</select></div>
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Jenis Kebutuhan *</label><select id="stok-kebutuhan" class="stok-select" required>${KEBUTUHAN.map(k => `<option value="${k}" ${item && item.jenis_kebutuhan === k ? 'selected' : ''}>${KEBUTUHAN_LABEL[k]}</option>`).join('')}</select></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;">
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Jumlah *</label><input type="number" id="stok-jumlah" class="stok-input" min="0" required value="${item ? item.jumlah : 0}"></div>
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Satuan</label><input type="text" id="stok-satuan" class="stok-input" value="${item ? item.satuan : ''}"></div>
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Minimal Stok</label><input type="number" id="stok-min" class="stok-input" min="0" value="${item ? item.minimal_stok : 0}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Lokasi</label><input type="text" id="stok-lokasi" class="stok-input" value="${item ? item.lokasi : ''}"></div>
+                    <div><label style="font-size:0.75rem;color:#94a3b8;">Kondisi</label><select id="stok-kondisi" class="stok-select">${KONDISI.map(k => `<option value="${k}" ${item && item.kondisi === k ? 'selected' : ''}>${k.replace('_',' ')}</option>`).join('')}</select></div>
+                </div>
+                <div><button type="submit" class="stok-btn">💾 Simpan</button></div>
+            </form>
+        `;
+
+        document.getElementById('stok-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('stok-id').value;
+            const data = {
+                id: id ? parseInt(id) : Date.now(),
+                nama: document.getElementById('stok-nama').value,
+                kategori: document.getElementById('stok-kategori').value,
+                jenis_kebutuhan: document.getElementById('stok-kebutuhan').value,
+                jumlah: parseInt(document.getElementById('stok-jumlah').value),
+                satuan: document.getElementById('stok-satuan').value,
+                minimal_stok: parseInt(document.getElementById('stok-min').value),
+                lokasi: document.getElementById('stok-lokasi').value,
+                kondisi: document.getElementById('stok-kondisi').value
+            };
+
+            if (id) {
+                const index = items.findIndex(i => i.id == id);
+                if (index > -1) items[index] = data;
+            } else {
+                items.push(data);
+            }
+            saveItems();
+            updateStatusBar();
+            renderList(container); // kembali ke list setelah simpan
+            document.querySelector('.stok-tab[data-tab="list"]').classList.add('active');
+            document.querySelector('.stok-tab[data-tab="add"]').classList.remove('active');
+        });
+    }
+
+    window.editStokItem = function(id) {
+        document.querySelectorAll('.stok-tab').forEach(b => b.classList.remove('active'));
+        document.querySelector('.stok-tab[data-tab="add"]').classList.add('active');
+        renderAddForm(document.getElementById('stok-content'), id);
+    };
+
+    window.hapusStokItem = function(id) {
+        if (confirm('Hapus barang ini?')) {
+            items = items.filter(i => i.id != id);
+            saveItems();
+            updateStatusBar();
+            renderTab('list');
+        }
+    };
+
+    function renderRequest(container) {
+        container.innerHTML = `
+            <h3 style="color:#06b6d4;margin-bottom:1rem;">📝 Permintaan Alat</h3>
+            <form id="req-form" style="display:grid;gap:1rem;">
+                <div><label style="font-size:0.75rem;color:#94a3b8;">Nama Pemohon *</label><input type="text" id="req-nama" class="stok-input" required></div>
+                <div><label style="font-size:0.75rem;color:#94a3b8;">Area / Lokasi *</label><input type="text" id="req-area" class="stok-input" required></div>
+                <div><label style="font-size:0.75rem;color:#94a3b8;">Tanggal</label><input type="date" id="req-tgl" class="stok-input"></div>
+                <div id="req-items">
+                    <div class="req-item-row" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                        <select class="stok-select req-item-select" style="flex:1;"><option value="">Pilih Barang</option></select>
+                        <input type="number" class="stok-input req-item-qty" style="width:80px;" placeholder="Jml">
+                        <button type="button" class="stok-btn-danger req-remove-item" style="padding:0.5rem;">✖</button>
+                    </div>
+                </div>
+                <button type="button" id="add-req-item" class="stok-btn-outline">+ Tambah Barang</button>
+                <div><label style="font-size:0.75rem;color:#94a3b8;">Catatan</label><textarea id="req-catatan" class="stok-textarea" rows="2"></textarea></div>
+                <button type="submit" class="stok-btn">📩 Ajukan Permintaan</button>
+            </form>
+            <div style="margin-top:2rem;">
+                <h4 style="color:#06b6d4;">Permintaan Pending</h4>
+                <div id="req-pending-list"></div>
+            </div>
+        `;
+
+        // Populate dropdown barang
+        function populateSelects() {
+            const selects = document.querySelectorAll('.req-item-select');
+            selects.forEach(sel => {
+                sel.innerHTML = '<option value="">Pilih Barang</option>';
+                items.filter(i => i.jumlah > 0 && i.kondisi === 'baik').forEach(i => {
+                    sel.innerHTML += `<option value="${i.id}">${i.nama} (Stok: ${i.jumlah})</option>`;
+                });
+            });
+        }
+        populateSelects();
+
+        document.getElementById('add-req-item').addEventListener('click', function() {
+            const row = document.createElement('div');
+            row.className = 'req-item-row';
+            row.style.cssText = 'display:flex;gap:0.5rem;margin-bottom:0.5rem;';
+            row.innerHTML = `
+                <select class="stok-select req-item-select" style="flex:1;"></select>
+                <input type="number" class="stok-input req-item-qty" style="width:80px;" placeholder="Jml">
+                <button type="button" class="stok-btn-danger req-remove-item" style="padding:0.5rem;">✖</button>
+            `;
+            document.getElementById('req-items').appendChild(row);
+            populateSelects();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('req-remove-item')) {
+                e.target.parentElement.remove();
+            }
+        });
+
+        document.getElementById('req-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const rows = document.querySelectorAll('.req-item-row');
+            const itemsReq = [];
+            rows.forEach(row => {
+                const sel = row.querySelector('.req-item-select');
+                const qty = row.querySelector('.req-item-qty').value;
+                if (sel.value && qty > 0) {
+                    const item = items.find(i => i.id == sel.value);
+                    itemsReq.push({ id: item.id, nama: item.nama, jumlah: parseInt(qty) });
+                }
+            });
+            if (itemsReq.length === 0) return alert('Pilih minimal satu barang');
+
+            requests.push({
+                id: Date.now(),
+                pemohon: document.getElementById('req-nama').value,
+                area: document.getElementById('req-area').value,
+                tanggal: document.getElementById('req-tgl').value || new Date().toISOString().split('T')[0],
+                items: itemsReq,
+                catatan: document.getElementById('req-catatan').value,
+                status: 'pending',
+                created: new Date().toISOString()
+            });
+            saveRequests();
+            updateStatusBar();
+            this.reset();
+            document.getElementById('req-items').innerHTML = `<div class="req-item-row" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;"><select class="stok-select req-item-select" style="flex:1;"></select><input type="number" class="stok-input req-item-qty" style="width:80px;" placeholder="Jml"><button type="button" class="stok-btn-danger req-remove-item" style="padding:0.5rem;">✖</button></div>`;
+            populateSelects();
+            renderPendingRequests();
+        });
+
+        function renderPendingRequests() {
+            const list = document.getElementById('req-pending-list');
+            const pending = requests.filter(r => r.status === 'pending');
+            if (pending.length === 0) {
+                list.innerHTML = '<p style="opacity:0.7;">Tidak ada permintaan pending</p>';
+                return;
+            }
+            list.innerHTML = pending.map(r => `
+                <div style="background:rgba(0,0,0,0.2);padding:0.75rem;border-radius:0.5rem;margin-bottom:0.5rem;border-left:3px solid #f59e0b;">
+                    <strong>${r.pemohon}</strong> (${r.area}) - ${r.tanggal}
+                    <div style="font-size:0.8rem;opacity:0.8;">${r.items.map(i => `${i.nama} x${i.jumlah}`).join(', ')}</div>
+                    ${r.catatan ? `<div style="font-size:0.7rem;font-style:italic;">📝 ${r.catatan}</div>` : ''}
+                    <div style="margin-top:0.5rem;">
+                        <button class="stok-btn" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="approveReq('${r.id}')">✅ Setujui</button>
+                        <button class="stok-btn-danger" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="rejectReq('${r.id}')">❌ Tolak</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        renderPendingRequests();
+    }
+
+    window.approveReq = function(id) {
+        const req = requests.find(r => r.id == id);
+        if (req) {
+            req.status = 'approved';
+            // Kurangi stok
+            req.items.forEach(ri => {
+                const item = items.find(i => i.id == ri.id);
+                if (item) item.jumlah = Math.max(0, item.jumlah - ri.jumlah);
+            });
+            saveItems();
+            saveRequests();
+            updateStatusBar();
+            renderTab('request');
+        }
+    };
+
+    window.rejectReq = function(id) {
+        const req = requests.find(r => r.id == id);
+        if (req) {
+            req.status = 'rejected';
+            saveRequests();
+            updateStatusBar();
+            renderTab('request');
+        }
+    };
+
+    function renderHistory(container) {
+        container.innerHTML = '<h3 style="color:#06b6d4;margin-bottom:1rem;">📜 Riwayat Permintaan</h3>';
+        const all = [...requests].sort((a,b) => new Date(b.created) - new Date(a.created));
+        if (all.length === 0) {
+            container.innerHTML += '<p style="opacity:0.7;">Belum ada riwayat</p>';
+            return;
+        }
+        let html = '<div style="overflow-x:auto;"><table class="table-stok"><thead><tr><th>Tanggal</th><th>Pemohon</th><th>Area</th><th>Barang</th><th>Status</th></tr></thead><tbody>';
+        all.forEach(r => {
+            const statusBadge = r.status === 'approved' ? 'badge-baik' : r.status === 'rejected' ? 'badge-rusak' : 'badge-perbaikan';
+            html += `<tr>
+                <td>${r.tanggal}</td><td>${r.pemohon}</td><td>${r.area}</td>
+                <td>${r.items.map(i => `${i.nama} (${i.jumlah})`).join(', ')}</td>
+                <td><span class="badge ${statusBadge}">${r.status}</span></td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML += html;
+    }
+
+    function renderCondition(container) {
+        const rusak = items.filter(i => i.kondisi !== 'baik');
+        container.innerHTML = '<h3 style="color:#06b6d4;margin-bottom:1rem;">🔧 Kondisi Alat</h3>';
+        if (rusak.length === 0) {
+            container.innerHTML += '<p style="opacity:0.7;">Semua alat dalam kondisi baik</p>';
+            return;
+        }
+        let html = '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
+        rusak.forEach(i => {
+            html += `<div style="background:rgba(0,0,0,0.2);padding:0.75rem;border-radius:0.5rem;border-left:3px solid ${i.kondisi === 'rusak_berat' ? '#ef4444' : '#f59e0b'};"><strong>${i.nama}</strong> (${i.jumlah} ${i.satuan}) - <span class="badge badge-${i.kondisi.includes('rusak') ? 'rusak' : 'perbaikan'}">${i.kondisi}</span><br><span style="font-size:0.8rem;">Kategori: ${KATEGORI_LABEL[i.kategori]} | Lokasi: ${i.lokasi || '-'}</span></div>`;
+        });
+        html += '</div>';
+        container.innerHTML += html;
+    }
+
+    function renderExport(container) {
+        container.innerHTML = `
+            <h3 style="color:#06b6d4;margin-bottom:1rem;">📤 Export Data</h3>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                <button class="stok-btn" onclick="exportStokCSV()">📊 Stok (CSV)</button>
+                <button class="stok-btn" onclick="exportStokJSON()">📄 Stok (JSON)</button>
+                <button class="stok-btn-outline" onclick="exportReqCSV()">📊 Permintaan (CSV)</button>
+                <button class="stok-btn-outline" onclick="exportReqJSON()">📄 Permintaan (JSON)</button>
+                <button class="stok-btn-danger" onclick="if(confirm('Hapus semua data?')) { localStorage.clear(); location.reload(); }">🗑️ Reset Semua</button>
+            </div>
+        `;
+    }
+
+    window.exportStokCSV = function() {
+        let csv = 'ID,Nama,Kategori,Kebutuhan,Jumlah,Satuan,Minimal,Kondisi,Lokasi\n';
+        items.forEach(i => {
+            csv += `${i.id},"${i.nama}","${i.kategori}","${i.jenis_kebutuhan}",${i.jumlah},"${i.satuan}",${i.minimal_stok},"${i.kondisi}","${i.lokasi}"\n`;
+        });
+        downloadFile('stok.csv', csv);
+    };
+    window.exportStokJSON = function() {
+        downloadFile('stok.json', JSON.stringify(items, null, 2));
+    };
+    window.exportReqCSV = function() {
+        let csv = 'ID,Pemohon,Area,Tanggal,Barang,Status\n';
+        requests.forEach(r => {
+            csv += `${r.id},"${r.pemohon}","${r.area}","${r.tanggal}","${r.items.map(i => i.nama+' x'+i.jumlah).join('; ')}","${r.status}"\n`;
+        });
+        downloadFile('permintaan.csv', csv);
+    };
+    window.exportReqJSON = function() {
+        downloadFile('permintaan.json', JSON.stringify(requests, null, 2));
+    };
+    function downloadFile(filename, text) {
+        const blob = new Blob([text], {type: 'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+    }
+
+    // Inisialisasi
+    document.querySelectorAll('.stok-tab').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.stok-tab').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            renderTab(this.dataset.tab);
+        });
+    });
+
+    updateStatusBar();
+    renderTab('dashboard');
+})();
+</script>
