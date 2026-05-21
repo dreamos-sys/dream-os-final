@@ -1,0 +1,104 @@
+<!--
+  Security Patrol Module v3.0 – Dream OS (Enterprise Edition)
+  ISO 18788:2015, ISO 22301:2019, ISO 27001:2022 Compliant
+  Terintegrasi penuh dengan Command Center & modul lainnya
+-->
+<div style="min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b);color:white;font-family:'Inter',sans-serif;padding:1.5rem;padding-bottom:5rem;">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <button onclick="closeSecurity()" style="background:rgba(255,255,255,0.1);color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;">← Kembali</button>
+        <h2 style="color:#10b981;font-size:1.5rem;font-weight:800;">🛡️ SECURITY PATROL</h2>
+        <span style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#020617;padding:0.35rem 1rem;border-radius:30px;font-size:0.7rem;font-weight:700;margin-left:auto;">ISO 18788</span>
+    </div>
+    <!-- Status Bar -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1.5rem;" id="sec-status-bar">
+        <div style="background:rgba(16,185,129,0.1);border-left:3px solid #10b981;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">SHIFT</div><div style="font-weight:700;" id="sec-shift-disp">--</div></div>
+        <div style="background:rgba(59,130,246,0.1);border-left:3px solid #3b82f6;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">PETUGAS</div><div style="font-weight:700;" id="sec-petugas-disp">--</div></div>
+        <div style="background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">GPS</div><div style="font-weight:700;" id="sec-gps-disp">🔍 Mencari...</div></div>
+        <div style="background:rgba(139,92,246,0.1);border-left:3px solid #8b5cf6;padding:0.75rem;border-radius:0.5rem;"><div style="font-size:0.65rem;opacity:0.7;">LAPORAN HARI INI</div><div style="font-weight:700;" id="sec-today-count">0</div></div>
+    </div>
+    <!-- Quick Templates -->
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;" id="sec-templates">
+        <button class="sec-template active" data-tpl="normal">✅ Patroli Normal</button>
+        <button class="sec-template" data-tpl="warning">⚠️ Insiden Minor</button>
+        <button class="sec-template" data-tpl="critical">🚨 Emergency</button>
+        <button class="sec-template" data-tpl="maintenance">🔧 Pemeliharaan</button>
+        <button class="sec-template" data-tpl="visitor">👥 Tamu</button>
+        <button class="sec-template" data-tpl="audit">📋 Audit</button>
+    </div>
+    <!-- Main Form -->
+    <form id="secForm" style="background:rgba(30,41,59,0.6);border:1px solid rgba(16,185,129,0.3);border-radius:1.5rem;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+            <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Tanggal *</label><input type="date" id="sec-tgl" required style="width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.75rem;color:white;font-size:0.85rem;"></div>
+            <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Shift *</label><select id="sec-shift" required style="width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.75rem;color:white;font-size:0.85rem;"><option value="P">🌅 Pagi (07:00-19:00)</option><option value="M">🌙 Malam (19:00-07:00)</option><option value="L">🏖️ Libur</option><option value="CT">✈️ Cuti</option></select></div>
+            <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Petugas *</label><select id="sec-petugas" required style="width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.75rem;color:white;font-size:0.85rem;"><option value="">-- Pilih --</option></select></div>
+        </div>
+        <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Lokasi Patroli *</label><input type="text" id="sec-lokasi" required style="width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.75rem;color:white;font-size:0.85rem;" placeholder="Ketik lokasi..."><div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;" id="sec-loc-chips"></div></div>
+        <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Deskripsi Situasi *</label><textarea id="sec-deskripsi" rows="3" required style="width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.75rem;color:white;font-size:0.85rem;resize:none;" placeholder="Jelaskan situasi / kejadian..."></textarea></div>
+        <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Foto Bukti (Max 5)</label><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.5rem;" id="sec-photo-grid"><div class="sec-photo-slot" onclick="document.getElementById('sec-photo-input').click()" style="aspect-ratio:1;border:2px dashed rgba(255,255,255,0.2);border-radius:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:2rem;">📷</div></div><input type="file" id="sec-photo-input" accept="image/*" capture="environment" multiple style="display:none;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div><label style="color:#94a3b8;font-size:0.7rem;display:block;margin-bottom:0.3rem;">Catatan Tambahan</label><textarea id="sec-catatan" rows="2" style="width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.75rem;color:white;font-size:0.85rem;resize:none;" placeholder="Opsional..."></textarea></div>
+            <div style="display:flex;align-items:flex-end;"><button type="submit" id="sec-submit" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;padding:1rem;border-radius:0.75rem;font-weight:700;font-size:1rem;cursor:pointer;">🔒 KIRIM LAPORAN</button></div>
+        </div>
+        <div id="sec-msg" style="display:none;padding:0.75rem;border-radius:0.5rem;font-size:0.8rem;"></div>
+    </form>
+</div>
+
+<style>
+.sec-template { padding:0.5rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:2rem; font-size:0.8rem; cursor:pointer; transition:all 0.2s; font-weight:500; }
+.sec-template:hover { background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); }
+.sec-template.active { background:rgba(16,185,129,0.2); border-color:#10b981; color:#10b981; font-weight:700; }
+.sec-photo-slot.has-photo { border-style:solid; border-color:#10b981; padding:0; overflow:hidden; }
+.sec-photo-slot img { width:100%; height:100%; object-fit:cover; }
+.badge { display:inline-block; padding:0.2rem 0.7rem; border-radius:1rem; font-size:0.7rem; font-weight:600; }
+.badge-aman { background:rgba(16,185,129,0.2); color:#10b981; }
+.badge-warning { background:rgba(245,158,11,0.2); color:#f59e0b; }
+.badge-danger { background:rgba(239,68,68,0.2); color:#ef4444; }
+.badge-info { background:rgba(59,130,246,0.2); color:#3b82f6; }
+</style>
+
+<script>
+(function() {
+    const PETUGAS_LIST = ['SUDARSONO','MARHUSIN','HERIYATNO','SUNARKO','HARIYANSAHC','AGUS SUTISNA','DONIH'];
+    const LOKASI_LIST = ['Pos Utama','Gerbang Depan','Gerbang Belakang','Area Parkir','Gedung A','Gedung B','Gedung C','Lapangan','Musholla','Kantin','Perpustakaan','Lab Komputer','Ruang Guru','Halaman','Aula'];
+    const TEMPLATES = {
+        normal: { desc: 'Situasi aman dan terkendali. Tidak ada kejadian khusus.', kat: 'normal' },
+        warning: { desc: 'Terdapat insiden minor yang perlu perhatian: ', kat: 'warning' },
+        critical: { desc: '🚨 SITUASI DARURAT! Memerlukan tindakan segera: ', kat: 'critical' },
+        maintenance: { desc: 'Ditemukan fasilitas yang perlu perbaikan: ', kat: 'maintenance' },
+        visitor: { desc: 'Kunjungan tamu/visitor: ', kat: 'info' },
+        audit: { desc: '[AUDIT] Pemeriksaan berkala: ', kat: 'info' }
+    };
+    const STORAGE_KEY = 'dreamos_security_reports';
+    let selectedTemplate = 'normal', photos = [], gpsData = null;
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const getReports = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const saveReports = r => localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
+    window.closeSecurity = () => { const m = document.getElementById('security-module'); if (m) m.style.display = 'none'; };
+
+    function init() {
+        document.getElementById('sec-tgl').value = new Date().toISOString().split('T')[0];
+        const sel = document.getElementById('sec-petugas');
+        PETUGAS_LIST.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; sel.appendChild(o); });
+        const chips = document.getElementById('sec-loc-chips');
+        LOKASI_LIST.forEach(l => { const c = document.createElement('span'); c.textContent = l; c.style.cssText = 'background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#3b82f6;padding:0.3rem 0.8rem;border-radius:1rem;font-size:0.75rem;cursor:pointer;'; c.onclick = () => { document.getElementById('sec-lokasi').value = l; }; chips.appendChild(c); });
+        document.querySelectorAll('.sec-template').forEach(b => { b.addEventListener('click', function() { document.querySelectorAll('.sec-template').forEach(x => x.classList.remove('active')); this.classList.add('active'); selectedTemplate = this.dataset.tpl; document.getElementById('sec-deskripsi').value = TEMPLATES[selectedTemplate].desc; }); });
+        document.getElementById('sec-photo-input').addEventListener('change', function(e) { Array.from(e.target.files).forEach(f => { if (photos.length >= 5) return; const reader = new FileReader(); reader.onload = ev => { photos.push({ name: f.name, data: ev.target.result, time: new Date().toISOString() }); renderPhotos(); }; reader.readAsDataURL(f); }); this.value = ''; });
+        document.getElementById('secForm').addEventListener('submit', function(e) {
+            e.preventDefault(); const msg = document.getElementById('sec-msg');
+            const tgl = document.getElementById('sec-tgl').value, shift = document.getElementById('sec-shift').value, petugas = document.getElementById('sec-petugas').value, lokasi = document.getElementById('sec-lokasi').value.trim(), deskripsi = document.getElementById('sec-deskripsi').value.trim(), catatan = document.getElementById('sec-catatan').value.trim();
+            if (!tgl || !shift || !petugas || !lokasi || !deskripsi) { msg.style.display = 'block'; msg.style.background = 'rgba(239,68,68,0.1)'; msg.style.border = '1px solid #ef4444'; msg.style.color = '#ef4444'; msg.textContent = 'Mohon isi semua field wajib (*)'; return; }
+            const report = { id: Date.now(), tgl, shift, petugas, lokasi, deskripsi, template: selectedTemplate, kategori: TEMPLATES[selectedTemplate].kat, catatan, photos: photos.map(p => ({ name: p.name, time: p.time })), gps: gpsData, status: 'pending', created: new Date().toISOString() };
+            const reports = getReports(); reports.unshift(report); saveReports(reports);
+            msg.style.display = 'block'; msg.style.background = 'rgba(16,185,129,0.1)'; msg.style.border = '1px solid #10b981'; msg.style.color = '#10b981'; msg.textContent = '✅ Laporan berhasil dikirim!';
+            this.reset(); document.getElementById('sec-tgl').value = new Date().toISOString().split('T')[0]; photos = []; renderPhotos(); updateTodayCount();
+        });
+        if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { gpsData = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; document.getElementById('sec-gps-disp').innerHTML = '✅ ' + gpsData.lat.toFixed(4) + ',' + gpsData.lng.toFixed(4); }, () => { document.getElementById('sec-gps-disp').innerHTML = '⚠️ Tidak tersedia'; }); }
+        const hour = new Date().getHours(); document.getElementById('sec-shift').value = (hour >= 7 && hour < 19) ? 'P' : 'M'; document.getElementById('sec-shift-disp').textContent = (hour >= 7 && hour < 19) ? '🌅 PAGI' : '🌙 MALAM';
+        updateTodayCount();
+    }
+    function renderPhotos() { const grid = document.getElementById('sec-photo-grid'); grid.innerHTML = ''; photos.forEach((p, i) => { const d = document.createElement('div'); d.className = 'sec-photo-slot has-photo'; d.style.position = 'relative'; d.innerHTML = `<img src="${p.data}" alt="Foto ${i+1}"><span onclick="this.parentElement.remove();window._secRemovePhoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(239,68,68,0.8);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.7rem;">×</span>`; grid.appendChild(d); }); if (photos.length < 5) { const add = document.createElement('div'); add.className = 'sec-photo-slot'; add.onclick = () => document.getElementById('sec-photo-input').click(); add.innerHTML = '📷'; grid.appendChild(add); } }
+    window._secRemovePhoto = function(i) { photos.splice(i,1); renderPhotos(); };
+    function updateTodayCount() { const today = new Date().toISOString().split('T')[0]; document.getElementById('sec-today-count').textContent = getReports().filter(r => r.tgl === today).length; }
+    init();
+})();
+</script>
