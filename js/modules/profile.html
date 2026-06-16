@@ -1,0 +1,71 @@
+<div id="profile-root"></div>
+<script>
+(function() {
+    function g(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
+    function s(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+
+    var ProfileApp = {
+        profile: { nama: '', email: '', hp: '', divisi: '', password: '', foto: null },
+        msg: '',
+        oninit: function() {
+            var p = JSON.parse(localStorage.getItem('dreamos_user_profile') || '{}');
+            if (p.nama) this.profile = p;
+            m.redraw();
+        },
+        saveProfile: function() {
+            if (!this.profile.nama) { this.msg = 'Nama wajib!'; m.redraw(); return; }
+            localStorage.setItem('dreamos_user_profile', JSON.stringify(this.profile));
+            this.msg = '✅ Profil tersimpan!';
+            m.redraw();
+            setTimeout(function(){ ProfileApp.msg = ''; m.redraw(); }, 2000);
+        },
+        view: function() {
+            var self = this;
+            return m("div", { style: "min-height:100vh;background:var(--bg-deep-space);color:var(--text-primary);font-family:'Space Grotesk',sans-serif;padding:1.5rem;padding-bottom:5rem;" }, [
+                // Header dengan tombol kembali yang JELAS
+                m("div", { style: "display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;" }, [
+                    m("button", {
+                        onclick: function() { document.getElementById('profile-module').style.display = 'none'; },
+                        style: "background:rgba(255,255,255,0.2);color:white;border:none;padding:0.7rem 1.5rem;border-radius:0.75rem;cursor:pointer;font-weight:700;font-size:1rem;"
+                    }, "← Kembali"),
+                    m("h2", { style: "color:var(--neon-tawhid);font-size:1.8rem;font-weight:800;" }, "👤 Profil")
+                ]),
+                // Foto
+                m("div", { class: "dream-panel", style: "padding:1.5rem;margin-bottom:1rem;text-align:center;" }, [
+                    m("div", {
+                        style: "width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,0.1);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:3rem;cursor:pointer;overflow:hidden;",
+                        onclick: function() {
+                            var input = document.createElement('input');
+                            input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+                            input.onchange = function(e) {
+                                var file = e.target.files[0]; if (!file) return;
+                                var reader = new FileReader();
+                                reader.onload = function(ev) { self.profile.foto = ev.target.result; self.saveProfile(); };
+                                reader.readAsDataURL(file);
+                            };
+                            input.click();
+                        }
+                    }, self.profile.foto ? m("img", { src: self.profile.foto, style: "width:100%;height:100%;object-fit:cover;" }) : "📷"),
+                    m("p", { style: "color:var(--text-secondary);font-size:0.75rem;margin-top:0.5rem;" }, "Klik untuk ganti foto")
+                ]),
+                // Form
+                m("div", { class: "dream-panel", style: "padding:1.5rem;margin-bottom:1rem;" }, [
+                    m("div", { style: "display:flex;flex-direction:column;gap:0.75rem;" }, [
+                        m("input", { type: "text", placeholder: "Nama Lengkap *", value: self.profile.nama, oninput: function(e) { self.profile.nama = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.7rem;color:var(--text-primary);font-size:0.9rem;" }),
+                        m("input", { type: "email", placeholder: "Email", value: self.profile.email, oninput: function(e) { self.profile.email = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.7rem;color:var(--text-primary);font-size:0.9rem;" }),
+                        m("input", { type: "password", placeholder: "Password", value: self.profile.password, oninput: function(e) { self.profile.password = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.7rem;color:var(--text-primary);font-size:0.9rem;" }),
+                        m("input", { type: "tel", placeholder: "No HP (08xx)", value: self.profile.hp, oninput: function(e) { self.profile.hp = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.7rem;color:var(--text-primary);font-size:0.9rem;" }),
+                        m("input", { type: "text", placeholder: "Divisi / Bagian", value: self.profile.divisi, oninput: function(e) { self.profile.divisi = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.7rem;color:var(--text-primary);font-size:0.9rem;" })
+                    ]),
+                    self.msg ? m("div", { style: "margin-top:0.5rem;color:#10b981;text-align:center;font-size:0.85rem;" }, self.msg) : null,
+                    m("button", { onclick: function() { self.saveProfile(); }, class: "dream-btn", style: "width:100%;padding:0.8rem;margin-top:0.75rem;font-size:1rem;" }, "💾 SIMPAN PROFIL")
+                ]),
+                // Tombol logout
+                m("button", { onclick: function() { if(confirm('Logout?')){ localStorage.removeItem('dreamos_user_profile'); alert('Logout sukses.'); location.reload(); } }, style: "width:100%;padding:0.7rem;background:#ef4444;color:white;border:none;border-radius:0.75rem;font-weight:700;font-size:1rem;cursor:pointer;" }, "🚪 LOGOUT")
+            ]);
+        }
+    };
+
+    m.mount(document.getElementById('profile-root'), ProfileApp);
+})();
+</script>

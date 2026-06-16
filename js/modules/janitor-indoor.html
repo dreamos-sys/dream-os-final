@@ -1,0 +1,147 @@
+<div id="janin-root"></div>
+<script>
+(function() {
+    function getChecklist() { try { return JSON.parse(localStorage.getItem('dreamos_janitor_indoor') || '{}'); } catch(e) { return {}; } }
+    function saveChecklist(data) { localStorage.setItem('dreamos_janitor_indoor', JSON.stringify(data)); }
+
+    var AREAS = {
+        toilet: {
+            title: '🚻 Toilet',
+            items: ['Pintu Utama', 'Pintu Kubikal', 'Kaca / Cermin', 'Exhoust', 'Dinding', 'Tempat Wudhu', 'Lantai', 'Floor Drain', 'Kloset', 'Flapond / Ceilling', 'Tempat Sampah']
+        },
+        ruangan: {
+            title: '🏢 Ruangan',
+            items: [
+                'Loby Utama', 'Teras', 'Lorong Utama Gedung', 'Balkon', 'Pintu Utama', 'Pintu Kelas dan R Lain', 'Jendela',
+                'Kelas', 'Aula', 'Sentra Musik', 'Sentra Kreasi', 'UKS', 'Psikolog', 'Lab Kom', 'Lab IPA', 'Perpustakaan',
+                'Kepala Sekolah', 'R.Guru (Laki/Perempuan)', 'R. Pemasaran', 'R. Admin TU', 'R. Rapat',
+                'R.CEO, Direktur dan Yayasan', 'R. Kepala Bidang (Kabid)', 'R. Osis', 'R. Mushalla', 'R. Inklusi',
+                'R. Gudang Olah Raga', 'R. Serbaguna', 'R. Masjid', 'Kantin', 'Saung Besar', 'Saung Kecil', 'Pos',
+                'Gudang Umum', 'Tangga', 'Lift', 'Keterangan Dll'
+            ]
+        }
+    };
+
+    var JaninApp = {
+        date: new Date().toISOString().split('T')[0],
+        shift: 'pagi',
+        data: {},
+        expanded: {},
+        petugas: '',
+        gedung: '',
+        lantai: '',
+        photoData: {},
+
+        oninit: function() { this.loadData(); },
+        loadData: function() {
+            var all = getChecklist();
+            if (!all[this.date]) all[this.date] = { shifts: { pagi: {}, siang: {}, sore: {} }, weekly: {}, petugas: '', gedung: '', lantai: '', photos: {} };
+            if (!all[this.date].shifts) all[this.date].shifts = { pagi: {}, siang: {}, sore: {} };
+            if (!all[this.date].photos) all[this.date].photos = {};
+            this.data = all;
+            this.petugas = all[this.date].petugas || '';
+            this.gedung = all[this.date].gedung || '';
+            this.lantai = all[this.date].lantai || '';
+            this.photoData = all[this.date].photos || {};
+            for (var area in AREAS) { if (this.expanded[area] === undefined) this.expanded[area] = true; }
+            m.redraw();
+        },
+        saveMetadata: function() {
+            if (!this.data[this.date]) this.data[this.date] = { shifts: { pagi: {}, siang: {}, sore: {} }, weekly: {}, petugas: '', gedung: '', lantai: '', photos: {} };
+            this.data[this.date].petugas = this.petugas;
+            this.data[this.date].gedung = this.gedung;
+            this.data[this.date].lantai = this.lantai;
+            saveChecklist(this.data);
+        },
+        toggleItem: function(area, item) {
+            if (!this.data[this.date].shifts[this.shift]) this.data[this.date].shifts[this.shift] = {};
+            if (!this.data[this.date].shifts[this.shift][area]) this.data[this.date].shifts[this.shift][area] = {};
+            this.data[this.date].shifts[this.shift][area][item] = !this.data[this.date].shifts[this.shift][area][item];
+            saveChecklist(this.data);
+        },
+        getProgress: function(area) {
+            var items = AREAS[area].items, checked = 0;
+            if (this.data[this.date] && this.data[this.date].shifts[this.shift] && this.data[this.date].shifts[this.shift][area]) {
+                items.forEach(function(item) { if (this.data[this.date].shifts[this.shift][area][item]) checked++; }.bind(this));
+            }
+            return { checked: checked, total: items.length };
+        },
+        uploadPhoto: function(area) {
+            var self = this;
+            var input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+            input.onchange = function(e) {
+                var file = e.target.files[0]; if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    var key = self.shift + '-' + area;
+                    self.data[self.date].photos[key] = ev.target.result;
+                    saveChecklist(self.data);
+                    self.photoData = self.data[self.date].photos;
+                    m.redraw();
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        },
+        resetShift: function() {
+            if (!confirm('Reset checklist shift ' + this.shift + '?')) return;
+            if (this.data[this.date] && this.data[this.date].shifts) {
+                this.data[this.date].shifts[this.shift] = {};
+                saveChecklist(this.data);
+            }
+        },
+        view: function() {
+            var self = this;
+            var shiftLabels = { pagi: '🌅 Pagi (07:30)', siang: '☀️ Siang (13:00)', sore: '🌇 Sore (15:00)' };
+            return m("div", { style: "min-height:100vh;background:var(--bg-deep-space);color:var(--text-primary);font-family:'Space Grotesk',sans-serif;padding:1rem;padding-bottom:5rem;" }, [
+                m("div", { style: "display:flex;align-items:center;gap:1rem;margin-bottom:1rem;" }, [
+                    m("button", { onclick: function() { document.getElementById('janitor-in-module').style.display = 'none'; }, style: "background:rgba(255,255,255,0.1);color:var(--text-primary);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;" }, "← Kembali"),
+                    m("div", [ m("h2", { style: "color:#10b981;font-size:1.3rem;font-weight:800;" }, "🧹 Janitor Indoor"), m("p", { style: "color:var(--text-secondary);font-size:0.7rem;" }, "Ceklis Harian • 06:30-17:00"), m("button", {onclick:function(){self.cetakLaporan();}, style:"padding:0.4rem 0.8rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;"}, "🖨️ Cetak") ])
+                ]),
+                // Data Petugas & Lokasi
+                m("div", { class: "dream-panel", style: "padding:0.75rem;margin-bottom:0.75rem;" }, [
+                    m("h4", { style: "color:var(--neon-tawhid);margin-bottom:0.5rem;" }, "👤 Petugas & Lokasi"),
+                    m("div", { style: "display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;" }, [
+                        m("input", { type: "text", placeholder: "Nama Petugas", value: self.petugas, oninput: function(e) { self.petugas = e.target.value; self.saveMetadata(); }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;" }),
+                        m("input", { type: "text", placeholder: "Gedung", value: self.gedung, oninput: function(e) { self.gedung = e.target.value; self.saveMetadata(); }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;" }),
+                        m("input", { type: "text", placeholder: "Lantai", value: self.lantai, oninput: function(e) { self.lantai = e.target.value; self.saveMetadata(); }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;" })
+                    ])
+                ]),
+                // Tanggal & Shift
+                m("div", { class: "dream-panel", style: "padding:0.75rem;margin-bottom:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;" }, [
+                    m("input", { type: "date", value: self.date, onchange: function(e) { self.date = e.target.value; self.loadData(); }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;" }),
+                    m("div", { style: "display:flex;gap:0.3rem;" }, ['pagi','siang','sore'].map(function(s) {
+                        return m("button", { onclick: function() { self.shift = s; self.loadData(); }, style: "padding:0.5rem 0.8rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;" + (self.shift===s?'background:var(--neon-tawhid);color:black;':'background:var(--glass-bg);color:var(--text-primary);') }, shiftLabels[s]);
+                    })),
+                    m("button", { onclick: function() { self.resetShift(); }, style: "margin-left:auto;background:#ef4444;color:white;border:none;padding:0.4rem 0.8rem;border-radius:0.5rem;cursor:pointer;font-size:0.7rem;" }, "Reset Shift")
+                ]),
+                // Checklist Area
+                m("div", { style: "display:flex;flex-direction:column;gap:0.75rem;" },
+                    Object.keys(AREAS).map(function(areaKey) {
+                        var area = AREAS[areaKey], progress = self.getProgress(areaKey), percent = Math.round((progress.checked / progress.total) * 100);
+                        var photoKey = self.shift + '-' + areaKey, photo = self.photoData[photoKey];
+                        return m("div", { class: "dream-panel", style: "padding:0.75rem;" }, [
+                            m("div", { style: "display:flex;justify-content:space-between;align-items:center;" }, [
+                                m("div", { style: "display:flex;align-items:center;gap:0.5rem;cursor:pointer;", onclick: function() { self.expanded[areaKey] = !self.expanded[areaKey]; } }, [ m("h4", { style: "color:var(--neon-tawhid);font-size:0.9rem;margin:0;" }, area.title), m("span", { style: "font-size:0.7rem;color:var(--text-secondary);" }, progress.checked + "/" + progress.total) ]),
+                                m("div", { style: "display:flex;align-items:center;gap:0.5rem;" }, [
+                                    m("button", { onclick: function() { self.uploadPhoto(areaKey); }, style: "background:rgba(59,130,246,0.2);color:#3b82f6;border:none;border-radius:0.3rem;padding:0.2rem 0.5rem;font-size:0.7rem;cursor:pointer;" }, photo ? "📸✓" : "📸"),
+                                    m("div", { style: "width:60px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;" }, m("div", { style: "width:"+percent+"%;height:100%;background:"+(percent===100?'#10b981':percent>=50?'#f59e0b':'#ef4444')+";border-radius:3px;transition:width 0.3s;" }))
+                                ])
+                            ]),
+                            photo ? m("img", { src: photo, style: "max-width:100%;max-height:120px;border-radius:0.5rem;margin-top:0.5rem;" }) : null,
+                            self.expanded[areaKey] ? m("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.3rem;margin-top:0.5rem;" },
+                                area.items.map(function(item) {
+                                    var checked = self.data[self.date] && self.data[self.date].shifts[self.shift] && self.data[self.date].shifts[self.shift][areaKey] && self.data[self.date].shifts[self.shift][areaKey][item];
+                                    return m("label", { style: "display:flex;align-items:center;gap:0.3rem;padding:0.3rem;background:"+(checked?'rgba(16,185,129,0.15)':'rgba(255,255,255,0.03)')+";border-radius:0.3rem;cursor:pointer;font-size:0.7rem;" }, [ m("input", { type: "checkbox", checked: checked, onchange: function() { self.toggleItem(areaKey, item); } }), item ]);
+                                })
+                            ) : null
+                        ]);
+                    })
+                )
+            ]);
+        }
+    };
+    m.mount(document.getElementById('janin-root'), JaninApp);
+})();
+</script>

@@ -1,0 +1,341 @@
+<!-- Command Center v5.2 - Dream OS -->
+<style>
+    .cmd-tab { padding: 0.75rem 1.25rem; border: none; border-radius: 1rem; cursor: pointer; font-weight: 600; white-space: nowrap; background: rgba(30,41,59,0.9); color: #e2e8f0; margin: 0 0.3rem; display: inline-block; transition: all 0.3s; }
+    .cmd-tab.active { background: #00ff9d; color: #000; box-shadow: 0 0 20px rgba(0,255,157,0.5); }
+    .panel { padding: 20px; display: none; }
+    .panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div style="padding: 20px; background: #0a0e27; min-height: 100vh;">
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+        <button onclick="document.getElementById('cmd-module').style.display='none'" style="background:rgba(255,255,255,0.15);color:white;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;font-size:16px;font-weight:bold;">← Kembali</button>
+        <h2 style="margin:0; color: white;">📊 Command Center</h2>
+    </div>
+
+    <div id="tab-bar">
+        <button class="cmd-tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="cmd-tab" onclick="switchTab('ruangkerja')">🏢 Ruang Kerja</button>
+        <button class="cmd-tab" onclick="switchTab('vault')">🗄️ Vault</button>
+        <button class="cmd-tab" onclick="switchTab('asset')">🏢 Aset</button>
+        <button class="cmd-tab" onclick="switchTab('stok')">📦 Stok</button>
+        <button class="cmd-tab" onclick="switchTab('dana')">💰 Dana</button>
+        <button class="cmd-tab" onclick="switchTab('approval')">✅ Approval</button>
+        <button class="cmd-tab" onclick="switchTab('slides')">🖼️ Slides</button>
+        <button class="cmd-tab" onclick="switchTab('qr')">🔳 QR</button>
+        <button class="cmd-tab" onclick="switchTab('hub')">📡 Hub</button>
+        <button class="cmd-tab" onclick="switchTab('analitik')">📈 Analitik</button>
+        <button class="cmd-tab" onclick="switchTab('users')">👥 Users</button>
+        <button class="cmd-tab" onclick="switchTab('backup')">💾 Backup</button>
+    </div>
+
+    <div id="panel-dashboard" class="panel active"><div id="dashboard-content">⏳ Memuat...</div></div>
+    <div id="panel-ruangkerja" class="panel"><div id="ruangkerja-content"></div></div>
+    <div id="panel-vault" class="panel"><div id="vault-content"></div></div>
+    <div id="panel-asset" class="panel"><div id="asset-content"></div></div>
+    <div id="panel-stok" class="panel"><div id="stok-content"></div></div>
+    <div id="panel-dana" class="panel"><div id="dana-content"></div></div>
+    <div id="panel-approval" class="panel"><div id="approval-content"></div></div>
+    <div id="panel-slides" class="panel"><div id="slides-content"></div></div>
+    <div id="panel-qr" class="panel"><div id="qr-content"></div></div>
+    <div id="panel-hub" class="panel"><div id="hub-content"></div></div>
+    <div id="panel-analitik" class="panel"><div id="analitik-content"></div></div>
+    <div id="panel-users" class="panel"><div id="users-content"></div></div>
+    <div id="panel-backup" class="panel"><div id="backup-content"></div></div>
+</div>
+
+<script>
+try {
+    console.log('✅ Command Center v5.2 mulai');
+    
+    function g(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
+    function s(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+    function fmt(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
+    function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+    function pnl(s){ return '<div style="background:rgba(30,41,59,0.8);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);margin-bottom:8px;">'+s+'</div>'; }
+    function el(id){ return document.getElementById(id); }
+
+    window.switchTab = function(tabId) {
+        var panels = document.getElementsByClassName('panel');
+        for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
+        var panel = el('panel-' + tabId);
+        if (panel) panel.classList.add('active');
+        
+        var loaders = {
+            dashboard: loadDashboard, ruangkerja: loadRuangKerja, vault: loadVault,
+            asset: loadAsset, stok: loadStok, dana: loadDana,
+            approval: loadApproval, slides: loadSlides, qr: loadQR,
+            hub: loadHub, analitik: loadAnalitik, users: loadUsers, backup: loadBackup
+        };
+        if (loaders[tabId]) loaders[tabId]();
+    };
+
+    // Load Dashboard
+    function loadDashboard(){
+        var booking=g('dreamos_bookings'),k3=g('dreamos_k3_reports'),maint=g('dreamos_maintenance_tasks');
+        var vault=g('dreamos_vault'),asset=g('dreamos_assets'),stok=g('dreamos_stok'),dana=g('dreamos_dana');
+        var today=new Date().toISOString().split('T')[0];
+        var stokMenipis=stok.filter(function(s){return s.jumlah<=s.minimal;}).length;
+        var totalAset=asset.reduce(function(s,a){return s+(parseInt(a.value||a.hargaBeli)||0);},0);
+        var danaBulanIni=dana.filter(function(d){return d.created&&d.created.startsWith(today.substring(0,7));});
+        var totalDana=danaBulanIni.reduce(function(s,d){return s+(parseInt(d.nominal)||0);},0);
+        var stats=[
+            {label:'Booking',value:booking.length,icon:'📅',color:'#f59e0b'},
+            {label:'K3 Pending',value:k3.filter(function(k){return k.status==='pending';}).length,icon:'⚠️',color:'#ef4444'},
+            {label:'Maint Aktif',value:maint.filter(function(m){return m.status==='pending'||m.status==='proses';}).length,icon:'🔧',color:'#3b82f6'},
+            {label:'Dokumen',value:vault.length,icon:'🗄️',color:'#8b5cf6'},
+            {label:'Nilai Aset',value:fmt(totalAset),icon:'💎',color:'#06b6d4'},
+            {label:'Stok Menipis',value:stokMenipis,icon:'📦',color:stokMenipis>0?'#ef4444':'#10b981'},
+            {label:'Dana Bulan Ini',value:fmt(totalDana),icon:'💰',color:'#8b5cf6'},
+            {label:'Audit Log',value:g('dreamos_audit_log').length,icon:'🔐',color:'#6366f1'}
+        ];
+        var c=el('dashboard-content');
+        if(c) c.innerHTML=stats.map(function(s){return '<div style="background:rgba(30,41,59,0.8);padding:15px;text-align:center;border-radius:10px;border:1px solid rgba(255,255,255,0.1);"><div style="font-size:2rem;">'+s.icon+'</div><div style="font-weight:700;font-size:1.3rem;color:'+s.color+';">'+s.value+'</div><div style="font-size:0.7rem;color:#94a3b8;">'+s.label+'</div></div>';}).join('');
+    }
+
+    // Load Analitik (SMART ANALYZER + GRAFIK)
+    function loadAnalitik(){
+        var stok = g('dreamos_stok');
+        var maint = g('dreamos_maintenance_tasks');
+        var bookings = g('dreamos_bookings');
+        var k3 = g('dreamos_k3_reports');
+        var dana = g('dreamos_dana');
+        var today = new Date().toISOString().split('T')[0].substring(0,7);
+        var bulanIni = new Date().toLocaleDateString('id-ID', {month:'long',year:'numeric'});
+
+        var bookingBulanIni = bookings.filter(function(b){return b.tgl && b.tgl.startsWith(today);}).length;
+        var k3BulanIni = k3.filter(function(k){return k.created && k.created.startsWith(today);}).length;
+        var maintBulanIni = maint.filter(function(m){return m.created && m.created.startsWith(today);}).length;
+        var danaBulanIni = dana.filter(function(d){return d.created && d.created.startsWith(today);}).length;
+        var maxVal = Math.max(bookingBulanIni, k3BulanIni, maintBulanIni, danaBulanIni, 1);
+
+        var menipis = stok.filter(function(s){return s.jumlah <= s.minimal;});
+        var saranPengadaan = menipis.map(function(s){ return {nama:s.nama, stok:s.jumlah, minimal:s.minimal, rekomendasi:s.minimal*3, harga:s.harga||0}; });
+        var totalBiaya = saranPengadaan.reduce(function(s,x){return s+(x.rekomendasi*x.harga);},0);
+
+        var katCount = {};
+        maint.forEach(function(m){ var k=m.kategori||'umum'; katCount[k]=(katCount[k]||0)+1; });
+        var topKat = Object.keys(katCount).sort(function(a,b){return katCount[b]-katCount[a];}).slice(0,5);
+
+        var keywords = ['soap','sabun','pengharum','sapu','pupuk','freon','kapasitor','kabel','kawat','tissue','pembersih','wipol','karbol','bayclin'];
+        var bahanHabis = stok.filter(function(s){ var n = s.nama.toLowerCase(); return keywords.some(function(kw){ return n.includes(kw); }); });
+
+        var rekomendasi = [];
+        if(menipis.length > 0) rekomendasi.push('⚠️ '+menipis.length+' item stok menipis. Segera lakukan pengadaan.');
+        if(k3.filter(function(k){return k.status==='pending';}).length > 3) rekomendasi.push('🔴 Banyak laporan K3 pending. Perlu review segera.');
+        if(maint.filter(function(m){return m.status==='pending';}).length > 5) rekomendasi.push('🔧 Tugas maintenance menumpuk. Jadwalkan ulang.');
+        if(bookings.filter(function(b){return b.status==='pending';}).length > 3) rekomendasi.push('📅 Banyak booking pending. Perlu approval.');
+        if(rekomendasi.length === 0) rekomendasi.push('✅ Semua sistem dalam kondisi baik. Tidak ada masalah kritis.');
+
+        var bars = [
+            {label:'Booking', value:bookingBulanIni, color:'#f59e0b'},
+            {label:'K3', value:k3BulanIni, color:'#ef4444'},
+            {label:'Maintenance', value:maintBulanIni, color:'#3b82f6'},
+            {label:'Dana', value:danaBulanIni, color:'#8b5cf6'}
+        ];
+
+        var h = '';
+        h += '<div class="dream-panel" style="padding:1rem;margin-bottom:0.75rem;text-align:center;"><h3 style="color:var(--neon-tawhid);">📈 Smart Analyzer • '+bulanIni+'</h3></div>';
+        h += '<div class="dream-panel" style="padding:1rem;margin-bottom:0.75rem;"><h4 style="color:var(--neon-tawhid);margin-bottom:0.5rem;">📊 Grafik Bulan Ini</h4>';
+        bars.forEach(function(bar){
+            var pct = Math.round((bar.value/maxVal)*100);
+            h += '<div style="margin-bottom:0.5rem;"><div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span>'+bar.label+'</span><span>'+bar.value+'</span></div>';
+            h += '<div style="width:100%;height:20px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:'+bar.color+';border-radius:10px;transition:width 0.5s;"></div></div></div>';
+        });
+        h += '</div>';
+        h += '<div class="dream-panel" style="padding:1rem;margin-bottom:0.75rem;"><h4 style="color:var(--neon-tawhid);margin-bottom:0.5rem;">🧠 Rekomendasi Cerdas</h4>';
+        rekomendasi.forEach(function(r){ h += '<div style="font-size:0.8rem;margin-bottom:0.3rem;">'+r+'</div>'; });
+        h += '</div>';
+        h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">';
+        h += '<div class="dream-panel" style="padding:1rem;"><h4 style="color:#eab308;">📦 Saran Pengadaan</h4>';
+        if(saranPengadaan.length){ saranPengadaan.forEach(function(s){ h += '<div style="font-size:0.7rem;margin-bottom:0.3rem;display:flex;justify-content:space-between;"><span>'+s.nama+'</span><span>Stok:'+s.stok+' → '+s.rekomendasi+'</span></div>'; }); h += '<div style="font-weight:700;margin-top:0.5rem;text-align:right;">Total: '+fmt(totalBiaya)+'</div>'; }
+        else { h += '<div style="color:var(--text-secondary);">Semua stok aman</div>'; }
+        h += '</div>';
+        h += '<div class="dream-panel" style="padding:1rem;"><h4 style="color:#10b981;">🧴 Bahan Habis Pakai</h4>';
+        if(bahanHabis.length){ bahanHabis.forEach(function(bh){ var low = bh.jumlah <= bh.minimal; h += '<div style="font-size:0.7rem;margin-bottom:0.3rem;color:'+(low?'#ef4444':'var(--text-primary)')+';">'+bh.nama+': '+bh.jumlah+' '+bh.satuan+' (min:'+bh.minimal+')</div>'; }); }
+        else { h += '<div style="color:var(--text-secondary);">Belum ada data</div>'; }
+        h += '</div>';
+        h += '<div class="dream-panel" style="padding:1rem;"><h4 style="color:#3b82f6;">🔧 Top Maintenance</h4>';
+        topKat.forEach(function(kat,i){ h += '<div style="font-size:0.7rem;margin-bottom:0.3rem;">'+(i+1)+'. '+kat+': '+katCount[kat]+' tugas</div>'; });
+        h += '</div>';
+        h += '</div>';
+        h += '<div style="text-align:center;margin-top:0.75rem;"><button onclick="cetakAnalitik()" style="padding:0.6rem 2rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.9rem;">🖨️ Cetak Laporan Analitik</button></div>';
+        el('analitik-content').innerHTML = h;
+
+        window.cetakAnalitik = function(){
+            var win = window.open('','_blank');
+            win.document.write('<html><head><title>Laporan Analitik</title><style>body{font-family:sans-serif;padding:20px}h2{text-align:center}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:8px}th{background:#eee}.bar{height:20px;border-radius:5px}@media print{button{display:none}}</style></head><body>');
+            win.document.write('<h2>LAPORAN ANALITIK • '+bulanIni+'</h2><p>Tanggal: '+new Date().toLocaleDateString('id-ID')+'</p>');
+            win.document.write('<button onclick="window.print()" style="padding:10px 20px;background:#6366f1;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;margin-bottom:10px;">🖨️ Cetak</button>');
+            win.document.write('<h3>📊 Grafik</h3><table><tr><th>Kategori</th><th>Jumlah</th><th>Grafik</th></tr>');
+            bars.forEach(function(bar){ var pct=Math.round((bar.value/maxVal)*100); win.document.write('<tr><td>'+bar.label+'</td><td>'+bar.value+'</td><td><div class="bar" style="width:'+(pct*2)+'px;background:'+bar.color+';"></div></td></tr>'); });
+            win.document.write('</table><h3>🧠 Rekomendasi</h3>'); rekomendasi.forEach(function(r){ win.document.write('<p>'+r+'</p>'); });
+            win.document.write('<h3>📦 Saran Pengadaan</h3><table><tr><th>Item</th><th>Stok</th><th>Beli</th><th>Biaya</th></tr>');
+            saranPengadaan.forEach(function(s){ win.document.write('<tr><td>'+s.nama+'</td><td>'+s.stok+'</td><td>'+s.rekomendasi+'</td><td>'+fmt(s.harga*s.rekomendasi)+'</td></tr>'); });
+            win.document.write('</table><p style="margin-top:30px;text-align:right;">Mengetahui,<br><br><br>Kepala Bagian Umum</p></body></html>');
+            win.document.close();
+        };
+    }
+
+    // Load Ruang Kerja, Vault, Asset, Stok, Dana, Approval, Slides, QR, Hub, Users, Backup (ringkas)
+    function loadRuangKerja(){
+        var b=g('dreamos_bookings').filter(function(x){return x.status==='pending';});
+        var k=g('dreamos_k3_reports').filter(function(x){return x.status==='pending';});
+        var m=g('dreamos_maintenance_tasks').filter(function(x){return x.status==='pending'||x.status==='proses';});
+        var d=g('dreamos_dana'); var dp=d.filter(function(x){return x.status==='pending';});
+        var st=g('dreamos_stok'); var sm=st.filter(function(x){return x.jumlah<=x.minimal;});
+        var a=g('dreamos_assets'); var v=g('dreamos_vault'); var u=g('dreamos_users');
+        var today=new Date().toISOString().split('T')[0].substring(0,7);
+        var db=d.filter(function(x){return x.created&&x.created.startsWith(today);});
+        var td=db.reduce(function(s,x){return s+(parseInt(x.nominal)||0);},0);
+        var ta=a.reduce(function(s,x){return s+(parseInt(x.value||x.hargaBeli)||0);},0);
+        var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+        h+=pnl('<h4 style="color:#8b5cf6;">💰 Keuangan</h4><div>Dana Pending: '+dp.length+'</div><div>Total Bulan Ini: '+fmt(td)+'</div><div>Vault: '+v.length+' file</div>');
+        h+=pnl('<h4 style="color:#f59e0b;">🔧 Operasional</h4><div>Booking: '+b.length+' pending</div><div>K3: '+k.length+' pending</div><div>Maint: '+m.length+' aktif</div>');
+        h+=pnl('<h4 style="color:#06b6d4;">🏢 Aset & SDM</h4><div>Nilai Aset: '+fmt(ta)+'</div><div>Stok Menipis: '+sm.length+'</div><div>Users: '+u.length+'</div>');
+        h+=pnl('<h4 style="color:#ef4444;">⏰ Deadline</h4><div>SPJ: Tgl 5</div><div>Laporan: Tgl 10</div><div>Pajak: Tgl 20</div>');
+        h+='</div>';
+        el('ruangkerja-content').innerHTML=h;
+    }
+
+    function loadVault(){ var docs=g('dreamos_vault'); var h=pnl('<h4>📄 Tambah</h4><input type="text" id="vault-name" placeholder="Nama" style="width:100%;padding:8px;margin:5px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="saveVault()" style="padding:8px 15px;background:#8b5cf6;color:white;border:none;border-radius:5px;cursor:pointer;">Simpan</button>'); h+=pnl('<h4>📋 Daftar ('+docs.length+')</h4>'+ (docs.length?docs.map(function(d){return '<div style="padding:5px;margin:3px 0;background:rgba(0,0,0,0.3);border-radius:3px;">'+d.name+'</div>';}).join(''):'Kosong')); el('vault-content').innerHTML=h; window.saveVault=function(){ var n=document.getElementById('vault-name').value.trim(); if(!n)return alert('Nama wajib!'); var docs=g('dreamos_vault'); docs.push({id:'v_'+Date.now(),name:n,category:'Lainnya',date:new Date().toISOString()}); s('dreamos_vault',docs); loadVault(); }; }
+
+    function loadAsset(){ var a=g('dreamos_assets'); var t=a.reduce(function(s,x){return s+(parseInt(x.value||x.hargaBeli)||0);},0); var h=pnl('<h4>💎 Total Nilai Aset</h4><div style="font-size:1.5rem;color:#00ff9d;">'+fmt(t)+'</div><div>'+a.length+' aset</div>'); h+=pnl('<h4>📋 Daftar</h4>'+(a.length?a.map(function(x){return '<div style="padding:5px;margin:3px 0;background:rgba(0,0,0,0.3);border-radius:3px;"><strong>'+(x.nama||x.name)+'</strong> - '+fmt(x.value||x.hargaBeli)+'</div>';}).join(''):'Belum ada')); el('asset-content').innerHTML=h; }
+
+    function loadStok(){ var items=g('dreamos_stok'); var menipis=items.filter(function(x){return x.jumlah<=x.minimal;}); var h=pnl('<h4>📦 Stok</h4><div style="font-size:1.5rem;">'+items.length+' jenis</div><div>Menipis: '+menipis.length+'</div>'); h+=pnl((items.length?items.map(function(x){var low=x.jumlah<=x.minimal;return '<div style="padding:5px;margin:3px 0;background:rgba(0,0,0,0.3);border-left:3px solid '+(low?'#ef4444':'#10b981')+';">'+x.nama+': '+x.jumlah+' '+x.satuan+'</div>';}).join(''):'Belum ada')); el('stok-content').innerHTML=h; }
+
+    function loadDana(){
+        var panel = document.getElementById('panel-dana');
+        var dana = g('dreamos_dana');
+        
+        // Preset pengeluaran operasional
+        var presets = [
+            {label:'🔨 Tukang Mingguan', judul:'Tukang Mingguan'},
+            {label:'🍱 Makan Sekuriti', judul:'Makan Sekuriti'},
+            {label:'❄️ Steam AC', judul:'Steam AC'},
+            {label:'🤝 Aspirasi Keamanan', judul:'Aspirasi Keamanan'},
+            {label:'🧹 Stok Janitor Indoor', judul:'Stok Janitor Indoor'},
+            {label:'🌿 Stok Janitor Outdoor', judul:'Stok Janitor Outdoor'},
+            {label:'🏗️ Material Bangunan', judul:'Material Bangunan'},
+            {label:'💰 Tips Petugas', judul:'Tips Petugas'},
+            {label:'🔧 Maintenance Tools', judul:'Maintenance Tools'},
+            {label:'📦 Lainnya', judul:'Lainnya'}
+        ];
+        
+        var html = '<div class="dream-panel" style="padding:1rem;margin-bottom:0.5rem;">';
+        html += '<h4 style="color:var(--neon-tawhid);margin-bottom:0.5rem;">⚡ Quick Add Pengeluaran</h4>';
+        html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.3rem;margin-bottom:0.5rem;">';
+        presets.forEach(function(p){
+            html += '<button onclick="quickAddDana(''+p.judul+'')" style="padding:0.5rem;background:rgba(139,92,246,0.2);color:white;border:1px solid rgba(139,92,246,0.4);border-radius:0.5rem;cursor:pointer;font-size:0.7rem;">'+p.label+'</button>';
+        });
+        html += '</div>';
+        html += '<input type="number" id="qty-nominal" placeholder="Nominal (Rp)" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.3rem;color:var(--text-primary);font-size:0.8rem;">';
+        html += '</div>';
+        
+        // Form manual
+        html += '<div class="dream-panel" style="padding:1rem;margin-bottom:0.5rem;">';
+        html += '<h4 style="color:var(--neon-tawhid);margin-bottom:0.5rem;">➕ Pengajuan Manual</h4>';
+        html += '<input type="text" id="dana-judul" placeholder="Judul" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.3rem;color:var(--text-primary);font-size:0.8rem;">';
+        html += '<input type="number" id="dana-nominal" placeholder="Nominal" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.3rem;color:var(--text-primary);font-size:0.8rem;">';
+        html += '<button onclick="saveDana()" style="width:100%;padding:0.5rem;background:#8b5cf6;color:white;border:none;border-radius:0.3rem;cursor:pointer;font-weight:600;">Simpan</button>';
+        html += '</div>';
+        
+        // Daftar dana
+        html += '<div class="dream-panel" style="padding:1rem;">';
+        html += '<h4 style="color:var(--neon-tawhid);margin-bottom:0.5rem;">📋 Daftar Pengeluaran ('+dana.length+')</h4>';
+        html += '<div id="dana-list" style="max-height:300px;overflow-y:auto;">';
+        if(dana.length){
+            dana.slice(-20).reverse().forEach(function(d){
+                var sc = d.status === 'pending' ? '#f59e0b' : '#10b981';
+                html += '<div style="padding:0.5rem;margin-bottom:0.3rem;background:rgba(30,41,59,0.6);border-radius:0.3rem;display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;">';
+                html += '<div><strong>'+d.judul+'</strong><br><span style="font-size:0.65rem;">'+fmt(d.nominal)+' | '+d.pengaju+' | '+new Date(d.created).toLocaleDateString('id-ID')+'</span></div>';
+                html += '<span style="background:'+sc+';color:white;padding:0.1rem 0.5rem;border-radius:1rem;font-size:0.65rem;">'+d.status+'</span>';
+                html += '</div>';
+            });
+        } else {
+            html += '<div style="color:var(--text-secondary);text-align:center;">Belum ada pengeluaran</div>';
+        }
+        html += '</div></div>';
+        
+        panel.innerHTML = html;
+        
+        // Fungsi Quick Add
+        window.quickAddDana = function(judul){
+            var nominal = document.getElementById('qty-nominal').value;
+            if(!nominal || parseInt(nominal) <= 0){
+                var n = prompt('Nominal untuk '+judul+' (Rp):', '');
+                if(!n || parseInt(n) <= 0) return;
+                nominal = n;
+            }
+            var dana = g('dreamos_dana');
+            dana.push({
+                id:'dana_'+Date.now(),
+                judul:judul,
+                nominal:parseInt(nominal),
+                pengaju:'Kabag Umum',
+                kategori:'Operasional',
+                status:'approved',
+                created:new Date().toISOString()
+            });
+            s('dreamos_dana', dana);
+            document.getElementById('qty-nominal').value = '';
+            loadDana();
+        };
+        
+        // Fungsi save manual
+        window.saveDana = function(){
+            var judul = document.getElementById('dana-judul').value.trim();
+            var nominal = document.getElementById('dana-nominal').value;
+            if(!judul || !nominal) return alert('Judul dan nominal wajib!');
+            var dana = g('dreamos_dana');
+            dana.push({
+                id:'dana_'+Date.now(),
+                judul:judul,
+                nominal:parseInt(nominal),
+                pengaju:'Kabag Umum',
+                kategori:'Operasional',
+                status:'pending',
+                created:new Date().toISOString()
+            });
+            s('dreamos_dana', dana);
+            document.getElementById('dana-judul').value = '';
+            document.getElementById('dana-nominal').value = '';
+            loadDana();
+        };
+    }
+
+    function loadApproval(){
+        var items=[ {title:'Booking',data:g('dreamos_bookings').filter(function(x){return x.status==='pending';}).slice(0,6),key:'dreamos_bookings',render:function(x){return x.tgl+' '+x.nama_peminjam+' ('+x.ruang+')';}}, {title:'K3',data:g('dreamos_k3_reports').filter(function(x){return x.status==='pending';}).slice(0,6),key:'dreamos_k3_reports',render:function(x){return dt(x.created)+' '+x.nama+' - '+x.jenis;}}, {title:'Dana',data:g('dreamos_dana').filter(function(x){return x.status==='pending';}).slice(0,6),key:'dreamos_dana',render:function(x){return x.judul+' - '+fmt(x.nominal);}} ];
+        var h='';
+        items.forEach(function(gp){ h+=pnl('<h4>'+gp.title+' Pending ('+gp.data.length+')</h4>'+(gp.data.length?gp.data.map(function(x){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px;margin:3px 0;background:rgba(0,0,0,0.3);border-radius:3px;"><span>'+gp.render(x)+'</span><div><button onclick="appr(\''+gp.key+'\',\''+x.id+'\',\'approved\')" style="background:#10b981;color:white;border:none;border-radius:3px;padding:3px 8px;cursor:pointer;">✓</button> <button onclick="appr(\''+gp.key+'\',\''+x.id+'\',\'rejected\')" style="background:#ef4444;color:white;border:none;border-radius:3px;padding:3px 8px;cursor:pointer;">✗</button></div></div>';}).join(''):'Tidak ada')); });
+        el('approval-content').innerHTML=h;
+        window.appr=function(key,id,status){var items=g(key);var item=items.find(function(x){return x.id===id;});if(item){item.status=status;s(key,items);loadApproval();}};
+    }
+
+    function loadSlides(){ var p=JSON.parse(localStorage.getItem('dreamos_piket')||'{}'); var a=JSON.parse(localStorage.getItem('dreamos_agenda')||'{}'); var today=new Date().toISOString().split('T')[0]; var h=pnl('<h4>🛡️ Piket ('+today+')</h4><input type="text" id="ep" value="'+(p[today]||'')+'" style="width:100%;padding:8px;margin:5px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="svPiket()" style="padding:8px 15px;background:#f59e0b;color:black;border:none;border-radius:5px;cursor:pointer;">Simpan</button>'); h+=pnl('<h4>📋 Agenda ('+today+')</h4><input type="text" id="ea" value="'+(a[today]||'')+'" style="width:100%;padding:8px;margin:5px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="svAgenda()" style="padding:8px 15px;background:#f59e0b;color:black;border:none;border-radius:5px;cursor:pointer;">Simpan</button>'); el('slides-content').innerHTML=h; window.svPiket=function(){var v=document.getElementById('ep').value.trim();var p=JSON.parse(localStorage.getItem('dreamos_piket')||'{}');p[today]=v;localStorage.setItem('dreamos_piket',JSON.stringify(p));alert('OK');}; window.svAgenda=function(){var v=document.getElementById('ea').value.trim();var a=JSON.parse(localStorage.getItem('dreamos_agenda')||'{}');a[today]=v;localStorage.setItem('dreamos_agenda',JSON.stringify(a));alert('OK');}; }
+
+    function loadQR(){ var h=pnl('<h4>🔳 QR Generator</h4><input type="text" id="qd" placeholder="Data" style="width:100%;padding:8px;margin:5px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="genQ()" style="padding:8px 15px;background:#6366f1;color:white;border:none;border-radius:5px;cursor:pointer;">Generate</button><div id="qi" style="margin-top:10px;"></div>'); el('qr-content').innerHTML=h; window.genQ=function(){var d=document.getElementById('qd').value.trim();if(!d)return alert('Isi!');el('qi').innerHTML='<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(d)+'" style="border-radius:10px;">';}; }
+
+    function loadHub(){
+        var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+        h+=pnl('<h4>📶 WiFi</h4><input type="text" id="ws" placeholder="SSID" style="width:100%;padding:5px;margin:3px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><input type="text" id="wp" placeholder="Pass" style="width:100%;padding:5px;margin:3px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="gQ(\'wifi\')" style="padding:5px 10px;background:#3b82f6;color:white;border:none;border-radius:5px;cursor:pointer;">QR</button><div id="qw"></div>');
+        h+=pnl('<h4>🖨️ Printer</h4><input type="text" id="pi" placeholder="IP" style="width:100%;padding:5px;margin:3px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="gQ(\'printer\')" style="padding:5px 10px;background:#8b5cf6;color:white;border:none;border-radius:5px;cursor:pointer;">QR</button><div id="qp"></div>');
+        h+=pnl('<h4>📺 Smart TV</h4><input type="text" id="ti" placeholder="IP" style="width:100%;padding:5px;margin:3px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="gQ(\'tv\')" style="padding:5px 10px;background:#f59e0b;color:black;border:none;border-radius:5px;cursor:pointer;">QR</button><div id="qt"></div>');
+        h+=pnl('<h4>📲 Share</h4><button onclick="gQ(\'share\')" style="padding:8px 15px;background:#10b981;color:white;border:none;border-radius:5px;cursor:pointer;">QR Akses</button><div id="qs"></div>');
+        h+='</div>'; el('hub-content').innerHTML=h;
+        window.gQ=function(t){ var d=''; if(t==='wifi'){var ss=document.getElementById('ws').value||'DreamOS';var pp=document.getElementById('wp').value||'12345678';d='WIFI:S:'+ss+';T:WPA;P:'+pp+';;';} else if(t==='printer'){var ip=document.getElementById('pi').value||'192.168.1.100';d='http://'+ip+':631/print';} else if(t==='tv'){var ip=document.getElementById('ti').value||'192.168.1.200';d='dreamos://share-screen?ip='+ip;} else if(t==='share'){d=window.location.href;} el('q'+(t==='wifi'?'w':t==='printer'?'p':t==='tv'?'t':'s')).innerHTML='<img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(d)+'" style="margin-top:5px;border-radius:10px;">'; };
+    }
+
+    function loadUsers(){ var u=g('dreamos_users'); var h=pnl('<h4>➕ Tambah</h4><input type="text" id="un" placeholder="Username" style="width:100%;padding:8px;margin:5px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><input type="password" id="up" placeholder="Password" style="width:100%;padding:8px;margin:5px 0;background:#000;color:#fff;border:1px solid #333;border-radius:5px;"><button onclick="addU()" style="padding:8px 15px;background:#8b5cf6;color:white;border:none;border-radius:5px;cursor:pointer;">Tambah</button>'); h+=pnl('<h4>👥 Daftar ('+u.length+')</h4><div id="ul">'+(u.length?u.map(function(x){return '<div style="padding:5px;margin:3px 0;background:rgba(0,0,0,0.3);border-radius:3px;display:flex;justify-content:space-between;"><span>'+x.username+' ('+x.role+')</span><button onclick="delU(\''+x.id+'\')" style="background:#ef4444;color:white;border:none;border-radius:3px;padding:2px 8px;cursor:pointer;">🗑️</button></div>';}).join(''):'Belum ada')+'</div>'); el('users-content').innerHTML=h; window.addU=function(){ var n=document.getElementById('un').value.trim(); var p=document.getElementById('up').value.trim(); if(!n||!p)return alert('Wajib!'); var u=g('dreamos_users'); if(u.find(function(x){return x.username===n;}))return alert('Sudah ada!'); u.push({id:'u_'+Date.now(),username:n,password:btoa(p),role:'public',created:new Date().toISOString()}); s('dreamos_users',u); loadUsers(); }; window.delU=function(id){var u=g('dreamos_users').filter(function(x){return x.id!==id;});s('dreamos_users',u);loadUsers();}; }
+
+    function loadBackup(){ var h=pnl('<h4>💾 Backup</h4><button onclick="expAll()" style="padding:10px 20px;background:#00ff9d;color:black;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Export JSON</button>'); el('backup-content').innerHTML=h; window.expAll=function(){var all={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);all[k]=localStorage.getItem(k);}var blob=new Blob([JSON.stringify(all)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='dreamos_backup.json';a.click();}; }
+
+    loadDashboard();
+} catch(e) {
+    console.error('❌ ERROR: ' + e.message);
+    alert('Error: ' + e.message);
+}
+</script>
+</body>
+</html>

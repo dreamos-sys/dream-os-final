@@ -1,0 +1,247 @@
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:100000;">← Kembali</button>
+
+<div style="min-height:100vh; background:#040814; color:#e2e8f0; font-family:'Inter',sans-serif; padding:1rem; padding-top:3.5rem; padding-bottom:5rem;" id="janout-app">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+        <div>
+            <h2 style="color:#22c55e; font-size:1.3rem; font-weight:800; margin:0;">🌿 Janitor Outdoor</h2>
+            <p style="color:#94a3b8; font-size:0.7rem; margin:0;">Ceklis Harian & Tugas Mingguan</p>
+        </div>
+        <button onclick="submitToCloudOutdoor()" style="margin-left:auto; margin-right:0.5rem; background:#22c55e; color:white; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem; padding:0.4rem 0.8rem;">☁️ Submit</button><button onclick="cetakLaporan()" style="margin-left:0; padding:0.4rem 0.8rem; background:#6366f1; color:white; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem;">🖨️ Cetak</button>
+    </div>
+
+    <!-- Metadata Petugas -->
+    <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:0.75rem;">
+        <h4 style="color:#22c55e; margin:0 0 0.5rem;">👤 Petugas & Area</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <input type="text" id="jo-petugas" placeholder="Nama Petugas" oninput="window.state.petugas=this.value; saveMeta();" style="width:100%; padding:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0; font-size:0.8rem;">
+            <input type="text" id="jo-area" placeholder="Area / Taman" oninput="window.state.area=this.value; saveMeta();" style="width:100%; padding:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0; font-size:0.8rem;">
+        </div>
+    </div>
+
+    <!-- Tanggal, Shift & Foto -->
+    <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+        <input type="date" id="jo-date" onchange="window.state.date=this.value; loadData();" style="flex:1; padding:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0; font-size:0.8rem;">
+        <div style="display:flex; gap:0.3rem;">
+            <button class="jo-shift active" id="btn-pagi" onclick="setShift('pagi')">🌅 Pagi</button>
+            <button class="jo-shift" id="btn-siang" onclick="setShift('siang')">☀️ Siang</button>
+            <button class="jo-shift" id="btn-sore" onclick="setShift('sore')">🌇 Sore</button>
+        </div>
+        <button onclick="uploadPhoto()" style="background:rgba(59,130,246,0.2);color:#3b82f6;border:none;border-radius:0.5rem;padding:0.5rem 0.8rem;font-size:0.75rem;cursor:pointer;">📸 Foto</button>
+    </div>
+
+    <!-- Foto Preview -->
+    <div id="jo-photo-container" style="margin-bottom:0.75rem;"></div>
+
+    <!-- Progress Bar -->
+    <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:0.75rem; text-align:center;">
+        <div id="jo-progress-text" style="font-size:1.2rem;font-weight:700;color:#22c55e;">0/0 item</div>
+        <div style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:0.3rem;">
+            <div id="jo-progress-bar" style="width:0%;height:100%;background:#ef4444;border-radius:4px;transition:width 0.3s;"></div>
+        </div>
+    </div>
+
+    <!-- Checklist Harian -->
+    <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:0.75rem;">
+        <h4 style="color:#22c55e; margin:0 0 0.5rem;">📋 Ceklis Harian</h4>
+        <div id="jo-daily-list"></div>    </div>
+
+    <!-- Tugas Mingguan -->
+    <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem;">
+        <h4 style="color:#f59e0b; margin:0 0 0.5rem;">🗓️ Tugas Mingguan</h4>
+        <div id="jo-weekly-list"></div>
+    </div>
+</div>
+
+<style>
+    .jo-shift { padding:0.5rem 0.8rem; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem; background:#1e293b; color:#e2e8f0; transition:0.3s; }
+    .jo-shift.active { background:#22c55e; color:#000; }
+</style>
+
+<script src="../js/core/supabase-bridge.js"></script>
+<script>
+(function(){
+    var ITEMS = ['Jalan Utama','Lorong dan Jalan Kecil','Parkir Motor / Mobil','Area Loby','Play Ground','Taman','Lapangan','Keterangan Dll'];
+    var WEEKLY = ['Pangkas Rumput','Pangkas Dahan','Pupuk Tanaman','Bersihkan Kolam','Perbaiki Pagar','Lainnya'];
+
+    window.state = {
+        date: new Date().toISOString().split('T')[0],
+        shift: 'pagi',
+        petugas: '', area: '',
+        data: {}, photoData: {}
+    };
+
+    function g(k){ try{return JSON.parse(localStorage.getItem(k)||'{}');}catch(e){return {};} }
+    function s(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+
+    window.loadData = function(){
+        var all = g('dreamos_janitor_outdoor');
+        if(!all[state.date]) all[state.date] = { shifts:{pagi:{},siang:{},sore:{}}, weekly:{}, photos:{}, petugas:'', area:'' };
+        if(!all[state.date].shifts) all[state.date].shifts = { pagi:{}, siang:{}, sore:{} };
+        if(!all[state.date].photos) all[state.date].photos = {};
+        state.data = all;
+        state.petugas = all[state.date].petugas || '';
+        state.area = all[state.date].area || '';
+        state.photoData = all[state.date].photos || {};
+        document.getElementById('jo-petugas').value = state.petugas;
+        document.getElementById('jo-area').value = state.area;
+        document.getElementById('jo-date').value = state.date;
+        updateShiftBtns();
+        renderAll();
+    };
+
+    window.saveMeta = function(){
+        if(!state.data[state.date]) state.data[state.date] = { shifts:{pagi:{},siang:{},sore:{}}, weekly:{}, photos:{}, petugas:'', area:'' };
+        state.data[state.date].petugas = state.petugas;
+        state.data[state.date].area = state.area;
+        s('dreamos_janitor_outdoor', state.data);    };
+
+    window.setShift = function(sh){
+        state.shift = sh;
+        updateShiftBtns();
+        renderAll();
+    };
+
+    function updateShiftBtns(){
+        document.getElementById('btn-pagi').classList.toggle('active', state.shift==='pagi');
+        document.getElementById('btn-siang').classList.toggle('active', state.shift==='siang');
+        document.getElementById('btn-sore').classList.toggle('active', state.shift==='sore');
+    }
+
+    window.toggleItem = function(item){
+        if(!state.data[state.date].shifts[state.shift]) state.data[state.date].shifts[state.shift] = {};
+        state.data[state.date].shifts[state.shift][item] = !state.data[state.date].shifts[state.shift][item];
+        s('dreamos_janitor_outdoor', state.data);
+        renderAll();
+    };
+
+    window.toggleWeekly = function(task){
+        if(!state.data[state.date].weekly) state.data[state.date].weekly = {};
+        state.data[state.date].weekly[task] = !state.data[state.date].weekly[task];
+        s('dreamos_janitor_outdoor', state.data);
+        renderAll();
+    };
+
+    window.uploadPhoto = function(){
+        var input = document.createElement('input');
+        input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+        input.onchange = function(e){
+            var file = e.target.files[0]; if(!file) return;
+            var reader = new FileReader();
+            reader.onload = function(ev){
+                var key = state.shift + '-area';
+                state.data[state.date].photos[key] = ev.target.result;
+                state.photoData = state.data[state.date].photos;
+                s('dreamos_janitor_outdoor', state.data);
+                renderAll();
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    };
+
+    window.renderAll = function(){
+        var shiftData = (state.data[state.date] && state.data[state.date].shifts[state.shift]) || {};
+        var checked = ITEMS.filter(function(it){ return shiftData[it]; }).length;
+        var total = ITEMS.length;        var pct = Math.round((checked/total)*100);
+        var col = pct===100?'#10b981':pct>=50?'#f59e0b':'#ef4444';
+        document.getElementById('jo-progress-text').textContent = checked+'/'+total+' item';
+        document.getElementById('jo-progress-bar').style.width = pct+'%';
+        document.getElementById('jo-progress-bar').style.background = col;
+
+        var photoKey = state.shift + '-area';
+        var photo = state.photoData[photoKey];
+        document.getElementById('jo-photo-container').innerHTML = photo ? '<img src="'+photo+'" style="max-width:100%;max-height:150px;border-radius:0.5rem;">' : '';
+
+        var dailyHTML = '';
+        ITEMS.forEach(function(item){
+            var chk = shiftData[item] ? 'checked' : '';
+            var bg = shiftData[item] ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)';
+            var safeItem = item.replace(/'/g, "\\'");
+            dailyHTML += '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:'+bg+';border-radius:0.5rem;margin-bottom:0.3rem;cursor:pointer;font-size:0.8rem;">';
+            dailyHTML += '<input type="checkbox" '+chk+' onchange="toggleItem(\''+safeItem+'\')"> '+item+'</label>';
+        });
+        document.getElementById('jo-daily-list').innerHTML = dailyHTML;
+
+        var weeklyData = (state.data[state.date] && state.data[state.date].weekly) || {};
+        var weeklyHTML = '';
+        WEEKLY.forEach(function(task){
+            var chk = weeklyData[task] ? 'checked' : '';
+            var bg = weeklyData[task] ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)';
+            var safeTask = task.replace(/'/g, "\\'");
+            weeklyHTML += '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:'+bg+';border-radius:0.5rem;margin-bottom:0.3rem;cursor:pointer;font-size:0.8rem;">';
+            weeklyHTML += '<input type="checkbox" '+chk+' onchange="toggleWeekly(\''+safeTask+'\')"> '+task+'</label>';
+        });
+        document.getElementById('jo-weekly-list').innerHTML = weeklyHTML;
+    };
+
+    window.cetakLaporan = function(){
+        var shiftData = (state.data[state.date] && state.data[state.date].shifts[state.shift]) || {};
+        var weeklyData = (state.data[state.date] && state.data[state.date].weekly) || {};
+        var photoKey = state.shift + '-area';
+        var photo = state.photoData[photoKey];
+        var win = window.open('', '_blank', 'width=900,height=600');
+        var doc = '<html><head><title>Laporan Janitor Outdoor</title><style>body{font-family:sans-serif;padding:20px;color:#111;}h2,h3{text-align:center;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #000;padding:6px;text-align:left;}th{background:#eee;}.chk{color:#10b981;font-weight:bold;}.unchk{color:#ef4444;}@media print{button{display:none;}}</style></head><body>';
+        doc += '<h2>LAPORAN JANITOR OUTDOOR</h2>';
+        doc += '<p style="text-align:center;">Tanggal: '+new Date(state.date).toLocaleDateString('id-ID')+' | Shift: '+state.shift.toUpperCase()+'</p>';
+        doc += '<p><strong>Petugas:</strong> '+state.petugas+' | <strong>Area:</strong> '+state.area+'</p>';
+        doc += '<button onclick="window.print()" style="padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">🖨️ Cetak Laporan</button>';
+        
+        doc += '<h3>📋 Ceklis Harian</h3><table><tr><th>Item</th><th>Status</th></tr>';
+        ITEMS.forEach(function(it){
+            doc += '<tr><td>'+it+'</td><td class="'+(shiftData[it]?'chk':'unchk')+'">'+(shiftData[it]?'✅ Bersih':'❌ Belum')+'</td></tr>';
+        });
+        doc += '</table>';
+        doc += '<h3>🗓️ Tugas Mingguan</h3><table><tr><th>Tugas</th><th>Status</th></tr>';
+        WEEKLY.forEach(function(t){
+            doc += '<tr><td>'+t+'</td><td class="'+(weeklyData[t]?'chk':'unchk')+'">'+(weeklyData[t]?'✅ Selesai':'❌ Belum')+'</td></tr>';
+        });
+        doc += '</table>';
+
+        if(photo) doc += '<p><strong>Foto Area:</strong><br><img src="'+photo+'" style="max-width:300px;border:1px solid #ccc;border-radius:4px;"></p>';
+        
+        doc += '<p style="margin-top:30px;text-align:right;">Mengetahui,<br><br><br>Kepala Bagian Umum</p></body></html>';
+        win.document.write(doc);
+        win.document.close();
+    };
+
+    
+    window.submitToCloudOutdoor = async function(){
+        if(!state.petugas || !state.area) return alert('⚠️ Isi Nama Petugas dan Area dulu!');
+        var payload = {
+            id: 'jo_'+Date.now(), petugas: state.petugas, area: state.area,
+            tanggal: state.date, shift: state.shift,
+            checklist: state.data[state.date].shifts[state.shift],
+            weekly: state.data[state.date].weekly,
+            created_at: new Date().toISOString()
+        };
+        // 🌍 GPS Stamping
+        if(window.DreamGeo) { try { var loc = await window.DreamGeo.get(); payload.gps_lat = loc.lat; payload.gps_lng = loc.lng; } catch(e){ payload.gps_lat='DENIED'; } }
+        // 📦 Hybrid Sync (Offline-First)
+        if(window.HybridSync) { window.HybridSync.push('janitor_outdoor', payload); alert('✅ Janitor Outdoor tersimpan & masuk antrian sync!'); }
+        else { alert('⚠️ HybridSync belum siap, data tetap aman di lokal.'); }
+    };
+
+    
+    window.submitToCloudOutdoor = async function(){
+        if(!state.petugas || !state.area) return alert('⚠️ Isi Nama Petugas dan Area dulu!');
+        var payload = {
+            id: 'jo_'+Date.now(), petugas: state.petugas, area: state.area,
+            tanggal: state.date, shift: state.shift,
+            checklist: state.data[state.date].shifts[state.shift],
+            weekly: state.data[state.date].weekly,
+            created_at: new Date().toISOString()
+        };
+        // 🌍 GPS Stamping (Biar tau petugas beneran di lokasi)
+        if(window.DreamGeo) { try { var loc = await window.DreamGeo.get(); payload.gps_lat = loc.lat; payload.gps_lng = loc.lng; } catch(e){ payload.gps_lat='DENIED'; } }
+        // 📦 Hybrid Sync (Offline-First, masuk antrian kalau sinyal jelek)
+        if(window.HybridSync) { window.HybridSync.push('janitor_outdoor', payload); alert('✅ Janitor Outdoor tersimpan & masuk antrian sync!'); }
+        else { alert('⚠️ HybridSync belum siap, data tetap aman di lokal.'); }
+    };
+
+    // 🛡️ SAFE INIT
+    setTimeout(function(){
+        try { loadData(); }
+        catch(e){ console.error('❌ Janitor Outdoor Init:', e); }
+    }, 80);
+})();
+</script>

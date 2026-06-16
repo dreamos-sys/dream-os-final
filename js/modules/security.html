@@ -1,0 +1,471 @@
+<div id="sec-root"></div>
+<script>
+(function() {
+    function g(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
+    function s(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+    function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+    function fmt(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
+
+    var CP = ['Pos Utama','Gerbang Masuk','Parkir Motor','Parkir Mobil','Loby Utama','Lorong Gedung','Lapangan','Taman','Area Belakang'];
+    var SHIFTS = { pagi:'🌅 Pagi (07:00-19:00)', malam:'🌙 Malam (19:00-07:00)' };
+    var MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+    var SecApp = {
+        tab: 'patroli',
+        date: new Date().toISOString().split('T')[0],
+        shift: 'pagi',
+        nama: '', idPetugas: '',
+        patroli: {},
+        photos: [],
+        jadwal: [],
+        handoverPagi: {}, handoverMalam: {},
+        log24: '',
+        calendarData: {},
+        calendarYear: new Date().getFullYear(),
+        calendarMonth: new Date().getMonth(),
+        editDay: null,
+
+        oninit: function(){
+            this.loadData();
+            this.loadJadwal();
+            this.loadCalendar();
+        },
+
+        loadData: function(){
+            var all = g('dreamos_security_patroli');
+            if(!all[this.date]) all[this.date] = { shifts: { pagi: {}, malam: {} }, nama: '', idPetugas: '', log24: '', handoverPagi: {}, handoverMalam: {}, photos: { pagi: [], malam: [] } };
+            if(!all[this.date].shifts[this.shift]) all[this.date].shifts[this.shift] = {};
+            if(!all[this.date].photos) all[this.date].photos = { pagi: [], malam: [] };
+            this.data = all;
+            this.nama = all[this.date].nama || '';
+            this.idPetugas = all[this.date].idPetugas || '';
+            this.patroli = all[this.date].shifts[this.shift] || {};
+            this.log24 = all[this.date].log24 || '';
+            this.handoverPagi = all[this.date].handoverPagi || {};
+            this.handoverMalam = all[this.date].handoverMalam || {};
+            this.photos = all[this.date].photos[this.shift] || [];
+            m.redraw();
+        },
+
+        loadJadwal: function(){
+            this.jadwal = g('dreamos_security_jadwal');
+            m.redraw();
+        },
+
+        loadCalendar: function(){
+            this.calendarData = JSON.parse(localStorage.getItem('dreamos_security_calendar') || '{}');
+            m.redraw();
+        },
+
+        saveCalendar: function(){
+            localStorage.setItem('dreamos_security_calendar', JSON.stringify(this.calendarData));
+            var today = new Date().toISOString().split('T')[0];
+            if(this.calendarData[today]){
+                var siang = (this.calendarData[today].siang || []).join(', ');
+                var malam = (this.calendarData[today].malam || []).join(', ');
+                var piketStr = [siang, malam].filter(Boolean).join(' / ');
+                if(piketStr){
+                    var piket = JSON.parse(localStorage.getItem('dreamos_piket')||'{}');
+                    piket[today] = piketStr;
+                    localStorage.setItem('dreamos_piket', JSON.stringify(piket));
+                }
+            }
+            m.redraw();
+        },
+
+        assignPersonel: function(day, shift, personel){
+            if(!this.calendarData[day]) this.calendarData[day] = { siang: [], malam: [], cuti: [] };
+            if(!this.calendarData[day][shift]) this.calendarData[day][shift] = [];
+            var idx = this.calendarData[day][shift].indexOf(personel);
+            if(idx > -1) this.calendarData[day][shift].splice(idx, 1);
+            else this.calendarData[day][shift].push(personel);
+            var otherShift = shift === 'siang' ? 'malam' : 'siang';
+            if(this.calendarData[day][otherShift]){
+                var oIdx = this.calendarData[day][otherShift].indexOf(personel);
+                if(oIdx > -1) this.calendarData[day][otherShift].splice(oIdx, 1);
+            }
+            if(this.calendarData[day].cuti){
+                var cIdx = this.calendarData[day].cuti.indexOf(personel);
+                if(cIdx > -1) this.calendarData[day].cuti.splice(cIdx, 1);
+            }
+            this.saveCalendar();
+        },
+
+        toggleCuti: function(day, personel){
+            if(!this.calendarData[day]) this.calendarData[day] = { siang: [], malam: [], cuti: [] };
+            if(!this.calendarData[day].cuti) this.calendarData[day].cuti = [];
+            var idx = this.calendarData[day].cuti.indexOf(personel);
+            if(idx > -1) this.calendarData[day].cuti.splice(idx, 1);
+            else {
+                this.calendarData[day].cuti.push(personel);
+                ['siang','malam'].forEach(function(sh){
+                    if(this.calendarData[day][sh]){
+                        var sIdx = this.calendarData[day][sh].indexOf(personel);
+                        if(sIdx > -1) this.calendarData[day][sh].splice(sIdx, 1);
+                    }
+                }.bind(this));
+            }
+            this.saveCalendar();
+        },
+
+        toggleCP: function(cp){
+            if(!this.data[this.date].shifts[this.shift]) this.data[this.date].shifts[this.shift] = {};
+            this.data[this.date].shifts[this.shift][cp] = !this.data[this.date].shifts[this.shift][cp];
+            s('dreamos_security_patroli', this.data);
+            this.patroli = this.data[this.date].shifts[this.shift];
+        },
+
+        uploadPhoto: function(){
+            var self = this;
+            var input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+            input.onchange = function(e){
+                var file = e.target.files[0]; if(!file) return;
+                var reader = new FileReader();
+                reader.onload = function(ev){
+                    if(self.data[self.date].photos[self.shift].length >= 5) {
+                        alert('Maksimal 5 foto per shift!');
+                        return;
+                    }
+                    self.data[self.date].photos[self.shift].push(ev.target.result);
+                    s('dreamos_security_patroli', self.data);
+                    self.photos = self.data[self.date].photos[self.shift];
+                    m.redraw();
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        },
+
+        deletePhoto: function(idx){
+            this.data[this.date].photos[this.shift].splice(idx, 1);
+            s('dreamos_security_patroli', this.data);
+            this.photos = this.data[this.date].photos[this.shift];
+            m.redraw();
+        },
+
+        saveJadwal: function(){
+            var nama = document.getElementById('jadwal-nama').value.trim();
+            var role = document.getElementById('jadwal-role').value;
+            var shift = document.getElementById('jadwal-shift').value;
+            var tglMulai = document.getElementById('jadwal-mulai').value;
+            if(!nama) return alert('Nama wajib!');
+            var jadwal = g('dreamos_security_jadwal');
+            jadwal.push({id:'jadwal_'+Date.now(), nama, role, shift, tglMulai, created: new Date().toISOString()});
+            s('dreamos_security_jadwal', jadwal);
+            this.loadJadwal();
+        },
+
+        deleteJadwal: function(id){
+            var jadwal = g('dreamos_security_jadwal').filter(function(j){return j.id!==id;});
+            s('dreamos_security_jadwal', jadwal);
+            this.loadJadwal();
+        },
+
+        saveHandover: function(waktu){
+            var self = this;
+            var penerima = document.getElementById('ho-penerima-'+waktu).value.trim();
+            var catatan = document.getElementById('ho-catatan-'+waktu).value.trim();
+            if(!penerima) return alert('Nama penerima wajib!');
+            var all = g('dreamos_security_patroli');
+            if(!all[this.date]) all[this.date] = { shifts: { pagi: {}, malam: {} }, nama: '', idPetugas: '', log24: '', handoverPagi: {}, handoverMalam: {}, photos: { pagi: [], malam: [] } };
+            all[this.date]['handover'+(waktu==='pagi'?'Pagi':'Malam')] = {
+                penerima: penerima,
+                penyerah: this.nama,
+                catatan: catatan,
+                waktu: new Date().toISOString()
+            };
+            s('dreamos_security_patroli', all);
+            this.data = all;
+            this.handoverPagi = all[this.date].handoverPagi || {};
+            this.handoverMalam = all[this.date].handoverMalam || {};
+            alert('Serah terima tersimpan!');
+            m.redraw();
+        },
+
+        saveLog24: function(){
+            var all = g('dreamos_security_patroli');
+            if(!all[this.date]) all[this.date] = { shifts: { pagi: {}, malam: {} }, nama: '', idPetugas: '', log24: '', handoverPagi: {}, handoverMalam: {}, photos: { pagi: [], malam: [] } };
+            all[this.date].log24 = this.log24;
+            s('dreamos_security_patroli', all);
+            this.data = all;
+            alert('Laporan 24 jam tersimpan');
+        },
+
+        // ========== FUNGSI CETAK ==========
+        cetakLaporan24Jam: function(){
+            var all = g('dreamos_security_patroli');
+            var today = new Date().toISOString().split('T')[0];
+            var dataHariIni = all[today] || {};
+            var log24 = dataHariIni.log24 || 'Tidak ada laporan.';
+            var win = window.open('', '_blank', 'width=900,height=600');
+            win.document.write('<html><head><title>Laporan 24 Jam Keamanan</title><style>body{font-family:sans-serif;padding:20px;}h2{text-align:center;}@media print{button{display:none;}}</style></head><body>');
+            win.document.write('<h2>LAPORAN 24 JAM KEAMANAN</h2>');
+            win.document.write('<p>Tanggal: '+new Date(today).toLocaleDateString('id-ID')+'</p>');
+            win.document.write('<button onclick="window.print()" style="padding:10px 20px;background:#10b981;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;margin-bottom:10px;">Cetak</button>');
+            win.document.write('<h3>Catatan Petugas</h3>');
+            win.document.write('<p style="white-space:pre-wrap;">'+log24+'</p>');
+            win.document.write('<p style="margin-top:30px;text-align:right;">Mengetahui,<br><br><br>Kepala Bagian Umum</p>');
+            win.document.write('</body></html>');
+            win.document.close();
+        },
+
+        cetakKalenderJadwal: function(){
+            var cal = JSON.parse(localStorage.getItem('dreamos_security_calendar')||'{}');
+            var year = this.calendarYear;
+            var month = this.calendarMonth;
+            var daysInMonth = new Date(year, month+1, 0).getDate();
+            var win = window.open('', '_blank', 'width=900,height=600');
+            win.document.write('<html><head><title>Jadwal Bulanan Keamanan</title><style>body{font-family:sans-serif;padding:20px;}h2{text-align:center;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #000;padding:8px;}th{background:#eee;}.cuti{color:red;}@media print{button{display:none;}}</style></head><body>');
+            win.document.write('<h2>JADWAL BULANAN KEAMANAN</h2>');
+            win.document.write('<p>Bulan: '+(month+1)+' / '+year+'</p>');
+            win.document.write('<button onclick="window.print()" style="padding:10px 20px;background:#f59e0b;color:black;border:none;border-radius:5px;font-weight:bold;cursor:pointer;margin-bottom:10px;">Cetak</button>');
+            win.document.write('<table><tr><th>Tanggal</th><th>Shift Siang</th><th>Shift Malam</th><th>Cuti</th></tr>');
+            for(var d=1; d<=daysInMonth; d++){
+                var dateStr = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+                var entry = cal[dateStr] || {};
+                var siang = (entry.siang||[]).join(', ') || '-';
+                var malam = (entry.malam||[]).join(', ') || '-';
+                var cuti = (entry.cuti||[]).join(', ') || '-';
+                win.document.write('<tr><td>'+d+'</td><td>'+siang+'</td><td>'+malam+'</td><td class="cuti">'+cuti+'</td></tr>');
+            }
+            win.document.write('</table></body></html>');
+            win.document.close();
+        },
+
+        cetakSerahTerima: function(){
+            var all = g('dreamos_security_patroli');
+            var today = new Date().toISOString().split('T')[0];
+            var dataHariIni = all[today] || {};
+            var hoPagi = dataHariIni.handoverPagi || {};
+            var hoMalam = dataHariIni.handoverMalam || {};
+            var win = window.open('', '_blank', 'width=900,height=600');
+            win.document.write('<html><head><title>Berita Acara Serah Terima</title><style>body{font-family:sans-serif;padding:20px;}h2{text-align:center;}@media print{button{display:none;}}</style></head><body>');
+            win.document.write('<h2>BERITA ACARA SERAH TERIMA JAGA</h2>');
+            win.document.write('<p>Tanggal: '+new Date(today).toLocaleDateString('id-ID')+'</p>');
+            win.document.write('<button onclick="window.print()" style="padding:10px 20px;background:#6366f1;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;margin-bottom:10px;">Cetak</button>');
+            win.document.write('<h3>Serah Terima Pagi (07:00)</h3>');
+            if(hoPagi.waktu){
+                win.document.write('<p>Waktu: '+new Date(hoPagi.waktu).toLocaleString('id-ID')+'</p>');
+                win.document.write('<p>Penyerah: '+hoPagi.penyerah+'</p>');
+                win.document.write('<p>Penerima: '+hoPagi.penerima+'</p>');
+                win.document.write('<p>Catatan: '+hoPagi.catatan+'</p>');
+            } else { win.document.write('<p>Belum dilakukan.</p>'); }
+            win.document.write('<h3>Serah Terima Malam (19:00)</h3>');
+            if(hoMalam.waktu){
+                win.document.write('<p>Waktu: '+new Date(hoMalam.waktu).toLocaleString('id-ID')+'</p>');
+                win.document.write('<p>Penyerah: '+hoMalam.penyerah+'</p>');
+                win.document.write('<p>Penerima: '+hoMalam.penerima+'</p>');
+                win.document.write('<p>Catatan: '+hoMalam.catatan+'</p>');
+            } else { win.document.write('<p>Belum dilakukan.</p>'); }
+            win.document.write('</body></html>');
+            win.document.close();
+        },
+
+        printCalendar: function(){
+            var win = window.open('', '_blank', 'width=800,height=600');
+            win.document.write('<html><head><title>Jadwal Sekuriti</title><style>body{font-family:monospace;font-size:12px;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #000;padding:5px;}.cuti{color:red;}@media print{button{display:none;}}</style></head><body>');
+            win.document.write('<h2>Jadwal Sekuriti Bulan '+MONTHS[this.calendarMonth]+' '+this.calendarYear+'</h2>');
+            win.document.write('<button onclick="window.print()">Cetak</button>');
+            var daysInMonth = new Date(this.calendarYear, this.calendarMonth+1, 0).getDate();
+            win.document.write('<table><tr><th>Tanggal</th><th>Shift Siang</th><th>Shift Malam</th><th>Cuti</th></tr>');
+            for(var d=1; d<=daysInMonth; d++){
+                var dateStr = this.calendarYear+'-'+String(this.calendarMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+                var entry = this.calendarData[dateStr] || {};
+                var siang = (entry.siang||[]).join(', ') || '-';
+                var malam = (entry.malam||[]).join(', ') || '-';
+                var cuti = (entry.cuti||[]).join(', ') || '-';
+                win.document.write('<tr><td>'+d+'</td><td>'+siang+'</td><td>'+malam+'</td><td class="cuti">'+cuti+'</td></tr>');
+            }
+            win.document.write('</table></body></html>');
+            win.document.close();
+        },
+
+        view: function(){
+            var self = this;
+            var tabs = ['patroli','jadwal','kalender','handover','laporan'];
+            var progress = (function(){
+                var t = CP.length, c = 0;
+                CP.forEach(function(cp){ if(self.patroli[cp]) c++; });
+                return {c:c, t:t, p:Math.round(c/t*100)};
+            })();
+
+            return m("div", {style:"min-height:100vh;background:var(--bg-deep-space);color:var(--text-primary);font-family:'Space Grotesk',sans-serif;padding:1rem;padding-bottom:5rem;"}, [
+                m("div", {style:"display:flex;align-items:center;gap:1rem;margin-bottom:1rem;"}, [
+                    m("button", {onclick:function(){document.getElementById('security-module').style.display='none';}, style:"background:rgba(255,255,255,0.15);color:white;border:none;padding:0.6rem 1.2rem;border-radius:0.75rem;cursor:pointer;font-weight:700;"}, "← Kembali"),
+                    m("div", [m("h2", {style:"color:#8b5cf6;font-size:1.3rem;font-weight:800;"}, "🛡️ Security Command"), m("p", {style:"color:var(--text-secondary);font-size:0.7rem;"}, "ISO 18788 • Profesional")])
+                ]),
+
+                // TOMBOL CETAK
+                m("div", {style:"display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;"}, [
+                    m("button", {onclick:function(){self.cetakLaporan24Jam();}, style:"padding:0.6rem 1rem;background:#10b981;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.8rem;"}, "📄 Laporan 24 Jam"),
+                    m("button", {onclick:function(){self.cetakKalenderJadwal();}, style:"padding:0.6rem 1rem;background:#f59e0b;color:black;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.8rem;"}, "📅 Jadwal Bulanan"),
+                    m("button", {onclick:function(){self.cetakSerahTerima();}, style:"padding:0.6rem 1rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.8rem;"}, "🤝 Serah Terima")
+                ]),
+
+                // Tabs
+                m("div", {style:"display:flex;gap:0.3rem;margin-bottom:0.75rem;overflow-x:auto;"},
+                    tabs.map(function(t){
+                        var labels = {patroli:'📍 Patroli', jadwal:'👥 Personel', kalender:'📅 Kalender', handover:'🤝 Serah Terima', laporan:'📋 Laporan'};
+                        return m("button", {onclick:function(){self.tab=t;}, style:"padding:0.5rem 0.8rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;white-space:nowrap;"+(self.tab===t?'background:var(--neon-tawhid);color:black;':'background:var(--glass-bg);color:var(--text-primary);')}, labels[t]);
+                    })
+                ),
+
+                // Data Petugas
+                m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;"}, [
+                    m("input", {type:"text", placeholder:"Nama Petugas", value:self.nama, oninput:function(e){self.nama=e.target.value;self.data[self.date].nama=e.target.value;s('dreamos_security_patroli',self.data);}, style:"width:100%;margin-bottom:0.5rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}),
+                    m("div", {style:"display:flex;gap:0.5rem;"}, [
+                        m("input", {type:"date", value:self.date, onchange:function(e){self.date=e.target.value;self.loadData();}, style:"flex:1;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}),
+                        m("div", {style:"display:flex;gap:0.3rem;"}, Object.keys(SHIFTS).map(function(sh){
+                            return m("button", {onclick:function(){self.shift=sh;self.loadData();}, style:"padding:0.5rem 0.8rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;"+(self.shift===sh?'background:var(--neon-tawhid);color:black;':'background:var(--glass-bg);color:var(--text-primary);')}, SHIFTS[sh]);
+                        }))
+                    ])
+                ]),
+
+                // TAB PATROLI
+                self.tab === 'patroli' ? m("div", [
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;text-align:center;"}, [
+                        m("div", {style:"font-size:1.2rem;font-weight:700;color:var(--neon-tawhid);"}, progress.c+"/"+progress.t+" checkpoint"),
+                        m("div", {style:"width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:0.3rem;"}, m("div", {style:"width:"+progress.p+"%;height:100%;background:"+(progress.p===100?'#10b981':progress.p>=50?'#f59e0b':'#ef4444')+";border-radius:4px;"}))
+                    ]),
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;"},
+                        CP.map(function(cp){
+                            var checked = self.patroli[cp];
+                            return m("label", {style:"display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:"+(checked?'rgba(139,92,246,0.15)':'rgba(255,255,255,0.03)')+";border-radius:0.5rem;margin-bottom:0.3rem;cursor:pointer;font-size:0.8rem;"}, [
+                                m("input", {type:"checkbox", checked:checked, onchange:function(){self.toggleCP(cp);}}),
+                                cp,
+                                m("span", {style:"margin-left:auto;font-size:0.6rem;color:var(--text-secondary);"}, "🔳 QR")
+                            ]);
+                        })
+                    ),
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;"}, [
+                        m("h4", {style:"color:var(--neon-tawhid);margin-bottom:0.5rem;"}, "📸 Foto Patroli ("+self.photos.length+"/5)"),
+                        m("button", {onclick:function(){self.uploadPhoto();}, style:"background:rgba(59,130,246,0.2);color:#3b82f6;border:none;border-radius:0.5rem;padding:0.5rem 1rem;cursor:pointer;font-size:0.8rem;margin-bottom:0.5rem;"}, "+ Tambah Foto"),
+                        m("div", {style:"display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:0.3rem;"},
+                            self.photos.map(function(ph, idx){
+                                return m("div", {style:"position:relative;"}, [
+                                    m("img", {src:ph, style:"width:100%;height:80px;object-fit:cover;border-radius:0.3rem;"}),
+                                    m("button", {onclick:function(){self.deletePhoto(idx);}, style:"position:absolute;top:2px;right:2px;background:#ef4444;color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:0.5rem;cursor:pointer;"}, "✕")
+                                ]);
+                            })
+                        )
+                    ])
+                ]) : null,
+
+                // TAB JADWAL
+                self.tab === 'jadwal' ? m("div", [
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;"}, [
+                        m("h4", {style:"color:var(--neon-tawhid);margin-bottom:0.5rem;"}, "➕ Tambah Personel"),
+                        m("input", {type:"text", id:"jadwal-nama", placeholder:"Nama Personel", style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}),
+                        m("select", {id:"jadwal-role", style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}, [
+                            m("option", {value:"komandan"}, "Komandan Regu"),
+                            m("option", {value:"anggota"}, "Anggota (Shift 12 Jam)"),
+                            m("option", {value:"guru"}, "Guru (07:00-17:00)")
+                        ]),
+                        m("select", {id:"jadwal-shift", style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}, [
+                            m("option", {value:"siang"}, "Shift Siang (07:00-19:00)"),
+                            m("option", {value:"malam"}, "Shift Malam (19:00-07:00)"),
+                            m("option", {value:"non_shift"}, "Non-Shift (07:00-17:00)")
+                        ]),
+                        m("input", {type:"date", id:"jadwal-mulai", style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}),
+                        m("button", {onclick:function(){self.saveJadwal();}, class:"dream-btn", style:"width:100%;padding:0.5rem;font-size:0.8rem;"}, "Simpan")
+                    ]),
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;"}, [
+                        m("h4", {style:"color:var(--neon-tawhid);margin-bottom:0.5rem;"}, "👥 Daftar Personel ("+self.jadwal.length+")"),
+                        self.jadwal.length ? self.jadwal.map(function(j){
+                            return m("div", {style:"display:flex;justify-content:space-between;align-items:center;padding:0.5rem;background:rgba(255,255,255,0.03);border-radius:0.5rem;margin-bottom:0.3rem;font-size:0.75rem;"}, [
+                                m("div", [m("strong", j.nama), m("br"), m("span", {style:"color:var(--text-secondary);font-size:0.65rem;"}, j.role+" | "+j.shift+" | Mulai: "+j.tglMulai)]),
+                                m("button", {onclick:function(){self.deleteJadwal(j.id);}, style:"background:#ef4444;color:white;border:none;border-radius:0.3rem;padding:0.15rem 0.5rem;font-size:0.6rem;cursor:pointer;"}, "✕")
+                            ]);
+                        }) : m("div", {style:"color:var(--text-secondary);"}, "Belum ada personel")
+                    ])
+                ]) : null,
+
+                // TAB KALENDER
+                self.tab === 'kalender' ? m("div", [
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;text-align:center;"}, [
+                        m("button", {onclick:function(){self.calendarMonth--; if(self.calendarMonth<0){self.calendarMonth=11; self.calendarYear--;} self.loadCalendar();}, style:"background:var(--glass-bg);border:none;color:var(--text-primary);padding:0.5rem;border-radius:0.5rem;cursor:pointer;font-size:0.8rem;"}, "◀"),
+                        m("span", {style:"margin:0 1rem;font-weight:700;"}, MONTHS[self.calendarMonth]+" "+self.calendarYear),
+                        m("button", {onclick:function(){self.calendarMonth++; if(self.calendarMonth>11){self.calendarMonth=0; self.calendarYear++;} self.loadCalendar();}, style:"background:var(--glass-bg);border:none;color:var(--text-primary);padding:0.5rem;border-radius:0.5rem;cursor:pointer;font-size:0.8rem;"}, "▶"),
+                        m("button", {onclick:function(){self.printCalendar();}, style:"margin-left:1rem;background:#6366f1;color:white;border:none;padding:0.5rem 0.8rem;border-radius:0.5rem;cursor:pointer;font-size:0.8rem;"}, "🖨️ Cetak")
+                    ]),
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;overflow-x:auto;"}, 
+                        m("table", {style:"width:100%;border-collapse:collapse;font-size:0.7rem;"}, [
+                            m("tr", ['Tanggal','Shift Siang','Shift Malam','Cuti'].map(function(h){return m("th", {style:"padding:0.3rem;border:1px solid var(--glass-border);text-align:center;"}, h);})),
+                            (function(){
+                                var daysInMonth = new Date(self.calendarYear, self.calendarMonth+1, 0).getDate();
+                                var rows = [];
+                                for(var d=1; d<=daysInMonth; d++){
+                                    var dateStr = self.calendarYear+'-'+String(self.calendarMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+                                    var entry = self.calendarData[dateStr] || {};
+                                    rows.push(m("tr", [
+                                        m("td", {style:"padding:0.3rem;border:1px solid var(--glass-border);text-align:center;font-weight:700;"}, d),
+                                        m("td", {style:"padding:0.3rem;border:1px solid var(--glass-border);cursor:pointer;", onclick:function(){self.editDay=dateStr;}}, (entry.siang||[]).join(', ') || '-'),
+                                        m("td", {style:"padding:0.3rem;border:1px solid var(--glass-border);cursor:pointer;", onclick:function(){self.editDay=dateStr;}}, (entry.malam||[]).join(', ') || '-'),
+                                        m("td", {style:"padding:0.3rem;border:1px solid var(--glass-border);color:red;cursor:pointer;", onclick:function(){self.editDay=dateStr;}}, (entry.cuti||[]).join(', ') || '-')
+                                    ]));
+                                }
+                                return rows;
+                            })()
+                        ])
+                    ),
+                    self.editDay ? m("div", {class:"dream-panel", style:"padding:0.75rem;margin-top:0.75rem;"}, [
+                        m("h4", "Edit "+self.editDay),
+                        self.jadwal.map(function(p){
+                            var isSiang = (self.calendarData[self.editDay]?.siang||[]).includes(p.nama);
+                            var isMalam = (self.calendarData[self.editDay]?.malam||[]).includes(p.nama);
+                            var isCuti = (self.calendarData[self.editDay]?.cuti||[]).includes(p.nama);
+                            return m("div", {style:"display:flex;gap:0.5rem;align-items:center;margin-bottom:0.3rem;"}, [
+                                m("span", {style:"flex:1;"}, p.nama),
+                                m("button", {onclick:function(){self.assignPersonel(self.editDay, 'siang', p.nama);}, style:"padding:0.2rem 0.5rem;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;background:"+(isSiang?'#10b981':'var(--glass-bg)')+";color:"+(isSiang?'white':'var(--text-secondary)')+";"}, "☀️ Siang"),
+                                m("button", {onclick:function(){self.assignPersonel(self.editDay, 'malam', p.nama);}, style:"padding:0.2rem 0.5rem;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;background:"+(isMalam?'#3b82f6':'var(--glass-bg)')+";color:"+(isMalam?'white':'var(--text-secondary)')+";"}, "🌙 Malam"),
+                                m("button", {onclick:function(){self.toggleCuti(self.editDay, p.nama);}, style:"padding:0.2rem 0.5rem;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;background:"+(isCuti?'#ef4444':'var(--glass-bg)')+";color:"+(isCuti?'white':'var(--text-secondary)')+";"}, isCuti?'✅ Cuti':'Cuti')
+                            ]);
+                        }),
+                        m("button", {onclick:function(){self.editDay=null;}, class:"dream-btn", style:"width:100%;margin-top:0.5rem;"}, "Tutup")
+                    ]) : null
+                ]) : null,
+
+                // TAB SERAH TERIMA
+                self.tab === 'handover' ? m("div", [
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;"}, [
+                        m("h4", {style:"color:#f59e0b;margin-bottom:0.5rem;"}, "🤝 Serah Terima Pagi (07:00)"),
+                        self.handoverPagi.waktu ? m("div", {style:"color:#10b981;font-size:0.8rem;margin-bottom:0.5rem;"}, "✅ Selesai: "+dt(self.handoverPagi.waktu)+" | Penerima: "+self.handoverPagi.penerima) : null,
+                        m("input", {type:"text", id:"ho-penerima-pagi", placeholder:"Nama Penerima", style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}),
+                        m("textarea", {id:"ho-catatan-pagi", placeholder:"Catatan...", rows:2, style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;resize:none;"}),
+                        m("button", {onclick:function(){self.saveHandover('pagi');}, class:"dream-btn", style:"width:100%;padding:0.5rem;font-size:0.8rem;"}, "Simpan Serah Terima Pagi")
+                    ]),
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;"}, [
+                        m("h4", {style:"color:#3b82f6;margin-bottom:0.5rem;"}, "🤝 Serah Terima Malam (19:00)"),
+                        self.handoverMalam.waktu ? m("div", {style:"color:#10b981;font-size:0.8rem;margin-bottom:0.5rem;"}, "✅ Selesai: "+dt(self.handoverMalam.waktu)+" | Penerima: "+self.handoverMalam.penerima) : null,
+                        m("input", {type:"text", id:"ho-penerima-malam", placeholder:"Nama Penerima", style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;"}),
+                        m("textarea", {id:"ho-catatan-malam", placeholder:"Catatan...", rows:2, style:"width:100%;margin-bottom:0.3rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;resize:none;"}),
+                        m("button", {onclick:function(){self.saveHandover('malam');}, class:"dream-btn", style:"width:100%;padding:0.5rem;font-size:0.8rem;"}, "Simpan Serah Terima Malam")
+                    ])
+                ]) : null,
+
+                // TAB LAPORAN
+                self.tab === 'laporan' ? m("div", [
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;margin-bottom:0.75rem;"}, [
+                        m("h4", {style:"color:var(--neon-tawhid);margin-bottom:0.5rem;"}, "📋 Laporan 24 Jam"),
+                        m("textarea", {placeholder:"Laporan aktivitas 24 jam...", rows:6, value:self.log24, oninput:function(e){self.log24=e.target.value;}, style:"width:100%;margin-bottom:0.5rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.8rem;resize:vertical;"}),
+                        m("button", {onclick:function(){self.saveLog24();}, class:"dream-btn", style:"width:100%;padding:0.5rem;font-size:0.8rem;"}, "💾 Simpan Laporan")
+                    ]),
+                    m("div", {class:"dream-panel", style:"padding:0.75rem;"}, [
+                        m("h4", {style:"color:var(--neon-tawhid);margin-bottom:0.5rem;"}, "📊 Ringkasan Hari Ini"),
+                        m("div", {style:"font-size:0.8rem;"}, [
+                            m("div", "✅ Patroli: "+progress.c+"/"+progress.t+" checkpoint"),
+                            m("div", "🛡️ Personel: "+self.jadwal.length+" orang"),
+                            m("div", "🤝 Serah Terima: "+(self.handoverPagi.waktu?'Pagi ✅':'Pagi ❌')+" | "+(self.handoverMalam.waktu?'Malam ✅':'Malam ❌')),
+                            m("div", "📸 Foto: "+self.photos.length+" foto"),
+                            m("div", "📋 Log: "+(self.log24?'✅ Tersimpan':'❌ Kosong'))
+                        ])
+                    ])
+                ]) : null
+            ]);
+        }
+    };
+
+    m.mount(document.getElementById('sec-root'), SecApp);
+})();
+</script>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Cetak Laporan Asset - Dream OS</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; }
+        h2 { text-align: center; color: #059669; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; font-size: 14px; }
+        th { background: #059669; color: white; }
+        tr:nth-child(even) { background: #f0fdf4; }
+        .total { font-weight: bold; background: #d1fae5; }
+        .btn { padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 10px 5px; }
+        .btn-print { background: #0284c7; }
+        @media print { .btn { display: none; } }
+    </style>
+</head>
+<body>
+    <h2>📄 LAPORAN ASET DREAM OS</h2>
+    <p>Tanggal Cetak: <span id="tglCetak"></span></p>
+    <button class="btn" onclick="muatData()">🔄 Muat Data</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ Cetak</button>
+    <div id="konten"></div>
+    <script>
+        function muatData() {
+            var data = JSON.parse(localStorage.getItem('dreamos_assets') || '[]');
+            var html = '<table><tr><th>No</th><th>ID</th><th>Nama Aset</th><th>Kategori</th><th>Lokasi</th><th>Tgl Beli</th><th>Harga</th><th>Kondisi</th></tr>';
+            var total = 0;
+            data.forEach(function(a, i) {
+                var harga = parseInt(a.hargaBeli || a.value || 0);
+                total += harga;
+                html += '<tr><td>'+(i+1)+'</td><td>'+a.id+'</td><td>'+a.nama+'</td><td>'+a.kategori+'</td><td>'+a.lokasi+'</td><td>'+a.tglBeli+'</td><td>Rp '+harga.toLocaleString('id-ID')+'</td><td>'+a.kondisi+'</td></tr>';
+            });
+            html += '<tr class="total"><td colspan="6">TOTAL</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td></td></tr>';
+            html += '</table>';
+            document.getElementById('konten').innerHTML = html;
+        }
+        document.getElementById('tglCetak').textContent = new Date().toLocaleDateString('id-ID');
+        muatData();
+    </script>
+</body>
+</html>
