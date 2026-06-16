@@ -1,22 +1,23 @@
 <button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:rgba(15,23,42,0.8);border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;backdrop-filter:blur(5px);">← Kembali</button>
+
 <div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="settings-app">
-    <h2 style="color:#06b6d4;font-size:1.4rem;margin-bottom:0.2rem;">⚙️ Pengaturan Tampilan</h2>
-    <p style="color:#94a3b8;font-size:0.7rem;margin-bottom:1rem;">ISO 9241-171 • WCAG 2.2 AA • User Preferences</p>
+    <h2 style="color:#06b6d4;font-size:1.4rem;margin-bottom:0.2rem;">⚙️ Enterprise Settings</h2>
+    <p style="color:#94a3b8;font-size:0.7rem;margin-bottom:1rem;">ISO 9241-171 • Multi-Language Engine • Global Config</p>
     
     <div style="display:flex;gap:0.4rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:0.4rem;border-bottom:1px solid rgba(255,255,255,0.1);">
-        <button class="set-tab active" data-tab="tampilan">🎨 Tampilan</button>
-        <button class="set-tab" data-tab="aksesibilitas">♿ Akses</button>
-        <button class="set-tab" data-tab="bahasa">🌍 Bahasa</button>
+        <button class="set-tab active" data-tab="tampilan">🎨 Display</button>
+        <button class="set-tab" data-tab="aksesibilitas">♿ Access</button>
+        <button class="set-tab" data-tab="bahasa">🌍 Language</button>
     </div>
     <div id="set-content"></div>
 </div>
+
 <style>
     .set-tab{padding:0.6rem 1rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;white-space:nowrap;background:rgba(30,41,59,0.5);color:#94a3b8;transition:0.3s;border:1px solid transparent;}
     .set-tab.active{background:rgba(6,182,212,0.15);color:#06b6d4;border-color:rgba(6,182,212,0.3);}
     .set-panel{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1rem;margin-bottom:0.75rem;backdrop-filter:blur(10px);}
-    .set-panel h4{color:#06b6d4;margin:0 0 0.75rem;font-size:0.9rem;}
-    .set-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.05);}
-    .set-row:last-child{border-bottom:none;}
+    .set-panel h4{color:#06b6d4;margin:0 0 0.75rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;}
+    .set-row{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);}
     .set-label{font-size:0.85rem;color:#e2e8f0;font-weight:500;}
     .set-desc{font-size:0.7rem;color:#94a3b8;margin-top:0.2rem;}
     .toggle{width:44px;height:24px;background:#334155;border-radius:12px;position:relative;cursor:pointer;transition:0.3s;}
@@ -25,69 +26,60 @@
     .toggle.active::after{left:23px;}
     .set-input{background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:0.5rem;border-radius:0.4rem;font-size:0.8rem;outline:none;}
 </style>
+
 <script>
 (function(){
-    var defaults = { theme:'dark', fontSize:100, highContrast:false, reduceMotion:false, lang:'id', dateFormat:'DD/MM/YYYY', dyslexiaFont:false, colorBlind:'none', largeTouch:false, simplifiedUI:false };
+    var defaults = { theme:'dark', fontSize:100, highContrast:false, lang:'id' };
     var state = JSON.parse(localStorage.getItem('dreamos_settings') || JSON.stringify(defaults));
     var currentTab = 'tampilan';
 
     function applySettings(){
         var r = document.documentElement;
         r.style.setProperty('--font-scale', state.fontSize + '%');
-        if(state.theme === 'light'){
-            r.setAttribute('data-theme', 'light');
-            r.style.setProperty('--bg-void', '#f8fafc'); r.style.setProperty('--text-main', '#0f172a'); r.style.setProperty('--panel-bg', '#ffffff');
-        } else {
-            r.setAttribute('data-theme', 'dark');
-            r.style.setProperty('--bg-void', '#020617'); r.style.setProperty('--text-main', '#e2e8f0'); r.style.setProperty('--panel-bg', '#1e293b');
-        }
-        document.body.classList.toggle('high-contrast', state.highContrast);
-        document.body.classList.toggle('reduce-motion', state.reduceMotion);
-        document.body.classList.toggle('dyslexia-font', state.dyslexiaFont);        var filters = {none:'none', protan:'sepia(0.5) saturate(1.5) hue-rotate(-30deg)', deutan:'sepia(0.3) saturate(1.2) hue-rotate(10deg)', tritan:'saturate(0.6) hue-rotate(180deg)'};
-        r.style.filter = filters[state.colorBlind] || 'none';
-        localStorage.setItem('theme', state.theme);
+        r.setAttribute('data-theme', state.theme);
         localStorage.setItem('dreamos_settings', JSON.stringify(state));
+        localStorage.setItem('dreamos_lang', state.lang);
+        // Event custom untuk update UI di modul lain
+        window.dispatchEvent(new CustomEvent('langChanged', { detail: state.lang }));
     }
 
     function render(){
         var h = '';
         if(currentTab === 'tampilan'){
-            h += '<div class="set-panel"><h4>🎨 Preferensi Visual</h4>';
-            h += row('Tema Gelap/Terang', 'Sesuaikan kenyamanan mata', toggle('theme', state.theme === 'dark'));
-            h += row('Ukuran Font', 'Skala teks global ('+state.fontSize+'%)', '<input type="range" min="80" max="140" value="'+state.fontSize+'" data-act="font-size" style="width:100%;accent-color:#06b6d4;">');
-            h += row('Kontras Tinggi', 'Rasio 7:1 untuk low vision', toggle('highContrast', state.highContrast));
-            h += row('Kurangi Animasi', 'Hindari motion sickness', toggle('reduceMotion', state.reduceMotion));
+            h += '<div class="set-panel"><h4>🎨 Visual Preferences</h4>';
+            h += row('Dark Mode', 'Enterprise dark theme', toggle('theme', state.theme === 'dark'));
+            h += row('Font Scale', 'Global text size ('+state.fontSize+'%)', '<input type="range" min="80" max="140" value="'+state.fontSize+'" data-act="font-size" style="width:100px;accent-color:#06b6d4;">');
             h += '</div>';
         } else if(currentTab === 'aksesibilitas'){
-            h += '<div class="set-panel"><h4>♿ Aksesibilitas & Inklusi</h4>';
-            h += row('Font Disleksia', 'OpenDyslexic fallback', toggle('dyslexiaFont', state.dyslexiaFont));
-            h += row('Filter Buta Warna', 'Simulasi & koreksi kontras', select('colorBlind', {none:'Normal', protan:'Protanopia', deutan:'Deuteranopia', tritan:'Tritanopia'}, state.colorBlind));
-            h += row('Target Sentuh Besar', 'Min 48x48px', toggle('largeTouch', state.largeTouch));
-            h += row('UI Sederhana', 'Kurangi clutter', toggle('simplifiedUI', state.simplifiedUI));
+            h += '<div class="set-panel"><h4>♿ Accessibility Suite</h4>';
+            h += row('High Contrast', 'WCAG 2.2 AA compliant', toggle('highContrast', state.highContrast));
+            h += row('Reduced Motion', 'Performance mode', toggle('reduceMotion', state.reduceMotion));
             h += '</div>';
         } else if(currentTab === 'bahasa'){
-            h += '<div class="set-panel"><h4>🌍 Bahasa & Wilayah</h4>';
-            h += row('Bahasa Antarmuka', 'ID / EN / AR', select('lang', {id:'🇮🇩 Indonesia', en:'🇬🇧 English', ar:'🇸🇦 العربية'}, state.lang));
-            h += row('Format Tanggal', 'Standar regional', select('dateFormat', {'DD/MM/YYYY':'DD/MM/YYYY', 'MM/DD/YYYY':'MM/DD/YYYY', 'YYYY-MM-DD':'ISO 8601'}, state.dateFormat));
+            h += '<div class="set-panel"><h4>🌍 Global Language Engine</h4>';
+            h += row('System Interface', 'Select operational language', select('lang', {id:'🇮🇩 Indonesia', en:'🇬🇧 English', ar:'🇸🇦 العربية', zh:'🇨🇳 中文'}, state.lang));
+            h += '<div style="margin-top:1rem; font-size:0.7rem; color:#64748b; font-style:italic;">*Perubahan bahasa akan diterapkan ke seluruh modul Enterprise.</div>';
             h += '</div>';
         }
         document.getElementById('set-content').innerHTML = h;
     }
+    
     function row(l, d, c){ return '<div class="set-row"><div><div class="set-label">'+l+'</div><div class="set-desc">'+d+'</div></div><div>'+c+'</div></div>'; }
     function toggle(k, a){ return '<div class="toggle '+(a?'active':'')+'" data-act="toggle" data-key="'+k+'"></div>'; }
     function select(k, opts, val){ var h = '<select class="set-input" data-act="select" data-key="'+k+'">'; for(var o in opts) h += '<option value="'+o+'" '+(val===o?'selected':'')+'>'+opts[o]+'</option>'; return h + '</select>'; }
 
-    setTimeout(function(){
-        var app = document.getElementById('settings-app'); if(!app) return;
-        app.addEventListener('click', function(e){
-            var t = e.target.closest('[data-tab]');
-            if(t){ currentTab = t.dataset.tab; document.querySelectorAll('.set-tab').forEach(function(b){ b.classList.remove('active'); }); t.classList.add('active'); render(); return; }
-            var a = e.target.closest('[data-act]'); if(!a) return;
-            if(a.dataset.act === 'toggle'){ state[a.dataset.key] = !state[a.dataset.key]; if(a.dataset.key === 'theme') state.theme = state.theme === 'dark' ? 'light' : 'dark'; applySettings(); render(); }
-        });
-        app.addEventListener('change', function(e){ var a = e.target.closest('[data-act]'); if(!a) return; if(a.dataset.act === 'select'){ state[a.dataset.key] = a.value; applySettings(); render(); } });
-        app.addEventListener('input', function(e){ var a = e.target.closest('[data-act]'); if(!a) return; if(a.dataset.act === 'font-size'){ state.fontSize = parseInt(a.value); applySettings(); var desc = a.closest('.set-row').querySelector('.set-desc'); if(desc) desc.textContent = 'Skala teks global ('+state.fontSize+'%)'; } });
-        applySettings(); render();
-    }, 100);
+    document.getElementById('settings-app').addEventListener('click', function(e){
+        var t = e.target.closest('[data-tab]');
+        if(t){ currentTab = t.dataset.tab; document.querySelectorAll('.set-tab').forEach(b => b.classList.remove('active')); t.classList.add('active'); render(); return; }
+        var a = e.target.closest('[data-act="toggle"]');
+        if(a){ state[a.dataset.key] = !state[a.dataset.key]; if(a.dataset.key === 'theme') state.theme = state.theme === 'dark' ? 'light' : 'dark'; applySettings(); render(); }
+    });
+    
+    document.getElementById('settings-app').addEventListener('change', function(e){
+        var a = e.target.closest('[data-act="select"]');
+        if(a){ state[a.dataset.key] = a.value; applySettings(); render(); }
+    });
+
+    render();
 })();
 </script>
