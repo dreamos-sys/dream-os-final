@@ -164,6 +164,80 @@ function clearLog() { document.getElementById('ghost-log').innerHTML = '<div>> L
 // ==================== CLOUDFLARE DELTA SYNC ====================
 const CLOUDFLARE_CONFIG_KEY = 'ghost_cloudflare_config';
 const LAST_SYNC_KEY = 'ghost_last_sync';
+// --- Revisi fungsi upload & restore untuk mendukung penyimpanan per-modul ---
+
+async function uploadDeltaToCloudflare() {
+  const config = getCloudflareConfig();
+  if (!config) return alert('Belum dikonfigurasi.');
+  const apiKey = atob(config.encryptedKey);
+  const workerUrl = config.workerUrl.replace(/\/$/, '');
+
+  // Kumpulkan data per modul dreamos_*
+  const modules = {};
+  for (let i=0; i<localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('dreamos_')) {
+      modules[key] = localStorage.getItem(key);
+    }
+  }
+
+  if (Object.keys(modules).length === 0) {
+    log('⚠️ Tidak ada data dreamos_ untuk disinkronkan.', 'warn');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${workerUrl}/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ data: modules })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+    setLastSyncTime();
+    log('✅ Delta uploaded (per-modul)', 'success');
+    log(`📊 ${result.updated} modul diperbarui, ${result.conflicts} konflik`, 'info');
+  } catch(e) {
+    log('❌ Gagal upload: ' + e.message, 'error');
+  }
+}
+
+async function restoreFromCloudflare() {
+  const config = getCloudflareConfig();
+  if (!config) return alert('Belum dikonfigurasi.');
+  const apiKey = atob(config.encryptedKey);
+  const workerUrl = config.workerUrl.replace(/\/$/, '');
+
+  try {
+    const res = await fetch(`${workerUrl}/sync`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+    if (result && result.data) {
+      let restored = 0;
+      for (const [moduleName, value] of Object.entries(result.data)) {
+        const localTimestamp = localStorage.getItem(moduleName + '_ts') || '0';
+        const serverTimestamp = result.timestamps[moduleName] || '0';
+        if (serverTimestamp > localTimestamp) {
+          localStorage.setItem(moduleName, value);
+          localStorage.setItem(moduleName + '_ts', serverTimestamp);
+          restored++;
+        }
+      }
+      setLastSyncTime();
+      log('✅ Restore selesai (per-modul)', 'success');
+      log(`📊 ${restored} modul diperbarui`, 'info');
+    } else {
+      log('⚠️ Tidak ada data di server', 'warn');
+    }
+  } catch(e) {
+    log('❌ Gagal restore: ' + e.message, 'error');
+  }
+}
 
 function getCloudflareConfig() {
   try { return JSON.parse(localStorage.getItem(CLOUDFLARE_CONFIG_KEY)); } catch(e) { return null; }
@@ -187,13 +261,6 @@ function getLastSyncTime() {
 function setLastSyncTime() {
   localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
 }
-
-async function uploadDeltaToCloudflare() {
-  const config = getCloudflareConfig();
-  if (!config) return alert('Belum dikonfigurasi. Isi Worker URL dan API Key.');
-  const apiKey = atob(config.encryptedKey);
-  const workerUrl = config.workerUrl.replace(/\/$/, '');
-  const lastSync = getLastSyncTime();
 
   // Kumpulkan data dreamos_* yang berubah sejak lastSync
   const delta = {};
@@ -246,12 +313,6 @@ async function uploadDeltaToCloudflare() {
     log('❌ Gagal upload: ' + e.message, 'error');
   }
 }
-
-async function restoreFromCloudflare() {
-  const config = getCloudflareConfig();
-  if (!config) return alert('Belum dikonfigurasi.');
-  const apiKey = atob(config.encryptedKey);
-  const workerUrl = config.workerUrl.replace(/\/$/, '');
 
   try {
     const res = await fetch(`${workerUrl}/sync?lastSync=${encodeURIComponent(getLastSyncTime())}`, {
