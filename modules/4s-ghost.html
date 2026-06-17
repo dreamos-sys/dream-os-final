@@ -161,14 +161,33 @@ function log(msg, type='info') {
 }
 function clearLog() { document.getElementById('ghost-log').innerHTML = '<div>> Log dibersihkan...</div>'; }
 
-// ==================== CLOUDFLARE DELTA SYNC ====================
+// ==================== CLOUDFLARE DELTA SYNC (ANTI-CONFLICT) ====================
 const CLOUDFLARE_CONFIG_KEY = 'ghost_cloudflare_config';
 const LAST_SYNC_KEY = 'ghost_last_sync';
-// --- Revisi fungsi upload & restore untuk mendukung penyimpanan per-modul ---
 
+function getCloudflareConfig() {
+  try { return JSON.parse(localStorage.getItem(CLOUDFLARE_CONFIG_KEY)); } catch(e) { return null; }
+}
+function saveCloudflareConfig(workerUrl, apiKey) {
+  const encryptedKey = btoa(apiKey);
+  localStorage.setItem(CLOUDFLARE_CONFIG_KEY, JSON.stringify({ workerUrl, encryptedKey }));
+}
+function getApiKey() {
+  const config = getCloudflareConfig();
+  if (!config) return null;
+  return atob(config.encryptedKey);
+}
+function getLastSyncTime() {
+  return localStorage.getItem(LAST_SYNC_KEY) || '1970-01-01T00:00:00.000Z';
+}
+function setLastSyncTime() {
+  localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
+}
+
+// Fungsi upload delta per-modul (anti-konflik)
 async function uploadDeltaToCloudflare() {
   const config = getCloudflareConfig();
-  if (!config) return alert('Belum dikonfigurasi.');
+  if (!config) return alert('Belum dikonfigurasi. Isi Worker URL dan API Key.');
   const apiKey = atob(config.encryptedKey);
   const workerUrl = config.workerUrl.replace(/\/$/, '');
 
@@ -205,6 +224,7 @@ async function uploadDeltaToCloudflare() {
   }
 }
 
+// Fungsi restore per-modul (hanya timpa data yang lebih baru dari server)
 async function restoreFromCloudflare() {
   const config = getCloudflareConfig();
   if (!config) return alert('Belum dikonfigurasi.');
@@ -233,117 +253,6 @@ async function restoreFromCloudflare() {
       log(`📊 ${restored} modul diperbarui`, 'info');
     } else {
       log('⚠️ Tidak ada data di server', 'warn');
-    }
-  } catch(e) {
-    log('❌ Gagal restore: ' + e.message, 'error');
-  }
-}
-
-function getCloudflareConfig() {
-  try { return JSON.parse(localStorage.getItem(CLOUDFLARE_CONFIG_KEY)); } catch(e) { return null; }
-}
-
-function saveCloudflareConfig(workerUrl, apiKey) {
-  const encryptedKey = btoa(apiKey);
-  localStorage.setItem(CLOUDFLARE_CONFIG_KEY, JSON.stringify({ workerUrl, encryptedKey }));
-}
-
-function getApiKey() {
-  const config = getCloudflareConfig();
-  if (!config) return null;
-  return atob(config.encryptedKey);
-}
-
-function getLastSyncTime() {
-  return localStorage.getItem(LAST_SYNC_KEY) || '1970-01-01T00:00:00.000Z';
-}
-
-function setLastSyncTime() {
-  localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
-}
-
-  // Kumpulkan data dreamos_* yang berubah sejak lastSync
-  const delta = {};
-  let count = 0;
-  for (let i=0; i<localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith('dreamos_')) {
-      // Cek timestamp dari data? Untuk data array/objek, kita ambil timestamp dari item pertama? 
-      // Alternatif: kita simpan timestamp terpisah untuk setiap key di ghastly_timestamps.
-      // Untuk sekarang, kita kirim semua data dreamos_*, tapi beri tahu server ini delta?
-      // Lebih baik: kita bandingkan dengan lastSync, tapi karena localStorage tidak menyimpan timestamp otomatis,
-      // kita membutuhkan mekanisme timestamp manual. Untuk demo, kita kirim semua dan server yang menentukan.
-      // Namun, untuk fitur delta, kita akan mengandalkan timestamp di server (KV menyimpan timestamp).
-      // Jadi di sini kita kirim semua data dreamos_*, server akan membandingkan dan mengembalikan konflik.
-      // Untuk delta sesungguhnya, kita butuh timestamp per key.
-      // Untuk sementara, kita kirim semua, tapi kita bisa menampilkan indikator "Full Sync" jika lastSync lama.
-      delta[key] = localStorage.getItem(key);
-      count++;
-    }
-  }
-
-  // Fallback: jika tidak ada data dreamos_, tetap lanjut
-  if (count === 0) {
-    log('⚠️ Tidak ada data dreamos_ untuk disinkronkan.', 'warn');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${workerUrl}/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({ 
-        data: delta, 
-        lastSync: lastSync,
-        timestamp: new Date().toISOString() 
-      })
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = await res.json();
-    setLastSyncTime();
-    log('✅ Delta berhasil di-upload ke Cloudflare', 'success');
-    log(`📊 ${count} key dikirim (delta since ${new Date(lastSync).toLocaleString('id-ID')})`, 'info');
-    if (result.conflicts) {
-      log(`⚠️ Conflict: ${result.conflicts} item perlu perhatian`, 'warn');
-    }
-  } catch(e) {
-    log('❌ Gagal upload: ' + e.message, 'error');
-  }
-}
-
-  try {
-    const res = await fetch(`${workerUrl}/sync?lastSync=${encodeURIComponent(getLastSyncTime())}`, {
-      headers: { 'Authorization': `Bearer ${apiKey}` }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = await res.json();
-    if (result && result.data) {
-      // Gabungkan data dari server dengan data lokal (Last Write Wins)
-      const serverData = result.data;
-      let restored = 0;
-      for (const [key, value] of Object.entries(serverData)) {
-        // Cek timestamp dari server vs lokal
-        const localTimestamp = localStorage.getItem(key + '_ts') || '0';
-        const serverTimestamp = result.timestamps?.[key] || '0';
-        if (serverTimestamp > localTimestamp) {
-          localStorage.setItem(key, value);
-          if (result.timestamps?.[key]) {
-            localStorage.setItem(key + '_ts', result.timestamps[key]);
-          }
-          restored++;
-        }
-      }
-      setLastSyncTime();
-      log('✅ Delta berhasil di-restore dari Cloudflare', 'success');
-      log(`📊 ${restored} key diperbarui (lebih baru dari lokal)`, 'info');
-      if (result.serverTime) {
-        log(`🕒 Server time: ${new Date(result.serverTime).toLocaleString('id-ID')}`, 'sys');
-      }
-    } else {
-      log('⚠️ Tidak ada data baru di server', 'warn');
     }
   } catch(e) {
     log('❌ Gagal restore: ' + e.message, 'error');
@@ -471,7 +380,7 @@ function renderSyncPanel() {
         <button class="btn btn-ghost" onclick="restoreFromCloudflare()">Restore</button>
       </div>
       <p style="font-size:0.7rem; margin-top:0.5rem; color:var(--muted);">
-        Delta sync hanya mengirim data yang lebih baru dari <code>${lastSyncStr}</code>.
+        Delta sync menyimpan data per-modul di Cloudflare KV.
       </p>
     </div>`;
 }
@@ -791,7 +700,7 @@ function activateDefcon() {
 
 // ==================== INIT ====================
 switchTool('dashboard');
-log('🛡️ 4S Ghost Delta Sync v8.0 siap', 'sys');
+log('🛡️ 4S Ghost Delta Sync v8.0 siap (anti-konflik)', 'sys');
 </script>
 </body>
 </html>
