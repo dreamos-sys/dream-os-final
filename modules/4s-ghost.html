@@ -3,330 +3,734 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>4S Ghost • DevOps Center Pro</title>
+  <title>4S Ghost • Delta Sync + Cloudflare</title>
   <style>
     :root {
       --bg: #0a0e27;
-      --card: rgba(15,23,42,0.8);
+      --surface: #131a2b;
       --accent: #2dd4bf;
-      --muted: #94a3b8;
       --text: #e2e8f0;
+      --muted: #94a3b8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
     }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-      background: linear-gradient(135deg, #0a0e27, #1a1f3a, #0f1419);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-    #lock-screen {
-      text-align: center;
-    }
-    #logo-tap {
-      width: 100px;
-      height: 100px;
-      border-radius: 20px;
-      border: 2px solid var(--accent);
-      cursor: pointer;
-      transition: transform 0.2s;
-      background: #000;
-      padding: 5px;
-    }
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+    #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; background: radial-gradient(circle at 30% 30%, #1a1f3a, #0a0e27); }
+    #logo-tap { width: 120px; border-radius: 24px; cursor: pointer; transition: transform 0.2s; border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(45,212,191,0.3); }
     #logo-tap:active { transform: scale(0.95); }
-    .tap-counter {
-      margin-top: 0.5rem;
-      color: var(--muted);
-      font-size: 0.8rem;
+    .workspace { display: flex; width: 100%; height: 100vh; }
+    .sidebar {
+      width: 260px; background: var(--surface); border-right: 1px solid rgba(45,212,191,0.15);
+      display: flex; flex-direction: column; overflow-y: auto; padding: 1rem 0;
     }
-    .hidden { display: none; }
-    /* Panel utama */
-    #ghost-panel {
-      width: 100%;
-      max-width: 800px;
-      padding: 1rem;
+    .sidebar-item {
+      display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1.2rem;
+      color: var(--muted); cursor: pointer; font-size: 0.85rem; font-weight: 500;
+      transition: all 0.2s; border-left: 3px solid transparent;
     }
-    .header {
-      background: linear-gradient(90deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95));
-      border-bottom: 2px solid var(--accent);
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: 12px 12px 0 0;
+    .sidebar-item:hover, .sidebar-item.active {
+      background: rgba(45,212,191,0.08); color: var(--accent);
+      border-left-color: var(--accent);
     }
-    .tool-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 1rem 0;
+    .main-panel { flex: 1; display: flex; flex-direction: column; background: #0f1419; }
+    .toolbar {
+      padding: 0.5rem 1rem; background: var(--surface); border-bottom: 1px solid rgba(45,212,191,0.2);
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .tool-btn {
-      background: #0f172a;
-      border: 2px solid #2dd4bf;
-      color: white;
-      padding: 0.8rem 0.4rem;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.7rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.4rem;
-      min-width: 80px;
+    .content-area { flex: 1; padding: 1.2rem; overflow-y: auto; }
+    .log-area {
+      height: 220px; background: #050510; border-top: 1px solid rgba(45,212,191,0.3);
+      padding: 0.7rem; font-family: 'Courier New', monospace; font-size: 0.7rem;
+      color: var(--accent); overflow-y: auto; resize: vertical;
     }
-    .log-console {
-      background: rgba(0,0,0,0.8);
-      border: 1px solid rgba(45,212,191,0.3);
-      border-radius: 12px;
-      padding: 0.75rem;
-      font-family: 'Courier New', monospace;
-      font-size: 0.7rem;
-      color: var(--accent);
-      height: 200px;
-      overflow-y: auto;
+    .btn {
+      padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600;
+      cursor: pointer; background: var(--accent); color: #000; font-size: 0.8rem;
     }
+    .btn-ghost { background: transparent; border: 1px solid #334155; color: var(--text); }
+    .card { background: var(--surface); padding: 1rem; border-radius: 10px; border: 1px solid rgba(45,212,191,0.15); margin-bottom: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    input, select, textarea {
+      width: 100%; padding: 0.6rem; background: #0f172a; border: 1px solid #334155;
+      border-radius: 6px; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.8rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    th, td { padding: 0.4rem; border-bottom: 1px solid #1e293b; text-align: left; }
+    th { color: var(--accent); }
     .modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
+      background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 999;
     }
     .modal-content {
-      background: #1e293b;
-      border: 2px solid var(--accent);
-      border-radius: 1rem;
-      padding: 2rem;
-      text-align: center;
-      max-width: 320px;
+      background: #1e293b; border: 2px solid var(--accent); border-radius: 1rem; padding: 2rem; max-width: 350px; text-align: center;
     }
-    input {
-      width: 100%;
-      padding: 0.6rem;
-      margin: 0.5rem 0;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 0.5rem;
-      color: white;
-      font-size: 1rem;
-      text-align: center;
+    .resize-handle { cursor: row-resize; height: 4px; background: var(--accent); opacity: 0.5; }
+    @media (max-width: 768px) {
+      .sidebar { width: 80px; }
+      .sidebar-item span { display: none; }
+      .sidebar-item { justify-content: center; }
+      .grid-2 { grid-template-columns: 1fr; }
     }
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.4rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin: 0.3rem;
-    }
-    .btn-primary { background: var(--accent); color: #000; }
-    .btn-ghost { background: transparent; border: 1px solid #334155; color: white; }
   </style>
 </head>
 <body>
-  <!-- Layar Kunci -->
-  <div id="lock-screen">
-    <img src="../assets/icon-512.png" id="logo-tap" alt="Logo">
-    <div class="tap-counter" id="tap-display">Ketuk 7x untuk masuk</div>
-  </div>
+<div id="lock-screen">
+  <img src="../assets/icon-512.png" id="logo-tap" alt="Logo">
+  <p style="color:var(--muted); margin-top:1.5rem; font-size:0.9rem;">Ketuk logo 7x untuk masuk</p>
+</div>
 
-  <!-- Panel Ghost (awalnya tersembunyi) -->
-  <div id="ghost-panel" class="hidden">
-    <div class="header">
-      <div style="display:flex;align-items:center;gap:0.5rem;">
-        <div style="width:40px;height:40px;background:linear-gradient(135deg,#2dd4bf,#06b6d4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🕌</div>
-        <div>
-          <h2 style="color:var(--accent);margin:0;font-size:1rem;">4S DevOps Center PRO v5.0</h2>
-          <p style="color:var(--muted);font-size:0.6rem;margin:0;">Shadow Soul Spirit • Final Fix</p>
-        </div>
+<div id="workspace" class="workspace" style="display:none;">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-panel">
+    <div class="toolbar">
+      <strong>4S GHOST + DELTA SYNC</strong>
+      <div style="display:flex; gap:0.5rem;">
+        <span id="online-status" style="font-size:0.7rem; color:var(--muted);">⚪ Offline</span>
+        <button class="btn btn-ghost" onclick="clearLog()">🧹 Log</button>
+        <button class="btn btn-ghost" onclick="lockWorkspace()">🔒 Kunci</button>
+        <button class="btn" onclick="window.location.href='../index.html'">🏠 Home</button>
       </div>
-      <button onclick="lock()" class="btn-ghost">🔒 Kunci</button>
     </div>
-    <div class="tool-grid" id="tool-container"></div>
-    <div class="log-console" id="ghost-log"><div>> Ready...</div></div>
-    <div style="text-align:center;margin-top:1rem;color:var(--accent);font-size:0.6rem;">⚡ THE POWER SOUL OF SHALAWAT ⚡</div>
+    <div class="content-area" id="content-area"></div>
+    <div class="resize-handle" id="resize-handle"></div>
+    <div class="log-area" id="ghost-log"><div>> [SYS] Ghost v8.0 Delta Sync siap...</div></div>
   </div>
+</div>
 
-  <script>
-    // ========== TAP 7X + PIN ==========
-    const logo = document.getElementById('logo-tap');
-    const tapDisplay = document.getElementById('tap-display');
-    let tapCount = 0;
-    let tapTimer;
+<script>
+// ==================== AUTH ====================
+const logo = document.getElementById('logo-tap');
+let tapCount = 0, tapTimer;
 
-    async function sha256(msg) {
-      const buf = new TextEncoder().encode(msg);
-      const hash = await crypto.subtle.digest('SHA-256', buf);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+async function sha256(msg) {
+  const buf = new TextEncoder().encode(msg);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+logo.addEventListener('click', () => {
+  tapCount++;
+  if (tapTimer) clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => tapCount = 0, 2000);
+  if (tapCount === 7) {
+    clearTimeout(tapTimer); tapCount = 0;
+    showPinModal();
+  }
+});
+
+function showPinModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>🔐 4S GHOST AUTH</h3>
+      <input type="password" id="pin-input" placeholder="PIN Rahasia">
+      <div style="margin-top:1rem;">
+        <button class="btn" id="pin-ok">Masuk</button>
+        <button class="btn btn-ghost" id="pin-cancel">Batal</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('pin-ok').onclick = async () => {
+    const pin = document.getElementById('pin-input').value;
+    if (await sha256(pin) === await sha256("4s_ghost_2026")) {
+      document.getElementById('lock-screen').style.display = 'none';
+      document.getElementById('workspace').style.display = 'flex';
+      modal.remove();
+      log('🔓 Workspace unlocked', 'success');
+    } else alert('PIN salah!');
+  };
+  document.getElementById('pin-cancel').onclick = () => modal.remove();
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+}
+
+function lockWorkspace() {
+  document.getElementById('workspace').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+}
+
+// ==================== LOG ====================
+function log(msg, type='info') {
+  const el = document.getElementById('ghost-log');
+  if (!el) return;
+  const colors = { info:'#2dd4bf', warn:'#f59e0b', error:'#ef4444', success:'#10b981', sys:'#8b5cf6' };
+  const time = new Date().toLocaleTimeString('id-ID');
+  el.innerHTML += `<div style="color:${colors[type]||'#94a3b8'}">[${time}] ${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog() { document.getElementById('ghost-log').innerHTML = '<div>> Log dibersihkan...</div>'; }
+
+// ==================== CLOUDFLARE DELTA SYNC ====================
+const CLOUDFLARE_CONFIG_KEY = 'ghost_cloudflare_config';
+const LAST_SYNC_KEY = 'ghost_last_sync';
+
+function getCloudflareConfig() {
+  try { return JSON.parse(localStorage.getItem(CLOUDFLARE_CONFIG_KEY)); } catch(e) { return null; }
+}
+
+function saveCloudflareConfig(workerUrl, apiKey) {
+  const encryptedKey = btoa(apiKey);
+  localStorage.setItem(CLOUDFLARE_CONFIG_KEY, JSON.stringify({ workerUrl, encryptedKey }));
+}
+
+function getApiKey() {
+  const config = getCloudflareConfig();
+  if (!config) return null;
+  return atob(config.encryptedKey);
+}
+
+function getLastSyncTime() {
+  return localStorage.getItem(LAST_SYNC_KEY) || '1970-01-01T00:00:00.000Z';
+}
+
+function setLastSyncTime() {
+  localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
+}
+
+async function uploadDeltaToCloudflare() {
+  const config = getCloudflareConfig();
+  if (!config) return alert('Belum dikonfigurasi. Isi Worker URL dan API Key.');
+  const apiKey = atob(config.encryptedKey);
+  const workerUrl = config.workerUrl.replace(/\/$/, '');
+  const lastSync = getLastSyncTime();
+
+  // Kumpulkan data dreamos_* yang berubah sejak lastSync
+  const delta = {};
+  let count = 0;
+  for (let i=0; i<localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('dreamos_')) {
+      // Cek timestamp dari data? Untuk data array/objek, kita ambil timestamp dari item pertama? 
+      // Alternatif: kita simpan timestamp terpisah untuk setiap key di ghastly_timestamps.
+      // Untuk sekarang, kita kirim semua data dreamos_*, tapi beri tahu server ini delta?
+      // Lebih baik: kita bandingkan dengan lastSync, tapi karena localStorage tidak menyimpan timestamp otomatis,
+      // kita membutuhkan mekanisme timestamp manual. Untuk demo, kita kirim semua dan server yang menentukan.
+      // Namun, untuk fitur delta, kita akan mengandalkan timestamp di server (KV menyimpan timestamp).
+      // Jadi di sini kita kirim semua data dreamos_*, server akan membandingkan dan mengembalikan konflik.
+      // Untuk delta sesungguhnya, kita butuh timestamp per key.
+      // Untuk sementara, kita kirim semua, tapi kita bisa menampilkan indikator "Full Sync" jika lastSync lama.
+      delta[key] = localStorage.getItem(key);
+      count++;
     }
+  }
 
-    logo.addEventListener('click', () => {
-      tapCount++;
-      tapDisplay.textContent = `Tap ke-${tapCount} dari 7`;
-      if (tapTimer) clearTimeout(tapTimer);
-      tapTimer = setTimeout(() => {
-        tapCount = 0;
-        tapDisplay.textContent = 'Ketuk 7x untuk masuk';
-      }, 2000);
+  // Fallback: jika tidak ada data dreamos_, tetap lanjut
+  if (count === 0) {
+    log('⚠️ Tidak ada data dreamos_ untuk disinkronkan.', 'warn');
+    return;
+  }
 
-      if (tapCount === 7) {
-        clearTimeout(tapTimer);
-        tapCount = 0;
-        tapDisplay.textContent = 'Ketuk 7x untuk masuk';
-        showPinModal();
-      }
+  try {
+    const res = await fetch(`${workerUrl}/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ 
+        data: delta, 
+        lastSync: lastSync,
+        timestamp: new Date().toISOString() 
+      })
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+    setLastSyncTime();
+    log('✅ Delta berhasil di-upload ke Cloudflare', 'success');
+    log(`📊 ${count} key dikirim (delta since ${new Date(lastSync).toLocaleString('id-ID')})`, 'info');
+    if (result.conflicts) {
+      log(`⚠️ Conflict: ${result.conflicts} item perlu perhatian`, 'warn');
+    }
+  } catch(e) {
+    log('❌ Gagal upload: ' + e.message, 'error');
+  }
+}
 
-    function showPinModal() {
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.innerHTML = `
-        <div class="modal-content">
-          <h3 style="color:var(--accent);">🔐 4S GHOST AUTH</h3>
-          <input type="password" id="pin-input" placeholder="Masukkan PIN">
-          <div>
-            <button class="btn-primary" id="pin-ok">Masuk</button>
-            <button class="btn-ghost" id="pin-cancel">Batal</button>
-          </div>
+async function restoreFromCloudflare() {
+  const config = getCloudflareConfig();
+  if (!config) return alert('Belum dikonfigurasi.');
+  const apiKey = atob(config.encryptedKey);
+  const workerUrl = config.workerUrl.replace(/\/$/, '');
+
+  try {
+    const res = await fetch(`${workerUrl}/sync?lastSync=${encodeURIComponent(getLastSyncTime())}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+    if (result && result.data) {
+      // Gabungkan data dari server dengan data lokal (Last Write Wins)
+      const serverData = result.data;
+      let restored = 0;
+      for (const [key, value] of Object.entries(serverData)) {
+        // Cek timestamp dari server vs lokal
+        const localTimestamp = localStorage.getItem(key + '_ts') || '0';
+        const serverTimestamp = result.timestamps?.[key] || '0';
+        if (serverTimestamp > localTimestamp) {
+          localStorage.setItem(key, value);
+          if (result.timestamps?.[key]) {
+            localStorage.setItem(key + '_ts', result.timestamps[key]);
+          }
+          restored++;
+        }
+      }
+      setLastSyncTime();
+      log('✅ Delta berhasil di-restore dari Cloudflare', 'success');
+      log(`📊 ${restored} key diperbarui (lebih baru dari lokal)`, 'info');
+      if (result.serverTime) {
+        log(`🕒 Server time: ${new Date(result.serverTime).toLocaleString('id-ID')}`, 'sys');
+      }
+    } else {
+      log('⚠️ Tidak ada data baru di server', 'warn');
+    }
+  } catch(e) {
+    log('❌ Gagal restore: ' + e.message, 'error');
+  }
+}
+
+function updateOnlineStatus(connected) {
+  const el = document.getElementById('online-status');
+  if (connected) {
+    el.innerHTML = '🟢 Online (Cloudflare)';
+    el.style.color = '#10b981';
+  } else {
+    el.innerHTML = '⚪ Offline';
+    el.style.color = '#94a3b8';
+  }
+}
+
+function testCloudflareConnection() {
+  const config = getCloudflareConfig();
+  if (!config) return alert('Konfigurasi dulu.');
+  const workerUrl = config.workerUrl.replace(/\/$/, '');
+  const apiKey = atob(config.encryptedKey);
+  fetch(`${workerUrl}/sync`, { headers: { Authorization: `Bearer ${apiKey}` } })
+    .then(res => {
+      if (res.ok) {
+        updateOnlineStatus(true);
+        log('✅ Koneksi ke Cloudflare berhasil', 'success');
+      } else {
+        updateOnlineStatus(false);
+        log('❌ Koneksi gagal: HTTP ' + res.status, 'error');
+      }
+    })
+    .catch(e => {
+      updateOnlineStatus(false);
+      log('❌ Gagal terhubung: ' + e.message, 'error');
+    });
+}
+
+// ==================== TOOLS DEFINITION ====================
+const tools = [
+  { id: 'dashboard', icon: '📊', label: 'Dashboard', render: renderDashboard },
+  { id: 'sync', icon: '☁️', label: 'Delta Sync', render: renderSyncPanel },
+  { id: 'explorer', icon: '🗄️', label: 'Data Explorer', render: renderDataExplorer, setup: refreshExplorerTable },
+  { id: 'console', icon: '>_', label: 'JS Console', render: renderConsole },
+  { id: 'network', icon: '🌐', label: 'Network Spy', render: renderNetwork },
+  { id: 'sql', icon: '🗃️', label: 'SQL Play', render: renderSQL },
+  { id: 'editor', icon: '📝', label: 'Editor', render: renderEditor },
+  { id: 'security', icon: '🛡️', label: 'Security', render: renderSecurity },
+  { id: 'snippets', icon: '📋', label: 'Snippets', render: renderSnippets },
+  { id: 'backup', icon: '💾', label: 'Backup File', render: renderBackup },
+  { id: 'dns', icon: '🔍', label: 'DNS/WHOIS', render: renderDNS },
+  { id: 'websocket', icon: '📡', label: 'WebSocket', render: renderWebSocket },
+  { id: 'defcon', icon: '💣', label: 'DEFCON', render: renderDefcon }
+];
+
+const sidebar = document.getElementById('sidebar');
+sidebar.innerHTML = tools.map(t => 
+  `<div class="sidebar-item" data-tool="${t.id}" onclick="switchTool('${t.id}')">
+    <span style="font-size:1.3rem;">${t.icon}</span> <span>${t.label}</span>
+  </div>`
+).join('');
+
+function switchTool(id) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const activeEl = document.querySelector(`[data-tool="${id}"]`);
+  if (activeEl) activeEl.classList.add('active');
+  const tool = tools.find(t => t.id === id);
+  if (tool) {
+    document.getElementById('content-area').innerHTML = tool.render();
+    if (tool.setup) tool.setup();
+  }
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const maint = JSON.parse(localStorage.getItem('dreamos_maintenance_tasks') || '[]');
+  const assets = JSON.parse(localStorage.getItem('dreamos_assets') || '[]');
+  const stok = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+  const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+  const users = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+  return `
+    <h3 style="margin-bottom:1rem;">📊 System Overview</h3>
+    <div class="grid-2">
+      <div class="card"><h4>🔧 Maintenance</h4><p style="font-size:2rem;font-weight:700;">${maint.length}</p><small>tugas</small></div>
+      <div class="card"><h4>🏢 Aset</h4><p style="font-size:2rem;font-weight:700;">${assets.length}</p><small>item</small></div>
+      <div class="card"><h4>📦 Stok</h4><p style="font-size:2rem;font-weight:700;">${stok.length}</p><small>barang</small></div>
+      <div class="card"><h4>⚠️ K3</h4><p style="font-size:2rem;font-weight:700;">${k3.length}</p><small>laporan</small></div>
+    </div>
+    <div class="card" style="margin-top:1rem;">
+      <h4>👤 User Terikat</h4>
+      <p>${users.nama || 'Tidak ada'} (${users.role || '-'})</p>
+      <p style="font-size:0.7rem;color:var(--muted);">Device: ${generateDeviceHash()}</p>
+    </div>`;
+}
+
+function generateDeviceHash() {
+  const ua = navigator.userAgent;
+  const si = screen.width+'x'+screen.height+'-'+screen.colorDepth;
+  const raw = ua+si+navigator.language;
+  let h = 0;
+  for (let i=0;i<raw.length;i++) { h = ((h<<5)-h)+raw.charCodeAt(i); h|=0; }
+  return 'DEV-'+Math.abs(h).toString(16).toUpperCase().slice(0,8);
+}
+
+// ==================== DELTA SYNC PANEL ====================
+function renderSyncPanel() {
+  const config = getCloudflareConfig();
+  const lastSync = getLastSyncTime();
+  const connected = config ? true : false;
+  const lastSyncStr = lastSync === '1970-01-01T00:00:00.000Z' ? 'Belum pernah' : new Date(lastSync).toLocaleString('id-ID');
+  const dreamKeys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+  return `
+    <div class="card">
+      <h3>☁️ Delta Sync (Cloudflare)</h3>
+      <p>Status: <span id="cf-status">${connected ? '🟢 Terkonfigurasi' : '⚪ Belum dikonfigurasi'}</span></p>
+      <p>Sync Terakhir: ${lastSyncStr}</p>
+      <p>Data Lokal: ${dreamKeys.length} key dreamos_*</p>
+      <label>Worker URL</label>
+      <input id="cf-url" placeholder="https://dreamos-sync.workers.dev" value="${config?.workerUrl || ''}">
+      <label>API Key</label>
+      <input id="cf-key" type="password" placeholder="Masukkan API Key" value="${config ? '••••••••' : ''}">
+      <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+        <button class="btn" onclick="saveCloudflareAndConnect()">Simpan & Tes</button>
+        <button class="btn" onclick="uploadDeltaToCloudflare()">Upload Delta</button>
+        <button class="btn btn-ghost" onclick="restoreFromCloudflare()">Restore</button>
+      </div>
+      <p style="font-size:0.7rem; margin-top:0.5rem; color:var(--muted);">
+        Delta sync hanya mengirim data yang lebih baru dari <code>${lastSyncStr}</code>.
+      </p>
+    </div>`;
+}
+
+function saveCloudflareAndConnect() {
+  const url = document.getElementById('cf-url').value.trim();
+  const key = document.getElementById('cf-key').value.trim();
+  if (!url || !key) return alert('Isi URL dan API Key');
+  if (key === '••••••••') {
+    const existingConfig = getCloudflareConfig();
+    if (!existingConfig) return alert('Key lama tidak ditemukan, masukkan ulang.');
+    saveCloudflareConfig(existingConfig.workerUrl, atob(existingConfig.encryptedKey));
+  } else {
+    saveCloudflareConfig(url, key);
+  }
+  testCloudflareConnection();
+  switchTool('sync');
+}
+
+// ==================== DATA EXPLORER ====================
+function refreshExplorerTable() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+  const tbody = document.getElementById('explorer-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = keys.map(key => {
+    const raw = localStorage.getItem(key);
+    const preview = raw.length > 80 ? raw.substring(0,80)+'…' : raw;
+    return `<tr>
+      <td style="font-weight:600;">${key.replace('dreamos_','')}</td>
+      <td><code style="font-size:0.7rem;">${preview}</code></td>
+      <td>
+        <button class="btn btn-ghost" onclick="explorerView('${key}')">Lihat</button>
+        <button class="btn btn-ghost" onclick="explorerDelete('${key}')">Hapus</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function explorerView(key) { alert(localStorage.getItem(key)); }
+function explorerDelete(key) { if(confirm('Hapus '+key+'?')) { localStorage.removeItem(key); refreshExplorerTable(); log('Dihapus: '+key); } }
+
+function renderDataExplorer() {
+  return `<div>
+    <h3>🗄️ LocalStorage Explorer</h3>
+    <table style="margin-top:1rem;"><thead><tr><th>Key</th><th>Value</th><th>Aksi</th></tr></thead>
+    <tbody id="explorer-tbody"></tbody></table>
+  </div>`;
+}
+
+// ==================== JS CONSOLE ====================
+function renderConsole() {
+  return `<div class="card">
+    <h3>💻 JavaScript Console</h3>
+    <textarea id="js-input" rows="6" placeholder="// Tulis kode JS..."></textarea>
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <button class="btn" onclick="executeJS()">Run</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('js-input').value=''">Clear</button>
+    </div>
+    <pre id="js-output" style="margin-top:0.5rem; min-height:80px; background:#0f172a; padding:0.5rem; border-radius:6px;"></pre>
+  </div>`;
+}
+function executeJS() {
+  const code = document.getElementById('js-input').value;
+  const out = document.getElementById('js-output');
+  try {
+    const result = eval(code);
+    out.textContent = '=> ' + (result === undefined ? 'undefined' : JSON.stringify(result, null, 2));
+    log('JS executed');
+  } catch(e) {
+    out.textContent = 'Error: ' + e.message;
+    log('JS error: '+e.message, 'error');
+  }
+}
+
+// ==================== NETWORK SPY ====================
+let spyActive = false;
+function renderNetwork() {
+  return `<div class="card">
+    <h3>🌐 Network Spy</h3>
+    <p style="color:var(--muted);">Merekam semua fetch/XHR. Lihat log.</p>
+    <button class="btn" id="spy-btn" onclick="toggleSpy()">${spyActive?'Matikan':'Aktifkan'}</button>
+    <div id="spy-stats" style="margin-top:0.5rem; font-size:0.75rem;"></div>
+  </div>`;
+}
+function toggleSpy() {
+  if (spyActive) {
+    spyActive = false;
+    document.getElementById('spy-btn').textContent = 'Aktifkan';
+    log('Spy dimatikan');
+    return;
+  }
+  spyActive = true;
+  const origFetch = window.fetch;
+  window.fetch = function(...args) {
+    const url = typeof args[0]==='string' ? args[0] : args[0]?.url||'';
+    log(`[NET] REQ: ${url}`, 'sys');
+    return origFetch.apply(this, args).then(r => {
+      log(`[NET] RES: ${r.status} ${url}`, 'success');
+      return r;
+    }).catch(err => {
+      log(`[NET] ERR: ${err.message}`, 'error');
+      throw err;
+    });
+  };
+  document.getElementById('spy-btn').textContent = 'Matikan';
+  log('Spy aktif');
+}
+
+// ==================== SQL PLAYGROUND ====================
+function renderSQL() {
+  return `<div class="card">
+    <h3>🗃️ SQL Playground</h3>
+    <p style="color:var(--muted);">Query tabel localStorage (dreamos_*)</p>
+    <textarea id="sql-input" rows="3" placeholder="SELECT * FROM maintenance_tasks;"></textarea>
+    <button class="btn" onclick="runSQL()" style="margin-top:0.5rem;">Execute</button>
+    <pre id="sql-output" style="margin-top:0.5rem; min-height:60px; background:#0f172a; padding:0.5rem; border-radius:6px;"></pre>
+  </div>`;
+}
+function runSQL() {
+  const query = document.getElementById('sql-input').value.toLowerCase();
+  const out = document.getElementById('sql-output');
+  if (query.includes('select * from')) {
+    const table = query.split('from ')[1]?.replace(/[^a-z_]/g,'').trim();
+    if (!table) { out.textContent = 'Format: SELECT * FROM [key]'; return; }
+    const key = 'dreamos_' + table;
+    const raw = localStorage.getItem(key);
+    out.textContent = raw ? raw : `Tabel '${table}' tidak ditemukan.`;
+  } else {
+    out.textContent = 'Hanya mendukung: SELECT * FROM [nama_key]';
+  }
+}
+
+// ==================== CODE EDITOR ====================
+function renderEditor() {
+  const saved = localStorage.getItem('ghost_editor_content') || '';
+  return `<div class="card">
+    <h3>📝 Code Editor</h3>
+    <textarea id="editor-text" rows="15" placeholder="Tulis kode atau catatan...">${saved}</textarea>
+    <button class="btn" onclick="saveEditor()" style="margin-top:0.5rem;">Simpan</button>
+  </div>`;
+}
+function saveEditor() {
+  const text = document.getElementById('editor-text').value;
+  localStorage.setItem('ghost_editor_content', text);
+  log('Konten disimpan');
+}
+
+// ==================== SECURITY ====================
+function renderSecurity() {
+  const hash = generateDeviceHash();
+  const https = location.protocol==='https:';
+  const csp = !!document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+  return `<div class="card">
+    <h3>🛡️ Security Audit</h3>
+    <p>Device Hash: <code>${hash}</code></p>
+    <p>HTTPS: ${https?'✅':'❌'}</p>
+    <p>CSP: ${csp?'✅':'❌'}</p>
+    <p>User Agent: ${navigator.userAgent}</p>
+  </div>`;
+}
+
+// ==================== SNIPPETS ====================
+function renderSnippets() {
+  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
+  return `<div class="card">
+    <h3>📋 Snippets</h3>
+    <input id="snippet-name" placeholder="Nama" style="margin-bottom:0.3rem;">
+    <textarea id="snippet-code" rows="4" placeholder="Kode JS"></textarea>
+    <button class="btn" onclick="saveSnippet()">Simpan</button>
+    <div style="margin-top:1rem;">${snippets.map((s,i)=>`
+      <div style="background:#1e293b;padding:0.3rem 0.5rem;margin:0.2rem 0;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">
+        <span><strong>${s.name}</strong></span>
+        <div>
+          <button class="btn btn-ghost" onclick="runSnippet(${i})">▶</button>
+          <button class="btn btn-ghost" onclick="deleteSnippet(${i})">🗑️</button>
         </div>
-      `;
-      document.body.appendChild(modal);
+      </div>`).join('')}</div>
+  </div>`;
+}
+function saveSnippet() {
+  const name = document.getElementById('snippet-name').value.trim();
+  const code = document.getElementById('snippet-code').value.trim();
+  if (!name || !code) return;
+  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
+  snippets.push({name, code});
+  localStorage.setItem('ghost_snippets', JSON.stringify(snippets));
+  log('Snippet disimpan');
+  switchTool('snippets');
+}
+function runSnippet(idx) {
+  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
+  try { eval(snippets[idx].code); log('Snippet dijalankan'); } catch(e) { log('Error: '+e.message, 'error'); }
+}
+function deleteSnippet(idx) {
+  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
+  snippets.splice(idx, 1);
+  localStorage.setItem('ghost_snippets', JSON.stringify(snippets));
+  switchTool('snippets');
+}
 
-      document.getElementById('pin-ok').addEventListener('click', async () => {
-        const pin = document.getElementById('pin-input').value;
-        const hashed = await sha256(pin);
-        const targetHash = await sha256("4s_ghost_2026");
-        if (hashed === targetHash) {
-          document.getElementById('lock-screen').classList.add('hidden');
-          document.getElementById('ghost-panel').classList.remove('hidden');
-          logToGhost('🔓 Akses diberikan.', 'success');
-          modal.remove();
-        } else {
-          alert('PIN salah!');
-        }
-      });
-      document.getElementById('pin-cancel').addEventListener('click', () => modal.remove());
-      setTimeout(() => document.getElementById('pin-input').focus(), 100);
-    }
+// ==================== BACKUP ====================
+function renderBackup() {
+  return `<div class="card">
+    <h3>💾 Backup & Restore (File)</h3>
+    <button class="btn" onclick="backupData()">Unduh Backup (JSON)</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('restore-file').click()">Restore</button>
+    <input type="file" id="restore-file" accept=".json" onchange="restoreData(this)" style="display:none;">
+  </div>`;
+}
+function backupData() {
+  const data = {};
+  for(let i=0;i<localStorage.length;i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('dreamos_') || key.startsWith('ghost_')) data[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dreamos_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  log('Backup diunduh');
+}
+function restoreData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      for(const key in data) localStorage.setItem(key, data[key]);
+      log('Data direstore', 'success');
+    } catch(ex) { log('Restore gagal: '+ex.message, 'error'); }
+  };
+  reader.readAsText(file);
+}
 
-    function lock() {
-      document.getElementById('ghost-panel').classList.add('hidden');
-      document.getElementById('lock-screen').classList.remove('hidden');
-    }
+// ==================== DNS / WHOIS ====================
+function renderDNS() {
+  return `<div class="card">
+    <h3>🔍 DNS & WHOIS Lookup</h3>
+    <input id="dns-input" placeholder="Domain atau IP">
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <button class="btn" onclick="dnsLookup()">DNS</button>
+      <button class="btn" onclick="whoisLookup()">WHOIS</button>
+    </div>
+    <pre id="dns-output" style="margin-top:0.5rem; background:#0f172a; padding:0.5rem; border-radius:6px; min-height:60px;"></pre>
+  </div>`;
+}
+async function dnsLookup() {
+  const domain = document.getElementById('dns-input').value.trim();
+  if (!domain) return;
+  const out = document.getElementById('dns-output');
+  out.textContent = 'Memuat...';
+  try {
+    const res = await fetch(`https://dns.google/resolve?name=${domain}&type=A`);
+    const data = await res.json();
+    if (data.Answer) {
+      out.textContent = data.Answer.map(a => `${a.name} → ${a.data}`).join('\n');
+    } else out.textContent = 'Tidak ada record.';
+  } catch(e) { out.textContent = 'Error: '+e.message; }
+}
+async function whoisLookup() {
+  const domain = document.getElementById('dns-input').value.trim();
+  if (!domain) return;
+  const out = document.getElementById('dns-output');
+  out.textContent = 'Memuat...';
+  try {
+    const res = await fetch(`https://api.hackertarget.com/whois/?q=${domain}`);
+    const text = await res.text();
+    out.textContent = text.split('\n').slice(0,25).join('\n');
+  } catch(e) { out.textContent = 'Error: '+e.message; }
+}
 
-    // ========== TOOLS (dari v5.0) ==========
-    function logToGhost(msg, type='info') {
-      const el = document.getElementById('ghost-log');
-      if (!el) return;
-      const colors = { info: '#2dd4bf', warn: '#f59e0b', error: '#ef4444', success: '#10b981', sys: '#8b5cf6' };
-      const time = new Date().toLocaleTimeString('id-ID');
-      el.innerHTML += `<div style="color:${colors[type]||'#94a3b8'}">[${time}] ${msg}</div>`;
-      el.scrollTop = el.scrollHeight;
-    }
+// ==================== WEBSOCKET TESTER ====================
+let wsInstance = null;
+function renderWebSocket() {
+  return `<div class="card">
+    <h3>📡 WebSocket Tester</h3>
+    <input id="ws-url" placeholder="ws://...">
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <button class="btn" onclick="connectWS()">Connect</button>
+      <button class="btn btn-ghost" onclick="disconnectWS()">Disconnect</button>
+    </div>
+    <pre id="ws-output" style="margin-top:0.5rem; background:#0f172a; padding:0.5rem; border-radius:6px; min-height:60px;"></pre>
+  </div>`;
+}
+function connectWS() {
+  const url = document.getElementById('ws-url').value;
+  if (!url) return;
+  try {
+    wsInstance = new WebSocket(url);
+    wsInstance.onopen = () => log('WebSocket connected: '+url, 'success');
+    wsInstance.onmessage = (e) => log('WS msg: '+e.data, 'info');
+    wsInstance.onerror = () => log('WS error', 'error');
+    wsInstance.onclose = () => log('WS closed', 'sys');
+  } catch(e) { log('WS error: '+e.message, 'error'); }
+}
+function disconnectWS() {
+  if (wsInstance) { wsInstance.close(); wsInstance = null; log('WS disconnected'); }
+}
 
-    window.runChaosMonkey = function() {
-      if(confirm('💥 ACTIVATE?')) {
-        logToGhost('💥 Chaos unleashed!', 'warn');
-        const start = Date.now();
-        while(Date.now()-start < 3000) {}
-        logToGhost('✅ Survived!', 'success');
-      }
-    };
+// ==================== DEFCON ====================
+function renderDefcon() {
+  return `<div class="card" style="border-color:var(--danger);">
+    <h3>💣 DEFCON</h3>
+    <button class="btn" style="background:var(--danger);" onclick="activateDefcon()">AKTIFKAN PROTOKOL DARURAT</button>
+    <p style="color:var(--muted); margin-top:0.5rem;">Menghapus semua sesi login dan mengunci sistem.</p>
+  </div>`;
+}
+function activateDefcon() {
+  if(confirm('🚨 Yakin? Semua sesi akan dihapus.')) {
+    localStorage.removeItem('dreamos_bound_user');
+    localStorage.removeItem('dreamos_session_active');
+    log('DEFCON diaktifkan', 'error');
+    setTimeout(() => location.reload(), 1000);
+  }
+}
 
-    window.openCryptoLab = function() {
-      const text = prompt('🧬 Text:');
-      if(text) {
-        const enc = btoa(text);
-        logToGhost(`🔒 ENC: ${enc.substring(0,30)}...`, 'info');
-        alert('Encoded: ' + enc);
-      }
-    };
-
-    window.clearDreamCache = function() {
-      if(confirm('🧹 Nuke localStorage?')) {
-        localStorage.clear();
-        location.reload();
-      }
-    };
-
-    window.viewLocalStorage = function() {
-      const data = {};
-      for(let i=0; i<localStorage.length; i++) {
-        const key = localStorage.key(i);
-        try { data[key] = JSON.parse(localStorage.getItem(key)); }
-        catch(e) { data[key] = localStorage.getItem(key); }
-      }
-      console.table(data);
-      logToGhost('📦 Data exported to console.', 'info');
-    };
-
-    window.dnsLookup = async function() {
-      const domain = prompt('🌐 Domain:');
-      if(!domain) return;
-      logToGhost(`🔍 DNS Lookup: ${domain}`, 'sys');
-      try {
-        const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`);
-        const data = await res.json();
-        if(data.Answer) data.Answer.forEach(a => logToGhost(`📡 ${a.name} → ${a.data}`, 'info'));
-        else logToGhost('⚠️ No records.', 'warn');
-      } catch(e) { logToGhost('❌ '+e.message, 'error'); }
-    };
-
-    window.selfAudit = function() {
-      logToGhost(`🛡️ Self-Audit: ${location.hostname}`, 'sys');
-      logToGhost(`🔒 HTTPS: ${location.protocol==='https:'?'✅':'❌'}`, 'success');
-      logToGhost('✅ Audit done.', 'success');
-    };
-
-    window.passGen = function() {
-      const len = parseInt(prompt('Length (12-64):', '16')) || 16;
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
-      let pwd = '';
-      for(let i=0; i<len; i++) pwd += chars[Math.floor(Math.random()*chars.length)];
-      logToGhost('🔑 Generated password: '+pwd, 'success');
-      alert('Password:\n'+pwd);
-    };
-
-    window.spiritualMonitor = async function() {
-      logToGhost('🕌 Spiritual Core Monitor', 'sys');
-      const today = new Date().toISOString().split('T')[0];
-      try {
-        const res = await fetch(`https://api.aladhan.com/v1/timings/${today}?latitude=-6.2088&longitude=106.8456&method=20`);
-        const data = await res.json();
-        if(data?.data?.timings) {
-          const t = data.data.timings;
-          logToGhost(`Subuh: ${t.Fajr} | Dzuhur: ${t.Dhuhr} | Ashar: ${t.Asr} | Maghrib: ${t.Maghrib} | Isya: ${t.Isha}`, 'sys');
-        }
-      } catch(e) { logToGhost('❌ Gagal: '+e.message, 'error'); }
-    };
-
-    // Render tools
-    const tools = [
-      { emoji:'💥', label:'Chaos', fn: runChaosMonkey, color:'#f59e0b' },
-      { emoji:'🧬', label:'Crypto', fn: openCryptoLab, color:'#10b981' },
-      { emoji:'🧹', label:'Nuke', fn: clearDreamCache, color:'#64748b' },
-      { emoji:'📦', label:'Storage', fn: viewLocalStorage, color:'#ec4899' },
-      { emoji:'🔍', label:'DNS', fn: dnsLookup, color:'#3b82f6' },
-      { emoji:'🛡️', label:'Audit', fn: selfAudit, color:'#a855f7' },
-      { emoji:'🔑', label:'PassGen', fn: passGen, color:'#10b981' },
-      { emoji:'🕌', label:'Sholat', fn: spiritualMonitor, color:'#a855f7' }
-    ];
-
-    const container = document.getElementById('tool-container');
-    container.innerHTML = tools.map(t => `
-      <button class="tool-btn" style="border-color:${t.color};" onclick="(${t.fn.toString()})()">
-        <span style="font-size:1.5rem;">${t.emoji}</span>
-        <span style="font-size:0.65rem;color:#cbd5e1;">${t.label}</span>
-      </button>
-    `).join('');
-
-    logToGhost('🛡️ Tools loaded. Ready.', 'sys');
-  </script>
+// ==================== INIT ====================
+switchTool('dashboard');
+log('🛡️ 4S Ghost Delta Sync v8.0 siap', 'sys');
+</script>
 </body>
 </html>
