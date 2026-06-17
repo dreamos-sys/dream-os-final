@@ -8,8 +8,6 @@
     :root {
       --bg: #040814;
       --card: rgba(15,23,42,0.75);
-      --accent: #00ff9d;
-      --accent2: #0ea5e9;
       --purple: #8b5cf6;
       --muted: #94a3b8;
       --text: #e2e8f0;
@@ -66,21 +64,24 @@
   </style>
 </head>
 <body>
+  <!-- Tampilan jika ditolak (tidak dipakai sekarang, tapi disiapkan) -->
   <div id="denied-screen" class="hidden">
     <h1 style="color:red;">AKSES DITOLAK</h1>
     <p>Hanya untuk Developer.</p>
     <p id="denied-hash" style="font-size:0.8rem;"></p>
     <button class="btn btn-purple" onclick="history.back()">Kembali</button>
   </div>
-  <div id="dev-screen" class="hidden">
+
+  <!-- Panel Developer (selalu terbuka untuk sementara) -->
+  <div id="dev-screen">
     <h2 style="color:var(--purple);">🛡️ 4S GHOST DEV CENTER</h2>
     <p style="font-size:0.8rem; color:var(--muted);">Developer Exclusive • Off-Network</p>
     <div class="tool-grid" id="tool-container"></div>
-    <div class="log-console" id="ghost-log"><div>> Ready...</div></div>
+    <div class="log-console" id="ghost-log"><div>> Siap...</div></div>
   </div>
-  <script>
-    const DEVELOPER_HASH = "DEV-A1B2C3D4"; // placeholder, nanti diganti
 
+  <script>
+    // ==================== GENERATE HASH & TAMPILKAN ====================
     function generateHash() {
       const ua = navigator.userAgent;
       const si = screen.width + 'x' + screen.height + '-' + screen.colorDepth;
@@ -94,25 +95,22 @@
     }
 
     const currentHash = generateHash();
-    const isDev = currentHash === DEVELOPER_HASH;
 
-    if (false) { // dinonaktifkan
-      document.getElementById('denied-screen').classList.remove('hidden');
-      document.getElementById('denied-hash').textContent = 'Device hash: ' + currentHash;
-      throw new Error('Akses ditolak');
-    }
-
-    document.getElementById('dev-screen').classList.remove('hidden');
-
+    // Fungsi log
     function log(msg, type='info') {
       const el = document.getElementById('ghost-log');
+      if (!el) return;
       const colors = { info: '#2dd4bf', error: '#ef4444', success: '#10b981', sys: '#8b5cf6' };
       const time = new Date().toLocaleTimeString('id-ID');
       el.innerHTML += `<div style="color:${colors[type]||'#fff'}">[${time}] ${msg}</div>`;
       el.scrollTop = el.scrollHeight;
     }
 
-    // Tools (contoh beberapa)
+    // Tampilkan hash di log
+    log('DEVICE HASH: ' + currentHash, 'sys');
+    log('> Silakan salin hash di atas, lalu gunakan untuk mengunci sistem.', 'info');
+
+    // ==================== TOOLS ====================
     function loadEruda() {
       const s = document.createElement('script');
       s.src = '//cdn.jsdelivr.net/npm/eruda';
@@ -162,4 +160,3 @@
   </script>
 </body>
 </html>
-<script>
