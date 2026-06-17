@@ -3,163 +3,330 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>4S Ghost • Developer Command Center</title>
+  <title>4S Ghost • DevOps Center Pro</title>
   <style>
     :root {
-      --bg: #040814;
-      --card: rgba(15,23,42,0.75);
-      --purple: #8b5cf6;
+      --bg: #0a0e27;
+      --card: rgba(15,23,42,0.8);
+      --accent: #2dd4bf;
       --muted: #94a3b8;
       --text: #e2e8f0;
     }
-    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0e27, #1a1f3a, #0f1419);
       color: var(--text);
       min-height: 100vh;
-      padding: 1rem;
-      padding-top: 2rem;
-      line-height: 1.6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
-    .denied-screen {
+    #lock-screen {
       text-align: center;
-      padding: 4rem 2rem;
+    }
+    #logo-tap {
+      width: 100px;
+      height: 100px;
+      border-radius: 20px;
+      border: 2px solid var(--accent);
+      cursor: pointer;
+      transition: transform 0.2s;
+      background: #000;
+      padding: 5px;
+    }
+    #logo-tap:active { transform: scale(0.95); }
+    .tap-counter {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
     }
     .hidden { display: none; }
-    .btn {
+    /* Panel utama */
+    #ghost-panel {
+      width: 100%;
+      max-width: 800px;
+      padding: 1rem;
+    }
+    .header {
+      background: linear-gradient(90deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95));
+      border-bottom: 2px solid var(--accent);
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 12px 12px 0 0;
+    }
+    .tool-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 1rem 0;
+    }
+    .tool-btn {
+      background: #0f172a;
+      border: 2px solid #2dd4bf;
+      color: white;
+      padding: 0.8rem 0.4rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.7rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 80px;
+    }
+    .log-console {
+      background: rgba(0,0,0,0.8);
+      border: 1px solid rgba(45,212,191,0.3);
+      border-radius: 12px;
+      padding: 0.75rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      height: 200px;
+      overflow-y: auto;
+    }
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #1e293b;
+      border: 2px solid var(--accent);
+      border-radius: 1rem;
+      padding: 2rem;
+      text-align: center;
+      max-width: 320px;
+    }
+    input {
+      width: 100%;
+      padding: 0.6rem;
+      margin: 0.5rem 0;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      color: white;
+      font-size: 1rem;
+      text-align: center;
+    }
+    button {
       padding: 0.5rem 1rem;
       border: none;
       border-radius: 0.4rem;
       font-weight: 600;
       cursor: pointer;
+      margin: 0.3rem;
     }
-    .btn-purple { background: var(--purple); color: #fff; }
-    .tool-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
-      gap: 0.8rem;
-      margin-top: 1rem;
-    }
-    .tool-card {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 0.8rem;
-      padding: 0.8rem 0.5rem;
-      text-align: center;
-      cursor: pointer;
-    }
-    .log-console {
-      background: #000;
-      border: 1px solid var(--purple);
-      border-radius: 0.5rem;
-      padding: 0.75rem;
-      font-family: monospace;
-      font-size: 0.7rem;
-      height: 250px;
-      overflow-y: auto;
-      margin-top: 1rem;
-    }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-ghost { background: transparent; border: 1px solid #334155; color: white; }
   </style>
 </head>
 <body>
-  <!-- Tampilan jika ditolak (tidak dipakai sekarang, tapi disiapkan) -->
-  <div id="denied-screen" class="hidden">
-    <h1 style="color:red;">AKSES DITOLAK</h1>
-    <p>Hanya untuk Developer.</p>
-    <p id="denied-hash" style="font-size:0.8rem;"></p>
-    <button class="btn btn-purple" onclick="history.back()">Kembali</button>
+  <!-- Layar Kunci -->
+  <div id="lock-screen">
+    <img src="../assets/icon-512.png" id="logo-tap" alt="Logo">
+    <div class="tap-counter" id="tap-display">Ketuk 7x untuk masuk</div>
   </div>
 
-  <!-- Panel Developer (selalu terbuka untuk sementara) -->
-  <div id="dev-screen">
-    <h2 style="color:var(--purple);">🛡️ 4S GHOST DEV CENTER</h2>
-    <p style="font-size:0.8rem; color:var(--muted);">Developer Exclusive • Off-Network</p>
+  <!-- Panel Ghost (awalnya tersembunyi) -->
+  <div id="ghost-panel" class="hidden">
+    <div class="header">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div style="width:40px;height:40px;background:linear-gradient(135deg,#2dd4bf,#06b6d4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🕌</div>
+        <div>
+          <h2 style="color:var(--accent);margin:0;font-size:1rem;">4S DevOps Center PRO v5.0</h2>
+          <p style="color:var(--muted);font-size:0.6rem;margin:0;">Shadow Soul Spirit • Final Fix</p>
+        </div>
+      </div>
+      <button onclick="lock()" class="btn-ghost">🔒 Kunci</button>
+    </div>
     <div class="tool-grid" id="tool-container"></div>
-    <div class="log-console" id="ghost-log"><div>> Siap...</div></div>
+    <div class="log-console" id="ghost-log"><div>> Ready...</div></div>
+    <div style="text-align:center;margin-top:1rem;color:var(--accent);font-size:0.6rem;">⚡ THE POWER SOUL OF SHALAWAT ⚡</div>
   </div>
 
   <script>
-    // ==================== GENERATE HASH & TAMPILKAN ====================
-    function generateHash() {
-      const ua = navigator.userAgent;
-      const si = screen.width + 'x' + screen.height + '-' + screen.colorDepth;
-      const raw = ua + si + navigator.language;
-      let h = 0;
-      for (let i = 0; i < raw.length; i++) {
-        h = ((h << 5) - h) + raw.charCodeAt(i);
-        h |= 0;
-      }
-      return 'DEV-' + Math.abs(h).toString(16).toUpperCase().slice(0,8);
+    // ========== TAP 7X + PIN ==========
+    const logo = document.getElementById('logo-tap');
+    const tapDisplay = document.getElementById('tap-display');
+    let tapCount = 0;
+    let tapTimer;
+
+    async function sha256(msg) {
+      const buf = new TextEncoder().encode(msg);
+      const hash = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
     }
 
-    const currentHash = generateHash();
+    logo.addEventListener('click', () => {
+      tapCount++;
+      tapDisplay.textContent = `Tap ke-${tapCount} dari 7`;
+      if (tapTimer) clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => {
+        tapCount = 0;
+        tapDisplay.textContent = 'Ketuk 7x untuk masuk';
+      }, 2000);
 
-    // Fungsi log
-    function log(msg, type='info') {
+      if (tapCount === 7) {
+        clearTimeout(tapTimer);
+        tapCount = 0;
+        tapDisplay.textContent = 'Ketuk 7x untuk masuk';
+        showPinModal();
+      }
+    });
+
+    function showPinModal() {
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3 style="color:var(--accent);">🔐 4S GHOST AUTH</h3>
+          <input type="password" id="pin-input" placeholder="Masukkan PIN">
+          <div>
+            <button class="btn-primary" id="pin-ok">Masuk</button>
+            <button class="btn-ghost" id="pin-cancel">Batal</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('pin-ok').addEventListener('click', async () => {
+        const pin = document.getElementById('pin-input').value;
+        const hashed = await sha256(pin);
+        const targetHash = await sha256("4s_ghost_2026");
+        if (hashed === targetHash) {
+          document.getElementById('lock-screen').classList.add('hidden');
+          document.getElementById('ghost-panel').classList.remove('hidden');
+          logToGhost('🔓 Akses diberikan.', 'success');
+          modal.remove();
+        } else {
+          alert('PIN salah!');
+        }
+      });
+      document.getElementById('pin-cancel').addEventListener('click', () => modal.remove());
+      setTimeout(() => document.getElementById('pin-input').focus(), 100);
+    }
+
+    function lock() {
+      document.getElementById('ghost-panel').classList.add('hidden');
+      document.getElementById('lock-screen').classList.remove('hidden');
+    }
+
+    // ========== TOOLS (dari v5.0) ==========
+    function logToGhost(msg, type='info') {
       const el = document.getElementById('ghost-log');
       if (!el) return;
-      const colors = { info: '#2dd4bf', error: '#ef4444', success: '#10b981', sys: '#8b5cf6' };
+      const colors = { info: '#2dd4bf', warn: '#f59e0b', error: '#ef4444', success: '#10b981', sys: '#8b5cf6' };
       const time = new Date().toLocaleTimeString('id-ID');
-      el.innerHTML += `<div style="color:${colors[type]||'#fff'}">[${time}] ${msg}</div>`;
+      el.innerHTML += `<div style="color:${colors[type]||'#94a3b8'}">[${time}] ${msg}</div>`;
       el.scrollTop = el.scrollHeight;
     }
 
-    // Tampilkan hash di log
-    log('DEVICE HASH: ' + currentHash, 'sys');
-    log('> Silakan salin hash di atas, lalu gunakan untuk mengunci sistem.', 'info');
+    window.runChaosMonkey = function() {
+      if(confirm('💥 ACTIVATE?')) {
+        logToGhost('💥 Chaos unleashed!', 'warn');
+        const start = Date.now();
+        while(Date.now()-start < 3000) {}
+        logToGhost('✅ Survived!', 'success');
+      }
+    };
 
-    // ==================== TOOLS ====================
-    function loadEruda() {
-      const s = document.createElement('script');
-      s.src = '//cdn.jsdelivr.net/npm/eruda';
-      s.onload = () => { eruda.init(); log('Eruda aktif'); };
-      document.body.appendChild(s);
-    }
+    window.openCryptoLab = function() {
+      const text = prompt('🧬 Text:');
+      if(text) {
+        const enc = btoa(text);
+        logToGhost(`🔒 ENC: ${enc.substring(0,30)}...`, 'info');
+        alert('Encoded: ' + enc);
+      }
+    };
 
-    function dnsLookup() {
-      const d = prompt('Domain:');
-      if(!d) return;
-      fetch(`https://dns.google/resolve?name=${d}&type=A`)
-        .then(r => r.json())
-        .then(data => {
-          if(data.Answer) data.Answer.forEach(a => log(`${a.name} → ${a.data}`));
-          else log('Tidak ada record', 'error');
-        });
-    }
+    window.clearDreamCache = function() {
+      if(confirm('🧹 Nuke localStorage?')) {
+        localStorage.clear();
+        location.reload();
+      }
+    };
 
-    function whoisLookup() {
-      const d = prompt('Domain/IP:');
-      if(!d) return;
-      fetch(`https://api.hackertarget.com/whois/?q=${d}`)
-        .then(r => r.text())
-        .then(t => t.split('\n').slice(0,20).forEach(l => log(l)));
-    }
+    window.viewLocalStorage = function() {
+      const data = {};
+      for(let i=0; i<localStorage.length; i++) {
+        const key = localStorage.key(i);
+        try { data[key] = JSON.parse(localStorage.getItem(key)); }
+        catch(e) { data[key] = localStorage.getItem(key); }
+      }
+      console.table(data);
+      logToGhost('📦 Data exported to console.', 'info');
+    };
 
-    function passGen() {
-      const len = parseInt(prompt('Panjang:', '16'))||16;
+    window.dnsLookup = async function() {
+      const domain = prompt('🌐 Domain:');
+      if(!domain) return;
+      logToGhost(`🔍 DNS Lookup: ${domain}`, 'sys');
+      try {
+        const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`);
+        const data = await res.json();
+        if(data.Answer) data.Answer.forEach(a => logToGhost(`📡 ${a.name} → ${a.data}`, 'info'));
+        else logToGhost('⚠️ No records.', 'warn');
+      } catch(e) { logToGhost('❌ '+e.message, 'error'); }
+    };
+
+    window.selfAudit = function() {
+      logToGhost(`🛡️ Self-Audit: ${location.hostname}`, 'sys');
+      logToGhost(`🔒 HTTPS: ${location.protocol==='https:'?'✅':'❌'}`, 'success');
+      logToGhost('✅ Audit done.', 'success');
+    };
+
+    window.passGen = function() {
+      const len = parseInt(prompt('Length (12-64):', '16')) || 16;
       const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
-      let p = '';
-      for(let i=0;i<len;i++) p += chars[Math.floor(Math.random()*chars.length)];
-      log('Password: ' + p);
-    }
+      let pwd = '';
+      for(let i=0; i<len; i++) pwd += chars[Math.floor(Math.random()*chars.length)];
+      logToGhost('🔑 Generated password: '+pwd, 'success');
+      alert('Password:\n'+pwd);
+    };
+
+    window.spiritualMonitor = async function() {
+      logToGhost('🕌 Spiritual Core Monitor', 'sys');
+      const today = new Date().toISOString().split('T')[0];
+      try {
+        const res = await fetch(`https://api.aladhan.com/v1/timings/${today}?latitude=-6.2088&longitude=106.8456&method=20`);
+        const data = await res.json();
+        if(data?.data?.timings) {
+          const t = data.data.timings;
+          logToGhost(`Subuh: ${t.Fajr} | Dzuhur: ${t.Dhuhr} | Ashar: ${t.Asr} | Maghrib: ${t.Maghrib} | Isya: ${t.Isha}`, 'sys');
+        }
+      } catch(e) { logToGhost('❌ Gagal: '+e.message, 'error'); }
+    };
 
     // Render tools
     const tools = [
-      { label:'Eruda', icon:'🛠️', fn: loadEruda },
-      { label:'DNS', icon:'🌐', fn: dnsLookup },
-      { label:'WHOIS', icon:'🔎', fn: whoisLookup },
-      { label:'PassGen', icon:'🔑', fn: passGen }
+      { emoji:'💥', label:'Chaos', fn: runChaosMonkey, color:'#f59e0b' },
+      { emoji:'🧬', label:'Crypto', fn: openCryptoLab, color:'#10b981' },
+      { emoji:'🧹', label:'Nuke', fn: clearDreamCache, color:'#64748b' },
+      { emoji:'📦', label:'Storage', fn: viewLocalStorage, color:'#ec4899' },
+      { emoji:'🔍', label:'DNS', fn: dnsLookup, color:'#3b82f6' },
+      { emoji:'🛡️', label:'Audit', fn: selfAudit, color:'#a855f7' },
+      { emoji:'🔑', label:'PassGen', fn: passGen, color:'#10b981' },
+      { emoji:'🕌', label:'Sholat', fn: spiritualMonitor, color:'#a855f7' }
     ];
-    const container = document.getElementById('tool-container');
-    container.innerHTML = tools.map(t => 
-      `<div class="tool-card" onclick="(${t.fn.toString()})()"><span>${t.icon}</span><br>${t.label}</div>`
-    ).join('');
-    log('Dev Center siap', 'sys');
-' + currentHash + '
 
-Salin kode ini, lalu gunakan untuk mengunci sistem.');
+    const container = document.getElementById('tool-container');
+    container.innerHTML = tools.map(t => `
+      <button class="tool-btn" style="border-color:${t.color};" onclick="(${t.fn.toString()})()">
+        <span style="font-size:1.5rem;">${t.emoji}</span>
+        <span style="font-size:0.65rem;color:#cbd5e1;">${t.label}</span>
+      </button>
+    `).join('');
+
+    logToGhost('🛡️ Tools loaded. Ready.', 'sys');
   </script>
 </body>
 </html>
