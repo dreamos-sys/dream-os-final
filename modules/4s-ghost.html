@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>4S Ghost • Developer Command Center</title>
+  <style>
+    :root {
+      --bg: #040814;
+      --card: rgba(15,23,42,0.75);
+      --accent: #00ff9d;
+      --accent2: #0ea5e9;
+      --purple: #8b5cf6;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+      padding-top: 2rem;
+      line-height: 1.6;
+    }
+    .denied-screen {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .hidden { display: none; }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.4rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-purple { background: var(--purple); color: #fff; }
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+    .tool-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 0.8rem;
+      padding: 0.8rem 0.5rem;
+      text-align: center;
+      cursor: pointer;
+    }
+    .log-console {
+      background: #000;
+      border: 1px solid var(--purple);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.7rem;
+      height: 250px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="denied-screen" class="hidden">
+    <h1 style="color:red;">AKSES DITOLAK</h1>
+    <p>Hanya untuk Developer.</p>
+    <p id="denied-hash" style="font-size:0.8rem;"></p>
+    <button class="btn btn-purple" onclick="history.back()">Kembali</button>
+  </div>
+  <div id="dev-screen" class="hidden">
+    <h2 style="color:var(--purple);">🛡️ 4S GHOST DEV CENTER</h2>
+    <p style="font-size:0.8rem; color:var(--muted);">Developer Exclusive • Off-Network</p>
+    <div class="tool-grid" id="tool-container"></div>
+    <div class="log-console" id="ghost-log"><div>> Ready...</div></div>
+  </div>
+  <script>
+    const DEVELOPER_HASH = "DEV-A1B2C3D4"; // placeholder, nanti diganti
+
+    function generateHash() {
+      const ua = navigator.userAgent;
+      const si = screen.width + 'x' + screen.height + '-' + screen.colorDepth;
+      const raw = ua + si + navigator.language;
+      let h = 0;
+      for (let i = 0; i < raw.length; i++) {
+        h = ((h << 5) - h) + raw.charCodeAt(i);
+        h |= 0;
+      }
+      return 'DEV-' + Math.abs(h).toString(16).toUpperCase().slice(0,8);
+    }
+
+    const currentHash = generateHash();
+    const isDev = currentHash === DEVELOPER_HASH;
+
+    if (!isDev) {
+      document.getElementById('denied-screen').classList.remove('hidden');
+      document.getElementById('denied-hash').textContent = 'Device hash: ' + currentHash;
+      throw new Error('Akses ditolak');
+    }
+
+    document.getElementById('dev-screen').classList.remove('hidden');
+
+    function log(msg, type='info') {
+      const el = document.getElementById('ghost-log');
+      const colors = { info: '#2dd4bf', error: '#ef4444', success: '#10b981', sys: '#8b5cf6' };
+      const time = new Date().toLocaleTimeString('id-ID');
+      el.innerHTML += `<div style="color:${colors[type]||'#fff'}">[${time}] ${msg}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // Tools (contoh beberapa)
+    function loadEruda() {
+      const s = document.createElement('script');
+      s.src = '//cdn.jsdelivr.net/npm/eruda';
+      s.onload = () => { eruda.init(); log('Eruda aktif'); };
+      document.body.appendChild(s);
+    }
+
+    function dnsLookup() {
+      const d = prompt('Domain:');
+      if(!d) return;
+      fetch(`https://dns.google/resolve?name=${d}&type=A`)
+        .then(r => r.json())
+        .then(data => {
+          if(data.Answer) data.Answer.forEach(a => log(`${a.name} → ${a.data}`));
+          else log('Tidak ada record', 'error');
+        });
+    }
+
+    function whoisLookup() {
+      const d = prompt('Domain/IP:');
+      if(!d) return;
+      fetch(`https://api.hackertarget.com/whois/?q=${d}`)
+        .then(r => r.text())
+        .then(t => t.split('\n').slice(0,20).forEach(l => log(l)));
+    }
+
+    function passGen() {
+      const len = parseInt(prompt('Panjang:', '16'))||16;
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+      let p = '';
+      for(let i=0;i<len;i++) p += chars[Math.floor(Math.random()*chars.length)];
+      log('Password: ' + p);
+    }
+
+    // Render tools
+    const tools = [
+      { label:'Eruda', icon:'🛠️', fn: loadEruda },
+      { label:'DNS', icon:'🌐', fn: dnsLookup },
+      { label:'WHOIS', icon:'🔎', fn: whoisLookup },
+      { label:'PassGen', icon:'🔑', fn: passGen }
+    ];
+    const container = document.getElementById('tool-container');
+    container.innerHTML = tools.map(t => 
+      `<div class="tool-card" onclick="(${t.fn.toString()})()"><span>${t.icon}</span><br>${t.label}</div>`
+    ).join('');
+    log('Dev Center siap', 'sys');
+  </script>
+</body>
+</html>
