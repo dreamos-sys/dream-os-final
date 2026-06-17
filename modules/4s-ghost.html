@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>4S Ghost • Delta Sync + Cloudflare</title>
+  <title>4S Ghost • Remote Command Center</title>
   <style>
     :root {
       --bg: #0a0e27;
@@ -13,6 +13,7 @@
       --muted: #94a3b8;
       --danger: #ef4444;
       --warning: #f59e0b;
+      --purple: #8b5cf6;
     }
     * { box-sizing: border-box; margin: 0; }
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
@@ -49,23 +50,21 @@
       cursor: pointer; background: var(--accent); color: #000; font-size: 0.8rem;
     }
     .btn-ghost { background: transparent; border: 1px solid #334155; color: var(--text); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-purple { background: var(--purple); color: white; }
     .card { background: var(--surface); padding: 1rem; border-radius: 10px; border: 1px solid rgba(45,212,191,0.15); margin-bottom: 1rem; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     input, select, textarea {
       width: 100%; padding: 0.6rem; background: #0f172a; border: 1px solid #334155;
       border-radius: 6px; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.8rem;
     }
-    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-    th, td { padding: 0.4rem; border-bottom: 1px solid #1e293b; text-align: left; }
-    th { color: var(--accent); }
     .modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 999;
     }
     .modal-content {
-      background: #1e293b; border: 2px solid var(--accent); border-radius: 1rem; padding: 2rem; max-width: 350px; text-align: center;
+      background: #1e293b; border: 2px solid var(--accent); border-radius: 1rem; padding: 2rem; max-width: 400px; text-align: center;
     }
-    .resize-handle { cursor: row-resize; height: 4px; background: var(--accent); opacity: 0.5; }
     @media (max-width: 768px) {
       .sidebar { width: 80px; }
       .sidebar-item span { display: none; }
@@ -77,24 +76,23 @@
 <body>
 <div id="lock-screen">
   <img src="../assets/icon-512.png" id="logo-tap" alt="Logo">
-  <p style="color:var(--muted); margin-top:1.5rem; font-size:0.9rem;">Ketuk logo 7x untuk masuk</p>
+  <p style="color:var(--muted); margin-top:1.5rem;">Ketuk logo 7x untuk masuk</p>
 </div>
 
 <div id="workspace" class="workspace" style="display:none;">
   <div class="sidebar" id="sidebar"></div>
   <div class="main-panel">
     <div class="toolbar">
-      <strong>4S GHOST + DELTA SYNC</strong>
+      <strong>4S GHOST REMOTE CENTER</strong>
       <div style="display:flex; gap:0.5rem;">
-        <span id="online-status" style="font-size:0.7rem; color:var(--muted);">⚪ Offline</span>
+        <span id="online-status">⚪ Offline</span>
         <button class="btn btn-ghost" onclick="clearLog()">🧹 Log</button>
         <button class="btn btn-ghost" onclick="lockWorkspace()">🔒 Kunci</button>
         <button class="btn" onclick="window.location.href='../index.html'">🏠 Home</button>
       </div>
     </div>
     <div class="content-area" id="content-area"></div>
-    <div class="resize-handle" id="resize-handle"></div>
-    <div class="log-area" id="ghost-log"><div>> [SYS] Ghost v8.0 Delta Sync siap...</div></div>
+    <div class="log-area" id="ghost-log"><div>> [SYS] Ghost v9.0 Remote Center siap...</div></div>
   </div>
 </div>
 
@@ -113,10 +111,7 @@ logo.addEventListener('click', () => {
   tapCount++;
   if (tapTimer) clearTimeout(tapTimer);
   tapTimer = setTimeout(() => tapCount = 0, 2000);
-  if (tapCount === 7) {
-    clearTimeout(tapTimer); tapCount = 0;
-    showPinModal();
-  }
+  if (tapCount === 7) { clearTimeout(tapTimer); tapCount = 0; showPinModal(); }
 });
 
 function showPinModal() {
@@ -161,546 +156,282 @@ function log(msg, type='info') {
 }
 function clearLog() { document.getElementById('ghost-log').innerHTML = '<div>> Log dibersihkan...</div>'; }
 
-// ==================== CLOUDFLARE DELTA SYNC (ANTI-CONFLICT) ====================
-const CLOUDFLARE_CONFIG_KEY = 'ghost_cloudflare_config';
-const LAST_SYNC_KEY = 'ghost_last_sync';
+// ==================== CLOUDFLARE CONFIG ====================
+const CFG_KEY = 'ghost_cloudflare_config';
+function getCFG() { try { return JSON.parse(localStorage.getItem(CFG_KEY)); } catch(e) { return null; } }
+function saveCFG(url, key) { localStorage.setItem(CFG_KEY, JSON.stringify({ url, key: btoa(key) })); }
+function getAPIKey() { const c = getCFG(); return c ? atob(c.key) : null; }
+function getWorkerURL() { const c = getCFG(); return c ? c.url.replace(/\/$/,'') : ''; }
 
-function getCloudflareConfig() {
-  try { return JSON.parse(localStorage.getItem(CLOUDFLARE_CONFIG_KEY)); } catch(e) { return null; }
-}
-function saveCloudflareConfig(workerUrl, apiKey) {
-  const encryptedKey = btoa(apiKey);
-  localStorage.setItem(CLOUDFLARE_CONFIG_KEY, JSON.stringify({ workerUrl, encryptedKey }));
-}
-function getApiKey() {
-  const config = getCloudflareConfig();
-  if (!config) return null;
-  return atob(config.encryptedKey);
-}
-function getLastSyncTime() {
-  return localStorage.getItem(LAST_SYNC_KEY) || '1970-01-01T00:00:00.000Z';
-}
-function setLastSyncTime() {
-  localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
-}
-
-// Fungsi upload delta per-modul (anti-konflik)
-async function uploadDeltaToCloudflare() {
-  const config = getCloudflareConfig();
-  if (!config) return alert('Belum dikonfigurasi. Isi Worker URL dan API Key.');
-  const apiKey = atob(config.encryptedKey);
-  const workerUrl = config.workerUrl.replace(/\/$/, '');
-
-  // Kumpulkan data per modul dreamos_*
-  const modules = {};
-  for (let i=0; i<localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith('dreamos_')) {
-      modules[key] = localStorage.getItem(key);
-    }
-  }
-
-  if (Object.keys(modules).length === 0) {
-    log('⚠️ Tidak ada data dreamos_ untuk disinkronkan.', 'warn');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${workerUrl}/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({ data: modules })
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = await res.json();
-    setLastSyncTime();
-    log('✅ Delta uploaded (per-modul)', 'success');
-    log(`📊 ${result.updated} modul diperbarui, ${result.conflicts} konflik`, 'info');
-  } catch(e) {
-    log('❌ Gagal upload: ' + e.message, 'error');
-  }
-}
-
-// Fungsi restore per-modul (hanya timpa data yang lebih baru dari server)
-async function restoreFromCloudflare() {
-  const config = getCloudflareConfig();
-  if (!config) return alert('Belum dikonfigurasi.');
-  const apiKey = atob(config.encryptedKey);
-  const workerUrl = config.workerUrl.replace(/\/$/, '');
-
-  try {
-    const res = await fetch(`${workerUrl}/sync`, {
-      headers: { 'Authorization': `Bearer ${apiKey}` }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = await res.json();
-    if (result && result.data) {
-      let restored = 0;
-      for (const [moduleName, value] of Object.entries(result.data)) {
-        const localTimestamp = localStorage.getItem(moduleName + '_ts') || '0';
-        const serverTimestamp = result.timestamps[moduleName] || '0';
-        if (serverTimestamp > localTimestamp) {
-          localStorage.setItem(moduleName, value);
-          localStorage.setItem(moduleName + '_ts', serverTimestamp);
-          restored++;
-        }
-      }
-      setLastSyncTime();
-      log('✅ Restore selesai (per-modul)', 'success');
-      log(`📊 ${restored} modul diperbarui`, 'info');
-    } else {
-      log('⚠️ Tidak ada data di server', 'warn');
-    }
-  } catch(e) {
-    log('❌ Gagal restore: ' + e.message, 'error');
-  }
-}
-
-function updateOnlineStatus(connected) {
+function updateOnlineStatus(c) {
   const el = document.getElementById('online-status');
-  if (connected) {
-    el.innerHTML = '🟢 Online (Cloudflare)';
-    el.style.color = '#10b981';
-  } else {
-    el.innerHTML = '⚪ Offline';
-    el.style.color = '#94a3b8';
-  }
+  el.innerHTML = c ? '🟢 Online' : '⚪ Offline';
+  el.style.color = c ? '#10b981' : '#94a3b8';
 }
 
-function testCloudflareConnection() {
-  const config = getCloudflareConfig();
-  if (!config) return alert('Konfigurasi dulu.');
-  const workerUrl = config.workerUrl.replace(/\/$/, '');
-  const apiKey = atob(config.encryptedKey);
-  fetch(`${workerUrl}/sync`, { headers: { Authorization: `Bearer ${apiKey}` } })
-    .then(res => {
-      if (res.ok) {
-        updateOnlineStatus(true);
-        log('✅ Koneksi ke Cloudflare berhasil', 'success');
-      } else {
-        updateOnlineStatus(false);
-        log('❌ Koneksi gagal: HTTP ' + res.status, 'error');
-      }
-    })
-    .catch(e => {
-      updateOnlineStatus(false);
-      log('❌ Gagal terhubung: ' + e.message, 'error');
-    });
+async function apiCall(path, method='GET', body=null) {
+  const url = getWorkerURL() + path;
+  const key = getAPIKey();
+  if (!url || !key) throw new Error('Belum dikonfigurasi');
+  const opts = {
+    method,
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
 }
 
-// ==================== TOOLS DEFINITION ====================
+// ==================== TOOLS ====================
 const tools = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard', render: renderDashboard },
-  { id: 'sync', icon: '☁️', label: 'Delta Sync', render: renderSyncPanel },
-  { id: 'explorer', icon: '🗄️', label: 'Data Explorer', render: renderDataExplorer, setup: refreshExplorerTable },
+  { id: 'sync', icon: '☁️', label: 'Delta Sync', render: renderSync },
+  { id: 'remote', icon: '🖥️', label: 'Remote CMD', render: renderRemote },
+  { id: 'broadcast', icon: '📢', label: 'Broadcast', render: renderBroadcast },
+  { id: 'audit', icon: '📜', label: 'Audit Trail', render: renderAudit },
+  { id: 'health', icon: '💚', label: 'Health', render: renderHealth },
+  { id: 'explorer', icon: '🗄️', label: 'Explorer', render: renderExplorer },
   { id: 'console', icon: '>_', label: 'JS Console', render: renderConsole },
-  { id: 'network', icon: '🌐', label: 'Network Spy', render: renderNetwork },
-  { id: 'sql', icon: '🗃️', label: 'SQL Play', render: renderSQL },
-  { id: 'editor', icon: '📝', label: 'Editor', render: renderEditor },
-  { id: 'security', icon: '🛡️', label: 'Security', render: renderSecurity },
-  { id: 'snippets', icon: '📋', label: 'Snippets', render: renderSnippets },
-  { id: 'backup', icon: '💾', label: 'Backup File', render: renderBackup },
-  { id: 'dns', icon: '🔍', label: 'DNS/WHOIS', render: renderDNS },
-  { id: 'websocket', icon: '📡', label: 'WebSocket', render: renderWebSocket },
   { id: 'defcon', icon: '💣', label: 'DEFCON', render: renderDefcon }
 ];
 
-const sidebar = document.getElementById('sidebar');
-sidebar.innerHTML = tools.map(t => 
+document.getElementById('sidebar').innerHTML = tools.map(t =>
   `<div class="sidebar-item" data-tool="${t.id}" onclick="switchTool('${t.id}')">
     <span style="font-size:1.3rem;">${t.icon}</span> <span>${t.label}</span>
   </div>`
 ).join('');
 
 function switchTool(id) {
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-  const activeEl = document.querySelector(`[data-tool="${id}"]`);
-  if (activeEl) activeEl.classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(e => e.classList.remove('active'));
+  const el = document.querySelector(`[data-tool="${id}"]`);
+  if (el) el.classList.add('active');
   const tool = tools.find(t => t.id === id);
-  if (tool) {
-    document.getElementById('content-area').innerHTML = tool.render();
-    if (tool.setup) tool.setup();
-  }
+  if (tool) document.getElementById('content-area').innerHTML = tool.render();
 }
 
-// ==================== DASHBOARD ====================
+// ==================== RENDER FUNCTIONS ====================
 function renderDashboard() {
-  const maint = JSON.parse(localStorage.getItem('dreamos_maintenance_tasks') || '[]');
-  const assets = JSON.parse(localStorage.getItem('dreamos_assets') || '[]');
-  const stok = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
-  const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-  const users = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-  return `
-    <h3 style="margin-bottom:1rem;">📊 System Overview</h3>
+  const m = ['dreamos_maintenance_tasks','dreamos_assets','dreamos_stok','dreamos_k3_reports'];
+  const c = m.map(k => JSON.parse(localStorage.getItem(k)||'[]').length);
+  return `<h3>📊 Dashboard</h3>
     <div class="grid-2">
-      <div class="card"><h4>🔧 Maintenance</h4><p style="font-size:2rem;font-weight:700;">${maint.length}</p><small>tugas</small></div>
-      <div class="card"><h4>🏢 Aset</h4><p style="font-size:2rem;font-weight:700;">${assets.length}</p><small>item</small></div>
-      <div class="card"><h4>📦 Stok</h4><p style="font-size:2rem;font-weight:700;">${stok.length}</p><small>barang</small></div>
-      <div class="card"><h4>⚠️ K3</h4><p style="font-size:2rem;font-weight:700;">${k3.length}</p><small>laporan</small></div>
-    </div>
-    <div class="card" style="margin-top:1rem;">
-      <h4>👤 User Terikat</h4>
-      <p>${users.nama || 'Tidak ada'} (${users.role || '-'})</p>
-      <p style="font-size:0.7rem;color:var(--muted);">Device: ${generateDeviceHash()}</p>
+      <div class="card"><h4>🔧 Maintenance</h4><p style="font-size:2rem;">${c[0]}</p></div>
+      <div class="card"><h4>🏢 Aset</h4><p style="font-size:2rem;">${c[1]}</p></div>
+      <div class="card"><h4>📦 Stok</h4><p style="font-size:2rem;">${c[2]}</p></div>
+      <div class="card"><h4>⚠️ K3</h4><p style="font-size:2rem;">${c[3]}</p></div>
     </div>`;
 }
 
-function generateDeviceHash() {
-  const ua = navigator.userAgent;
-  const si = screen.width+'x'+screen.height+'-'+screen.colorDepth;
-  const raw = ua+si+navigator.language;
-  let h = 0;
-  for (let i=0;i<raw.length;i++) { h = ((h<<5)-h)+raw.charCodeAt(i); h|=0; }
-  return 'DEV-'+Math.abs(h).toString(16).toUpperCase().slice(0,8);
-}
-
-// ==================== DELTA SYNC PANEL ====================
-function renderSyncPanel() {
-  const config = getCloudflareConfig();
-  const lastSync = getLastSyncTime();
-  const connected = config ? true : false;
-  const lastSyncStr = lastSync === '1970-01-01T00:00:00.000Z' ? 'Belum pernah' : new Date(lastSync).toLocaleString('id-ID');
+function renderSync() {
+  const cfg = getCFG();
   const dreamKeys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-  return `
-    <div class="card">
-      <h3>☁️ Delta Sync (Cloudflare)</h3>
-      <p>Status: <span id="cf-status">${connected ? '🟢 Terkonfigurasi' : '⚪ Belum dikonfigurasi'}</span></p>
-      <p>Sync Terakhir: ${lastSyncStr}</p>
-      <p>Data Lokal: ${dreamKeys.length} key dreamos_*</p>
-      <label>Worker URL</label>
-      <input id="cf-url" placeholder="https://dreamos-sync.workers.dev" value="${config?.workerUrl || ''}">
-      <label>API Key</label>
-      <input id="cf-key" type="password" placeholder="Masukkan API Key" value="${config ? '••••••••' : ''}">
-      <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-        <button class="btn" onclick="saveCloudflareAndConnect()">Simpan & Tes</button>
-        <button class="btn" onclick="uploadDeltaToCloudflare()">Upload Delta</button>
-        <button class="btn btn-ghost" onclick="restoreFromCloudflare()">Restore</button>
-      </div>
-      <p style="font-size:0.7rem; margin-top:0.5rem; color:var(--muted);">
-        Delta sync menyimpan data per-modul di Cloudflare KV.
-      </p>
-    </div>`;
-}
-
-function saveCloudflareAndConnect() {
-  const url = document.getElementById('cf-url').value.trim();
-  const key = document.getElementById('cf-key').value.trim();
-  if (!url || !key) return alert('Isi URL dan API Key');
-  if (key === '••••••••') {
-    const existingConfig = getCloudflareConfig();
-    if (!existingConfig) return alert('Key lama tidak ditemukan, masukkan ulang.');
-    saveCloudflareConfig(existingConfig.workerUrl, atob(existingConfig.encryptedKey));
-  } else {
-    saveCloudflareConfig(url, key);
-  }
-  testCloudflareConnection();
-  switchTool('sync');
-}
-
-// ==================== DATA EXPLORER ====================
-function refreshExplorerTable() {
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-  const tbody = document.getElementById('explorer-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = keys.map(key => {
-    const raw = localStorage.getItem(key);
-    const preview = raw.length > 80 ? raw.substring(0,80)+'…' : raw;
-    return `<tr>
-      <td style="font-weight:600;">${key.replace('dreamos_','')}</td>
-      <td><code style="font-size:0.7rem;">${preview}</code></td>
-      <td>
-        <button class="btn btn-ghost" onclick="explorerView('${key}')">Lihat</button>
-        <button class="btn btn-ghost" onclick="explorerDelete('${key}')">Hapus</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-function explorerView(key) { alert(localStorage.getItem(key)); }
-function explorerDelete(key) { if(confirm('Hapus '+key+'?')) { localStorage.removeItem(key); refreshExplorerTable(); log('Dihapus: '+key); } }
-
-function renderDataExplorer() {
-  return `<div>
-    <h3>🗄️ LocalStorage Explorer</h3>
-    <table style="margin-top:1rem;"><thead><tr><th>Key</th><th>Value</th><th>Aksi</th></tr></thead>
-    <tbody id="explorer-tbody"></tbody></table>
+  return `<div class="card">
+    <h3>☁️ Delta Sync</h3>
+    <p>Status: ${cfg ? '🟢 Terkonfigurasi' : '⚪ Belum'}</p>
+    <p>Data Lokal: ${dreamKeys.length} modul</p>
+    <input id="cf-url" placeholder="Worker URL" value="${cfg?.url || ''}">
+    <input id="cf-key" type="password" placeholder="API Key" value="${cfg ? '••••••••' : ''}">
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <button class="btn" onclick="saveAndTest()">Simpan & Tes</button>
+      <button class="btn" onclick="uploadDelta()">Upload</button>
+      <button class="btn btn-ghost" onclick="restoreDelta()">Restore</button>
+    </div>
   </div>`;
 }
 
-// ==================== JS CONSOLE ====================
+function saveAndTest() {
+  const url = document.getElementById('cf-url').value.trim();
+  const key = document.getElementById('cf-key').value.trim();
+  if (!url || !key) return alert('Isi URL dan Key');
+  if (key !== '••••••••') saveCFG(url, key);
+  apiCall('/health').then(() => { updateOnlineStatus(true); log('✅ Terhubung'); switchTool('sync'); })
+    .catch(e => { updateOnlineStatus(false); log('❌ '+e.message, 'error'); });
+}
+
+async function uploadDelta() {
+  const modules = {};
+  for (let i=0; i<localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k.startsWith('dreamos_')) modules[k] = localStorage.getItem(k);
+  }
+  try {
+    const r = await apiCall('/sync', 'POST', { data: modules });
+    log(`✅ Upload: ${r.updated} modul`, 'success');
+  } catch(e) { log('❌ '+e.message, 'error'); }
+}
+
+async function restoreDelta() {
+  try {
+    const r = await apiCall('/sync');
+    let count = 0;
+    for (const [key, val] of Object.entries(r.data || {})) {
+      const localTs = localStorage.getItem(key+'_ts') || '0';
+      if ((r.timestamps[key]||'0') > localTs) {
+        localStorage.setItem(key, val);
+        localStorage.setItem(key+'_ts', r.timestamps[key]);
+        count++;
+      }
+    }
+    log(`✅ Restore: ${count} modul`, 'success');
+  } catch(e) { log('❌ '+e.message, 'error'); }
+}
+
+// ==================== REMOTE COMMAND ====================
+function renderRemote() {
+  return `<div class="card">
+    <h3>🖥️ Remote Command</h3>
+    <p style="color:var(--muted);">Kirim perintah ke semua client yang online.</p>
+    <textarea id="cmd-input" rows="3" placeholder="Contoh: alert('Maintenance dalam 5 menit')"></textarea>
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <button class="btn btn-purple" onclick="sendCommand()">Kirim Perintah</button>
+      <button class="btn btn-ghost" onclick="checkCommands()">Cek Perintah Masuk</button>
+    </div>
+    <div id="cmd-response" style="margin-top:0.5rem; font-size:0.8rem;"></div>
+  </div>`;
+}
+
+async function sendCommand() {
+  const cmd = document.getElementById('cmd-input').value.trim();
+  if (!cmd) return;
+  try {
+    const r = await apiCall('/command', 'POST', { command: cmd, target: 'all' });
+    log('✅ Perintah terkirim: ' + r.commandId, 'success');
+  } catch(e) { log('❌ '+e.message, 'error'); }
+}
+
+async function checkCommands() {
+  try {
+    const cmds = await apiCall('/command');
+    cmds.filter(c => !c.executed).forEach(c => {
+      try { eval(c.command); log('▶️ Eksekusi: ' + c.command.substring(0,30), 'sys'); }
+      catch(e) { log('❌ Gagal eksekusi: '+e.message, 'error'); }
+    });
+  } catch(e) { log('❌ '+e.message, 'error'); }
+}
+
+// ==================== BROADCAST ====================
+function renderBroadcast() {
+  return `<div class="card">
+    <h3>📢 System Broadcast</h3>
+    <textarea id="bc-msg" rows="2" placeholder="Pesan untuk semua user..."></textarea>
+    <select id="bc-level" style="margin-top:0.3rem;"><option value="info">Info</option><option value="warn">Peringatan</option><option value="error">Darurat</option></select>
+    <button class="btn" onclick="sendBroadcast()" style="margin-top:0.5rem;">Kirim Broadcast</button>
+    <div id="bc-list" style="margin-top:0.5rem; font-size:0.75rem;"></div>
+  </div>`;
+}
+
+async function sendBroadcast() {
+  const msg = document.getElementById('bc-msg').value.trim();
+  const level = document.getElementById('bc-level').value;
+  if (!msg) return;
+  try {
+    await apiCall('/broadcast', 'POST', { message: msg, level });
+    log('✅ Broadcast terkirim', 'success');
+    loadBroadcasts();
+  } catch(e) { log('❌ '+e.message, 'error'); }
+}
+
+async function loadBroadcasts() {
+  try {
+    const bcs = await apiCall('/broadcast');
+    document.getElementById('bc-list').innerHTML = bcs.map(b =>
+      `<div style="padding:0.3rem;border-left:3px solid ${b.level==='error'?'#ef4444':b.level==='warn'?'#f59e0b':'#2dd4bf'};margin:0.2rem 0;padding-left:0.5rem;">
+        <small>${new Date(b.timestamp).toLocaleString('id-ID')}</small><br>${b.message}
+      </div>`
+    ).join('');
+  } catch(e) {}
+}
+
+// ==================== AUDIT TRAIL ====================
+function renderAudit() {
+  return `<div class="card">
+    <h3>📜 Audit Trail (Cloud)</h3>
+    <button class="btn" onclick="loadAudit()">Muat Log Audit</button>
+    <div id="audit-list" style="margin-top:0.5rem; font-size:0.7rem; max-height:300px; overflow-y:auto;"></div>
+  </div>`;
+}
+
+async function loadAudit() {
+  try {
+    const logs = await apiCall('/audit');
+    document.getElementById('audit-list').innerHTML = logs.map(l =>
+      `<div style="padding:0.2rem; border-bottom:1px solid #1e293b;">
+        <span style="color:var(--accent);">${new Date(l.timestamp).toLocaleString('id-ID')}</span>
+        ${l.action} - ${l.detail || ''}
+      </div>`
+    ).join('');
+  } catch(e) { log('❌ '+e.message, 'error'); }
+}
+
+// ==================== HEALTH ====================
+function renderHealth() {
+  return `<div class="card">
+    <h3>💚 System Health</h3>
+    <button class="btn" onclick="checkHealth()">Periksa</button>
+    <div id="health-result" style="margin-top:0.5rem;"></div>
+  </div>`;
+}
+
+async function checkHealth() {
+  try {
+    const h = await apiCall('/health');
+    document.getElementById('health-result').innerHTML = `
+      <p>Status: <span style="color:#10b981;">${h.status}</span></p>
+      <p>KV: ${h.kv}</p>
+      <p>Uptime: ${new Date(h.uptime).toLocaleString('id-ID')}</p>
+    `;
+    updateOnlineStatus(true);
+  } catch(e) {
+    document.getElementById('health-result').innerHTML = `<p style="color:red;">Offline</p>`;
+    updateOnlineStatus(false);
+  }
+}
+
+// ==================== SIMPLE TOOLS ====================
+function renderExplorer() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+  return `<div class="card">
+    <h3>🗄️ LocalStorage</h3>
+    <table style="width:100%; font-size:0.75rem;">
+      ${keys.map(k => `<tr><td>${k.replace('dreamos_','')}</td><td><button class="btn btn-ghost" onclick="alert(localStorage.getItem('${k}'))">Lihat</button></td></tr>`).join('')}
+    </table>
+  </div>`;
+}
+
 function renderConsole() {
   return `<div class="card">
-    <h3>💻 JavaScript Console</h3>
-    <textarea id="js-input" rows="6" placeholder="// Tulis kode JS..."></textarea>
-    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-      <button class="btn" onclick="executeJS()">Run</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('js-input').value=''">Clear</button>
-    </div>
-    <pre id="js-output" style="margin-top:0.5rem; min-height:80px; background:#0f172a; padding:0.5rem; border-radius:6px;"></pre>
+    <h3>>_ JS Console</h3>
+    <textarea id="js-code" rows="4" placeholder="// JS code..."></textarea>
+    <button class="btn" onclick="executeJS()" style="margin-top:0.3rem;">Run</button>
+    <pre id="js-out" style="margin-top:0.3rem; background:#0f172a; padding:0.5rem; border-radius:6px;"></pre>
   </div>`;
 }
 function executeJS() {
-  const code = document.getElementById('js-input').value;
-  const out = document.getElementById('js-output');
-  try {
-    const result = eval(code);
-    out.textContent = '=> ' + (result === undefined ? 'undefined' : JSON.stringify(result, null, 2));
-    log('JS executed');
-  } catch(e) {
-    out.textContent = 'Error: ' + e.message;
-    log('JS error: '+e.message, 'error');
-  }
+  const code = document.getElementById('js-code').value;
+  try { document.getElementById('js-out').textContent = eval(code); }
+  catch(e) { document.getElementById('js-out').textContent = 'Error: '+e.message; }
 }
 
-// ==================== NETWORK SPY ====================
-let spyActive = false;
-function renderNetwork() {
-  return `<div class="card">
-    <h3>🌐 Network Spy</h3>
-    <p style="color:var(--muted);">Merekam semua fetch/XHR. Lihat log.</p>
-    <button class="btn" id="spy-btn" onclick="toggleSpy()">${spyActive?'Matikan':'Aktifkan'}</button>
-    <div id="spy-stats" style="margin-top:0.5rem; font-size:0.75rem;"></div>
-  </div>`;
-}
-function toggleSpy() {
-  if (spyActive) {
-    spyActive = false;
-    document.getElementById('spy-btn').textContent = 'Aktifkan';
-    log('Spy dimatikan');
-    return;
-  }
-  spyActive = true;
-  const origFetch = window.fetch;
-  window.fetch = function(...args) {
-    const url = typeof args[0]==='string' ? args[0] : args[0]?.url||'';
-    log(`[NET] REQ: ${url}`, 'sys');
-    return origFetch.apply(this, args).then(r => {
-      log(`[NET] RES: ${r.status} ${url}`, 'success');
-      return r;
-    }).catch(err => {
-      log(`[NET] ERR: ${err.message}`, 'error');
-      throw err;
-    });
-  };
-  document.getElementById('spy-btn').textContent = 'Matikan';
-  log('Spy aktif');
-}
-
-// ==================== SQL PLAYGROUND ====================
-function renderSQL() {
-  return `<div class="card">
-    <h3>🗃️ SQL Playground</h3>
-    <p style="color:var(--muted);">Query tabel localStorage (dreamos_*)</p>
-    <textarea id="sql-input" rows="3" placeholder="SELECT * FROM maintenance_tasks;"></textarea>
-    <button class="btn" onclick="runSQL()" style="margin-top:0.5rem;">Execute</button>
-    <pre id="sql-output" style="margin-top:0.5rem; min-height:60px; background:#0f172a; padding:0.5rem; border-radius:6px;"></pre>
-  </div>`;
-}
-function runSQL() {
-  const query = document.getElementById('sql-input').value.toLowerCase();
-  const out = document.getElementById('sql-output');
-  if (query.includes('select * from')) {
-    const table = query.split('from ')[1]?.replace(/[^a-z_]/g,'').trim();
-    if (!table) { out.textContent = 'Format: SELECT * FROM [key]'; return; }
-    const key = 'dreamos_' + table;
-    const raw = localStorage.getItem(key);
-    out.textContent = raw ? raw : `Tabel '${table}' tidak ditemukan.`;
-  } else {
-    out.textContent = 'Hanya mendukung: SELECT * FROM [nama_key]';
-  }
-}
-
-// ==================== CODE EDITOR ====================
-function renderEditor() {
-  const saved = localStorage.getItem('ghost_editor_content') || '';
-  return `<div class="card">
-    <h3>📝 Code Editor</h3>
-    <textarea id="editor-text" rows="15" placeholder="Tulis kode atau catatan...">${saved}</textarea>
-    <button class="btn" onclick="saveEditor()" style="margin-top:0.5rem;">Simpan</button>
-  </div>`;
-}
-function saveEditor() {
-  const text = document.getElementById('editor-text').value;
-  localStorage.setItem('ghost_editor_content', text);
-  log('Konten disimpan');
-}
-
-// ==================== SECURITY ====================
-function renderSecurity() {
-  const hash = generateDeviceHash();
-  const https = location.protocol==='https:';
-  const csp = !!document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-  return `<div class="card">
-    <h3>🛡️ Security Audit</h3>
-    <p>Device Hash: <code>${hash}</code></p>
-    <p>HTTPS: ${https?'✅':'❌'}</p>
-    <p>CSP: ${csp?'✅':'❌'}</p>
-    <p>User Agent: ${navigator.userAgent}</p>
-  </div>`;
-}
-
-// ==================== SNIPPETS ====================
-function renderSnippets() {
-  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
-  return `<div class="card">
-    <h3>📋 Snippets</h3>
-    <input id="snippet-name" placeholder="Nama" style="margin-bottom:0.3rem;">
-    <textarea id="snippet-code" rows="4" placeholder="Kode JS"></textarea>
-    <button class="btn" onclick="saveSnippet()">Simpan</button>
-    <div style="margin-top:1rem;">${snippets.map((s,i)=>`
-      <div style="background:#1e293b;padding:0.3rem 0.5rem;margin:0.2rem 0;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">
-        <span><strong>${s.name}</strong></span>
-        <div>
-          <button class="btn btn-ghost" onclick="runSnippet(${i})">▶</button>
-          <button class="btn btn-ghost" onclick="deleteSnippet(${i})">🗑️</button>
-        </div>
-      </div>`).join('')}</div>
-  </div>`;
-}
-function saveSnippet() {
-  const name = document.getElementById('snippet-name').value.trim();
-  const code = document.getElementById('snippet-code').value.trim();
-  if (!name || !code) return;
-  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
-  snippets.push({name, code});
-  localStorage.setItem('ghost_snippets', JSON.stringify(snippets));
-  log('Snippet disimpan');
-  switchTool('snippets');
-}
-function runSnippet(idx) {
-  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
-  try { eval(snippets[idx].code); log('Snippet dijalankan'); } catch(e) { log('Error: '+e.message, 'error'); }
-}
-function deleteSnippet(idx) {
-  const snippets = JSON.parse(localStorage.getItem('ghost_snippets') || '[]');
-  snippets.splice(idx, 1);
-  localStorage.setItem('ghost_snippets', JSON.stringify(snippets));
-  switchTool('snippets');
-}
-
-// ==================== BACKUP ====================
-function renderBackup() {
-  return `<div class="card">
-    <h3>💾 Backup & Restore (File)</h3>
-    <button class="btn" onclick="backupData()">Unduh Backup (JSON)</button>
-    <button class="btn btn-ghost" onclick="document.getElementById('restore-file').click()">Restore</button>
-    <input type="file" id="restore-file" accept=".json" onchange="restoreData(this)" style="display:none;">
-  </div>`;
-}
-function backupData() {
-  const data = {};
-  for(let i=0;i<localStorage.length;i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith('dreamos_') || key.startsWith('ghost_')) data[key] = localStorage.getItem(key);
-  }
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'dreamos_backup_'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
-  log('Backup diunduh');
-}
-function restoreData(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      for(const key in data) localStorage.setItem(key, data[key]);
-      log('Data direstore', 'success');
-    } catch(ex) { log('Restore gagal: '+ex.message, 'error'); }
-  };
-  reader.readAsText(file);
-}
-
-// ==================== DNS / WHOIS ====================
-function renderDNS() {
-  return `<div class="card">
-    <h3>🔍 DNS & WHOIS Lookup</h3>
-    <input id="dns-input" placeholder="Domain atau IP">
-    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-      <button class="btn" onclick="dnsLookup()">DNS</button>
-      <button class="btn" onclick="whoisLookup()">WHOIS</button>
-    </div>
-    <pre id="dns-output" style="margin-top:0.5rem; background:#0f172a; padding:0.5rem; border-radius:6px; min-height:60px;"></pre>
-  </div>`;
-}
-async function dnsLookup() {
-  const domain = document.getElementById('dns-input').value.trim();
-  if (!domain) return;
-  const out = document.getElementById('dns-output');
-  out.textContent = 'Memuat...';
-  try {
-    const res = await fetch(`https://dns.google/resolve?name=${domain}&type=A`);
-    const data = await res.json();
-    if (data.Answer) {
-      out.textContent = data.Answer.map(a => `${a.name} → ${a.data}`).join('\n');
-    } else out.textContent = 'Tidak ada record.';
-  } catch(e) { out.textContent = 'Error: '+e.message; }
-}
-async function whoisLookup() {
-  const domain = document.getElementById('dns-input').value.trim();
-  if (!domain) return;
-  const out = document.getElementById('dns-output');
-  out.textContent = 'Memuat...';
-  try {
-    const res = await fetch(`https://api.hackertarget.com/whois/?q=${domain}`);
-    const text = await res.text();
-    out.textContent = text.split('\n').slice(0,25).join('\n');
-  } catch(e) { out.textContent = 'Error: '+e.message; }
-}
-
-// ==================== WEBSOCKET TESTER ====================
-let wsInstance = null;
-function renderWebSocket() {
-  return `<div class="card">
-    <h3>📡 WebSocket Tester</h3>
-    <input id="ws-url" placeholder="ws://...">
-    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-      <button class="btn" onclick="connectWS()">Connect</button>
-      <button class="btn btn-ghost" onclick="disconnectWS()">Disconnect</button>
-    </div>
-    <pre id="ws-output" style="margin-top:0.5rem; background:#0f172a; padding:0.5rem; border-radius:6px; min-height:60px;"></pre>
-  </div>`;
-}
-function connectWS() {
-  const url = document.getElementById('ws-url').value;
-  if (!url) return;
-  try {
-    wsInstance = new WebSocket(url);
-    wsInstance.onopen = () => log('WebSocket connected: '+url, 'success');
-    wsInstance.onmessage = (e) => log('WS msg: '+e.data, 'info');
-    wsInstance.onerror = () => log('WS error', 'error');
-    wsInstance.onclose = () => log('WS closed', 'sys');
-  } catch(e) { log('WS error: '+e.message, 'error'); }
-}
-function disconnectWS() {
-  if (wsInstance) { wsInstance.close(); wsInstance = null; log('WS disconnected'); }
-}
-
-// ==================== DEFCON ====================
 function renderDefcon() {
   return `<div class="card" style="border-color:var(--danger);">
     <h3>💣 DEFCON</h3>
-    <button class="btn" style="background:var(--danger);" onclick="activateDefcon()">AKTIFKAN PROTOKOL DARURAT</button>
-    <p style="color:var(--muted); margin-top:0.5rem;">Menghapus semua sesi login dan mengunci sistem.</p>
+    <button class="btn btn-danger" onclick="activateDefcon()">AKTIFKAN</button>
   </div>`;
 }
 function activateDefcon() {
-  if(confirm('🚨 Yakin? Semua sesi akan dihapus.')) {
+  if(confirm('🚨 Hapus semua sesi?')) {
     localStorage.removeItem('dreamos_bound_user');
     localStorage.removeItem('dreamos_session_active');
-    log('DEFCON diaktifkan', 'error');
+    log('DEFCON aktif', 'error');
     setTimeout(() => location.reload(), 1000);
   }
 }
 
 // ==================== INIT ====================
 switchTool('dashboard');
-log('🛡️ 4S Ghost Delta Sync v8.0 siap (anti-konflik)', 'sys');
+if (getCFG()) { checkHealth(); }
+log('🛡️ 4S Ghost Remote Center v1.0 siap', 'sys');
 </script>
 </body>
 </html>
