@@ -3,47 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • Debug TWA</title>
+    <title>Dream OS • v1.0 Final</title>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#020617">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <script>
-    window.DREAMOS_CONFIG = window.DREAMOS_CONFIG || {
+    window.DREAMOS_CONFIG = {
         supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
     };
     </script>
     <style>
-        body { background:#020617; color:#e2e8f0; font-family:Inter,sans-serif; margin:0; }
-        #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; background:radial-gradient(circle at 30% 30%, #1a1f3a, #0a0e27); }
-        .login-box { width:90%; max-width:400px; text-align:center; }
-        .logo { width:80px; border-radius:20px; margin-bottom:1rem; }
-        input { width:100%; padding:0.8rem; margin:0.5rem 0; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:Orbitron,monospace; }
-        button { width:100%; padding:0.8rem; background:#0ea5e9; color:#fff; border:none; border-radius:0.5rem; font-weight:bold; cursor:pointer; margin-top:0.3rem; }
+        :root { --bg-void: #020617; --text-main: #e2e8f0; --neon-accent: #0ea5e9; --neon-warning: #e11d48; --panel-bg: #1e293b; }
+        body { margin:0; background:var(--bg-void); color:var(--text-main); font-family:'Inter',sans-serif; }
+        canvas#star-field { position:fixed; inset:0; z-index:-1; width:100%; height:100%; display:block; }
+        #login-screen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:transparent; z-index:1000; }
+        .login-content { width:100%; max-width:400px; padding:2rem; text-align:center; }
+        .logo-img { width:90px; border-radius:1.2rem; margin:1rem 0; cursor:pointer; }
+        .arabic { font-family:'Amiri',serif; color:#00ff9d; font-size:1.8rem; font-weight:800; }
+        .login-input { width:100%; padding:1rem; margin-bottom:1rem; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:'Orbitron',monospace; text-align:left; }
+        .password-wrapper { position:relative; width:100%; }
+        .password-wrapper .login-input { padding-right:3rem; }
+        .toggle-password { position:absolute; right:1rem; top:50%; transform:translateY(-50%); cursor:pointer; color:#2dd4bf; font-size:1.3rem; z-index:2; }
+        .btn-login { width:100%; padding:1rem; background:#0ea5e9; color:#fff; border:none; border-radius:0.5rem; font-weight:700; cursor:pointer; font-size:1.1rem; }
+        .btn-register { width:100%; padding:0.8rem; background:#10b981; color:#fff; border:none; border-radius:0.5rem; font-weight:700; cursor:pointer; margin-top:1rem; }
+        .lockout-msg { color:var(--neon-warning); font-size:0.8rem; margin-top:10px; display:none; }
         #debug-log { background:#000; color:#0f0; font-size:0.7rem; padding:0.5rem; margin-top:1rem; text-align:left; max-height:150px; overflow-y:auto; display:none; }
-        #main-app { display:none; padding:2rem; text-align:center; }
-        .reg-btn { background:#10b981; }
     </style>
 </head>
 <body>
+    <canvas id="star-field"></canvas>
     <div id="login-screen">
-        <div class="login-box">
-            <img src="assets/logo-sultan.png" class="logo" id="logo-main" onclick="tapLogo(event)">
-            <h2 style="color:#00ff9d;">Dream OS Debug</h2>
-            <input type="email" id="login-email" placeholder="EMAIL">
-            <input type="password" id="login-pass" placeholder="PASSWORD">
-            <button onclick="authenticate()">🔐 LOGIN</button>
-            <!-- Tombol darurat untuk developer: registrasi user baru -->
-            <button class="reg-btn" onclick="registerUser()" style="margin-top:1rem;">⚡ DAFTAR (Developer Only)</button>
+        <div class="login-content">
+            <img src="assets/logo-sultan.png" class="logo-img" id="logo-main" onclick="tapLogo(event)">
+            <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+            <div class="arabic" style="font-size:1.2rem; color:#0ea5e9;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <input type="email" id="login-email" class="login-input" placeholder="EMAIL AKSES">
+            <div class="password-wrapper">
+                <input type="password" id="login-pass" class="login-input" placeholder="PASSWORD" onkeydown="if(event.key==='Enter')authenticate()">
+                <span class="toggle-password" onclick="togglePass()">👁️</span>
+            </div>
+            <button class="btn-login" onclick="authenticate()">🔐 LOGIN</button>
+            <button class="btn-register" onclick="registerUser()">⚡ DAFTAR (Developer Only)</button>
+            <div class="lockout-msg" id="lock-msg"></div>
             <div id="debug-log"></div>
         </div>
     </div>
-    <div id="main-app">
-        <h1>Selamat Datang</h1>
-        <p id="user-info"></p>
-        <button onclick="location.reload()">Logout</button>
+    <div id="main-app" style="display:none;">
+        <div id="dashboard-container"></div>
+        <button onclick="location.reload()" style="margin:1rem; padding:0.5rem 1rem; background:#ef4444; color:#fff; border:none; border-radius:0.5rem;">Logout</button>
     </div>
 
     <script>
+        // ========== BINTANG-BINTANG ==========
+        (function() {
+            var canvas = document.getElementById('star-field');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var stars = [];
+            var w, h;
+            function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+            function init() { resize(); stars = []; for (var i = 0; i < 120; i++) { stars.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.5, v: Math.random() * 0.3 }); } }
+            function draw() { ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = 'rgba(255,255,255,0.5)'; for (var i = 0; i < stars.length; i++) { var p = stars[i]; p.y -= p.v; if (p.y < 0) p.y = h; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); } requestAnimationFrame(draw); }
+            window.addEventListener('resize', function() { resize(); init(); });
+            init(); draw();
+        })();
+
+        // ========== TOGGLE PASSWORD ==========
+        window.togglePass = function() {
+            var x = document.getElementById('login-pass');
+            x.type = (x.type === 'password') ? 'text' : 'password';
+        };
+
+        // ========== DEBUG LOG ==========
         function debug(msg) {
             var el = document.getElementById('debug-log');
             el.style.display = 'block';
@@ -51,7 +83,7 @@
             el.scrollTop = el.scrollHeight;
         }
 
-        // Fungsi hash (fallback jika crypto.subtle gagal)
+        // ========== HASH FUNCTION ==========
         async function simpleHash(pin) {
             try {
                 var enc = new TextEncoder();
@@ -60,83 +92,52 @@
                 return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
             } catch(e) {
                 debug('crypto error: ' + e.message);
-                // Fallback untuk TWA
                 return btoa(pin + 'dreamos_salt_2026').replace(/[^a-f0-9]/g,'').substring(0,64);
             }
         }
 
-        // Fungsi login
+        // ========== LOGIN ==========
         window.authenticate = async function() {
             var email = document.getElementById('login-email').value.trim().toLowerCase();
             var pass = document.getElementById('login-pass').value;
-            debug('Login: ' + email);
-
-            if (!email || !pass) {
-                debug('Email/password kosong');
-                return;
-            }
+            if (!email || !pass) { debug('Email/password kosong'); return; }
 
             var inputHash = await simpleHash(pass);
-            debug('Hash: ' + inputHash.substring(0,20) + '...');
+            debug('Login: ' + email);
 
-            // VIP
-            if (email === 'dreamos.sch.id@gmail.com' && inputHash === 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece') {
-                enterSystem('dev', 'Sultan Architect');
-                return;
-            }
-            if (email === 'vespaexcelhijaucedar@gmail.com' && inputHash === '5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5') {
-                enterSystem('kabag', 'Bpk. Hanung');
-                return;
-            }
-            if (email === 'erwinsyah1679@gmail.com' && inputHash === '9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288') {
-                enterSystem('koord', 'Bpk. Erwinsyah');
-                return;
-            }
+            // VIP Hardcoded
+            if (email === 'dreamos.sch.id@gmail.com' && inputHash === 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece') { enterSystem('dev', 'Sultan Architect', email); return; }
+            if (email === 'vespaexcelhijaucedar@gmail.com' && inputHash === '5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5') { enterSystem('kabag', 'Bpk. Hanung', email); return; }
+            if (email === 'erwinsyah1679@gmail.com' && inputHash === '9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288') { enterSystem('koord', 'Bpk. Erwinsyah', email); return; }
 
-            // Cek database lokal
+            // Database lokal
             var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
             var user = users.find(u => u.email === email && u.password_hash === inputHash);
-
             if (user) {
-                enterSystem(user.role, user.nama, email);
-                return;
+                enterSystem(user.role, user.nama || email.split('@')[0], email);
+            } else {
+                debug('User tidak ditemukan');
             }
-
-            debug('User tidak ditemukan');
         };
 
-        // Fungsi pendaftaran darurat (hanya untuk developer)
+        // ========== REGISTRASI DARURAT ==========
         window.registerUser = async function() {
             var email = document.getElementById('login-email').value.trim().toLowerCase();
             var pass = document.getElementById('login-pass').value;
-
-            if (!email || !pass) {
-                debug('Isi email dan password untuk daftar');
-                return;
-            }
+            if (!email || !pass) { debug('Isi email dan password'); return; }
 
             var hash = await simpleHash(pass);
             var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
 
-            // Cek apakah email sudah ada
             if (users.some(u => u.email === email)) {
-                // Update password
                 users = users.map(u => u.email === email ? {...u, password_hash: hash} : u);
                 debug('Password diperbarui untuk ' + email);
             } else {
-                // Tambah user baru
-                users.push({
-                    email: email,
-                    password_hash: hash,
-                    nama: email.split('@')[0],
-                    role: 'koord', // Bisa disesuaikan
-                    device_dna: ''
-                });
+                users.push({ email: email, password_hash: hash, nama: email.split('@')[0], role: 'staff', device_dna: '' });
                 debug('User baru ditambahkan: ' + email);
             }
-
             localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-            debug('✅ Registrasi berhasil! Silakan login dengan password yang sama.');
+            debug('✅ Registrasi berhasil! Klik LOGIN untuk masuk.');
         };
 
         function enterSystem(role, name, email) {
@@ -144,20 +145,15 @@
             localStorage.setItem('dreamos_session_active', 'true');
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
-            document.getElementById('user-info').textContent = name + ' (' + role + ')';
-            debug('Login sukses: ' + name);
+            document.getElementById('dashboard-container').innerHTML = '<h2>Selamat Datang, ' + name + ' (' + role + ')</h2>';
         }
 
-        // Tap logo 7x untuk 4S Ghost
+        // ========== TAP LOGO 7X ==========
         var taps = 0;
         window.tapLogo = function(e) {
             e.stopPropagation();
             taps++;
-            if (taps >= 7) {
-                taps = 0;
-                debug('Membuka 4S Ghost...');
-                window.open('modules/4s-ghost.html', '_blank');
-            }
+            if (taps >= 7) { taps = 0; debug('Membuka 4S Ghost...'); window.open('modules/4s-ghost.html', '_blank'); }
             setTimeout(function() { taps = 0; }, 2000);
         };
     </script>
