@@ -12,24 +12,34 @@
     <style>
         :root { --bg-void: #020617; --text-main: #e2e8f0; --neon-accent: #0ea5e9; --neon-warning: #e11d48; --panel-bg: #1e293b; }
         body { margin:0; background:var(--bg-void); color:var(--text-main); font-family:'Inter',sans-serif; }
-        #login-screen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 30% 30%, #1a1f3a, #0a0e27); z-index:1000; }
+        canvas#star-field { position:fixed; inset:0; z-index:-1; width:100%; height:100%; display:block; }
+        #login-screen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:transparent; z-index:1000; }
         .login-content { width:100%; max-width:400px; padding:2rem; text-align:center; }
         .logo-img { width:90px; border-radius:1.2rem; margin:1rem 0; cursor:pointer; }
         .arabic { font-family:'Amiri',serif; color:#00ff9d; font-size:1.8rem; font-weight:800; }
-        .login-input { width:100%; padding:1rem; margin-bottom:1rem; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:'Orbitron',monospace; text-align:center; }
+        .login-input { width:100%; padding:1rem; margin-bottom:1rem; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:'Orbitron',monospace; text-align:left; letter-spacing:1px; }
+        .password-wrapper { position:relative; width:100%; }
+        .password-wrapper .login-input { padding-right:3rem; }
+        .toggle-password { position:absolute; right:1rem; top:50%; transform:translateY(-50%); cursor:pointer; color:#2dd4bf; font-size:1.3rem; z-index:2; }
         .btn-login { width:100%; padding:1rem; background:#0ea5e9; color:#fff; border:none; border-radius:0.5rem; font-weight:700; cursor:pointer; }
         .lockout-msg { color:var(--neon-warning); font-size:0.8rem; margin-top:10px; display:none; }
         #wipe-btn { position:fixed; bottom:1rem; right:1rem; background:#ef4444; color:white; border:none; border-radius:0.5rem; padding:0.5rem 1rem; font-size:0.7rem; cursor:pointer; z-index:2000; display:none; }
     </style>
 </head>
 <body>
+    <!-- BINTANG-BINTANG -->
+    <canvas id="star-field"></canvas>
+
     <div id="login-screen">
         <div class="login-content">
             <img src="assets/logo-sultan.png" class="logo-img" id="logo-main" onclick="tapLogo(event)">
             <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
             <div class="arabic" style="font-size:1.2rem; color:#0ea5e9;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
             <input type="email" id="login-email" class="login-input" placeholder="EMAIL AKSES">
-            <input type="password" id="login-pass" class="login-input" placeholder="PASSWORD">
+            <div class="password-wrapper">
+                <input type="password" id="login-pass" class="login-input" placeholder="PASSWORD" onkeydown="if(event.key==='Enter')authenticate()">
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
             <button class="btn-login" onclick="authenticate()">🔐 ACCESS CORE</button>
             <div class="lockout-msg" id="lock-msg"></div>
         </div>
@@ -40,39 +50,92 @@
     </div>
 
     <script>
+        // ========== BINTANG-BINTANG (WebView Compatible) ==========
+        (function() {
+            var canvas = document.getElementById('star-field');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var stars = [];
+            var w, h;
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
+            function init() {
+                resize();
+                stars = [];
+                for (var i = 0; i < 120; i++) {
+                    stars.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h,
+                        r: Math.random() * 1.5,
+                        v: Math.random() * 0.3
+                    });
+                }
+            }
+            function draw() {
+                ctx.fillStyle = '#020617';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                for (var i = 0; i < stars.length; i++) {
+                    var p = stars[i];
+                    p.y -= p.v;
+                    if (p.y < 0) p.y = h;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                requestAnimationFrame(draw);
+            }
+            window.addEventListener('resize', function() { resize(); init(); });
+            init();
+            draw();
+        })();
+
+        // ========== TOGGLE PASSWORD ==========
+        window.togglePassword = function() {
+            var passField = document.getElementById('login-pass');
+            if (passField.type === 'password') {
+                passField.type = 'text';
+            } else {
+                passField.type = 'password';
+            }
+        };
+
         // ========== SINGLE AUTHENTICATE ==========
-        let attempts = 0;
-        const DEV_EMAIL = "dreamos.sch.id@gmail.com";
-        const DEV_HASH = "ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece";
-        const KABAG_EMAIL = "vespaexcelhijaucedar@gmail.com";
-        const KABAG_HASH = "5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5";
-        const KOORD_EMAIL = "erwinsyah1679@gmail.com";
-        const KOORD_HASH = "9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288";
+        var attempts = 0;
+        var DEV_EMAIL = "dreamos.sch.id@gmail.com";
+        var DEV_HASH = "ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece";
+        var KABAG_EMAIL = "vespaexcelhijaucedar@gmail.com";
+        var KABAG_HASH = "5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5";
+        var KOORD_EMAIL = "erwinsyah1679@gmail.com";
+        var KOORD_HASH = "9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288";
 
         async function hashPin(pin) {
-            const enc = new TextEncoder();
-            const hash = await crypto.subtle.digest('SHA-256', enc.encode(pin + 'dreamos_salt_2026'));
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+            var enc = new TextEncoder();
+            var hash = await crypto.subtle.digest('SHA-256', enc.encode(pin + 'dreamos_salt_2026'));
+            return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
         }
 
         window.authenticate = async function() {
-            const email = document.getElementById('login-email').value.trim().toLowerCase();
-            const pass = document.getElementById('login-pass').value;
-            const msg = document.getElementById('lock-msg');
+            var email = document.getElementById('login-email').value.trim().toLowerCase();
+            var pass = document.getElementById('login-pass').value;
+            var msg = document.getElementById('lock-msg');
             if (!email || !pass) {
                 msg.innerText = '⚠️ Email dan Password wajib diisi!';
                 msg.style.display = 'block';
                 return;
             }
-            const inputHash = await hashPin(pass);
+            var inputHash = await hashPin(pass);
 
             // VIP Bypass
             if (email === DEV_EMAIL && inputHash === DEV_HASH) { enterSystem('dev', 'Sultan Architect', email); return; }
             if (email === KABAG_EMAIL && inputHash === KABAG_HASH) { enterSystem('kabag', 'Bpk. Hanung', email); return; }
             if (email === KOORD_EMAIL && inputHash === KOORD_HASH) { enterSystem('koord', 'Bpk. Erwinsyah', email); return; }
 
-            const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-            const user = users.find(u => u.email === email && u.password_hash === inputHash);
+            var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            var user = users.find(function(u) { return u.email === email && u.password_hash === inputHash; });
 
             if (!user) {
                 msg.innerText = '⛔ Email atau Password salah!';
@@ -80,7 +143,7 @@
                 return;
             }
 
-            if (['dev', 'kabag', 'koord'].includes(user.role)) {
+            if (['dev', 'kabag', 'koord'].indexOf(user.role) !== -1) {
                 enterSystem(user.role, user.nama, user.email);
                 return;
             }
@@ -90,48 +153,50 @@
         };
 
         function enterSystem(role, name, email) {
-            // Simpan di localStorage
-            localStorage.setItem('dreamos_bound_user', JSON.stringify({ role, name, email }));
+            // localStorage
+            localStorage.setItem('dreamos_bound_user', JSON.stringify({ role: role, name: name, email: email }));
             localStorage.setItem('dreamos_session_active', 'true');
-            // Simpan juga di cookie (fallback untuk TWA)
-            document.cookie = `dreamos_session_active=true;path=/;max-age=86400`;
-            document.cookie = `dreamos_role=${role};path=/;max-age=86400`;
-            document.cookie = `dreamos_user=${encodeURIComponent(name)};path=/;max-age=86400`;
+            // Cookie fallback (untuk TWA)
+            document.cookie = 'dreamos_session_active=true;path=/;max-age=86400';
+            document.cookie = 'dreamos_role=' + role + ';path=/;max-age=86400';
+            document.cookie = 'dreamos_user=' + encodeURIComponent(name) + ';path=/;max-age=86400';
 
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
-            document.getElementById('dashboard-container').innerHTML = `<h2>Selamat Datang, ${name} (${role})</h2>`;
-            // Tampilkan tombol wipe hanya untuk developer
+            document.getElementById('dashboard-container').innerHTML = '<h2>Selamat Datang, ' + name + ' (' + role + ')</h2>';
             if (role === 'dev') {
                 document.getElementById('wipe-btn').style.display = 'block';
             }
         }
 
-        // Wipe all cache (localStorage + cookies)
         window.wipeAllCache = function() {
             if (confirm('Hapus SEMUA data lokal? Ini akan logout.')) {
                 localStorage.clear();
-                document.cookie.split(';').forEach(c => {
-                    document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
-                });
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    var eqPos = cookie.indexOf('=');
+                    var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+                }
                 location.reload();
             }
         };
 
         window.tapLogo = function(e) {
             e.stopPropagation();
-            let taps = parseInt(localStorage.getItem('taps') || '0');
+            var taps = parseInt(localStorage.getItem('taps') || '0');
             taps++;
             localStorage.setItem('taps', taps);
             if (taps >= 7) {
                 localStorage.setItem('taps', '0');
-                const pin = prompt('🔐 4S DevOps PIN:');
+                var pin = prompt('🔐 4S DevOps PIN:');
                 if (pin === '4s_ghost_2026') {
                     document.getElementById('login-screen').style.display = 'none';
                     window.openMod('4s-ghost');
                 } else alert('PIN salah');
             }
-            setTimeout(() => localStorage.setItem('taps', '0'), 2000);
+            setTimeout(function() { localStorage.setItem('taps', '0'); }, 2000);
         };
     </script>
 </body>
