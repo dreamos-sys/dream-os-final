@@ -7,7 +7,6 @@
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#020617">
     <script>
-    // Fallback DREAMOS_CONFIG jika config-supabase.js gagal load
     window.DREAMOS_CONFIG = window.DREAMOS_CONFIG || {
         supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
@@ -19,9 +18,10 @@
         .login-box { width:90%; max-width:400px; text-align:center; }
         .logo { width:80px; border-radius:20px; margin-bottom:1rem; }
         input { width:100%; padding:0.8rem; margin:0.5rem 0; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:Orbitron,monospace; }
-        button { width:100%; padding:0.8rem; background:#0ea5e9; color:#fff; border:none; border-radius:0.5rem; font-weight:bold; cursor:pointer; }
+        button { width:100%; padding:0.8rem; background:#0ea5e9; color:#fff; border:none; border-radius:0.5rem; font-weight:bold; cursor:pointer; margin-top:0.3rem; }
         #debug-log { background:#000; color:#0f0; font-size:0.7rem; padding:0.5rem; margin-top:1rem; text-align:left; max-height:150px; overflow-y:auto; display:none; }
         #main-app { display:none; padding:2rem; text-align:center; }
+        .reg-btn { background:#10b981; }
     </style>
 </head>
 <body>
@@ -31,7 +31,9 @@
             <h2 style="color:#00ff9d;">Dream OS Debug</h2>
             <input type="email" id="login-email" placeholder="EMAIL">
             <input type="password" id="login-pass" placeholder="PASSWORD">
-            <button onclick="authenticate()">LOGIN</button>
+            <button onclick="authenticate()">🔐 LOGIN</button>
+            <!-- Tombol darurat untuk developer: registrasi user baru -->
+            <button class="reg-btn" onclick="registerUser()" style="margin-top:1rem;">⚡ DAFTAR (Developer Only)</button>
             <div id="debug-log"></div>
         </div>
     </div>
@@ -42,7 +44,6 @@
     </div>
 
     <script>
-        // Debug logger
         function debug(msg) {
             var el = document.getElementById('debug-log');
             el.style.display = 'block';
@@ -50,7 +51,7 @@
             el.scrollTop = el.scrollHeight;
         }
 
-        // Simple hash (fallback kalau crypto.subtle gagal)
+        // Fungsi hash (fallback jika crypto.subtle gagal)
         async function simpleHash(pin) {
             try {
                 var enc = new TextEncoder();
@@ -58,16 +59,17 @@
                 var hashBuffer = await crypto.subtle.digest('SHA-256', data);
                 return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
             } catch(e) {
-                debug('crypto.subtle error: ' + e.message);
-                // Fallback extremely simple (hanya untuk debug)
-                return btoa(pin + 'dreamos_salt_2026').substring(0,64);
+                debug('crypto error: ' + e.message);
+                // Fallback untuk TWA
+                return btoa(pin + 'dreamos_salt_2026').replace(/[^a-f0-9]/g,'').substring(0,64);
             }
         }
 
+        // Fungsi login
         window.authenticate = async function() {
             var email = document.getElementById('login-email').value.trim().toLowerCase();
             var pass = document.getElementById('login-pass').value;
-            debug('Login attempt: ' + email);
+            debug('Login: ' + email);
 
             if (!email || !pass) {
                 debug('Email/password kosong');
@@ -77,7 +79,7 @@
             var inputHash = await simpleHash(pass);
             debug('Hash: ' + inputHash.substring(0,20) + '...');
 
-            // Hardcoded VIP (langsung bypass)
+            // VIP
             if (email === 'dreamos.sch.id@gmail.com' && inputHash === 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece') {
                 enterSystem('dev', 'Sultan Architect');
                 return;
@@ -91,53 +93,62 @@
                 return;
             }
 
-            // Cek database lokal (tanpa fetch Supabase)
-            var users = [];
-            try {
-                users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-                debug('Local users loaded: ' + users.length);
-            } catch(e) {
-                debug('localStorage error: ' + e.message);
-            }
-
+            // Cek database lokal
+            var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
             var user = users.find(u => u.email === email && u.password_hash === inputHash);
-            if (!user) {
-                // Untuk debugging: buat user sementara jika belum ada
-                if (confirm('User tidak ditemukan. Tambahkan ke database lokal untuk testing?')) {
-                    user = {
-                        email: email,
-                        password_hash: inputHash,
-                        nama: email.split('@')[0],
-                        role: 'staff'
-                    };
-                    users.push(user);
-                    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-                    debug('User ditambahkan sementara');
-                    enterSystem(user.role, user.nama);
-                } else {
-                    debug('Login gagal: user tidak ditemukan');
-                }
+
+            if (user) {
+                enterSystem(user.role, user.nama, email);
                 return;
             }
 
-            if (user.password_hash !== inputHash) {
-                debug('Password salah');
-                return;
-            }
-
-            enterSystem(user.role, user.nama);
+            debug('User tidak ditemukan');
         };
 
-        function enterSystem(role, name) {
-            debug('Login berhasil: ' + name + ' (' + role + ')');
-            localStorage.setItem('dreamos_bound_user', JSON.stringify({role: role, name: name}));
+        // Fungsi pendaftaran darurat (hanya untuk developer)
+        window.registerUser = async function() {
+            var email = document.getElementById('login-email').value.trim().toLowerCase();
+            var pass = document.getElementById('login-pass').value;
+
+            if (!email || !pass) {
+                debug('Isi email dan password untuk daftar');
+                return;
+            }
+
+            var hash = await simpleHash(pass);
+            var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+
+            // Cek apakah email sudah ada
+            if (users.some(u => u.email === email)) {
+                // Update password
+                users = users.map(u => u.email === email ? {...u, password_hash: hash} : u);
+                debug('Password diperbarui untuk ' + email);
+            } else {
+                // Tambah user baru
+                users.push({
+                    email: email,
+                    password_hash: hash,
+                    nama: email.split('@')[0],
+                    role: 'koord', // Bisa disesuaikan
+                    device_dna: ''
+                });
+                debug('User baru ditambahkan: ' + email);
+            }
+
+            localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+            debug('✅ Registrasi berhasil! Silakan login dengan password yang sama.');
+        };
+
+        function enterSystem(role, name, email) {
+            localStorage.setItem('dreamos_bound_user', JSON.stringify({role: role, name: name, email: email}));
             localStorage.setItem('dreamos_session_active', 'true');
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('user-info').textContent = name + ' (' + role + ')';
+            debug('Login sukses: ' + name);
         }
 
-        // Tap logo 7x untuk 4S Ghost (tanpa PIN, langsung buka)
+        // Tap logo 7x untuk 4S Ghost
         var taps = 0;
         window.tapLogo = function(e) {
             e.stopPropagation();
@@ -148,11 +159,6 @@
                 window.open('modules/4s-ghost.html', '_blank');
             }
             setTimeout(function() { taps = 0; }, 2000);
-        };
-
-        // Tampilkan log error global
-        window.onerror = function(msg, url, line) {
-            debug('ERROR: ' + msg + ' at ' + line);
         };
     </script>
 </body>
