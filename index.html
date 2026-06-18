@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="dark">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; font-src 'self' https: data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta charset="UTF-8">
     <link rel="manifest" href="./manifest.json">
@@ -240,7 +239,7 @@
         var c = document.getElementById(m[2]);
         if (!c) { c = document.createElement('div'); c.id = m[2]; c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#040814;padding-bottom:5rem;'; document.body.appendChild(c); }
         c.style.display = 'block'; c.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Memuat '+m[0]+'...</div>';
-        fetch('modules/'+m[1]+'?v='+Date.now()).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(html=>{c.innerHTML=html;var q=[];c.querySelectorAll('script').forEach(old=>{if(old.textContent)q.push(old.textContent);});setTimeout(()=>{q.forEach(src=>{try{var ns=document.createElement('script');ns.textContent=src;document.body.appendChild(ns);}catch(e){console.error('Script Error:',e.message);}});},120);}).catch(err=>{c.innerHTML='<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal</h3><p>'+err.message+'</p></div>';});
+        fetch('https://dreamos-sys.github.io/dream-os-final/modules/'+m[1]+'?v='+Date.now()).then(r=>{if(!r.ok)throw new Error('Gagal memuat ' + m[1] + ' (HTTP ' + r.status + ')');return r.text();}).then(html=>{c.innerHTML=html;var q=[];c.querySelectorAll('script').forEach(old=>{if(old.textContent)q.push(old.textContent);});setTimeout(()=>{q.forEach(src=>{try{var ns=document.createElement('script');ns.textContent=src;document.body.appendChild(ns);}catch(e){console.error('Script Error:',e.message);}});},120);}).catch(err=>{c.innerHTML='<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal</h3><p>'+err.message+'</p></div>';});
     };
     window.goHome = function() {
         document.querySelectorAll('[id$="-module"]').forEach(m => m.style.display = 'none');
@@ -288,7 +287,7 @@
         function addIhtiyat(timeStr, mins) { var parts = timeStr.split(':'); var h = parseInt(parts[0]), m = parseInt(parts[1]) + mins; if (m >= 60) { h++; m -= 60; } return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
         var today = new Date(); var dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
         fetch('https://api.aladhan.com/v1/timings/'+dateStr+'?latitude=-6.3940&longitude=106.8228&method=20')
-            .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+            .then(r => { if (!r.ok) throw new Error('Gagal memuat ' + m[1] + ' (HTTP ' + r.status + ')'); return r.json(); })
             .then(d => { if (d && d.data && d.data.timings) { var t = d.data.timings; el.innerHTML = '🕌 Subuh ' + t.Fajr + ' • Dzuhur ' + t.Dhuhr + ' • Ashar ' + t.Asr + ' • Maghrib ' + addIhtiyat(t.Maghrib,2) + ' • Isya ' + addIhtiyat(t.Isha,2); } })
             .catch(e => { el.innerHTML = '⚠️ Gagal memuat jadwal shalat'; });
     };
