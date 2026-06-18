@@ -54,7 +54,7 @@
         .system-info-box { margin:2rem 1.5rem; padding:1rem; border-radius:12px; background:var(--panel-bg); border:1px solid var(--glass-border); font-size:0.65rem; color:var(--text-dim); text-align:center; }
         #ai-float-btn { position:fixed; bottom:5.5rem; right:1.5rem; width:56px; height:56px; background:linear-gradient(135deg,#0ea5e9,#06b6d4); border:none; border-radius:50%; box-shadow:0 4px 20px rgba(14,165,233,0.4); cursor:pointer; z-index:999; font-size:1.8rem; display:none; align-items:center; justify-content:center; color:#fff; }
     </style>
-<script src="js/auto-sync.js"></script>
+    <script src="js/auto-sync.js"></script>
 </head>
 <body>
     <canvas id="star-field" style="position:fixed;inset:0;z-index:-1;width:100%;height:100%;display:block;"></canvas>
@@ -90,16 +90,16 @@
         <button class="dream-nav-item" onclick="openMod('about')"><span style="font-size:1.3rem;">ℹ️</span><span>About</span></button>
         <button class="dream-nav-item" onclick="openMod('setting')"><span style="font-size:1.3rem;">⚙</span><span>System</span></button>
     </nav>
+
+    <!-- ========== SINGLE AUTHENTICATE FUNCTION (VIP BYPASS) ========== -->
     <script>
     let attempts=0,lockoutUntil=localStorage.getItem('dream_lockout')||0,taps=0,tapTimer,slideInterval;window.slideIdx=0;
     
-    // ✅ FIX LOGO CLICK
     window.tapLogo=function(e){if(e)e.stopPropagation();clearTimeout(tapTimer);taps++;if(taps>=7){taps=0;var pin=prompt('🔐 4S DevOps PIN:');if(pin==='4s_ghost_2026'||pin==='b15m1ll4h_012443410'){document.getElementById('login-screen').style.display='none';window.openMod('4s-ghost');}else{alert('❌ PIN salah.');}return;}tapTimer=setTimeout(function(){taps=0;},2000);};
     
     async function hashPin(pin){const e=new TextEncoder();const d=e.encode(pin+'dreamos_salt_2026');const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
     function checkLockout(){if(Date.now()<lockoutUntil){let r=Math.ceil((lockoutUntil-Date.now())/60000);document.getElementById('lock-msg').innerText='SYSTEM LOCKED. RETRY IN '+r+' MINS.';document.getElementById('lock-msg').style.display='block';return true;}document.getElementById('lock-msg').style.display='none';return false;}
     
-    // 🔰 ROLE-BASED ACCESS CONTROL (RBAC)
     window.ROLE_PERMISSIONS = {
         dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting','4s-ghost','core-ai'],
         kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting','core-ai'],
@@ -115,16 +115,14 @@
         return permissions.includes(modId);
     };
     window.escapeHtml=function(s){return String(s).replace(/[&<>"'"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});};
-    
-    // ✅ FIX TOGGLE PASSWORD
     window.togglePass=function(){var x=document.getElementById("login-pass");x.type=x.type==="password"?"text":"password";};
     
-    const DEV_HASH_CONFIG = "ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece";
-    const DEV_EMAIL_CONFIG = "dreamos.sch.id@gmail.com";
-    const KABAG_HASH_CONFIG = "5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5";
-    const KABAG_EMAIL_CONFIG = "vespaexcelhijaucedar@gmail.com";
-    const KOORD_HASH_CONFIG = "9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288";
-    const KOORD_EMAIL_CONFIG = "erwinsyah1679@gmail.com";
+    const DEV_HASH = "ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece";
+    const DEV_EMAIL = "dreamos.sch.id@gmail.com";
+    const KABAG_HASH = "5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5";
+    const KABAG_EMAIL = "vespaexcelhijaucedar@gmail.com";
+    const KOORD_HASH = "9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288";
+    const KOORD_EMAIL = "erwinsyah1679@gmail.com";
 
     async function getDeviceDNA() {
         var c = document.createElement('canvas'); var ctx = c.getContext('2d');
@@ -136,24 +134,7 @@
         return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
     }
 
-    function handleLeaderGPS(role, name, email) {
-        var msg = document.getElementById('lock-msg');
-        msg.innerText = '🛰️ Memeriksa Lokasi (Global Access)...'; msg.style.color='#f59e0b'; msg.style.display='block';
-        if(!navigator.geolocation) { msg.innerText = '⛔ GPS Wajib Aktif!'; return; }
-        navigator.geolocation.getCurrentPosition(function(position) {
-            var lat = position.coords.latitude.toFixed(6);
-            var lng = position.coords.longitude.toFixed(6);
-            var lastLoc = JSON.parse(localStorage.getItem('dreamos_exec_locations') || '[]');
-            lastLoc.unshift({ role: role, nama: name, lat: lat, lng: lng, time: new Date().toLocaleString('id-ID') });
-            if(lastLoc.length > 10) lastLoc.pop();
-            localStorage.setItem('dreamos_exec_locations', JSON.stringify(lastLoc));
-            msg.innerText = '✅ Lokasi terdeteksi (' + lat + ', ' + lng + '). Akses Global Diizinkan!';
-            msg.style.color = '#10b981';
-            setTimeout(() => enterSystem(role, name, email), 1500);
-        }, function() { msg.innerText = '⛔ Gagal ambil lokasi!'; msg.style.color='#ef4444'; }, { enableHighAccuracy: true, timeout: 10000 });
-    }
-
-    // ✅ FIX TWA MULTI-USER LOGIN
+    // SATU-SATUNYA FUNGSI LOGIN
     window.authenticate = async function() {
         if(checkLockout()) return;
         var email = document.getElementById('login-email').value.trim().toLowerCase();
@@ -162,29 +143,16 @@
         if(!email || !pass) { msg.innerText = '⚠️ Email dan Password wajib diisi!'; msg.style.display='block'; return; }
         var inputHash = await hashPin(pass);
 
-        if(email === DEV_EMAIL_CONFIG) {
-            if(inputHash !== DEV_HASH_CONFIG) { msg.innerText = '⛔ Password Developer Salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-            enterSystem('dev', 'Sultan Architect', email);
-            return;
-        }
-
-        if(email === KABAG_EMAIL_CONFIG) {
-            if(inputHash !== KABAG_HASH_CONFIG) { msg.innerText = '⛔ Password Kabag Salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-            handleLeaderGPS('kabag', 'Bpk. Hanung', email);
-            return;
-        }
-
-        if(email === KOORD_EMAIL_CONFIG) {
-            if(inputHash !== KOORD_HASH_CONFIG) { msg.innerText = '⛔ Password Koordinator Salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-            handleLeaderGPS('koord', 'Bpk. Erwinsyah', email);
-            return;
-        }
+        // VIP Hardcoded Bypass (NO GPS)
+        if(email === DEV_EMAIL && inputHash === DEV_HASH) { enterSystem('dev', 'Sultan Architect', email); return; }
+        if(email === KABAG_EMAIL && inputHash === KABAG_HASH) { enterSystem('kabag', 'Bpk. Hanung', email); return; }
+        if(email === KOORD_EMAIL && inputHash === KOORD_HASH) { enterSystem('koord', 'Bpk. Erwinsyah', email); return; }
 
         var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-        var user = users.find(u => u.email === email);
+        var user = users.find(u => u.email === email && u.password_hash === inputHash);
 
         if (!user && navigator.onLine && window.DREAMOS_CONFIG) {
-            msg.innerText = '☁️ Mengecek database pusat (Supabase)...'; msg.style.color='#0ea5e9'; msg.style.display='block';
+            msg.innerText = '☁️ Mengecek database pusat...'; msg.style.color='#0ea5e9'; msg.style.display='block';
             try {
                 const res = await fetch(window.DREAMOS_CONFIG.supabaseUrl + '/rest/v1/users?email=eq.' + encodeURIComponent(email), {
                     headers: { 'apikey': window.DREAMOS_CONFIG.supabaseKey, 'Authorization': 'Bearer ' + window.DREAMOS_CONFIG.supabaseKey }
@@ -196,43 +164,40 @@
                         users.push(user);
                         localStorage.setItem('dreamos_users_db', JSON.stringify(users));
                     }
-                    msg.innerText = '✅ Ditemukan di Cloud! Memproses...'; msg.style.color='#10b981';
                 }
-            } catch(e) { console.error('Supabase error:', e); }
+            } catch(e) {}
         }
 
-        if(!user) { msg.innerText = '⛔ Email tidak terdaftar! Hubungi Admin untuk didaftarkan.'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+        if(!user) { msg.innerText = '⛔ Email tidak terdaftar!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
         if(user.password_hash !== inputHash) { 
             attempts++; msg.innerText = '⛔ Password Salah! Sisa: ' + (3-attempts); msg.style.color='#ef4444'; msg.style.display='block'; 
             if(attempts>=3) { lockoutUntil = Date.now()+(5*60*1000); localStorage.setItem('dream_lockout', lockoutUntil); checkLockout(); } 
             return; 
         }
 
-        if(user.role !== 'kabag' && user.role !== 'koord' && user.role !== 'dev') {
-            msg.innerText = '🛰️ Memeriksa Lokasi Kantor...'; msg.style.color='#f59e0b'; msg.style.display='block';
-            if(!navigator.geolocation) { msg.innerText = '⛔ GPS Wajib Aktif!'; return; }
-            navigator.geolocation.getCurrentPosition(async function(position) {
-                var R = 6371e3; var phi1 = -6.4025 * Math.PI/180; var phi2 = position.coords.latitude * Math.PI/180;
-                var dPhi = (position.coords.latitude - -6.4025) * Math.PI/180; var dLambda = (position.coords.longitude - 106.7942) * Math.PI/180;
-                var a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
-                var distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                if(distance > 2000) { msg.innerText = '⛔ Di luar area kantor ('+Math.round(distance)+'m).'; msg.style.color='#ef4444'; return; }
-                
-                // Device Binding
-                var currentDNA = await getDeviceDNA();
-                if(!user.device_dna) {
-                    if(confirm('🔐 Device baru terdeteksi! Ikatkan HP ini permanen ke akun '+user.nama+'?')) {
-                        user.device_dna = currentDNA;
-                        localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-                        enterSystem(user.role, user.nama, user.email);
-                    } else { msg.innerText = '⛔ Binding Ditolak.'; msg.style.color='#ef4444'; msg.style.display='block'; }
-                } else if(user.device_dna === currentDNA) {
-                    enterSystem(user.role, user.nama, user.email);
-                } else {
-                    msg.innerText = '⛔ DEVICE TIDAK DIKENALI! Hubungi Admin.'; msg.style.color='#ef4444'; msg.style.display='block';
-                }
-            }, function() { msg.innerText = '⛔ Gagal ambil lokasi!'; msg.style.color='#ef4444'; }, { enableHighAccuracy: true });
+        // VIP dari database (tanpa GPS)
+        if(['dev', 'kabag', 'koord'].includes(user.role)) {
+            enterSystem(user.role, user.nama, user.email);
+            return;
         }
+
+        // STAFF GPS CHECK
+        if (!navigator.geolocation) { msg.innerText = '⛔ GPS diperlukan untuk staff!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+        msg.innerText = '🛰️ Memeriksa Lokasi...'; msg.style.color='#f59e0b'; msg.style.display='block';
+        navigator.geolocation.getCurrentPosition(async function(pos) {
+            var lat = pos.coords.latitude, lng = pos.coords.longitude;
+            var R = 6371e3; var phi1 = -6.411514 * Math.PI/180; var phi2 = lat * Math.PI/180;
+            var dPhi = (lat - -6.411514) * Math.PI/180; var dLambda = (lng - 106.839846) * Math.PI/180;
+            var a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
+            var distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            if(distance > 500) { msg.innerText = '⛔ Di luar area ('+Math.round(distance)+'m).'; msg.style.color='#ef4444'; return; }
+            var currentDNA = await getDeviceDNA();
+            if (!user.device_dna) {
+                if(confirm('🔐 Ikatkan HP ini?')) { user.device_dna = currentDNA; localStorage.setItem('dreamos_users_db', JSON.stringify(users)); enterSystem(user.role, user.nama, user.email); }
+            } else if (user.device_dna === currentDNA) {
+                enterSystem(user.role, user.nama, user.email);
+            } else { msg.innerText = '⛔ Device tidak dikenal!'; msg.style.color='#ef4444'; }
+        }, function() { msg.innerText = '⛔ Gagal ambil lokasi!'; msg.style.color='#ef4444'; }, { enableHighAccuracy: true, timeout: 10000 });
     };
 
     function enterSystem(role, name, email) {
@@ -243,8 +208,7 @@
         setTimeout(function(){ document.getElementById('login-screen').style.display='none'; document.getElementById('main-app').style.display='block'; document.getElementById('bottom-nav').style.display='flex'; document.getElementById('ai-float-btn').style.display='flex'; renderDashboard(); }, 500);
     }
 
-    window.openMod=function(id){ if(!window.canAccess(id)){ alert('⛔ Akses Ditolak! Role Anda tidak diizinkan.'); return; }
-        if(id === 'cmd') { if(window.currentRole !== 'dev' && window.currentRole !== 'kabag' && window.currentRole !== 'koord') { alert('⛔ Akses Ditolak! Hanya Admin/Kabag/Koord.'); return; } }
+    window.openMod=function(id){ if(!window.canAccess(id)){ alert('⛔ Akses Ditolak!'); return; }
         var map={book:['Booking','booking.html','booking-module'],k3:['K3','k3.html','k3-module'],in:['Jan Indoor','janitor-indoor.html','janitor-in-module'],out:['Jan Outdoor','janitor-outdoor.html','janitor-out-module'],maint:['Maintenance','maintenance.html','maintenance-module'],sec:['Security','security.html','security-module'],stok:['Stok','stok.html','stok-module'],asset:['Asset','asset.html','asset-module'],cmd:['CMD','commandcenter.html','cmd-module'],profile:['Profile','profile.html','profile-module'],qr:['QR','qr.html','qr-module'],about:['About','about.html','about-module'],setting:['Setting','setting.html','setting-module'],dana:['Dana','dana.html','dana-module'],'4s-ghost':['4S Ghost Hub','4s-ghost-hub.html','ghost-hub-module'],'core-ai':['Core AI','core-ai.html','core-ai-module']};
         var m=map[id];if(!m)return alert('Modul tidak dikenali: '+id);
         var c=document.getElementById(m[2]);if(!c){c=document.createElement('div');c.id=m[2];c.style.cssText='position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#040814;padding-bottom:5rem;';document.body.appendChild(c);}
@@ -258,7 +222,6 @@
     window.showSlides=function(){ var t=document.getElementById('dream-slide-track'); if(!t)return; if(slideInterval)clearInterval(slideInterval); var sec=localStorage.getItem('dreamos_sec_today')||'Petugas Siaga'; var todayStr = new Date().toISOString().split('T')[0]; var tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1); var tomorrowStr = tomorrowDate.toISOString().split('T')[0]; var bookings = safeGet('dreamos_bookings',[]).filter(b => b.status === 'approved'); var todayBookings = bookings.filter(b => b.tgl === todayStr); var tomorrowBookings = bookings.filter(b => b.tgl === tomorrowStr); var todayTxt = todayBookings.length ? todayBookings.map(b => b.ruang+' ('+b.jam_mulai+'-'+b.jam_selesai+')').join(', ') : 'Kosong'; var tomorrowTxt = tomorrowBookings.length ? tomorrowBookings.map(b => b.ruang+' ('+b.jam_mulai+'-'+b.jam_selesai+')').join(', ') : 'Kosong'; var k3 = safeGet('dreamos_k3_reports',[]); var k3Pending = k3.filter(x=>x.status==='pending').length; var k3Proses = k3.filter(x=>x.status==='Proses' || x.status==='proses').length; var k3Selesai = k3.filter(x=>x.status==='Selesai' || x.status==='selesai' || x.status==='disposisi').length; var totalK3 = k3.length; var k3Pct = totalK3 > 0 ? Math.round((k3Selesai/totalK3)*100) : 100; var weather = localStorage.getItem('dreamos_weather_text') || 'Memuat Cuaca...'; var isRaining = localStorage.getItem('dreamos_is_raining') === 'true'; var rainAlert = isRaining ? ' | ⚠️ Booking Outdoor Hubungi Bpk. Erwinsyah!' : ''; var slide5Info = localStorage.getItem('dreamos_slide_5') || 'Tidak ada agenda Manajemen hari ini.'; var slide6Info = localStorage.getItem('dreamos_slide_6') || 'Tidak ada agenda Bagian Umum hari ini.'; var slide7Info = localStorage.getItem('dreamos_slide_7') || 'Selamat Bekerja! The Power Soul Of Shalawat!'; var s=[ {t:'🕌 Selamat Datang', s:'Security: '+sec}, {t:'📅 Booking (Hari & Besok)', s:'Hari: '+todayTxt+' | Besok: '+tomorrowTxt}, {t:'⚠️ K3 Progress Laporan', s:'Total:'+totalK3+' | Pending:'+k3Pending+' | Proses:'+k3Proses+' | Selesai:'+k3Selesai+' ('+k3Pct+'%)'}, {t:'🌦️ Cuaca Depok Hari Ini', s: weather + rainAlert}, {t:'🏛️ Slide 5: Info Manajemen', s: slide5Info}, {t:'📋 Slide 6: Info Bag. Umum', s: slide6Info}, {t:'🎉 Slide 7: Ucapan & Info', s: slide7Info} ]; t.innerHTML=s.map(sl=>'<div class="dream-slide">'+sl.t+'<br><small style="font-size:0.8rem;opacity:0.9;word-wrap:break-word;">'+sl.s+'</small></div>').join(''); window.slideIdx=0; slideInterval=setInterval(()=>{if(!t.children.length)return;window.slideIdx=(window.slideIdx+1)%t.children.length;t.style.transform='translateX(-'+(window.slideIdx*100)+'%)';},7000); };
     window.fetchPrayerTimes = function() { var el = document.getElementById('prayer-times-dash'); if(!el) return; function addIhtiyat(timeStr, mins) { var parts = timeStr.split(':'); var h = parseInt(parts[0]); var m = parseInt(parts[1]) + mins; if (m >= 60) { h++; m -= 60; } return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); } var today = new Date(); var dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0'); fetch('https://api.aladhan.com/v1/timings/'+dateStr+'?latitude=-6.3940&longitude=106.8228&method=20') .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }) .then(d => { if (d && d.data && d.data.timings) { var t = d.data.timings; var maghrib = addIhtiyat(t.Maghrib, 2); var isya = addIhtiyat(t.Isha, 2); el.innerHTML = '🕌 Subuh ' + t.Fajr + ' • Dzuhur ' + t.Dhuhr + ' • Ashar ' + t.Asr + ' • Maghrib ' + maghrib + ' • Isya ' + isya; } else { el.innerHTML = '⚠️ Data tidak lengkap'; } }) .catch(e => { el.innerHTML = '⚠️ Gagal memuat jadwal shalat'; }); };
     
-    // ✅ FIX SYNTAX ERROR DISINI (Dulu: +gridHTML</div>)
     window.renderDashboard=function(){ var c=document.getElementById('dashboard-container'); if(!c)return; var modules=[{i:'⎈',n:'CMD Center',id:'cmd',cls:'iso-27001-b'},{i:'◈',n:'Security',id:'sec',cls:'iso-27001-b'},{i:'⚠',n:'K3 Safety',id:'k3',cls:'iso-27001-r'},{i:'⌾',n:'Jan Indoor',id:'in',cls:'iso-9001'},{i:'⎉',n:'Jan Outdoor',id:'out',cls:'iso-9001'},{i:'◷',n:'Booking',id:'book',cls:'iso-9001'},{i:'⛊',n:'Asset',id:'asset',cls:'iso-55001'},{i:'◫',n:'Stok',id:'stok',cls:'iso-55001'},{i:'⚙',n:'Maintenance',id:'maint',cls:'iso-55001'},{i:'💰',n:'Dana',id:'dana',cls:'iso-9001'}];var allowed=modules.filter(function(m){return window.canAccess(m.id);});var gridHTML='';allowed.forEach(function(m){gridHTML+='<div class="mod-card '+m.cls+'" onclick="openMod(\''+m.id+'\')"><div class="mod-icon">'+m.i+'</div><div class="mod-title">'+m.n+'</div></div>';});
     c.innerHTML='<div class="header-main"><img src="assets/logo-sultan.png" class="logo-img" onclick="tapLogo(event)"/><div class="arabic">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div><div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div><div class="info-badges"><span class="badge">🕌 Depok Area</span><span class="badge" id="live-clock">⏱️ --:--:--</span><span class="badge" id="sync-badge" style="background:rgba(16,185,129,0.1);color:#10b981;">☁️ Synced</span></div><div id="prayer-times-dash" style="font-size:0.65rem; color:var(--text-dim); margin-top:10px; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px;">🕌 Memuat jadwal shalat...</div></div><div id="dream-slideshow"><div id="dream-slide-track"></div></div><div class="module-grid">'+gridHTML+'</div><div class="system-info-box"><strong>Dream OS v1.0 Final</strong><br>Family Dream Team<br><span style="color:var(--neon-accent);">"The Power Soul Of Shalawat"</span></div>'; 
     setInterval(()=>{var clockEl=document.getElementById('live-clock');if(clockEl)clockEl.textContent='⏱️ '+new Date().toLocaleTimeString('id-ID');},1000); updateSecuritySlideAuto(); checkWeatherAndNotify(); showSlides(); fetchPrayerTimes(); };
@@ -271,117 +234,6 @@
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(() => console.log('🛡️ Offline Bastion Ready')).catch(err => console.error('SW Error:', err)); }); }
     </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var oldGhost = document.getElementById('ghost-hub');
-  if (oldGhost) {
-    var iframe = document.createElement('iframe');
-    iframe.src = 'modules/4s-ghost.html';
-    iframe.style.width = '100%';
-    iframe.style.height = '100vh';
-    iframe.style.border = 'none';
-    iframe.style.position = 'fixed';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.zIndex = '99999';
-    document.body.appendChild(iframe);
-    oldGhost.remove();
-  }
-});
-</script>
-
-<script>
-// ✅ FINAL LOGIN SYSTEM v3.0 (VIP BYPASS GPS - OVERWRITE ALL)
-window.authenticate = async function() {
-    var email = document.getElementById('login-email').value.trim().toLowerCase();
-    var pass = document.getElementById('login-pass').value;
-    var msg = document.getElementById('lock-msg');
-    if (!email || !pass) { msg.innerText = '⚠️ Email dan Password wajib diisi!'; msg.style.display = 'block'; return; }
-
-    var encoder = new TextEncoder();
-    var data = encoder.encode(pass + 'dreamos_salt_2026');
-    var hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    var inputHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    // VIP Hardcoded Bypass (No GPS needed!)
-    if (email === 'dreamos.sch.id@gmail.com' && inputHash === 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece') { enterSystem('dev', 'Sultan Architect', email, inputHash); return; }
-    if (email === 'vespaexcelhijaucedar@gmail.com' && inputHash === '5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5') { enterSystem('kabag', 'Bpk. Hanung', email, inputHash); return; }
-    if (email === 'erwinsyah1679@gmail.com' && inputHash === '9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288') { enterSystem('koord', 'Bpk. Erwinsyah', email, inputHash); return; }
-
-    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-    var user = users.find(u => u.email === email && u.password_hash === inputHash);
-    if (!user) { msg.innerText = '⛔ Email atau Password salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-
-    // VIP from DB Bypass
-    if (['dev', 'kabag', 'koord'].includes(user.role)) { enterSystem(user.role, user.nama, user.email, user.password_hash); return; }
-
-    // STAFF GPS Check
-    if (!navigator.geolocation) { msg.innerText = '⛔ HP tidak mendukung GPS!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-    msg.innerText = '🛰️ Memeriksa Lokasi...'; msg.style.color='#f59e0b'; msg.style.display='block';
-
-    navigator.geolocation.getCurrentPosition(async function(pos) {
-        var lat = pos.coords.latitude; var lng = pos.coords.longitude;
-        var R = 6371e3; var phi1 = -6.411514 * Math.PI/180; var phi2 = lat * Math.PI/180;
-        var dPhi = (lat - -6.411514) * Math.PI/180; var dLambda = (lng - 106.839846) * Math.PI/180;
-        var a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
-        var distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        if (distance > 500) { msg.innerText = '⛔ Di luar area ('+Math.round(distance)+'m).'; msg.style.color='#ef4444'; return; }
-
-        var c = document.createElement('canvas'); var ctx = c.getContext('2d');
-        ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20); ctx.fillStyle = "#069"; ctx.fillText("DreamOS-Ghost", 2, 15);
-        var metrics = [navigator.hardwareConcurrency || 0, screen.colorDepth, c.toDataURL()].join('|');
-        const hashBuffer2 = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metrics));
-        var currentDNA = Array.from(new Uint8Array(hashBuffer2)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
-
-        if (!user.device_dna) {
-            if(confirm('🔐 Ikatkan HP ini ke akun '+user.nama+'?')) { user.device_dna = currentDNA; localStorage.setItem('dreamos_users_db', JSON.stringify(users)); enterSystem(user.role, user.nama, user.email, user.password_hash); }
-        } else if (user.device_dna === currentDNA) {
-            enterSystem(user.role, user.nama, user.email, user.password_hash);
-        } else { msg.innerText = '⛔ DEVICE TIDAK DIKENALI!'; msg.style.color='#ef4444'; msg.style.display='block'; }
-    }, function() { msg.innerText = '⛔ Gagal ambil lokasi!'; msg.style.color='#ef4444'; }, { enableHighAccuracy: true });
-};
-console.log('✅ Login v3.0 Loaded. VIP Bypass Active.');
-</script>
-
-
-<script>
-// 🔄 AUTO SYNC PULL (Supabase -> LocalStorage) BIAR DATA ANTAR HP SINKRON OTOMATIS
-(function(){
-    async function pullCloudData() {
-        if (!navigator.onLine || !window.DREAMOS_CONFIG) return;
-        console.log('☁️ Menarik data terbaru dari Supabase...');
-        // Daftar tabel yang mau disinkronkan
-        const tables = ['dreamos_bookings', 'dreamos_maintenance_tasks', 'dreamos_k3_reports', 'dreamos_piket_logs', 'dreamos_stok', 'dreamos_assets', 'dreamos_dana', 'dreamos_users_db', 'dreamos_notifications', 'dreamos_matrix'];
-        
-        for (let t of tables) {
-            try {
-                let res = await fetch(window.DREAMOS_CONFIG.supabaseUrl + '/rest/v1/' + t + '?select=*', {
-                    headers: { 'apikey': window.DREAMOS_CONFIG.supabaseKey, 'Authorization': 'Bearer ' + window.DREAMOS_CONFIG.supabaseKey }
-                });
-                if (res.ok) {
-                    let data = await res.json();
-                    // Timpa localStorage biar modul-modul lama bisa baca data terbaru
-                    localStorage.setItem(t, JSON.stringify(data));
-                }
-            } catch(e){ /* Diam-diam gagal kalau offline */ }
-        }
-        
-        // Refresh tampilan dashboard kalau user udah login
-        if(window.renderDashboard && document.getElementById('main-app').style.display === 'block') {
-            window.renderDashboard(); 
-        }
-    }
-    
-    // 1. Jalankan pas aplikasi pertama kali dibuka
-    window.addEventListener('load', pullCloudData);
-    
-    // 2. Auto sync diam-diam tiap 1 menit (60000 ms)
-    setInterval(pullCloudData, 60000); 
-    
-    // 3. Sync langsung pas internet HP balik nyala
-    window.addEventListener('online', pullCloudData);
-})();
-</script>
-
+<!-- Auto-Sync sudah termasuk di js/auto-sync.js -->
 </body>
 </html>
