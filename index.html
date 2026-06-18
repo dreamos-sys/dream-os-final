@@ -9,8 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <script src="js/config-supabase.js"></script>
     <script src="js/auto-sync.js"></script>
-    <script src="js/auto-sync.js"></script>
-    <script src="js/auto-sync.js"></script>
     <style>
         :root { --bg-void: #020617; --text-main: #e2e8f0; --neon-accent: #0ea5e9; --neon-warning: #e11d48; --panel-bg: #1e293b; }
         body { margin:0; background:var(--bg-void); color:var(--text-main); font-family:'Inter',sans-serif; }
@@ -21,6 +19,7 @@
         .login-input { width:100%; padding:1rem; margin-bottom:1rem; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:'Orbitron',monospace; text-align:center; }
         .btn-login { width:100%; padding:1rem; background:#0ea5e9; color:#fff; border:none; border-radius:0.5rem; font-weight:700; cursor:pointer; }
         .lockout-msg { color:var(--neon-warning); font-size:0.8rem; margin-top:10px; display:none; }
+        #wipe-btn { position:fixed; bottom:1rem; right:1rem; background:#ef4444; color:white; border:none; border-radius:0.5rem; padding:0.5rem 1rem; font-size:0.7rem; cursor:pointer; z-index:2000; display:none; }
     </style>
 </head>
 <body>
@@ -37,6 +36,7 @@
     </div>
     <div id="main-app" style="display:none;">
         <div id="dashboard-container"></div>
+        <button id="wipe-btn" onclick="wipeAllCache()">🧹 Wipe Cache</button>
     </div>
 
     <script>
@@ -85,17 +85,38 @@
                 return;
             }
 
-            // Staff tanpa GPS sementara (biar mudah login)
+            // Staff tanpa GPS sementara
             enterSystem(user.role, user.nama, user.email);
         };
 
         function enterSystem(role, name, email) {
+            // Simpan di localStorage
             localStorage.setItem('dreamos_bound_user', JSON.stringify({ role, name, email }));
             localStorage.setItem('dreamos_session_active', 'true');
+            // Simpan juga di cookie (fallback untuk TWA)
+            document.cookie = `dreamos_session_active=true;path=/;max-age=86400`;
+            document.cookie = `dreamos_role=${role};path=/;max-age=86400`;
+            document.cookie = `dreamos_user=${encodeURIComponent(name)};path=/;max-age=86400`;
+
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('dashboard-container').innerHTML = `<h2>Selamat Datang, ${name} (${role})</h2>`;
+            // Tampilkan tombol wipe hanya untuk developer
+            if (role === 'dev') {
+                document.getElementById('wipe-btn').style.display = 'block';
+            }
         }
+
+        // Wipe all cache (localStorage + cookies)
+        window.wipeAllCache = function() {
+            if (confirm('Hapus SEMUA data lokal? Ini akan logout.')) {
+                localStorage.clear();
+                document.cookie.split(';').forEach(c => {
+                    document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+                });
+                location.reload();
+            }
+        };
 
         window.tapLogo = function(e) {
             e.stopPropagation();
