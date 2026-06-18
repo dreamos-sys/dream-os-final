@@ -289,12 +289,17 @@
             .then(d => { if (d && d.data && d.data.timings) { var t = d.data.timings; el.innerHTML = '🕌 Subuh ' + t.Fajr + ' • Dzuhur ' + t.Dhuhr + ' • Ashar ' + t.Asr + ' • Maghrib ' + addIhtiyat(t.Maghrib,2) + ' • Isya ' + addIhtiyat(t.Isha,2); } })
             .catch(e => { el.innerHTML = '⚠️ Gagal memuat jadwal shalat'; });
     };
-    window.renderDashboard = function() {
+    window.renderDashboard = function() { try {
         var c = document.getElementById('dashboard-container'); if (!c) return;
         var modules = [{i:'⎈',n:'CMD Center',id:'cmd',cls:'iso-27001-b'},{i:'◈',n:'Security',id:'sec',cls:'iso-27001-b'},{i:'⚠',n:'K3 Safety',id:'k3',cls:'iso-27001-r'},{i:'⌾',n:'Jan Indoor',id:'in',cls:'iso-9001'},{i:'⎉',n:'Jan Outdoor',id:'out',cls:'iso-9001'},{i:'◷',n:'Booking',id:'book',cls:'iso-9001'},{i:'⛊',n:'Asset',id:'asset',cls:'iso-55001'},{i:'◫',n:'Stok',id:'stok',cls:'iso-55001'},{i:'⚙',n:'Maintenance',id:'maint',cls:'iso-55001'},{i:'💰',n:'Dana',id:'dana',cls:'iso-9001'}];
         var allowed = modules.filter(function(m) { return window.canAccess(m.id); });
         var gridHTML = ''; allowed.forEach(function(m) { gridHTML += '<div class="mod-card '+m.cls+'" onclick="openMod(\''+m.id+'\')"><div class="mod-icon">'+m.i+'</div><div class="mod-title">'+m.n+'</div></div>'; });
         c.innerHTML = '<div class="header-main"><img src="assets/logo-sultan.png" class="logo-img" onclick="tapLogo(event)"/><div class="arabic">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div><div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div><div class="info-badges"><span class="badge">🕌 Depok Area</span><span class="badge" id="live-clock">⏱️ --:--:--</span><span class="badge" id="sync-badge" style="background:rgba(16,185,129,0.1);color:#10b981;">☁️ Synced</span></div><div id="prayer-times-dash" style="font-size:0.65rem; color:var(--text-dim); margin-top:10px; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px;">🕌 Memuat jadwal shalat...</div></div><div id="dream-slideshow"><div id="dream-slide-track"></div></div><div class="module-grid">'+gridHTML+'</div><div class="system-info-box"><strong>Dream OS v1.0 Final</strong><br>Family Dream Team<br><span style="color:var(--neon-accent);">"The Power Soul Of Shalawat"</span></div>';
+    } catch(e) { 
+        var c = document.getElementById("dashboard-container"); 
+        if(c) c.innerHTML = "<div style=\"color:red; padding:2rem;\"><h3>⚠️ Gagal merender dashboard</h3><p>" + e.message + "</p><pre>" + e.stack + "</pre></div>"; 
+        console.error(e); 
+    }
         setInterval(function() { var clockEl = document.getElementById('live-clock'); if (clockEl) clockEl.textContent = '⏱️ '+new Date().toLocaleTimeString('id-ID'); }, 1000);
         updateSecuritySlideAuto(); checkWeatherAndNotify(); showSlides(); fetchPrayerTimes();
     };
