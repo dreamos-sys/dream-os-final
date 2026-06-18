@@ -342,5 +342,45 @@ window.authenticate = async function() {
 console.log('✅ Login v3.0 Loaded. VIP Bypass Active.');
 </script>
 
+
+<script>
+// 🔄 AUTO SYNC PULL (Supabase -> LocalStorage) BIAR DATA ANTAR HP SINKRON OTOMATIS
+(function(){
+    async function pullCloudData() {
+        if (!navigator.onLine || !window.DREAMOS_CONFIG) return;
+        console.log('☁️ Menarik data terbaru dari Supabase...');
+        // Daftar tabel yang mau disinkronkan
+        const tables = ['dreamos_bookings', 'dreamos_maintenance_tasks', 'dreamos_k3_reports', 'dreamos_piket_logs', 'dreamos_stok', 'dreamos_assets', 'dreamos_dana', 'dreamos_users_db', 'dreamos_notifications', 'dreamos_matrix'];
+        
+        for (let t of tables) {
+            try {
+                let res = await fetch(window.DREAMOS_CONFIG.supabaseUrl + '/rest/v1/' + t + '?select=*', {
+                    headers: { 'apikey': window.DREAMOS_CONFIG.supabaseKey, 'Authorization': 'Bearer ' + window.DREAMOS_CONFIG.supabaseKey }
+                });
+                if (res.ok) {
+                    let data = await res.json();
+                    // Timpa localStorage biar modul-modul lama bisa baca data terbaru
+                    localStorage.setItem(t, JSON.stringify(data));
+                }
+            } catch(e){ /* Diam-diam gagal kalau offline */ }
+        }
+        
+        // Refresh tampilan dashboard kalau user udah login
+        if(window.renderDashboard && document.getElementById('main-app').style.display === 'block') {
+            window.renderDashboard(); 
+        }
+    }
+    
+    // 1. Jalankan pas aplikasi pertama kali dibuka
+    window.addEventListener('load', pullCloudData);
+    
+    // 2. Auto sync diam-diam tiap 1 menit (60000 ms)
+    setInterval(pullCloudData, 60000); 
+    
+    // 3. Sync langsung pas internet HP balik nyala
+    window.addEventListener('online', pullCloudData);
+})();
+</script>
+
 </body>
 </html>
