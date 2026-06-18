@@ -1,6 +1,7 @@
 // Dream OS Auto-Sync Engine v1.0 (Supabase Edition)
 (function() {
     let SYNC_TABLE = 'kv_store';
+    let loginChecked = false;
 
     function getConfig() {
         if (window.DREAMOS_CONFIG && window.DREAMOS_CONFIG.supabaseUrl && window.DREAMOS_CONFIG.supabaseKey) {
@@ -10,6 +11,10 @@
             supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
         };
+    }
+
+    function isLoggedIn() {
+        return !!localStorage.getItem('dreamos_session_active');
     }
 
     async function uploadKey(key, value) {
@@ -37,6 +42,7 @@
     }
 
     async function pullAll() {
+        if (!isLoggedIn()) return; // Jangan tarik data sebelum login
         const config = getConfig();
         if (!config.supabaseUrl) return;
         
@@ -66,13 +72,29 @@
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = function(key, value) {
         originalSetItem.call(localStorage, key, value);
-        localStorage.setItem(key + '_ts', new Date().toISOString());
+        // Jangan catat timestamp untuk key sistem, hanya untuk data dreamos_
         if (key.startsWith('dreamos_')) {
-            uploadKey(key, value);
+            localStorage.setItem(key + '_ts', new Date().toISOString());
+            if (isLoggedIn()) uploadKey(key, value);
         }
     };
 
-    if (navigator.onLine) { pullAll(); }
-    window.addEventListener('online', pullAll);
-    console.log('🛡️ Auto-Sync Engine Mounted.');
+    // Hanya jalankan pullAll jika sudah login
+    function checkAndPull() {
+        if (navigator.onLine && isLoggedIn()) {
+            pullAll();
+            loginChecked = true;
+        } else if (!isLoggedIn()) {
+            // Coba lagi nanti
+            setTimeout(checkAndPull, 3000);
+        }
+    }
+
+    if (navigator.onLine) {
+        checkAndPull();
+    }
+    window.addEventListener('online', () => {
+        if (isLoggedIn()) pullAll();
+    });
+    console.log('🛡️ Auto-Sync Engine Mounted (wait for login).');
 })();
