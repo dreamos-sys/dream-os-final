@@ -269,5 +269,78 @@
     document.addEventListener("DOMContentLoaded", function(){ const c = document.getElementById("star-field"); if(!c) return; const x = c.getContext("2d"); let w, h, s = []; function resize(){ w = c.width = window.innerWidth; h = c.height = window.innerHeight; } function init(){ resize(); s = []; for(let i=0; i<120; i++) s.push({x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.5, v: Math.random()*0.3}); } function draw(){ x.fillStyle = "#020617"; x.fillRect(0, 0, w, h); x.fillStyle = "rgba(255,255,255,0.5)"; s.forEach(p => { p.y -= p.v; if(p.y < 0) p.y = h; x.beginPath(); x.arc(p.x, p.y, p.r, 0, Math.PI*2); x.fill(); }); requestAnimationFrame(draw); } window.addEventListener("resize", () => { resize(); init(); }); init(); draw(); });
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(() => console.log('🛡️ Offline Bastion Ready')).catch(err => console.error('SW Error:', err)); }); }
     </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var oldGhost = document.getElementById('ghost-hub');
+  if (oldGhost) {
+    var iframe = document.createElement('iframe');
+    iframe.src = 'modules/4s-ghost.html';
+    iframe.style.width = '100%';
+    iframe.style.height = '100vh';
+    iframe.style.border = 'none';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.zIndex = '99999';
+    document.body.appendChild(iframe);
+    oldGhost.remove();
+  }
+});
+</script>
+
+<script>
+// ✅ FINAL LOGIN SYSTEM v3.0 (VIP BYPASS GPS - OVERWRITE ALL)
+window.authenticate = async function() {
+    var email = document.getElementById('login-email').value.trim().toLowerCase();
+    var pass = document.getElementById('login-pass').value;
+    var msg = document.getElementById('lock-msg');
+    if (!email || !pass) { msg.innerText = '⚠️ Email dan Password wajib diisi!'; msg.style.display = 'block'; return; }
+
+    var encoder = new TextEncoder();
+    var data = encoder.encode(pass + 'dreamos_salt_2026');
+    var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    var inputHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // VIP Hardcoded Bypass (No GPS needed!)
+    if (email === 'dreamos.sch.id@gmail.com' && inputHash === 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece') { enterSystem('dev', 'Sultan Architect', email, inputHash); return; }
+    if (email === 'vespaexcelhijaucedar@gmail.com' && inputHash === '5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5') { enterSystem('kabag', 'Bpk. Hanung', email, inputHash); return; }
+    if (email === 'erwinsyah1679@gmail.com' && inputHash === '9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288') { enterSystem('koord', 'Bpk. Erwinsyah', email, inputHash); return; }
+
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var user = users.find(u => u.email === email && u.password_hash === inputHash);
+    if (!user) { msg.innerText = '⛔ Email atau Password salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+
+    // VIP from DB Bypass
+    if (['dev', 'kabag', 'koord'].includes(user.role)) { enterSystem(user.role, user.nama, user.email, user.password_hash); return; }
+
+    // STAFF GPS Check
+    if (!navigator.geolocation) { msg.innerText = '⛔ HP tidak mendukung GPS!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+    msg.innerText = '🛰️ Memeriksa Lokasi...'; msg.style.color='#f59e0b'; msg.style.display='block';
+
+    navigator.geolocation.getCurrentPosition(async function(pos) {
+        var lat = pos.coords.latitude; var lng = pos.coords.longitude;
+        var R = 6371e3; var phi1 = -6.411514 * Math.PI/180; var phi2 = lat * Math.PI/180;
+        var dPhi = (lat - -6.411514) * Math.PI/180; var dLambda = (lng - 106.839846) * Math.PI/180;
+        var a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
+        var distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        if (distance > 500) { msg.innerText = '⛔ Di luar area ('+Math.round(distance)+'m).'; msg.style.color='#ef4444'; return; }
+
+        var c = document.createElement('canvas'); var ctx = c.getContext('2d');
+        ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20); ctx.fillStyle = "#069"; ctx.fillText("DreamOS-Ghost", 2, 15);
+        var metrics = [navigator.hardwareConcurrency || 0, screen.colorDepth, c.toDataURL()].join('|');
+        const hashBuffer2 = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metrics));
+        var currentDNA = Array.from(new Uint8Array(hashBuffer2)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+
+        if (!user.device_dna) {
+            if(confirm('🔐 Ikatkan HP ini ke akun '+user.nama+'?')) { user.device_dna = currentDNA; localStorage.setItem('dreamos_users_db', JSON.stringify(users)); enterSystem(user.role, user.nama, user.email, user.password_hash); }
+        } else if (user.device_dna === currentDNA) {
+            enterSystem(user.role, user.nama, user.email, user.password_hash);
+        } else { msg.innerText = '⛔ DEVICE TIDAK DIKENALI!'; msg.style.color='#ef4444'; msg.style.display='block'; }
+    }, function() { msg.innerText = '⛔ Gagal ambil lokasi!'; msg.style.color='#ef4444'; }, { enableHighAccuracy: true });
+};
+console.log('✅ Login v3.0 Loaded. VIP Bypass Active.');
+</script>
+
 </body>
 </html>
