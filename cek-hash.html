@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Cek Hash</title></head>
+<body>
+  <h2>Cek Hash Password</h2>
+  <input type="text" id="pass" placeholder="Masukkan password">
+  <button onclick="hitung()">Hitung Hash</button>
+  <p id="hasil"></p>
+  <script>
+    async function hitung() {
+      var pin = document.getElementById('pass').value;
+      try {
+        var enc = new TextEncoder();
+        var data = enc.encode(pin + 'dreamos_salt_2026');
+        var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        var hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+        document.getElementById('hasil').innerText = 'Hash: ' + hash;
+      } catch(e) {
+        document.getElementById('hasil').innerText = 'Error: ' + e.message;
+      }
+    }
+  </script>
+</body></html>
