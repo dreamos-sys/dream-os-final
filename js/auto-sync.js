@@ -1,43 +1,22 @@
 // Dream OS Auto-Sync Engine v1.0 (Supabase Edition)
 (function() {
-    let SYNC_TABLE = 'kv_store';
+    const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+    const SYNC_TABLE = 'kv_store';
 
-    function getConfig() {
-        if (window.DREAMOS_CONFIG && window.DREAMOS_CONFIG.supabaseUrl && window.DREAMOS_CONFIG.supabaseKey) {
-            return window.DREAMOS_CONFIG;
-        }
-        return {
-            supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
-            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
-        };
-    }
-
-    function isLoggedIn() {
-        // Cek localStorage dulu, lalu cookie
-        if (localStorage.getItem('dreamos_session_active') === 'true') return true;
-        // Fallback ke cookie
-        const cookies = document.cookie.split(';');
-        for (let c of cookies) {
-            const [key, val] = c.trim().split('=');
-            if (key === 'dreamos_session_active' && val === 'true') return true;
-        }
-        return false;
-    }
+    let syncTimer = null;
 
     async function uploadKey(key, value) {
         if (!key.startsWith('dreamos_')) return;
-        const config = getConfig();
-        if (!config.supabaseUrl) return;
-        
-        if (window.syncTimeout) clearTimeout(window.syncTimeout);
-        window.syncTimeout = setTimeout(async () => {
+        if (syncTimer) clearTimeout(syncTimer);
+        syncTimer = setTimeout(async () => {
             try {
                 const now = new Date().toISOString();
-                await fetch(`${config.supabaseUrl}/rest/v1/${SYNC_TABLE}`, {
+                await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}`, {
                     method: 'POST',
                     headers: {
-                        'apikey': config.supabaseKey,
-                        'Authorization': 'Bearer ' + config.supabaseKey,
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY,
                         'Content-Type': 'application/json',
                         'Prefer': 'resolution=merge-duplicates'
                     },
@@ -49,13 +28,9 @@
     }
 
     async function pullAll() {
-        if (!isLoggedIn()) return;
-        const config = getConfig();
-        if (!config.supabaseUrl) return;
-        
         try {
-            const res = await fetch(`${config.supabaseUrl}/rest/v1/${SYNC_TABLE}?select=*`, {
-                headers: { 'apikey': config.supabaseKey, 'Authorization': 'Bearer ' + config.supabaseKey }
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?select=*`, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
             });
             const rows = await res.json();
             if (!rows || rows.length === 0) return;
@@ -70,7 +45,7 @@
                 }
             }
             if(count > 0) {
-                console.log('🔄 Auto-sync pulled', count, 'keys. Refreshing UI...');
+                console.log('🔄 Auto-sync pulled', count, 'updated keys. Refreshing UI...');
                 if(window.renderDashboard) window.renderDashboard();
             }
         } catch(e) { console.warn('Sync pull failed:', e.message); }
@@ -79,21 +54,13 @@
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = function(key, value) {
         originalSetItem.call(localStorage, key, value);
+        localStorage.setItem(key + '_ts', new Date().toISOString());
         if (key.startsWith('dreamos_')) {
-            localStorage.setItem(key + '_ts', new Date().toISOString());
-            if (isLoggedIn()) uploadKey(key, value);
+            uploadKey(key, value);
         }
     };
 
-    function checkAndPull() {
-        if (navigator.onLine && isLoggedIn()) {
-            pullAll();
-        } else if (!isLoggedIn()) {
-            setTimeout(checkAndPull, 3000);
-        }
-    }
-
-    if (navigator.onLine) checkAndPull();
-    window.addEventListener('online', () => { if (isLoggedIn()) pullAll(); });
-    console.log('🛡️ Auto-Sync Engine Mounted (cookie fallback ready).');
+    if (navigator.onLine) { pullAll(); }
+    window.addEventListener('online', pullAll);
+    console.log('🛡️ Auto-Sync Engine Mounted.');
 })();
