@@ -142,12 +142,22 @@
         var msg = document.getElementById('lock-msg');
         if (!email || !pass) { msg.innerText = '⚠️ Email dan Password wajib diisi!'; msg.style.display='block'; return; }
         var inputHash = await hashPin(pass);
+            debug("Hash yang dihasilkan: " + inputHash.substring(0,20) + "...");
         debug('Login attempt: ' + email);
 
         // VIP Bypass (NO GPS)
-        if (email === DEV_EMAIL && inputHash === DEV_HASH) { enterSystem('dev', 'Sultan Architect', email); return; }
-        if (email === KABAG_EMAIL && inputHash === KABAG_HASH) { enterSystem('kabag', 'Bpk. Hanung', email); return; }
-        if (email === KOORD_EMAIL && inputHash === KOORD_HASH) { enterSystem('koord', 'Bpk. Erwinsyah', email); return; }
+        if (email === DEV_EMAIL) {
+                if (inputHash !== DEV_HASH) { debug("Password DEV salah! Hash tidak cocok."); alert("Password Developer Salah!"); return; }
+                enterSystem("dev", "Sultan Architect", email); return;
+            }
+        if (email === KABAG_EMAIL) {
+                if (inputHash !== KABAG_HASH) { debug("Password Kabag salah!"); alert("Password Kabag Salah!"); return; }
+                enterSystem("kabag", "Bpk. Hanung", email); return;
+            }
+        if (email === KOORD_EMAIL) {
+                if (inputHash !== KOORD_HASH) { debug("Password Koord salah!"); alert("Password Koordinator Salah!"); return; }
+                enterSystem("koord", "Bpk. Erwinsyah", email); return;
+            }
 
         let users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
         let user = users.find(u => u.email === email && u.password_hash === inputHash);
@@ -187,7 +197,7 @@
         document.cookie = 'dreamos_user=' + encodeURIComponent(name) + ';path=/;max-age=86400';
         attempts = 0;
         document.getElementById('login-screen').style.display='none';
-        setTimeout(function() {
+        setTimeout(function() { debug("Memasuki sistem, merender dashboard...");
             document.getElementById('login-screen').style.display='none';
             document.getElementById('main-app').style.display='block';
             document.getElementById('bottom-nav').style.display='flex';
@@ -202,7 +212,7 @@
         e.stopPropagation();
         clearTimeout(tapTimer); taps++;
         if (taps >= 7) { taps = 0; var pin = prompt('🔐 4S DevOps PIN:'); if (pin === '4s_ghost_2026') { document.getElementById('login-screen').style.display='none'; window.openMod('4s-ghost'); } else alert('❌ PIN salah.'); return; }
-        tapTimer = setTimeout(function() { taps = 0; }, 2000);
+        tapTimer = setTimeout(function() { debug("Memasuki sistem, merender dashboard..."); taps = 0; }, 2000);
     };
 
     // ========== RBAC ==========
@@ -306,7 +316,7 @@
         updateSecuritySlideAuto(); checkWeatherAndNotify(); showSlides(); fetchPrayerTimes();
     };
     document.addEventListener('click', function(e) { var c = e.target.closest('.mod-card'); if (c && c.dataset.mod) { e.preventDefault(); window.openMod(c.dataset.mod); } });
-    setTimeout(function() { var p = document.getElementById('login-pass'); if (p) p.focus(); }, 500);
+    setTimeout(function() { debug("Memasuki sistem, merender dashboard..."); var p = document.getElementById('login-pass'); if (p) p.focus(); }, 500);
     </script>
 </body>
 </html>
