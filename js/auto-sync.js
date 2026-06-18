@@ -1,22 +1,31 @@
 // Dream OS Auto-Sync Engine v1.0 (Supabase Edition)
 (function() {
-    const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-    const SYNC_TABLE = 'kv_store';
+    let SYNC_TABLE = 'kv_store';
 
-    let syncTimer = null;
+    function getConfig() {
+        if (window.DREAMOS_CONFIG && window.DREAMOS_CONFIG.supabaseUrl && window.DREAMOS_CONFIG.supabaseKey) {
+            return window.DREAMOS_CONFIG;
+        }
+        return {
+            supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
+            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
+        };
+    }
 
     async function uploadKey(key, value) {
         if (!key.startsWith('dreamos_')) return;
-        if (syncTimer) clearTimeout(syncTimer);
-        syncTimer = setTimeout(async () => {
+        const config = getConfig();
+        if (!config.supabaseUrl) return;
+        
+        if (window.syncTimeout) clearTimeout(window.syncTimeout);
+        window.syncTimeout = setTimeout(async () => {
             try {
                 const now = new Date().toISOString();
-                await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}`, {
+                await fetch(`${config.supabaseUrl}/rest/v1/${SYNC_TABLE}`, {
                     method: 'POST',
                     headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_KEY,
+                        'apikey': config.supabaseKey,
+                        'Authorization': 'Bearer ' + config.supabaseKey,
                         'Content-Type': 'application/json',
                         'Prefer': 'resolution=merge-duplicates'
                     },
@@ -28,9 +37,12 @@
     }
 
     async function pullAll() {
+        const config = getConfig();
+        if (!config.supabaseUrl) return;
+        
         try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?select=*`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            const res = await fetch(`${config.supabaseUrl}/rest/v1/${SYNC_TABLE}?select=*`, {
+                headers: { 'apikey': config.supabaseKey, 'Authorization': 'Bearer ' + config.supabaseKey }
             });
             const rows = await res.json();
             if (!rows || rows.length === 0) return;
@@ -45,7 +57,7 @@
                 }
             }
             if(count > 0) {
-                console.log('🔄 Auto-sync pulled', count, 'updated keys. Refreshing UI...');
+                console.log('🔄 Auto-sync pulled', count, 'keys. Refreshing UI...');
                 if(window.renderDashboard) window.renderDashboard();
             }
         } catch(e) { console.warn('Sync pull failed:', e.message); }
