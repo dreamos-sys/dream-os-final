@@ -14,7 +14,7 @@
     }
 
     function isLoggedIn() {
-        return !!localStorage.getItem('dreamos_session_active');
+        return localStorage.getItem('dreamos_session_active') === 'true';
     }
 
     async function uploadKey(key, value) {
