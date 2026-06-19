@@ -122,7 +122,19 @@
 
             // Database lokal
             var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-            var user = users.find(function(u) { return u.email === email && u.password_hash === inputHash; });
+                    // Fallback: bandingkan password langsung jika hash tidak cocok (untuk TWA)
+        var user = users.find(function(u) { return u.email === email && u.password_hash === inputHash; });
+        if (!user) {
+            // Coba cocokkan password secara langsung (tanpa hash)
+            user = users.find(function(u) { return u.email === email && u.password === pass; });
+            if (user) {
+                // Update hash di database agar selanjutnya bisa menggunakan hash normal
+                user.password_hash = inputHash;
+                delete user.password;
+                localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+                debug('Password langsung dikonversi ke hash');
+            }
+        }
             if (user) {
                 if (['dev', 'kabag', 'koord'].includes(user.role)) {
                     enterSystem(user.role, user.nama, email);
