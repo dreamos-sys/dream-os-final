@@ -39,7 +39,6 @@
         originalSetItem.call(localStorage, key, value);
         localStorage.setItem(key + '_ts', new Date().toISOString());
         if (key.startsWith('dreamos_')) uploadKey(key, value);
-    };
-    if (navigator.onLine) pullAll();
+    };    if (navigator.onLine) pullAll();
     window.addEventListener('online', pullAll);
 })();
