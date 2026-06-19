@@ -3,21 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • Hybrid Final</title>
+    <title>Dream OS • Final</title>
     <link rel="manifest" href="./manifest.json">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta name="theme-color" content="#020617">
-    <!-- CryptoJS untuk user biasa -->
-    <script src="js/crypto-js.min.js"></script>
-    <script src="js/auto-sync.js"></script>
-    <script>
-    window.DREAMOS_CONFIG = {
-        supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
-        supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
-    };
-    </script>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="theme-color" content="#020617">
     <style>
         :root { --bg: #020617; --text: #e2e8f0; --accent: #0ea5e9; --panel: #1e293b; }
         body { background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; margin:0; }
@@ -35,7 +26,6 @@
         nav { position:fixed; bottom:0; left:0; right:0; background:#0f172a; display:none; height:60px; }
         nav button { flex:1; background:none; border:none; color:#94a3b8; font-size:0.7rem; }
         #msg { color:#f59e0b; font-size:0.8rem; }
-        #debug-log { background:#000; color:#0f0; font-size:0.7rem; padding:0.5rem; margin-top:1rem; text-align:left; max-height:120px; overflow-y:auto; display:none; }
     </style>
 </head>
 <body>
@@ -50,7 +40,6 @@
             <button onclick="authenticate()">🔐 LOGIN</button>
             <button class="btn-green" onclick="registerUser()">⚡ DAFTAR</button>
             <p id="msg"></p>
-            <div id="debug-log"></div>
         </div>
     </div>
 
@@ -84,24 +73,9 @@
             init(); draw();
         })();
 
-        function debug(msg) {
-            var el = document.getElementById('debug-log');
-            if (el) { el.style.display = 'block'; el.innerHTML += '<div>' + msg + '</div>'; el.scrollTop = el.scrollHeight; }
-        }
-
-        function sha256(str) {
-            return CryptoJS.SHA256(str).toString();
-        }
-
+        // ========== DATABASE USER ==========
         function getUsers() { try { return JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); } catch(e) { return []; } }
         function saveUsers(users) { localStorage.setItem('dreamos_users_db', JSON.stringify(users)); }
-
-        // ========== DATA VIP (PASSWORD LANGSUNG) ==========
-        var VIP = {
-            'dreamos.sch.id@gmail.com': { pass: 'b15m1ll4h_012443410', role: 'dev', name: 'Sultan Architect' },
-            'vespaexcelhijaucedar@gmail.com': { pass: '4dm1n_k002d', role: 'kabag', name: 'Bpk. Hanung' },
-            'erwinsyah1679@gmail.com': { pass: '4dm1n_k002d', role: 'koord', name: 'Bpk. Erwinsyah' }
-        };
 
         // ========== LOGIN ==========
         window.authenticate = function() {
@@ -112,43 +86,29 @@
 
             if (!email || !pass) { msg.innerText = '⚠️ Isi email dan password'; return; }
 
-            // 1. VIP: password langsung (tanpa hash)
-            if (VIP[email] && VIP[email].pass === pass) {
-                enterSystem(VIP[email].role, VIP[email].name, email);
-                return;
-            }
-
-            // 2. User biasa: cek hash
             var users = getUsers();
-            var hash = sha256(pass + 'dreamos_salt_2026');
-            var user = users.find(function(u) { return u.email === email && u.password_hash === hash; });
+            var user = users.find(function(u) { return u.email === email && u.password === pass; });
             if (user) {
                 enterSystem(user.role, user.nama || email.split('@')[0], email);
-                return;
+            } else {
+                msg.innerText = '⛔ Email atau password salah';
             }
-
-            msg.innerText = '⛔ Email atau password salah';
         };
 
-        // ========== REGISTRASI (USER BIASA) ==========
+        // ========== REGISTRASI ==========
         window.registerUser = function() {
             var email = document.getElementById('email').value.trim().toLowerCase();
             var pass = document.getElementById('pass').value;
             var msg = document.getElementById('msg');
             if (!email || !pass) { msg.innerText = '⚠️ Isi email dan password'; return; }
 
-            // Cegah VIP mendaftar ulang
-            if (VIP[email]) { msg.innerText = '⚠️ Email ini khusus VIP, tidak bisa didaftarkan ulang.'; return; }
-
             var users = getUsers();
-            var hash = sha256(pass + 'dreamos_salt_2026');
-
             var existing = users.find(function(u) { return u.email === email; });
             if (existing) {
-                existing.password_hash = hash;
+                existing.password = pass;
                 msg.innerText = '✅ Password diperbarui!';
             } else {
-                users.push({ email: email, password_hash: hash, nama: email.split('@')[0], role: 'staff' });
+                users.push({ email: email, password: pass, nama: email.split('@')[0], role: 'staff' });
                 msg.innerText = '✅ Registrasi berhasil! Silakan login.';
             }
             saveUsers(users);
