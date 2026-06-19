@@ -6,264 +6,80 @@
     <title>Dream OS • Enterprise Core</title>
     <link rel="manifest" href="./manifest.json">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#020617">
     <style>
-        :root { 
-            --bg: #020617; 
-            --text: #e2e8f0; 
-            --accent: #0ea5e9; 
-            --panel: rgba(30, 41, 59, 0.7); 
-            --neon-green: #00ff9d;
-            --danger: #ef4444;
-        }
+        :root { --bg: #020617; --text: #e2e8f0; --accent: #0ea5e9; --panel: rgba(30, 41, 59, 0.7); --neon-green: #00ff9d; --danger: #ef4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; height: 100vh; }
-        canvas#star-field { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; }
-        
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
         #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
-        .login-box { 
-            width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.85); 
-            padding: 2.5rem 2rem; border-radius: 1.5rem; border: 1px solid rgba(45, 212, 191, 0.2);
-            backdrop-filter: blur(10px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; 
-        }
-        .logo { width: 95px; height: 95px; border-radius: 24px; margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s; border: 2px solid var(--neon-green); box-shadow: 0 0 20px rgba(0, 255, 157, 0.2); }
-        .logo:active { transform: scale(0.95); }
-        
-        .input-group { position: relative; margin-bottom: 1.2rem; }
-        input { 
-            width: 100%; padding: 1rem 1.2rem; background: #090d1a; border: 1px solid #1e293b; 
-            border-radius: 0.75rem; color: var(--neon-green); font-family: monospace; font-size: 1rem;
-        }
-        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 15px rgba(14, 165, 233, 0.2); }
-        .eye-icon { position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 1.2rem; }
-        
-        button { 
-            width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; 
-            border-radius: 0.75rem; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 0.5rem; transition: all 0.2s;
-        }
-        button:active { transform: scale(0.98); }
-        .btn-green { background: #10b981; margin-top: 0.8rem; }
-        .security-badge { font-size: 0.7rem; color: #64748b; margin-top: 1.5rem; letter-spacing: 1px; text-transform: uppercase; }
-        #msg { color: var(--danger); font-size: 0.85rem; margin-top: 1rem; font-weight: 500; min-height: 20px; }
-
-        /* MAIN APP DASHBOARD */
-        #main-app { display: none; padding-bottom: 70px; min-height: 100vh; position: relative; z-index: 10; }
-        .header { padding: 2rem 1rem 1rem; text-align: center; border-bottom: 1px solid rgba(14, 165, 233, 0.3); background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px); }
-        .header h2 { color: var(--neon-green); margin-bottom: 0.5rem; }
-        .header p { color: #94a3b8; font-size: 0.9rem; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; padding: 1.5rem; }
-        .card { 
-            background: var(--panel); padding: 1.5rem 0.5rem; border-radius: 1rem; text-align: center; 
-            cursor: pointer; border: 1px solid #334155; font-size: 0.85rem; font-weight: 600;
-            transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .card:hover { border-color: var(--accent); transform: translateY(-3px); }
-        
-        nav { 
-            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); 
-            display: none; height: 65px; border-top: 1px solid #334155; backdrop-filter: blur(10px); z-index: 20;
-        }
-        nav button { 
-            flex: 1; background: none; border: none; color: #94a3b8; font-size: 0.75rem; 
-            border-radius: 0; margin: 0; padding: 0.5rem; display: flex; flex-direction: column; align-items: center;
-        }
-        nav button.active { color: var(--accent); }
+        .login-box { width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.85); padding: 2rem; border-radius: 1.5rem; border: 1px solid rgba(45, 212, 191, 0.2); text-align: center; }
+        .logo { width: 95px; height: 95px; border-radius: 24px; margin-bottom: 1.5rem; cursor: pointer; border: 2px solid var(--neon-green); }
+        input { width: 100%; padding: 1rem; margin-bottom: 1rem; background: #090d1a; border: 1px solid #1e293b; border-radius: 0.75rem; color: var(--neon-green); }
+        button { width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; border-radius: 0.75rem; font-weight: bold; cursor: pointer; margin-top: 0.5rem; }
+        #main-app { display: none; padding-bottom: 70px; min-height: 100vh; }
+        .header { padding: 2rem 1rem; text-align: center; border-bottom: 1px solid var(--accent); }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; padding: 1rem; }
+        .card { background: var(--panel); padding: 1rem; border-radius: 1rem; text-align: center; border: 1px solid #334155; }
+        nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f172a; display: none; height: 60px; border-top: 1px solid #334155; }
+        nav button { flex: 1; border: none; background: none; color: #94a3b8; font-size: 0.7rem; }
     </style>
 </head>
 <body>
-    <canvas id="star-field"></canvas>
-
     <div id="login-screen">
         <div class="login-box">
-            <div style="display:none;">Bismillah bi idznillah • Shalawat Core</div>
-            <img src="assets/logo-sultan.png" class="logo" onclick="tapLogo(event)" alt="Dream OS Logo">
-            <p style="color:#00ff9d; font-size:0.9rem; margin-bottom:1.5rem; font-family:serif;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
-            
-            <div class="input-group">
-                <input type="email" id="email" placeholder="EMAIL AKSES">
-            </div>
-            <div class="input-group">
-                <input type="password" id="pass" placeholder="PASSWORD CORE">
-                <span class="eye-icon" onclick="togglePass()">👁️</span>
-            </div>
-            
-            <button onclick="authenticate()">🔐 ACCESS CORE</button>
-            <button class="btn-green" onclick="registerUser()">⚡ REGISTRASI MULTI-USER</button>
-            <p id="msg"></p>
-            <div class="security-badge">• REGIS CORE ACTIVE • SHA-256 SALT • ISO 27001 •</div>
+            <img src="assets/logo-sultan.png" class="logo" onclick="tapLogo(event)">
+            <input type="email" id="email" placeholder="EMAIL">
+            <input type="password" id="pass" placeholder="PASSWORD">
+            <button onclick="authenticate()">🔐 LOGIN</button>
+            <button style="background:#10b981" onclick="registerUser()">⚡ DAFTAR</button>
+            <p id="msg" style="color:var(--danger); margin-top:1rem;"></p>
         </div>
     </div>
-
     <div id="main-app">
-        <div class="header">
-            <h2>Dream OS Central</h2>
-            <p id="user-info"></p>
-            <p id="live-clock" style="font-family:monospace; margin-top:0.3rem; color:var(--accent);"></p>
-        </div>
+        <div class="header"><h2>Dream OS Central</h2><p id="user-info"></p></div>
         <div class="grid" id="mod-grid"></div>
     </div>
-
     <nav id="bottom-nav">
-        <button class="active">🏠<br>Home</button>
-        <button>👤<br>Profile</button>
-        <button>📷<br>QR Scan</button>
-        <button onclick="window.location.href='modules/commandcenter.html'">🏢<br>CMD</button>
-        <button>⚙️<br>System</button>
+        <button>🏠 Home</button><button>👤 Profile</button><button>📷 QR</button>
+        <button onclick="window.location.href='modules/commandcenter.html'">🏢 CMD</button><button>⚙️ Sys</button>
     </nav>
-
     <script>
-        // ========== VISUAL FX ==========
-        (function() {
-            var c = document.getElementById('star-field');
-            if (!c) return;
-            var ctx = c.getContext('2d'), stars = [], w, h;
-            function resize() { w = c.width = window.innerWidth; h = c.height = window.innerHeight; }
-            function init() { resize(); stars = []; for (var i = 0; i < 150; i++) stars.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.2, v: Math.random()*0.2 }); }
-            function draw() { ctx.fillStyle = '#020617'; ctx.fillRect(0,0,w,h); ctx.fillStyle = 'rgba(255,255,255,0.4)'; for (var i = 0; i < stars.length; i++) { var p = stars[i]; p.y -= p.v; if (p.y < 0) p.y = h; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); } requestAnimationFrame(draw); }
-            window.addEventListener('resize', function() { resize(); init(); });
-            init(); draw();
-        })();
-
-        window.togglePass = function() {
-            var p = document.getElementById('pass');
-            p.type = p.type === 'password' ? 'text' : 'password';
-        };
-
-        function generateDeviceDNA() {
-            var ua = navigator.userAgent; var si = screen.width + 'x' + screen.height + '-' + screen.colorDepth;
-            var raw = ua + si + navigator.language; var h = 0;
-            for (var i = 0; i < raw.length; i++) { h = ((h << 5) - h) + raw.charCodeAt(i); h |= 0; }
-            return 'DNA-' + Math.abs(h).toString(16).toUpperCase();
-        }
-
-        function checkLockout() {
-            var lockoutTime = localStorage.getItem('dreamos_lockout_until');
-            if (lockoutTime && new Date().getTime() < parseInt(lockoutTime)) {
-                var remaining = Math.ceil((parseInt(lockoutTime) - new Date().getTime()) / 1000 / 60);
-                document.getElementById('msg').innerText = '🔒 Sistem Terkunci. Coba lagi dalam ' + remaining + ' menit.';
-                return true;
-            }
-            return false;
-        }
-
-        function handleFailedAttempt() {
-            var attempts = parseInt(localStorage.getItem('dreamos_fail_attempts') || '0') + 1;
-            localStorage.setItem('dreamos_fail_attempts', attempts);
-            if (attempts >= 3) {
-                var lockoutUntil = new Date().getTime() + (5 * 60 * 1000);
-                localStorage.setItem('dreamos_lockout_until', lockoutUntil);
-                localStorage.setItem('dreamos_fail_attempts', '0');
-                checkLockout();
-            } else {
-                document.getElementById('msg').innerText = '⛔ Akses ditolak. Sisa percobaan: ' + (3 - attempts);
-            }
-        }
-
-        // ========== LOGIN PROCESS LOGIC (BYPASS GPS HANG) ==========
-        function processLogin(user, email, statusLog) {
-            localStorage.setItem('dreamos_fail_attempts', '0');
-            localStorage.setItem('dreamos_bound_dna', generateDeviceDNA());
-            localStorage.setItem('dreamos_bound_user', JSON.stringify({ role: user.role, name: user.nama, email: email }));
-            localStorage.setItem('dreamos_session_active', 'true');
-            
-            var msg = document.getElementById('msg');
-            msg.style.color = '#00ff9d';
-            msg.innerText = '⚡ Kredensial Valid. ' + statusLog;
-            
-            setTimeout(function() {
+        window.authenticate = function() {
+            var email = document.getElementById('email').value.trim().toLowerCase();
+            var pass = document.getElementById('pass').value;
+            var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            var user = users.find(u => u.email === email && u.password === pass);
+            if (user) {
+                localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+                localStorage.setItem('dreamos_session_active', 'true');
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 document.getElementById('bottom-nav').style.display = 'flex';
-                document.getElementById('user-info').innerText = user.nama + ' (' + user.role + ')';
+                document.getElementById('user-info').innerText = user.nama;
                 renderModules();
-                startClock();
-            }, 1000);
-        }
-
-        window.authenticate = function() {
-            if (checkLockout()) return;
-            
-            var email = document.getElementById('email').value.trim().toLowerCase();
-            var pass = document.getElementById('pass').value;
-            var msg = document.getElementById('msg');
-            msg.innerText = '';
-
-            if (!email || !pass) { msg.innerText = '⚠️ Parameter identitas tidak lengkap'; return; }
-
-            var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-            var user = users.find(function(u) { return u.email === email && u.password === pass; });
-            
-            if (!user) {
-                handleFailedAttempt();
-                return;
-            }
-
-            msg.style.color = '#0ea5e9';
-            msg.innerText = '⏳ Verifikasi DNA Hardware...';
-
-            // GHOST OVERRIDE: Skip GPS jika berada di dalam WebView/PWA yang bermasalah.
-            // Kita langsung eksekusi DNA Binding agar tidak terjadi Hang!
-            processLogin(user, email, "Membuka Gateway...");
+            } else { document.getElementById('msg').innerText = '⛔ Login Gagal'; }
         };
-
         window.registerUser = function() {
             var email = document.getElementById('email').value.trim().toLowerCase();
             var pass = document.getElementById('pass').value;
-            var msg = document.getElementById('msg');
-            if (!email || !pass) { msg.innerText = '⚠️ Isi email dan password'; return; }
-
             var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-            var existing = users.find(function(u) { return u.email === email; });
-            
-            if (existing) {
-                existing.password = pass;
-                msg.style.color = '#00ff9d';
-                msg.innerText = '✅ Kredensial akun Cloud diperbarui!';
-            } else {
-                users.push({ email: email, password: pass, nama: email.split('@')[0], role: 'staff' });
-                msg.style.color = '#00ff9d';
-                msg.innerText = '✅ Registrasi Berhasil! Silakan Login.';
-            }
+            users.push({ email, password: pass, nama: email.split('@')[0], role: 'kabag' });
             localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+            alert('✅ Terdaftar!');
         };
-
-        // ========== DASHBOARD RENDER ==========
         function renderModules() {
-            var mods = [
-                { icon: '💻', name: 'CMD', action: "window.location.href='modules/commandcenter.html'" }, 
-                { icon: '🛡️', name: 'Security', action: "alert('Modul Security')" }, 
-                { icon: '⚠️', name: 'K3', action: "alert('Modul K3')" },
-                { icon: '🧹', name: 'Jan Indoor', action: "alert('Modul Janitor')" }, 
-                { icon: '🌳', name: 'Jan Outdoor', action: "alert('Modul Taman')" }, 
-                { icon: '📅', name: 'Booking', action: "alert('Modul Booking')" },
-                { icon: '🏢', name: 'Asset', action: "alert('Modul Asset')" }, 
-                { icon: '📦', name: 'Stok', action: "alert('Modul Stok')" }, 
-                { icon: '🔧', name: 'Maintenance', action: "alert('Modul Maintenance')" }, 
-                { icon: '💰', name: 'Dana', action: "alert('Modul Dana')" }
-            ];
-            var grid = document.getElementById('mod-grid');
-            grid.innerHTML = mods.map(function(m) { 
-                return '<div class="card" onclick="' + m.action + '"><div style="font-size:1.8rem; margin-bottom:0.5rem;">' + m.icon + '</div>' + m.name + '</div>'; 
-            }).join('');
+            var mods = ['CMD','Security','K3','Jan','Taman','Book','Asset','Stok','Maint','Dana'];
+            document.getElementById('mod-grid').innerHTML = mods.map(m => '<div class="card" onclick="alert(\'Modul '+m+'\')">'+m+'</div>').join('');
         }
-
-        function startClock() {
-            var el = document.getElementById('live-clock');
-            function tick() { el.textContent = new Date().toLocaleTimeString('id-ID'); }
-            tick(); setInterval(tick, 1000);
-        }
-
-        // ========== 4S GHOST TRIGGER ==========
-        var taps = 0; var tapTimeout;
         window.tapLogo = function(e) {
-            e.stopPropagation(); taps++; clearTimeout(tapTimeout);
-            if (taps >= 7) { taps = 0; window.location.href = 'modules/4s-ghost.html'; }
-            tapTimeout = setTimeout(function() { taps = 0; }, 2000);
+            if (e.detail >= 7) window.location.href = 'modules/4s-ghost.html';
         };
-        
-        checkLockout();
+        if (localStorage.getItem('dreamos_session_active') === 'true') {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('bottom-nav').style.display = 'flex';
+            renderModules();
+        }
     </script>
 </body>
 </html>
