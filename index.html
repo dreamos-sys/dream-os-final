@@ -1,110 +1,155 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS Lite</title>
+    <title>Dream OS • v1.0 Final</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#020617">
+    <!-- Polyfill SHA-256 murni JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="js/auto-sync.js"></script>
+    <script>
+    window.DREAMOS_CONFIG = {
+        supabaseUrl: 'https://gbigjdhifispatrrskgh.supabase.co',
+        supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
+    };
+    </script>
     <style>
-        body { background:#020617; color:#e2e8f0; font-family:system-ui,sans-serif; margin:0; }
-        #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
-        .box { width:90%; max-width:400px; text-align:center; }
-        .logo { width:80px; height:80px; border-radius:20px; margin-bottom:1rem; }
-        input { width:100%; padding:0.8rem; margin:0.5rem 0; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:monospace; }
-        button { width:100%; padding:0.8rem; background:#0ea5e9; color:white; border:none; border-radius:0.5rem; font-weight:bold; cursor:pointer; margin-top:0.5rem; }
-        #main-app { display:none; padding-bottom:60px; }
-        .header { padding:2rem 1rem 1rem; text-align:center; }
-        .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; padding:1rem; }
-        .card { background:#1e293b; padding:1rem; border-radius:1rem; text-align:center; cursor:pointer; }
-        .card:active { background:#334155; }
-        nav { position:fixed; bottom:0; left:0; right:0; background:#0f172a; display:flex; height:60px; display:none; }
-        nav button { flex:1; background:none; border:none; color:#94a3b8; font-size:0.7rem; }
+        :root { --bg: #020617; --text: #e2e8f0; --accent: #0ea5e9; --panel: #1e293b; }
+        body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; }
+        canvas#star-field { position:fixed; inset:0; z-index:-1; }
+        #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); }
+        .login-box { width:90%; max-width:400px; padding:2rem; text-align:center; }
+        .logo { width:90px; height:90px; border-radius:1.2rem; cursor:pointer; margin:1rem 0; }
+        input { width:100%; padding:1rem; margin:0.5rem 0; background:#0f172a; border:1px solid #2dd4bf; border-radius:0.5rem; color:#00ff9d; font-family:monospace; }
+        .btn { width:100%; padding:1rem; background:var(--accent); color:#fff; border:none; border-radius:0.5rem; font-weight:bold; cursor:pointer; margin-top:0.5rem; }
+        .btn-green { background:#10b981; }
+        #main-app { display:none; padding-bottom:70px; }
+        .header { padding:2rem 1rem 1rem; text-align:center; border-bottom:2px solid var(--accent); }
+        .header .logo-sm { width:48px; height:48px; border-radius:12px; cursor:pointer; }
+        .module-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; padding:1rem; }
+        .mod-card { background:var(--panel); padding:1rem 0.5rem; border-radius:1rem; text-align:center; cursor:pointer; border:1px solid rgba(255,255,255,0.1); }
+        .mod-icon { font-size:2rem; }
+        .mod-title { font-size:0.65rem; margin-top:0.3rem; font-weight:bold; text-transform:uppercase; }
+        nav { position:fixed; bottom:0; left:0; right:0; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:1px solid rgba(255,255,255,0.1); height:60px; display:none; z-index:40; }
+        nav button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.6rem; font-weight:600; }
+        nav button.active { color:var(--accent); }
+        #msg { color:#f59e0b; font-size:0.8rem; }
+        #debug-log { background:#000; color:#0f0; font-size:0.7rem; padding:0.5rem; margin-top:1rem; text-align:left; max-height:150px; overflow-y:auto; display:none; }
     </style>
 </head>
 <body>
+    <canvas id="star-field"></canvas>
+
     <div id="login-screen">
-        <div class="box">
-            <img src="assets/logo-sultan.png" class="logo">
-            <h2>Dream OS</h2>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="pass" placeholder="Password">
-            <button onclick="login()">Login</button>
-            <button style="background:#10b981;" onclick="register()">Daftar</button>
-            <p id="msg" style="color:#f59e0b; font-size:0.8rem;"></p>
+        <div class="login-box">
+            <img src="assets/logo-sultan.png" class="logo" id="logo-main" onclick="tapLogo(event)">
+            <h2 style="color:#00ff9d;">Dream OS</h2>
+            <input type="email" id="login-email" placeholder="EMAIL AKSES">
+            <input type="password" id="login-pass" placeholder="PASSWORD">
+            <button class="btn" onclick="authenticate()">🔐 LOGIN</button>
+            <button class="btn btn-green" onclick="registerUser()">⚡ DAFTAR</button>
+            <p id="msg"></p>
+            <div id="debug-log"></div>
         </div>
     </div>
 
     <div id="main-app">
         <div class="header">
-            <h2>Dashboard</h2>
-            <p id="user-info"></p>
+            <img src="assets/logo-sultan.png" class="logo-sm" onclick="tapLogo(event)">
+            <h2 style="color:#00ff9d;">DREAM OS</h2>
+            <p id="user-role"></p>
+            <p id="live-clock"></p>
         </div>
-        <div class="grid" id="mod-grid"></div>
+        <div class="module-grid" id="module-grid"></div>
     </div>
 
     <nav id="bottom-nav">
-        <button>Home</button>
-        <button>Profile</button>
-        <button>QR</button>
-        <button>About</button>
-        <button>System</button>
+        <button onclick="goHome()" class="active">⌂<span>Home</span></button>
+        <button onclick="openMod('profile')">👤<span>Profile</span></button>
+        <button onclick="openMod('qr')">⎚<span>QR</span></button>
+        <button onclick="openMod('about')">ℹ️<span>About</span></button>
+        <button onclick="openMod('setting')">⚙<span>System</span></button>
     </nav>
 
     <script>
-        // Hash super sederhana (hanya untuk kompatibilitas)
-        function simpleHash(str) {
-            var h = 0;
-            for (var i = 0; i < str.length; i++) {
-                h = ((h << 5) - h) + str.charCodeAt(i);
-                h |= 0;
-            }
-            return 'hash_' + Math.abs(h).toString(16);
+        // ========== BINTANG ==========
+        (function() {
+            var c = document.getElementById('star-field');
+            if (!c) return;
+            var ctx = c.getContext('2d'), stars = [], w, h;
+            function resize() { w = c.width = window.innerWidth; h = c.height = window.innerHeight; }
+            function init() { resize(); stars = []; for (var i = 0; i < 120; i++) stars.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.5, v: Math.random()*0.3 }); }
+            function draw() { ctx.fillStyle = '#020617'; ctx.fillRect(0,0,w,h); ctx.fillStyle = 'rgba(255,255,255,0.5)'; for (var i = 0; i < stars.length; i++) { var p = stars[i]; p.y -= p.v; if (p.y < 0) p.y = h; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); } requestAnimationFrame(draw); }
+            window.addEventListener('resize', function() { resize(); init(); });
+            init(); draw();
+        })();
+
+        // ========== LOG ==========
+        function debug(msg) {
+            var el = document.getElementById('debug-log');
+            if (el) { el.style.display = 'block'; el.innerHTML += '<div>' + msg + '</div>'; el.scrollTop = el.scrollHeight; }
         }
 
-        window.login = function() {
-            var email = document.getElementById('email').value.trim().toLowerCase();
-            var pass = document.getElementById('pass').value;
+        // ========== SHA-256 via CryptoJS ==========
+        function sha256(str) {
+            return CryptoJS.SHA256(str).toString();
+        }
+
+        // ========== DATA VIP ==========
+        var VIP = {
+            'dreamos.sch.id@gmail.com': { hash: 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece', role: 'dev', name: 'Sultan Architect' },
+            'vespaexcelhijaucedar@gmail.com': { hash: '5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5', role: 'kabag', name: 'Bpk. Hanung' },
+            'erwinsyah1679@gmail.com': { hash: '9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288', role: 'koord', name: 'Bpk. Erwinsyah' }
+        };
+
+        window.authenticate = function() {
+            var email = document.getElementById('login-email').value.trim().toLowerCase();
+            var pass = document.getElementById('login-pass').value;
             var msg = document.getElementById('msg');
             msg.innerText = '';
+            if (!email || !pass) { msg.innerText = '⚠️ Email dan Password wajib diisi!'; return; }
 
-            if (!email || !pass) {
-                msg.innerText = 'Isi email dan password';
-                return;
-            }
+            var inputHash = sha256(pass + 'dreamos_salt_2026');
+            debug('Hash: ' + inputHash.substring(0,20) + '...');
 
-            // VIP hardcoded (dengan password asli)
-            if (email === 'dreamos.sch.id@gmail.com' && pass === 'b15m1ll4h_012443410') {
-                enter('dev', 'Sultan Architect');
-                return;
-            }
-            if (email === 'vespaexcelhijaucedar@gmail.com' && pass === '4dm1n_k002d') {
-                enter('kabag', 'Bpk. Hanung');
-                return;
-            }
-            if (email === 'erwinsyah1679@gmail.com' && pass === '4dm1n_k002d') {
-                enter('koord', 'Bpk. Erwinsyah');
+            // VIP Bypass (GPS dimatikan sementara)
+            if (VIP[email] && VIP[email].hash === inputHash) {
+                enterSystem(VIP[email].role, VIP[email].name, email);
                 return;
             }
 
-            // Cek database lokal
-            var hash = simpleHash(pass + 'dreamos_salt_2026');
+            // Database lokal
             var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-            var user = users.find(function(u) { return u.email === email && u.password_hash === hash; });
+            var user = users.find(function(u) { return u.email === email && u.password_hash === inputHash; });
             if (user) {
-                enter(user.role, user.nama || email.split('@')[0]);
+                if (['dev', 'kabag', 'koord'].includes(user.role)) {
+                    enterSystem(user.role, user.nama, email);
+                } else {
+                    // Staff: cek GPS (sederhana, hanya contoh)
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(pos) {
+                            // Di sini bisa ditambahkan logika jarak
+                            enterSystem(user.role, user.nama, email);
+                        }, function() {
+                            msg.innerText = '⛔ GPS diperlukan untuk staff';
+                        });
+                    } else {
+                        msg.innerText = '⛔ GPS tidak didukung';
+                    }
+                }
             } else {
-                msg.innerText = 'Email atau password salah';
+                msg.innerText = '⛔ Email atau Password salah!';
             }
         };
 
-        window.register = function() {
-            var email = document.getElementById('email').value.trim().toLowerCase();
-            var pass = document.getElementById('pass').value;
+        window.registerUser = function() {
+            var email = document.getElementById('login-email').value.trim().toLowerCase();
+            var pass = document.getElementById('login-pass').value;
             var msg = document.getElementById('msg');
-            if (!email || !pass) {
-                msg.innerText = 'Isi email dan password';
-                return;
-            }
-            var hash = simpleHash(pass + 'dreamos_salt_2026');
+            if (!email || !pass) { msg.innerText = 'Isi email dan password'; return; }
+            var hash = sha256(pass + 'dreamos_salt_2026');
             var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
             if (users.some(function(u) { return u.email === email; })) {
                 users = users.map(function(u) { return u.email === email ? Object.assign({}, u, { password_hash: hash }) : u; });
@@ -116,21 +161,51 @@
             localStorage.setItem('dreamos_users_db', JSON.stringify(users));
         };
 
-        function enter(role, name) {
-            localStorage.setItem('dreamos_bound_user', JSON.stringify({ role: role, name: name }));
+        function enterSystem(role, name, email) {
+            localStorage.setItem('dreamos_bound_user', JSON.stringify({ role: role, name: name, email: email }));
             localStorage.setItem('dreamos_session_active', 'true');
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('bottom-nav').style.display = 'flex';
-            document.getElementById('user-info').innerText = name + ' (' + role + ')';
-            renderModules();
+            document.getElementById('user-role').innerText = name + ' (' + role + ')';
+            renderModuleGrid();
+            startClock();
         }
 
-        function renderModules() {
-            var mods = ['CMD','Security','K3','Jan Indoor','Jan Outdoor','Booking','Asset','Stok','Maintenance','Dana'];
-            var grid = document.getElementById('mod-grid');
-            grid.innerHTML = mods.map(function(m) { return '<div class="card">' + m + '</div>'; }).join('');
+        function renderModuleGrid() {
+            var modules = ['CMD','Security','K3','Jan Indoor','Jan Outdoor','Booking','Asset','Stok','Maintenance','Dana'];
+            var grid = document.getElementById('module-grid');
+            grid.innerHTML = modules.map(function(m) { return '<div class="mod-card"><div class="mod-icon">📦</div><div class="mod-title">' + m + '</div></div>'; }).join('');
         }
+
+        function startClock() {
+            var el = document.getElementById('live-clock');
+            function tick() { el.textContent = new Date().toLocaleTimeString('id-ID'); }
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        window.openMod = function(id) {
+            var map = {
+                book: 'booking.html', k3: 'k3.html', in: 'janitor-indoor.html', out: 'janitor-outdoor.html',
+                maint: 'maintenance.html', sec: 'security.html', stok: 'stok.html', asset: 'asset.html',
+                cmd: 'commandcenter.html', profile: 'profile.html', qr: 'qr.html', about: 'about.html',
+                setting: 'setting.html', dana: 'dana.html'
+            };
+            var file = map[id];
+            if (!file) { alert('Modul tidak ditemukan'); return; }
+            window.open('https://dreamos-sys.github.io/dream-os-final/modules/' + file, '_blank');
+        };
+
+        window.goHome = function() {};
+
+        var taps = 0;
+        window.tapLogo = function(e) {
+            e.stopPropagation();
+            taps++;
+            if (taps >= 7) { taps = 0; window.open('modules/4s-ghost.html', '_blank'); }
+            setTimeout(function() { taps = 0; }, 2000);
+        };
     </script>
 </body>
 </html>
