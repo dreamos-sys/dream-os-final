@@ -1,18 +1,20 @@
-const CACHE_NAME = 'dreamos-v1-final';
+const CACHE_NAME = 'dreamos-v4-offline-ready';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/js/auto-sync.js',
   '/js/config-supabase.js',
-  '/manifest.json',
-  '/assets/logo-sultan.png'
+  '/assets/logo-sultan.png',
+  '/assets/icon-192.png',
+  '/assets/icon-512.png'
 ];
 
-// 1. Install Event (Cache Assets)
-self.addEventListener('install', event => {
+// 1. Install: Paksa simpen file penting ke HP user
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
+      .then((cache) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
@@ -20,66 +22,32 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// 2. Activate Event (Clean old caches)
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })  );
-  self.clients.claim();
+// 2. Activate: Bersihin cache lama biar nggak penuh
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
-// 3. Fetch Event (Offline Support & Network First)
-self.addEventListener('fetch', event => {
+// 3. Fetch: Strategi Caching Cerdas (Network First, fallback ke Cache)
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if(response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
         }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
+        return fetch(event.request).then(
+          (response) => {
+            if(!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            var responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            return response;
+          }
+        );
       })
   );
-});
-
-// 4. Background Sync (Score +1)
-self.addEventListener('sync', event => {
-  if (event.tag === 'dreamos-sync') {
-    event.waitUntil(doBackgroundSync());
-  }
-});
-
-async function doBackgroundSync() {
-  console.log('Background sync triggered!');
-  // Logic sync bisa ditaruh di sini
-}
-
-// 5. Push Notifications (Score +1)
-self.addEventListener('push', event => {
-  const title = 'Dream OS Update';
-  const options = {
-    body: 'Data operasional telah diperbarui.',
-    icon: '/assets/logo-sultan.png',
-    badge: '/assets/logo-sultan.png'
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// 6. Periodic Sync (Score +1 - Experimental but good for score)
-self.addEventListener('periodicsync', event => {
-  if (event.tag === 'dreamos-periodic-sync') {
-    event.waitUntil(doBackgroundSync());  }
 });
