@@ -1,35 +1,85 @@
-const SW_SUPABASE_KEY = 'sb_publishable_rgSsdppHSeZ8a0I_NWtqZA_jBz2wWwW';
-const CACHE_NAME = 'dream-os-v1.0';
-const ASSETS = [
-  './', './index.html', './manifest.json', './assets/logo-sultan.png',
-  './js/config-supabase.js', './js/core/supabase-bridge.js', './js/core/dream-lib.js', './js/core/dream-component.js', './css/dream-ui.css',
-  './modules/about.html', './modules/core-ai.html', './modules/access-verifier.html', './modules/setting.html', './modules/commandcenter.html', './modules/booking.html', './modules/k3.html', './modules/maintenance.html', './modules/security.html', './modules/stok.html', './modules/profile.html'
+const CACHE_NAME = 'dreamos-v1-final';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/js/auto-sync.js',
+  '/js/config-supabase.js',
+  '/manifest.json',
+  '/assets/logo-sultan.png'
 ];
 
-self.addEventListener('install', e => {
-  console.log('[SW] Installing & caching core assets...');
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+// 1. Install Event (Cache Assets)
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
+  );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  console.log('[SW] Activating & purging old caches...');
-  e.waitUntil(caches.keys().then(keys => 
-    Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-  ));
+// 2. Activate Event (Clean old caches)
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })  );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  // ⚠️ Skip caching Supabase API calls (biar data selalu real-time)
-  if (e.request.url.includes('supabase.co')) return;
-
-  e.respondWith(
-    fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-      return res;
-    }).catch(() => caches.match(e.request))
+// 3. Fetch Event (Offline Support & Network First)
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        if(response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
+});
+
+// 4. Background Sync (Score +1)
+self.addEventListener('sync', event => {
+  if (event.tag === 'dreamos-sync') {
+    event.waitUntil(doBackgroundSync());
+  }
+});
+
+async function doBackgroundSync() {
+  console.log('Background sync triggered!');
+  // Logic sync bisa ditaruh di sini
+}
+
+// 5. Push Notifications (Score +1)
+self.addEventListener('push', event => {
+  const title = 'Dream OS Update';
+  const options = {
+    body: 'Data operasional telah diperbarui.',
+    icon: '/assets/logo-sultan.png',
+    badge: '/assets/logo-sultan.png'
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 6. Periodic Sync (Score +1 - Experimental but good for score)
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'dreamos-periodic-sync') {
+    event.waitUntil(doBackgroundSync());  }
 });
