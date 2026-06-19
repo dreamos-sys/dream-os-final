@@ -4,7 +4,6 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
     const SYNC_TABLE = 'kv_store';
     let syncTimer = null;
-
     async function uploadKey(key, value) {
         if (!key.startsWith('dreamos_')) return;
         if (syncTimer) clearTimeout(syncTimer);
@@ -19,7 +18,6 @@
             } catch(e) {}
         }, 2000);
     }
-
     async function pullAll() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?select=*`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
@@ -36,13 +34,12 @@
             if(window.renderDashboard && document.getElementById('main-app').style.display === 'block') window.renderDashboard();
         } catch(e) {}
     }
-
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = function(key, value) {
-        originalSetItem.call(localStorage, key, value);        localStorage.setItem(key + '_ts', new Date().toISOString());
+        originalSetItem.call(localStorage, key, value);
+        localStorage.setItem(key + '_ts', new Date().toISOString());
         if (key.startsWith('dreamos_')) uploadKey(key, value);
     };
-
     if (navigator.onLine) pullAll();
     window.addEventListener('online', pullAll);
 })();
