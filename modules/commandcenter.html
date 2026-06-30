@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Enterprise Ops Room • Dream OS v4.1</title>
+<title>Enterprise Ops Room • Dream OS v4.2</title>
 <script src="../js/security-helper.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -59,12 +59,10 @@
   .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
   .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
   .badge-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
-  .badge-info { background: rgba(14,165,233,0.2); color: #0ea5e9; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
   .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.6rem; }
-  @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 600px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .grid-2, .grid-4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
   .kpi-card {
     text-align: center; padding: 0.6rem; border-radius: 10px;
     background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
@@ -87,9 +85,9 @@
   .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .tab:hover:not(.active) { border-color: var(--neon); color: #e2e8f0; }
   .progress-bar {
-    height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-top: 0.2rem;
+    height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 0.4rem;
   }
-  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; background: var(--accent); }
   .action-row { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
   .notif-dot {
     width: 8px; height: 8px; background: #ef4444; border-radius: 50%;
@@ -98,10 +96,7 @@
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
   .search-box { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
   .quick-actions { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
-  .executive-note {
-    background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2);
-    border-radius: 12px; padding: 0.8rem;
-  }
+  .chart-container { min-height: 200px; position: relative; }
 </style>
 </head>
 <body>
@@ -113,57 +108,55 @@
   <!-- HEADER -->
   <div class="glass" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
     <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 ENTERPRISE OPERATIONS ROOM <span style="font-size:0.6rem; color:#64748b;">v4.1</span></h2>
-      <p style="color:#94a3b8; font-size:0.62rem; margin:0.15rem 0 0;" id="role-subtitle">Loading...</p>
+      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 ENTERPRISE OPERATIONS ROOM <span style="font-size:0.6rem; color:#64748b;">v4.2</span></h2>
+      <p style="color:#94a3b8; font-size:0.62rem; margin:0;" id="role-subtitle">Loading...</p>
     </div>
     <div style="display:flex; align-items:center; gap:0.8rem;">
       <div style="text-align:right;">
         <div style="font-weight:700; font-size:0.8rem;" id="user-display">🔒</div>
         <div style="font-size:0.55rem; color:#64748b;" id="live-clock">--:--:--</div>
       </div>
-      <span id="notif-indicator" style="display:none;" title="Ada pengajuan baru!"><span class="notif-dot"></span></span>
       <button class="btn btn-danger" onclick="doLogout()" style="font-size:0.6rem; padding:0.25rem 0.6rem;">🚪</button>
     </div>
   </div>
 
   <!-- QUICK ACTIONS -->
   <div class="quick-actions">
-    <button class="btn btn-primary" onclick="quickAddDana()">💸 Ajukan Dana</button>
-    <button class="btn btn-warning" onclick="quickAddK3()">⚠️ Lapor K3</button>
-    <button class="btn btn-purple" onclick="quickAddMaint()">🔧 Tugas Maint</button>
-    <button class="btn btn-pink" onclick="openSlideManager()">📢 Slide Dashboard</button>
-    <button class="btn btn-success" onclick="openExecutiveNote()">📝 Catatan Pimpinan</button>
-    <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak Halaman</button>
+    <button class="btn btn-primary" onclick="quickAddDana()">💸 Dana</button>
+    <button class="btn btn-warning" onclick="quickAddK3()">⚠️ K3</button>
+    <button class="btn btn-purple" onclick="quickAddMaint()">🔧 Maint</button>
+    <button class="btn btn-pink" onclick="openSlideManager()">📢 Slide</button>
+    <button class="btn btn-success" onclick="openExecutiveNote()">📝 Catatan</button>
   </div>
 
   <!-- KPI DASHBOARD -->
   <div class="glass">
-    <div class="section-title" style="color:var(--accent);">📊 REAL-TIME OPERATIONAL DASHBOARD</div>
+    <div class="section-title" style="color:var(--accent);">📊 REAL-TIME DASHBOARD</div>
     <div class="grid-4" id="kpi-cards"></div>
     <div class="grid-2" style="margin-top:0.8rem;">
-      <div><canvas id="mainChart" style="max-height:180px; width:100%;"></canvas></div>
-      <div><canvas id="trendChart" style="max-height:180px; width:100%;"></canvas></div>
+      <div class="chart-container"><canvas id="mainChart"></canvas></div>
+      <div class="chart-container"><canvas id="trendChart"></canvas></div>
     </div>
   </div>
 
   <!-- EXECUTIVE NOTE -->
-  <div id="executive-note-panel" class="glass executive-note" style="display:none;">
-    <div class="section-title" style="color:var(--gold);">📝 CATATAN PIMPINAN HARI INI</div>
-    <textarea id="executive-note-input" rows="2" placeholder="Tulis instruksi atau catatan penting..."></textarea>
+  <div id="executive-note-panel" class="glass" style="display:none; border-color: rgba(245,158,11,0.3);">
+    <div class="section-title" style="color:var(--gold);">📝 CATATAN PIMPINAN</div>
+    <textarea id="executive-note-input" rows="2" placeholder="Tulis instruksi atau catatan..."></textarea>
     <button class="btn btn-warning" onclick="saveExecutiveNote()" style="margin-top:0.4rem;">💾 Simpan</button>
     <button class="btn btn-success" onclick="printExecutiveNote()" style="margin-top:0.4rem;">🖨️ Cetak</button>
   </div>
 
   <!-- SLIDE MANAGER -->
   <div id="slide-manager-panel" class="glass" style="display:none;">
-    <div class="section-title" style="color:var(--pink);">📢 MANAJEMEN SLIDE DASHBOARD</div>
+    <div class="section-title" style="color:var(--pink);">📢 SLIDE DASHBOARD</div>
     <div class="grid-2">
-      <div><label style="font-size:0.65rem;">Slide 5 - Info Manajemen</label><input class="input-field" id="slide5-input"></div>
-      <div><label style="font-size:0.65rem;">Slide 6 - Info Bagian Umum</label><input class="input-field" id="slide6-input"></div>
-      <div><label style="font-size:0.65rem;">Slide 7 - Ucapan & Pesan</label><input class="input-field" id="slide7-input"></div>
-      <div><label style="font-size:0.65rem;">Slide Security (Piket)</label><input class="input-field" id="slide-sec-input"></div>
+      <div><label style="font-size:0.6rem;">Slide 5</label><input class="input-field" id="slide5-input"></div>
+      <div><label style="font-size:0.6rem;">Slide 6</label><input class="input-field" id="slide6-input"></div>
+      <div><label style="font-size:0.6rem;">Slide 7</label><input class="input-field" id="slide7-input"></div>
+      <div><label style="font-size:0.6rem;">Security</label><input class="input-field" id="slide-sec-input"></div>
     </div>
-    <button class="btn btn-pink" onclick="saveSlides()" style="margin-top:0.5rem;">💾 Simpan Semua Slide</button>
+    <button class="btn btn-pink" onclick="saveSlides()" style="margin-top:0.5rem;">💾 Simpan</button>
   </div>
 
   <!-- TABS -->
@@ -177,60 +170,60 @@
     <button class="tab" data-tab="system">⚙️ System</button>
   </div>
 
-  <!-- TAB CONTENTS -->
+  <!-- TAB CONTENTS - hanya tab dana yang visible -->
   <div id="tab-dana" class="tab-content">
     <div class="search-box">
-      <input class="input-field" id="dana-search" placeholder="🔍 Cari dana..." oninput="filterDana()" style="flex:1;">
+      <input class="input-field" id="dana-search" placeholder="🔍 Cari..." oninput="filterDana()" style="flex:1;">
       <select class="input-field" id="dana-filter-status" onchange="filterDana()" style="width:auto;">
         <option value="all">Semua</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
       </select>
     </div>
     <div class="grid-2">
       <div class="glass">
-        <div class="section-title" style="color:var(--gold);">💸 Pengajuan Pending</div>
+        <div class="section-title" style="color:var(--gold);">💸 Pending</div>
         <div id="dana-pending-list"></div>
-        <button class="btn btn-primary" onclick="quickAddDana()" style="margin-top:0.4rem;">📝 Ajukan Baru</button>
+        <button class="btn btn-primary" onclick="quickAddDana()" style="margin-top:0.4rem;">📝 Ajukan</button>
       </div>
       <div class="glass">
-        <div class="section-title" style="color:var(--accent);">📊 Ringkasan Anggaran</div>
+        <div class="section-title" style="color:var(--accent);">📊 Anggaran</div>
         <div id="budget-summary"></div>
-        <div class="progress-bar" style="margin-top:0.5rem;"><div class="progress-fill" id="budget-bar" style="width:0%; background:var(--accent);"></div></div>
-        <button class="btn btn-warning" onclick="setBudgetCap()" style="margin-top:0.5rem;">💰 Set Pagu</button>
+        <div class="progress-bar"><div class="progress-fill" id="budget-bar" style="width:0%;"></div></div>
+        <button class="btn btn-warning" onclick="setBudgetCap()" style="margin-top:0.5rem;">💰 Pagu</button>
       </div>
     </div>
     <div class="glass" style="margin-top:0.8rem;">
-      <div class="section-title" style="color:#94a3b8;">📋 Riwayat Dana</div>
+      <div class="section-title">📋 Riwayat</div>
       <div id="dana-history" style="max-height:200px; overflow-y:auto;"></div>
-      <button class="btn btn-success" onclick="exportDana()" style="margin-top:0.4rem;">📥 Export CSV</button>
+      <button class="btn btn-success" onclick="exportDana()" style="margin-top:0.4rem;">📥 CSV</button>
     </div>
   </div>
 
   <div id="tab-k3" class="tab-content" style="display:none;">
-    <div class="search-box"><input class="input-field" id="k3-search" placeholder="🔍 Cari K3..." oninput="filterK3()" style="flex:1;"></div>
+    <div class="search-box"><input class="input-field" id="k3-search" placeholder="🔍 Cari..." oninput="filterK3()" style="flex:1;"></div>
     <div class="grid-2">
-      <div class="glass"><div class="section-title" style="color:var(--warning);">⚠️ Laporan Aktif</div><div id="k3-active-list"></div><button class="btn btn-warning" onclick="quickAddK3()" style="margin-top:0.4rem;">➕ Lapor K3</button></div>
-      <div class="glass"><div class="section-title" style="color:var(--accent);">📊 Statistik</div><div><canvas id="k3Chart" style="max-height:180px; width:100%;"></canvas></div></div>
+      <div class="glass"><div class="section-title" style="color:var(--warning);">⚠️ Aktif</div><div id="k3-active-list"></div><button class="btn btn-warning" onclick="quickAddK3()" style="margin-top:0.4rem;">➕ Lapor</button></div>
+      <div class="glass"><div class="section-title" style="color:var(--accent);">📊 Statistik</div><div class="chart-container"><canvas id="k3Chart"></canvas></div></div>
     </div>
-    <div class="glass" style="margin-top:0.8rem;"><div class="section-title" style="color:#94a3b8;">📋 Semua Laporan</div><div id="k3-all-list" style="max-height:200px; overflow-y:auto;"></div><button class="btn btn-success" onclick="exportK3()" style="margin-top:0.4rem;">📥 Export CSV</button></div>
+    <div class="glass" style="margin-top:0.8rem;"><div class="section-title">📋 Semua</div><div id="k3-all-list" style="max-height:200px; overflow-y:auto;"></div><button class="btn btn-success" onclick="exportK3()" style="margin-top:0.4rem;">📥 CSV</button></div>
   </div>
 
   <div id="tab-maint" class="tab-content" style="display:none;">
     <div class="grid-2">
-      <div class="glass"><div class="section-title" style="color:var(--accent);">🔧 Tugas Aktif</div><div id="maint-active-list"></div><button class="btn btn-purple" onclick="quickAddMaint()" style="margin-top:0.4rem;">➕ Tambah</button></div>
+      <div class="glass"><div class="section-title" style="color:var(--accent);">🔧 Aktif</div><div id="maint-active-list"></div><button class="btn btn-purple" onclick="quickAddMaint()" style="margin-top:0.4rem;">➕ Tambah</button></div>
       <div class="glass"><div class="section-title" style="color:#10b981;">✅ Selesai</div><div id="maint-done-list" style="max-height:250px; overflow-y:auto;"></div></div>
     </div>
   </div>
 
   <div id="tab-booking" class="tab-content" style="display:none;">
-    <div class="glass"><div class="section-title" style="color:var(--accent);">📅 Booking Ruangan</div><div id="booking-list" style="max-height:300px; overflow-y:auto;"></div><button class="btn btn-success" onclick="exportBooking()" style="margin-top:0.4rem;">📥 Export CSV</button></div>
+    <div class="glass"><div class="section-title" style="color:var(--accent);">📅 Booking</div><div id="booking-list" style="max-height:300px; overflow-y:auto;"></div><button class="btn btn-success" onclick="exportBooking()" style="margin-top:0.4rem;">📥 CSV</button></div>
   </div>
 
   <div id="tab-users" class="tab-content" style="display:none;">
     <div class="glass">
-      <div class="section-title" style="color:var(--purple);">👥 Manajemen Pengguna</div>
+      <div class="section-title" style="color:var(--purple);">👥 Users</div>
       <div class="action-row">
         <button class="btn btn-purple" onclick="addNewUser()">➕ Tambah</button>
-        <button class="btn btn-primary" onclick="resetUserPassword()">🔑 Reset Pass</button>
+        <button class="btn btn-primary" onclick="resetUserPassword()">🔑 Reset</button>
         <button class="btn btn-warning" onclick="printUserList()">🖨️ Cetak</button>
       </div>
       <div id="user-table" style="max-height:300px; overflow-y:auto;"></div>
@@ -238,15 +231,15 @@
   </div>
 
   <div id="tab-audit" class="tab-content" style="display:none;">
-    <div class="glass"><div class="section-title" style="color:#94a3b8;">📜 Audit Trail (ISO 27001)</div><button class="btn btn-success" onclick="exportAuditLog()" style="margin-bottom:0.5rem;">📥 Export</button><div id="audit-log-full" style="max-height:350px; overflow-y:auto; font-size:0.65rem;"></div></div>
+    <div class="glass"><div class="section-title">📜 Audit (ISO 27001)</div><button class="btn btn-success" onclick="exportAuditLog()" style="margin-bottom:0.5rem;">📥 Export</button><div id="audit-log-full" style="max-height:350px; overflow-y:auto; font-size:0.65rem;"></div></div>
   </div>
 
   <div id="tab-system" class="tab-content" style="display:none;">
     <div class="grid-2">
-      <div class="glass"><div class="section-title" style="color:var(--accent);">💾 Backup</div><button class="btn btn-success" onclick="exportAllData()">📥 Export Full</button><button class="btn btn-primary" onclick="importData()" style="margin-top:0.3rem;">📤 Import</button></div>
-      <div class="glass"><div class="section-title" style="color:var(--warning);">⚠️ Zona Berbahaya</div><button class="btn btn-danger" onclick="resetSystem()">⚠️ Reset</button><button class="btn btn-danger" onclick="clearAllData()" style="margin-top:0.3rem;">🧹 Hapus</button></div>
+      <div class="glass"><div class="section-title" style="color:var(--accent);">💾 Backup</div><button class="btn btn-success" onclick="exportAllData()">📥 Export</button><button class="btn btn-primary" onclick="importData()" style="margin-top:0.3rem;">📤 Import</button></div>
+      <div class="glass"><div class="section-title" style="color:var(--warning);">⚠️ Danger</div><button class="btn btn-danger" onclick="resetSystem()">⚠️ Reset</button><button class="btn btn-danger" onclick="clearAllData()" style="margin-top:0.3rem;">🧹 Hapus</button></div>
     </div>
-    <div class="glass" style="margin-top:0.8rem;"><div class="section-title" style="color:var(--accent);">📊 System Info</div><div id="system-info"></div></div>
+    <div class="glass" style="margin-top:0.8rem;"><div class="section-title">📊 System Info</div><div id="system-info"></div></div>
   </div>
 
 </div>
@@ -264,9 +257,8 @@
   }
 
   document.getElementById('user-display').textContent = currentUser ? currentUser.nama : 'User';
-  document.getElementById('role-subtitle').textContent = 'Role: ' + role.toUpperCase() + ' • Enterprise Ops Room v4.1';
+  document.getElementById('role-subtitle').textContent = 'Role: ' + role.toUpperCase() + ' • v4.2';
 
-  // Live clock - fixed
   setInterval(function() {
     var el = document.getElementById('live-clock');
     if (el) el.textContent = new Date().toLocaleTimeString('id-ID');
@@ -277,21 +269,16 @@
     catch(e) { return fb; }
   }
 
-  // ========== TAB SWITCHING (FIXED) ==========
+  // ========== TAB SWITCHING ==========
   document.getElementById('workspace-tabs').addEventListener('click', function(e) {
     var tab = e.target.closest('.tab');
     if (!tab) return;
-    
-    // Reset semua tab
     document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelectorAll('.tab-content').forEach(function(c) { c.style.display = 'none'; });
-    
-    // Aktifkan tab yang diklik
     tab.classList.add('active');
     var target = document.getElementById('tab-' + tab.dataset.tab);
     if (target) {
       target.style.display = 'block';
-      // Render ulang konten tab
       if (tab.dataset.tab === 'dana') { renderDanaPending(); renderBudgetSummary(); renderDanaHistory(); }
       if (tab.dataset.tab === 'k3') { renderK3Active(); renderK3Chart(); }
       if (tab.dataset.tab === 'maint') { renderMaintenanceActive(); renderMaintenanceDone(); }
@@ -302,34 +289,24 @@
     }
   });
 
-  // KPI navigation - fixed
   window.switchTab = function(tabName) {
     var tab = document.querySelector('.tab[data-tab="'+tabName+'"]');
     if (tab) tab.click();
   };
 
-  // ========== NOTIFICATION ==========
-  function checkNotifications() {
-    var pendingDana = safeGet('dreamos_dana',[]).filter(function(d){return d.status==='pending';}).length;
-    var pendingK3 = safeGet('dreamos_k3_reports',[]).filter(function(k){return k.status==='pending';}).length;
-    var notif = document.getElementById('notif-indicator');
-    if (notif) notif.style.display = (pendingDana > 0 || pendingK3 > 0) ? 'inline' : 'none';
-  }
-
-  // ========== RENDER ALL ==========
+  // ========== RENDER ==========
   function renderAll() {
     renderKPIs(); renderCharts(); renderBudgetSummary();
     renderDanaPending(); renderDanaHistory(); renderUserTable();
     renderMaintenanceActive(); renderMaintenanceDone();
     renderK3Active(); renderBookingList();
-    renderAuditFull(); renderSystemInfo(); checkNotifications();
+    renderAuditFull(); renderSystemInfo();
   }
 
   function renderKPIs() {
     var dana = safeGet('dreamos_dana',[]), k3 = safeGet('dreamos_k3_reports',[]);
     var maint = safeGet('dreamos_maintenance_tasks',[]), stok = safeGet('dreamos_stok',[]);
     var users = safeGet('dreamos_users_db',[]), booking = safeGet('dreamos_bookings',[]);
-    
     var kpis = [
       { label:'💰 Dana Pending', value: dana.filter(function(d){return d.status==='pending';}).length, color:'#f59e0b', tab:'dana' },
       { label:'⚠️ K3 Urgent', value: k3.filter(function(k){return k.status==='pending';}).length, color:'#ef4444', tab:'k3' },
@@ -340,7 +317,6 @@
       { label:'✅ K3 Selesai', value: k3.filter(function(k){return k.status==='Selesai'||k.status==='selesai';}).length, color:'#10b981', tab:'k3' },
       { label:'💵 Dana ACC', value: dana.filter(function(d){return d.status==='approved';}).length, color:'#0ea5e9', tab:'dana' }
     ];
-    
     document.getElementById('kpi-cards').innerHTML = kpis.map(function(k) {
       return '<div class="kpi-card" onclick="switchTab(\''+k.tab+'\')"><div class="kpi-value" style="color:'+k.color+'">'+k.value+'</div><div class="kpi-label">'+k.label+'</div></div>';
     }).join('');
@@ -348,44 +324,19 @@
 
   function renderCharts() {
     var dana = safeGet('dreamos_dana',[]), k3 = safeGet('dreamos_k3_reports',[]), maint = safeGet('dreamos_maintenance_tasks',[]);
-    
     var ctx = document.getElementById('mainChart');
     if (ctx && typeof Chart !== 'undefined') {
       if (window._chart) window._chart.destroy();
       window._chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Dana Pend.','Dana ACC','K3 Urgent','K3 Selesai','Maint Aktif','Maint Selesai'],
+          labels: ['Dana P.','Dana ACC','K3 Urg.','K3 Sel.','Maint A.','Maint S.'],
           datasets: [{
-            data: [
-              dana.filter(function(d){return d.status==='pending';}).length,
-              dana.filter(function(d){return d.status==='approved';}).length,
-              k3.filter(function(k){return k.status==='pending';}).length,
-              k3.filter(function(k){return k.status==='Selesai';}).length,
-              maint.filter(function(m){return m.status!=='Selesai'&&m.status!=='Disetujui';}).length,
-              maint.filter(function(m){return m.status==='Selesai'||m.status==='Disetujui';}).length
-            ],
+            data: [dana.filter(function(d){return d.status==='pending';}).length,dana.filter(function(d){return d.status==='approved';}).length,k3.filter(function(k){return k.status==='pending';}).length,k3.filter(function(k){return k.status==='Selesai';}).length,maint.filter(function(m){return m.status!=='Selesai'&&m.status!=='Disetujui';}).length,maint.filter(function(m){return m.status==='Selesai'||m.status==='Disetujui';}).length],
             backgroundColor: ['#f59e0b','#10b981','#ef4444','#10b981','#0ea5e9','#8b5cf6']
           }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-      });
-    }
-
-    var ctx2 = document.getElementById('trendChart');
-    if (ctx2 && typeof Chart !== 'undefined') {
-      if (window._trend) window._trend.destroy();
-      window._trend = new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels: ['Jan','Feb','Mar','Apr','Mei','Jun'],
-          datasets: [{
-            label: 'Total Dana (juta)',
-            data: [12,19,8,15,22, dana.reduce(function(s,d){return s+(parseInt(d.nominal)||0);},0)/1000000],
-            borderColor: '#0ea5e9', tension: 0.4, fill: false
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
       });
     }
   }
@@ -397,12 +348,9 @@
     var pct = cap > 0 ? Math.round((spent / cap) * 100) : 0;
     var el = document.getElementById('budget-summary');
     if (!el) return;
-    el.innerHTML = 
-      '<div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span>Realisasi:</span><b style="color:#f59e0b;">Rp '+spent.toLocaleString('id-ID')+'</b></div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span>Pagu:</span><b style="color:#10b981;">Rp '+cap.toLocaleString('id-ID')+'</b></div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span>Sisa:</span><b style="color:#0ea5e9;">Rp '+(cap-spent).toLocaleString('id-ID')+' ('+pct+'%)</b></div>';
+    el.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:0.7rem;"><span>Realisasi:</span><b style="color:#f59e0b;">Rp '+spent.toLocaleString('id-ID')+'</b></div><div style="display:flex;justify-content:space-between;font-size:0.7rem;"><span>Pagu:</span><b style="color:#10b981;">Rp '+cap.toLocaleString('id-ID')+'</b></div><div style="display:flex;justify-content:space-between;font-size:0.7rem;"><span>Sisa:</span><b style="color:#0ea5e9;">Rp '+(cap-spent).toLocaleString('id-ID')+' ('+pct+'%)</b></div>';
     var bar = document.getElementById('budget-bar');
-    if (bar) bar.style.width = pct + '%';
+    if (bar) bar.style.width = Math.min(pct, 100) + '%';
   }
 
   function renderDanaPending() {
@@ -410,26 +358,26 @@
     var el = document.getElementById('dana-pending-list');
     if (!el) return;
     el.innerHTML = pending.length ? pending.map(function(d){
-      return '<div style="background:rgba(0,0,0,0.2);padding:0.5rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+SEC.sanitize(d.judul)+'</b> • Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'<br><small>'+SEC.sanitize(d.tanggal)+'</small><br><button class="btn btn-success" onclick="approveDana(\''+d.id+'\')" style="font-size:0.55rem;padding:0.15rem 0.4rem;margin-top:0.2rem;">✅ ACC</button> <button class="btn btn-danger" onclick="rejectDana(\''+d.id+'\')" style="font-size:0.55rem;padding:0.15rem 0.4rem;">❌ Tolak</button></div>';
-    }).join('') : '<p style="color:#94a3b8;font-size:0.7rem;">✅ Tidak ada pengajuan.</p>';
+      return '<div style="background:rgba(0,0,0,0.2);padding:0.4rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+SEC.sanitize(d.judul)+'</b> • Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'<br><small>'+SEC.sanitize(d.tanggal)+'</small><br><button class="btn btn-success" onclick="approveDana(\''+d.id+'\')" style="font-size:0.5rem;padding:0.1rem 0.3rem;margin-top:0.2rem;">✅</button> <button class="btn btn-danger" onclick="rejectDana(\''+d.id+'\')" style="font-size:0.5rem;padding:0.1rem 0.3rem;">❌</button></div>';
+    }).join('') : '<p style="color:#94a3b8;font-size:0.7rem;">✅ Tidak ada.</p>';
   }
 
   function renderDanaHistory() {
-    var all = safeGet('dreamos_dana',[]).slice(-30).reverse();
+    var all = safeGet('dreamos_dana',[]).slice(-20).reverse();
     var el = document.getElementById('dana-history');
     if (!el) return;
     el.innerHTML = all.length ? '<table><tr><th>Tgl</th><th>Judul</th><th>Nominal</th><th>Status</th></tr>'+all.map(function(d){
       return '<tr><td>'+SEC.sanitize(d.tanggal)+'</td><td>'+SEC.sanitize(d.judul)+'</td><td>Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'</td><td><span class="badge badge-'+(d.status==='approved'?'approved':d.status==='rejected'?'rejected':'pending')+'">'+d.status+'</span></td></tr>';
-    }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada riwayat.</p>';
+    }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
 
   function renderUserTable() {
     var users = safeGet('dreamos_users_db',[]);
     var el = document.getElementById('user-table');
     if (!el) return;
-    el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Device</th><th>Aksi</th></tr>'+users.map(function(u,i){
-      return '<tr><td>'+SEC.sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+SEC.sanitize(u.email)+'</td><td>'+SEC.sanitize(u.role)+'</td><td>'+(u.device_dna?'🔒':'⏳')+'</td><td><button class="btn btn-danger" onclick="deleteUser('+i+')" style="font-size:0.5rem;padding:0.1rem 0.3rem;">🗑️</button></td></tr>';
-    }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada user.</p>';
+    el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Device</th><th></th></tr>'+users.map(function(u,i){
+      return '<tr><td>'+SEC.sanitize(u.nama)+'</td><td style="font-size:0.6rem;">'+SEC.sanitize(u.email)+'</td><td>'+SEC.sanitize(u.role)+'</td><td>'+(u.device_dna?'🔒':'⏳')+'</td><td><button class="btn btn-danger" onclick="deleteUser('+i+')" style="font-size:0.45rem;padding:0.1rem 0.25rem;">🗑️</button></td></tr>';
+    }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
 
   function renderMaintenanceActive() {
@@ -437,26 +385,24 @@
     var el = document.getElementById('maint-active-list');
     if (!el) return;
     el.innerHTML = active.length ? active.map(function(m){
-      return '<div style="background:rgba(0,0,0,0.2);padding:0.4rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+SEC.sanitize(m.judul)+'</b> • <span class="badge badge-pending">'+SEC.sanitize(m.status)+'</span><br><small>'+SEC.sanitize(m.lokasi)+'</small></div>';
+      return '<div style="background:rgba(0,0,0,0.2);padding:0.3rem;border-radius:6px;margin-bottom:0.2rem;"><b>'+SEC.sanitize(m.judul)+'</b> • <span class="badge badge-pending">'+SEC.sanitize(m.status)+'</span></div>';
     }).join('') : '<p style="color:#94a3b8;">✅ Semua selesai.</p>';
   }
 
   function renderMaintenanceDone() {
-    var done = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status==='Selesai'||m.status==='Disetujui';}).slice(-15);
+    var done = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status==='Selesai'||m.status==='Disetujui';}).slice(-10);
     var el = document.getElementById('maint-done-list');
     if (!el) return;
-    el.innerHTML = done.length ? done.map(function(m){
-      return '<div style="padding:0.3rem;border-bottom:1px solid rgba(255,255,255,0.02);font-size:0.68rem;">✅ '+SEC.sanitize(m.judul)+'</div>';
-    }).join('') : '<p style="color:#94a3b8;">Belum ada.</p>';
+    el.innerHTML = done.length ? done.map(function(m){ return '<div style="padding:0.2rem;font-size:0.65rem;">✅ '+SEC.sanitize(m.judul)+'</div>'; }).join('') : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
 
   function renderK3Active() {
     var k3 = safeGet('dreamos_k3_reports',[]);
     var el = document.getElementById('k3-active-list');
     if (!el) return;
-    el.innerHTML = k3.length ? k3.slice(0,10).map(function(k){
-      return '<div style="padding:0.4rem;border-bottom:1px solid rgba(255,255,255,0.03);"><b>'+SEC.sanitize(k.lokasi)+'</b> • <span class="badge badge-'+(k.status==='pending'?'pending':'approved')+'">'+k.status+'</span></div>';
-    }).join('') : '<p style="color:#94a3b8;">Tidak ada laporan.</p>';
+    el.innerHTML = k3.length ? k3.slice(0,8).map(function(k){
+      return '<div style="padding:0.3rem;border-bottom:1px solid rgba(255,255,255,0.02);"><b>'+SEC.sanitize(k.lokasi)+'</b> • <span class="badge badge-'+(k.status==='pending'?'pending':'approved')+'">'+k.status+'</span></div>';
+    }).join('') : '<p style="color:#94a3b8;">Tidak ada.</p>';
     var el2 = document.getElementById('k3-all-list');
     if (el2) el2.innerHTML = k3.length ? '<table><tr><th>Lokasi</th><th>Kategori</th><th>Status</th></tr>'+k3.map(function(k){
       return '<tr><td>'+SEC.sanitize(k.lokasi)+'</td><td>'+SEC.sanitize(k.kategori)+'</td><td>'+SEC.sanitize(k.status)+'</td></tr>';
@@ -468,30 +414,16 @@
     if (!ctx || typeof Chart === 'undefined') return;
     var k3 = safeGet('dreamos_k3_reports',[]);
     if (window._k3chart) window._k3chart.destroy();
-    window._k3chart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Pending','Proses','Selesai'],
-        datasets: [{
-          data: [
-            k3.filter(function(k){return k.status==='pending';}).length,
-            k3.filter(function(k){return k.status==='Proses'||k.status==='proses';}).length,
-            k3.filter(function(k){return k.status==='Selesai'||k.status==='selesai';}).length
-          ],
-          backgroundColor: ['#f59e0b','#0ea5e9','#10b981']
-        }]
-      },
-      options: { responsive: true, maintainAspectRatio: false }
-    });
+    window._k3chart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Pending','Proses','Selesai'], datasets: [{ data: [k3.filter(function(k){return k.status==='pending';}).length,k3.filter(function(k){return k.status==='Proses'||k.status==='proses';}).length,k3.filter(function(k){return k.status==='Selesai';}).length], backgroundColor: ['#f59e0b','#0ea5e9','#10b981'] }] }, options: { responsive: true, maintainAspectRatio: false } });
   }
 
   function renderBookingList() {
     var bookings = safeGet('dreamos_bookings',[]);
     var el = document.getElementById('booking-list');
     if (!el) return;
-    el.innerHTML = bookings.length ? '<table><tr><th>Tgl</th><th>Ruangan</th><th>Peminjam</th><th>Jam</th><th>Status</th></tr>'+bookings.map(function(b){
-      return '<tr><td>'+SEC.sanitize(b.tgl)+'</td><td>'+SEC.sanitize(b.ruang)+'</td><td>'+SEC.sanitize(b.nama_peminjam)+'</td><td>'+SEC.sanitize(b.jam_mulai)+'-'+SEC.sanitize(b.jam_selesai)+'</td><td><span class="badge badge-'+(b.status==='approved'?'approved':'pending')+'">'+b.status+'</span></td></tr>';
-    }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada booking.</p>';
+    el.innerHTML = bookings.length ? '<table><tr><th>Tgl</th><th>Ruangan</th><th>Peminjam</th><th>Jam</th></tr>'+bookings.map(function(b){
+      return '<tr><td>'+SEC.sanitize(b.tgl)+'</td><td>'+SEC.sanitize(b.ruang)+'</td><td>'+SEC.sanitize(b.nama_peminjam)+'</td><td>'+SEC.sanitize(b.jam_mulai)+'-'+SEC.sanitize(b.jam_selesai)+'</td></tr>';
+    }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
 
   function renderAuditFull() {
@@ -499,111 +431,20 @@
     var el = document.getElementById('audit-log-full');
     if (!el) return;
     el.innerHTML = logs.length ? logs.map(function(l){
-      return '<div style="padding:0.25rem;border-bottom:1px solid rgba(255,255,255,0.02);">['+new Date(l.time).toLocaleTimeString('id-ID')+'] <b>'+SEC.sanitize(l.user)+'</b>: '+SEC.sanitize(l.action)+'</div>';
-    }).join('') : '<p style="color:#94a3b8;">Belum ada aktivitas.</p>';
+      return '<div style="padding:0.2rem;border-bottom:1px solid rgba(255,255,255,0.02);">['+new Date(l.time).toLocaleTimeString('id-ID')+'] <b>'+SEC.sanitize(l.user)+'</b>: '+SEC.sanitize(l.action)+'</div>';
+    }).join('') : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
 
   function renderSystemInfo() {
     var keys = ['dreamos_dana','dreamos_k3_reports','dreamos_maintenance_tasks','dreamos_stok','dreamos_users_db','dreamos_bookings','dreamos_audit_logs'];
     var el = document.getElementById('system-info');
     if (!el) return;
-    var html = '<table><tr><th>Database</th><th>Records</th><th>Size</th></tr>';
-    keys.forEach(function(k) {
-      var data = safeGet(k,[]);
-      html += '<tr><td>'+k+'</td><td>'+(Array.isArray(data)?data.length:'-')+'</td><td>'+Math.round(JSON.stringify(data).length/1024)+' KB</td></tr>';
-    });
+    var html = '<table><tr><th>DB</th><th>Records</th><th>KB</th></tr>';
+    keys.forEach(function(k) { var data = safeGet(k,[]); html += '<tr><td>'+k+'</td><td>'+(Array.isArray(data)?data.length:'-')+'</td><td>'+Math.round(JSON.stringify(data).length/1024)+'</td></tr>'; });
     el.innerHTML = html + '</table>';
   }
 
-  function filterDana() {
-    var q = (document.getElementById('dana-search')?.value || '').toLowerCase();
-    var status = document.getElementById('dana-filter-status')?.value || 'all';
-    var all = safeGet('dreamos_dana',[]);
-    var filtered = all.filter(function(d){
-      return (!q || (d.judul||'').toLowerCase().includes(q)) && (status==='all' || d.status===status);
-    }).slice(-30).reverse();
-    var el = document.getElementById('dana-history');
-    if (!el) return;
-    el.innerHTML = filtered.length ? '<table><tr><th>Tgl</th><th>Judul</th><th>Nominal</th><th>Status</th></tr>'+filtered.map(function(d){
-      return '<tr><td>'+SEC.sanitize(d.tanggal)+'</td><td>'+SEC.sanitize(d.judul)+'</td><td>Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'</td><td><span class="badge badge-'+(d.status==='approved'?'approved':d.status==='rejected'?'rejected':'pending')+'">'+d.status+'</span></td></tr>';
-    }).join('')+'</table>' : '<p style="color:#94a3b8;">Tidak ditemukan.</p>';
-  }
-
-  function filterK3() {
-    var q = (document.getElementById('k3-search')?.value || '').toLowerCase();
-    var all = safeGet('dreamos_k3_reports',[]);
-    var filtered = q ? all.filter(function(k){return (k.lokasi||'').toLowerCase().includes(q);}) : all;
-    var el = document.getElementById('k3-all-list');
-    if (!el) return;
-    el.innerHTML = filtered.length ? '<table><tr><th>Lokasi</th><th>Kategori</th><th>Status</th></tr>'+filtered.map(function(k){
-      return '<tr><td>'+SEC.sanitize(k.lokasi)+'</td><td>'+SEC.sanitize(k.kategori)+'</td><td>'+SEC.sanitize(k.status)+'</td></tr>';
-    }).join('')+'</table>' : '<p style="color:#94a3b8;">Tidak ditemukan.</p>';
-  }
-
-  // ========== QUICK ACTIONS ==========
-  window.quickAddDana = function() {
-    var j=prompt('📝 Judul:'), n=prompt('💰 Nominal (Rp):');
-    if(!j||!n)return;
-    var dana=safeGet('dreamos_dana',[]);
-    dana.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')});
-    localStorage.setItem('dreamos_dana',JSON.stringify(dana));
-    SEC.auditLog('SUBMIT_DANA',j); renderAll(); alert('✅ Diajukan!');
-  };
-
-  window.quickAddK3 = function() {
-    var l=prompt('📍 Lokasi:'), k=prompt('🏷️ Kategori:');
-    if(!l)return;
-    var k3=safeGet('dreamos_k3_reports',[]);
-    k3.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending',tanggal:new Date().toLocaleDateString('id-ID')});
-    localStorage.setItem('dreamos_k3_reports',JSON.stringify(k3));
-    SEC.auditLog('ADD_K3',l); renderAll(); alert('✅ Dilaporkan!');
-  };
-
-  window.quickAddMaint = function() {
-    var j=prompt('🔧 Judul:'), l=prompt('📍 Lokasi:');
-    if(!j)return;
-    var maint=safeGet('dreamos_maintenance_tasks',[]);
-    maint.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending',tanggal:new Date().toLocaleDateString('id-ID')});
-    localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(maint));
-    SEC.auditLog('ADD_MAINT',j); renderAll(); alert('✅ Ditambahkan!');
-  };
-
-  window.openSlideManager = function() {
-    var panel = document.getElementById('slide-manager-panel');
-    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
-    document.getElementById('slide5-input').value = localStorage.getItem('dreamos_slide_5') || '';
-    document.getElementById('slide6-input').value = localStorage.getItem('dreamos_slide_6') || '';
-    document.getElementById('slide7-input').value = localStorage.getItem('dreamos_slide_7') || '';
-    document.getElementById('slide-sec-input').value = localStorage.getItem('dreamos_sec_today') || '';
-  };
-
-  window.saveSlides = function() {
-    localStorage.setItem('dreamos_slide_5', document.getElementById('slide5-input').value);
-    localStorage.setItem('dreamos_slide_6', document.getElementById('slide6-input').value);
-    localStorage.setItem('dreamos_slide_7', document.getElementById('slide7-input').value);
-    localStorage.setItem('dreamos_sec_today', document.getElementById('slide-sec-input').value);
-    SEC.auditLog('UPDATE_SLIDES','Updated'); alert('✅ Slide disimpan!');
-  };
-
-  window.openExecutiveNote = function() {
-    var panel = document.getElementById('executive-note-panel');
-    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
-    document.getElementById('executive-note-input').value = localStorage.getItem('dreamos_executive_note') || '';
-  };
-
-  window.saveExecutiveNote = function() {
-    localStorage.setItem('dreamos_executive_note', document.getElementById('executive-note-input').value);
-    SEC.auditLog('SAVE_NOTE','Saved'); alert('✅ Catatan disimpan!');
-  };
-
-  window.printExecutiveNote = function() {
-    var note = localStorage.getItem('dreamos_executive_note') || '-';
-    var w=window.open('','_blank');
-    w.document.write('<html><head><title>Laporan Harian</title></head><body><h1>LAPORAN HARIAN</h1><p>'+new Date().toLocaleDateString('id-ID')+'</p><p>'+note+'</p></body></html>');
-    w.document.close(); setTimeout(function(){w.print();},500);
-  };
-
-  // ========== DANA ACTIONS ==========
+  // ========== ACTIONS ==========
   window.approveDana = function(id) {
     var dana=safeGet('dreamos_dana',[]); var item=dana.find(function(d){return d.id===id;});
     if(item){item.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(dana)); SEC.auditLog('ACC_DANA',item.judul); renderAll();}
@@ -616,23 +457,59 @@
     var c=prompt('Pagu (Rp):', localStorage.getItem('dreamos_budget_cap')||'50000000');
     if(c){localStorage.setItem('dreamos_budget_cap',c); renderAll();}
   };
-  window.exportDana = function() {
+  window.quickAddDana = function() {
+    var j=prompt('Judul:'), n=prompt('Nominal (Rp):');
+    if(!j||!n)return;
     var dana=safeGet('dreamos_dana',[]);
-    var csv='Tgl,Judul,Nominal,Status\n'+dana.map(function(d){return d.tanggal+','+d.judul+','+d.nominal+','+d.status;}).join('\n');
-    var b=new Blob([csv],{type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='dana.csv'; a.click();
+    dana.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')});
+    localStorage.setItem('dreamos_dana',JSON.stringify(dana));
+    SEC.auditLog('SUBMIT_DANA',j); renderAll(); alert('✅ Diajukan!');
   };
-  window.exportK3 = function() {
+  window.quickAddK3 = function() {
+    var l=prompt('Lokasi:'), k=prompt('Kategori:');
+    if(!l)return;
     var k3=safeGet('dreamos_k3_reports',[]);
-    var csv='Lokasi,Kategori,Status,Tanggal\n'+k3.map(function(k){return k.lokasi+','+k.kategori+','+k.status+','+k.tanggal;}).join('\n');
-    var b=new Blob([csv],{type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='k3.csv'; a.click();
+    k3.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending',tanggal:new Date().toLocaleDateString('id-ID')});
+    localStorage.setItem('dreamos_k3_reports',JSON.stringify(k3));
+    SEC.auditLog('ADD_K3',l); renderAll(); alert('✅ Dilaporkan!');
   };
-  window.exportBooking = function() {
-    var bookings=safeGet('dreamos_bookings',[]);
-    var csv='Tgl,Ruangan,Peminjam,Jam,Status\n'+bookings.map(function(b){return b.tgl+','+b.ruang+','+b.nama_peminjam+','+b.jam_mulai+'-'+b.jam_selesai+','+b.status;}).join('\n');
-    var b=new Blob([csv],{type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='booking.csv'; a.click();
+  window.quickAddMaint = function() {
+    var j=prompt('Judul:'), l=prompt('Lokasi:');
+    if(!j)return;
+    var maint=safeGet('dreamos_maintenance_tasks',[]);
+    maint.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending',tanggal:new Date().toLocaleDateString('id-ID')});
+    localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(maint));
+    SEC.auditLog('ADD_MAINT',j); renderAll(); alert('✅ Ditambahkan!');
   };
-
-  // ========== USER ACTIONS ==========
+  window.openSlideManager = function() {
+    var p=document.getElementById('slide-manager-panel');
+    p.style.display = (p.style.display==='none'||!p.style.display)?'block':'none';
+    document.getElementById('slide5-input').value=localStorage.getItem('dreamos_slide_5')||'';
+    document.getElementById('slide6-input').value=localStorage.getItem('dreamos_slide_6')||'';
+    document.getElementById('slide7-input').value=localStorage.getItem('dreamos_slide_7')||'';
+    document.getElementById('slide-sec-input').value=localStorage.getItem('dreamos_sec_today')||'';
+  };
+  window.saveSlides = function() {
+    localStorage.setItem('dreamos_slide_5',document.getElementById('slide5-input').value);
+    localStorage.setItem('dreamos_slide_6',document.getElementById('slide6-input').value);
+    localStorage.setItem('dreamos_slide_7',document.getElementById('slide7-input').value);
+    localStorage.setItem('dreamos_sec_today',document.getElementById('slide-sec-input').value);
+    SEC.auditLog('UPDATE_SLIDES','OK'); alert('✅ Disimpan!');
+  };
+  window.openExecutiveNote = function() {
+    var p=document.getElementById('executive-note-panel');
+    p.style.display = (p.style.display==='none'||!p.style.display)?'block':'none';
+    document.getElementById('executive-note-input').value=localStorage.getItem('dreamos_executive_note')||'';
+  };
+  window.saveExecutiveNote = function() {
+    localStorage.setItem('dreamos_executive_note',document.getElementById('executive-note-input').value);
+    SEC.auditLog('SAVE_NOTE','OK'); alert('✅ Disimpan!');
+  };
+  window.printExecutiveNote = function() {
+    var w=window.open('','_blank');
+    w.document.write('<h1>LAPORAN HARIAN</h1><p>'+new Date().toLocaleDateString('id-ID')+'</p><p>'+(localStorage.getItem('dreamos_executive_note')||'-')+'</p>');
+    w.document.close(); setTimeout(function(){w.print();},500);
+  };
   window.addNewUser = async function() {
     var n=prompt('Nama:'),e=prompt('Email:'),r=prompt('Role:','staff'),p=prompt('Password:','123456');
     if(!n||!e||!p)return;
@@ -649,7 +526,7 @@
     var p=prompt('Password baru:','123456');
     u.password_hash=await SEC.hashPassword(p); u.device_dna='';
     localStorage.setItem('dreamos_users_db',JSON.stringify(users));
-    SEC.auditLog('RESET_PASS',u.nama); alert('✅ Password direset!'); renderAll();
+    SEC.auditLog('RESET_PASS',u.nama); renderAll(); alert('✅ Password direset!');
   };
   window.deleteUser = function(i) {
     if(!confirm('Hapus?'))return;
@@ -660,21 +537,32 @@
   window.printUserList = function() {
     var users=safeGet('dreamos_users_db',[]);
     var w=window.open('','_blank');
-    w.document.write('<html><head><title>Daftar User</title></head><body><h2>Daftar User</h2><table border="1"><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+users.map(function(u){return '<tr><td>'+u.nama+'</td><td>'+u.email+'</td><td>'+u.role+'</td></tr>';}).join('')+'</table></body></html>');
+    w.document.write('<table border="1"><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+users.map(function(u){return '<tr><td>'+u.nama+'</td><td>'+u.email+'</td><td>'+u.role+'</td></tr>';}).join('')+'</table>');
     w.document.close(); setTimeout(function(){w.print();},500);
   };
-
-  // ========== SYSTEM ==========
+  window.exportDana = function() {
+    var d=safeGet('dreamos_dana',[]);
+    var csv='Tgl,Judul,Nominal,Status\n'+d.map(function(x){return x.tanggal+','+x.judul+','+x.nominal+','+x.status;}).join('\n');
+    var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI(csv); a.download='dana.csv'; a.click();
+  };
+  window.exportK3 = function() {
+    var d=safeGet('dreamos_k3_reports',[]);
+    var csv='Lokasi,Kategori,Status,Tanggal\n'+d.map(function(x){return x.lokasi+','+x.kategori+','+x.status+','+x.tanggal;}).join('\n');
+    var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI(csv); a.download='k3.csv'; a.click();
+  };
+  window.exportBooking = function() {
+    var d=safeGet('dreamos_bookings',[]);
+    var csv='Tgl,Ruangan,Peminjam,Jam\n'+d.map(function(x){return x.tgl+','+x.ruang+','+x.nama_peminjam+','+x.jam_mulai+'-'+x.jam_selesai;}).join('\n');
+    var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI(csv); a.download='booking.csv'; a.click();
+  };
   window.exportAllData = function() {
     var data={}; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i); try{data[k]=JSON.parse(localStorage.getItem(k));}catch(e){data[k]=localStorage.getItem(k);}}
-    var b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-    var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='backup_'+new Date().toISOString().split('T')[0]+'.json'; a.click();
-    SEC.auditLog('EXPORT','Full backup');
+    var a=document.createElement('a'); a.href='data:text/json;charset=utf-8,'+encodeURI(JSON.stringify(data)); a.download='backup_'+new Date().toISOString().split('T')[0]+'.json'; a.click();
+    SEC.auditLog('EXPORT','Full');
   };
   window.exportAuditLog = function() {
     var logs=safeGet('dreamos_audit_logs',[]);
-    var b=new Blob([JSON.stringify(logs,null,2)],{type:'application/json'});
-    var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='audit.json'; a.click();
+    var a=document.createElement('a'); a.href='data:text/json;charset=utf-8,'+encodeURI(JSON.stringify(logs)); a.download='audit.json'; a.click();
   };
   window.importData = function() {
     var input=document.createElement('input'); input.type='file'; input.accept='.json';
@@ -684,7 +572,7 @@
       reader.onload=function(ev){
         try{
           var data=JSON.parse(ev.target.result);
-          if(!confirm('⚠️ Timpa semua data?'))return;
+          if(!confirm('⚠️ Timpa semua?'))return;
           Object.keys(data).forEach(function(k){localStorage.setItem(k,JSON.stringify(data[k]));});
           alert('✅ Direstore!'); location.reload();
         }catch(err){alert('❌ Gagal!');}
@@ -693,12 +581,8 @@
     };
     input.click();
   };
-  window.resetSystem = function() {
-    if(confirm('⚠️ Reset?')){localStorage.removeItem('dreamos_settings'); alert('✅'); location.reload();}
-  };
-  window.clearAllData = function() {
-    if(confirm('🧹 HAPUS SEMUA?')){localStorage.clear(); location.reload();}
-  };
+  window.resetSystem = function() { if(confirm('Reset?')){localStorage.removeItem('dreamos_settings'); location.reload();} };
+  window.clearAllData = function() { if(confirm('HAPUS SEMUA?')){localStorage.clear(); location.reload();} };
   window.doLogout = function() {
     localStorage.removeItem('dreamos_bound_user');
     localStorage.removeItem('dreamos_session_active');
@@ -707,7 +591,7 @@
 
   // ========== INIT ==========
   renderAll();
-  SEC.auditLog('ACCESS', 'Ops Room v4.1');
+  SEC.auditLog('ACCESS', 'v4.2');
 })();
 </script>
 </body>
