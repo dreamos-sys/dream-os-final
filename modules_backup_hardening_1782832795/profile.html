@@ -1,0 +1,188 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Profile • Enterprise v2.0</title>
+<script src="../js/security-helper.js"></script>
+<style>
+  :root {
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(0, 255, 157, 0.1);
+    --neon: #00ff9d;
+    --accent: #0ea5e9;
+    --warning: #e11d48;
+    --gold: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',sans-serif; min-height:100vh; }
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .back-btn {
+    position: fixed; top: 1rem; left: 1rem; z-index: 1000;
+    background: rgba(30,41,59,0.8); border: 1px solid var(--neon);
+    color: var(--neon); padding: 0.6rem 1.2rem; border-radius: 12px;
+    cursor: pointer; font-weight: 700; font-size: 0.8rem;
+  }
+  .btn {
+    padding: 0.7rem 1.2rem; border: none; border-radius: 12px;
+    font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--warning); color: #fff; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+  .input-field {
+    width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+    color: #e2e8f0; font-size: 0.8rem; outline: none;
+  }
+  .input-field:focus { border-color: var(--neon); }
+  .avatar-preview {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(30,41,59,0.8); border: 2px solid rgba(0,255,157,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; overflow: hidden;
+  }
+</style>
+<button class="back-btn" onclick="window.parent.goHome()">← KEMBALI</button>
+<div style="max-width:600px; margin:0 auto; padding:4rem 1.5rem 5rem;">
+  <div class="glass-panel">
+    <h2 style="color:var(--neon); margin:0 0 1rem;">👤 Profil Saya</h2>
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+      <div class="avatar-preview" id="avatar-preview">👤</div>
+      <div>
+        <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+        <button class="btn btn-primary" onclick="document.getElementById('avatar-input').click()" style="font-size:0.7rem; padding:0.5rem 1rem;">📷 Upload Foto</button>
+        <div style="font-size:0.6rem; color:#64748b; margin-top:0.3rem;">Max 50KB • Local Storage</div>
+      </div>
+    </div>
+    <div style="margin-bottom:0.8rem;">
+      <label style="font-size:0.7rem; color:#94a3b8;">Nama</label>
+      <input class="input-field" id="prof-nama" readonly>
+    </div>
+    <div style="margin-bottom:0.8rem;">
+      <label style="font-size:0.7rem; color:#94a3b8;">Role</label>
+      <input class="input-field" id="prof-role" readonly>
+    </div>
+    <div style="margin-bottom:0.8rem;">
+      <label style="font-size:0.7rem; color:#94a3b8;">Email</label>
+      <input class="input-field" id="prof-email" readonly>
+    </div>
+  </div>
+
+  <div class="glass-panel" style="border-color: rgba(14,165,233,0.3);">
+    <h3 style="color:var(--accent); margin:0 0 1rem;">🔒 Keamanan</h3>
+    <p style="font-size:0.75rem; color:#94a3b8;">
+      <strong>DNA Device:</strong> <span id="dna-hash" style="font-family:monospace; color:#f59e0b;">Menghitung...</span>
+    </p>
+    <p style="font-size:0.65rem; color:#64748b;">*Device DNA mencegah login dari HP lain.</p>
+  </div>
+
+  <div class="glass-panel" style="border-color: rgba(139,92,246,0.3);">
+    <h3 style="color:#8b5cf6; margin:0 0 1rem;">👥 Pengguna Terdaftar</h3>
+    <div id="user-list" style="max-height:200px; overflow-y:auto;"></div>
+    <button class="btn btn-success" onclick="showRegisterForm()" style="margin-top:0.5rem;">➕ Daftar Pengguna Baru</button>
+  </div>
+
+  <div id="register-panel" class="glass-panel" style="display:none; border-color: var(--neon);">
+    <h3 style="color:var(--neon); margin:0 0 1rem;">📝 Pendaftaran Pengguna</h3>
+    <input class="input-field" id="reg-nama" placeholder="Nama Lengkap" style="margin-bottom:0.5rem;">
+    <input class="input-field" id="reg-email" placeholder="Email" style="margin-bottom:0.5rem;">
+    <select class="input-field" id="reg-role" style="margin-bottom:0.5rem;">
+      <option value="staff">Staff</option>
+      <option value="security">Security</option>
+      <option value="janitor">Janitor</option>
+      <option value="maintenance">Maintenance</option>
+      <option value="koord">Koordinator</option>
+      <option value="kabag">Kabag</option>
+    </select>
+    <input class="input-field" type="password" id="reg-pass" placeholder="Password (min 6 karakter)" style="margin-bottom:0.5rem;">
+    <input class="input-field" type="password" id="reg-confirm" placeholder="Konfirmasi Password">
+    <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+      <button class="btn btn-primary" onclick="registerUser()">✅ Daftar</button>
+      <button class="btn btn-danger" onclick="hideRegisterForm()">❌ Batal</button>
+    </div>
+    <p id="reg-msg" style="font-size:0.75rem; margin-top:0.5rem;"></p>
+  </div>
+
+  <button class="btn btn-danger" onclick="handleLogout()" style="width:100%; margin-top:1rem;">🚪 Logout & Kunci Device</button>
+  <p style="text-align:center; font-size:0.65rem; color:#ef4444; margin-top:0.5rem;">⚠️ Logout menghapus sesi. Hubungi Kabag jika terkunci.</p>
+</div>
+<script>
+(function() {
+  'use strict';
+  const SEC = window.DreamSec;
+  if (!SEC) return;
+  const user = SEC.getCurrentUser();
+  if (!user) {
+    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login terlebih dahulu.</h2></div>';
+    return;
+  }
+  document.getElementById('prof-nama').value = user.nama || '-';
+  document.getElementById('prof-role').value = user.role || '-';
+  document.getElementById('prof-email').value = user.email || '-';
+  if (user.avatar) {
+    document.getElementById('avatar-preview').innerHTML = '<img src="'+user.avatar+'" style="width:100%;height:100%;object-fit:cover;">';
+  }
+  SEC.getDeviceDNA().then(function(dna) {
+    document.getElementById('dna-hash').textContent = dna;
+  });
+  function loadUserList() {
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var container = document.getElementById('user-list');
+    if (!users.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada pengguna terdaftar.</p>';
+      return;
+    }
+    container.innerHTML = users.map(function(u) {
+      return '<div style="background:rgba(0,0,0,0.2); padding:0.6rem; border-radius:8px; margin-bottom:0.3rem; display:flex; justify-content:space-between; align-items:center;"><div><b>'+SEC.sanitize(u.nama)+'</b><br><span style="font-size:0.65rem; color:#94a3b8;">'+SEC.sanitize(u.role)+' • '+SEC.sanitize(u.email)+'</span></div><span>'+(u.device_dna ? '🔒' : '⏳')+'</span></div>';
+    }).join('');
+  }
+  loadUserList();
+  window.showRegisterForm = function() { document.getElementById('register-panel').style.display = 'block'; };
+  window.hideRegisterForm = function() { document.getElementById('register-panel').style.display = 'none'; };
+  window.registerUser = async function() {
+    var nama = document.getElementById('reg-nama').value.trim();
+    var email = document.getElementById('reg-email').value.trim();
+    var role = document.getElementById('reg-role').value;
+    var pass = document.getElementById('reg-pass').value;
+    var confirm = document.getElementById('reg-confirm').value;
+    var msg = document.getElementById('reg-msg');
+    if (!nama || !email || !pass) { msg.textContent = '⚠️ Semua field wajib diisi!'; msg.style.color = '#ef4444'; return; }
+    if (pass.length < 6) { msg.textContent = '⚠️ Password minimal 6 karakter!'; msg.style.color = '#ef4444'; return; }
+    if (pass !== confirm) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    if (users.find(function(u) { return u.email === email; })) { msg.textContent = '⚠️ Email sudah terdaftar!'; msg.style.color = '#ef4444'; return; }
+    var hashed = await SEC.hashPassword(pass);
+    users.push({ nama: nama, email: email, role: role, password_hash: hashed, device_dna: '', created_at: new Date().toISOString() });
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    SEC.auditLog('REGISTER', 'Mendaftarkan '+nama+' ('+email+')');
+    hideRegisterForm();
+    loadUserList();
+    alert('✅ '+nama+' berhasil didaftarkan!');
+  };
+  document.getElementById('avatar-input').addEventListener('change', function() {
+    if (this.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        user.avatar = ev.target.result;
+        localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+        document.getElementById('avatar-preview').innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;">';
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+  window.handleLogout = function() {
+    if (confirm('🚪 Yakin logout? Device akan dikunci.')) {
+      localStorage.removeItem('dreamos_bound_user');
+      localStorage.removeItem('dreamos_session_active');
+      window.parent.location.reload();
+    }
+  };
+})();
+</script>

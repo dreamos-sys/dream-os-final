@@ -1,0 +1,137 @@
+<!-- Setting Module - Dream OS Control Panel -->
+<div style="min-height:100vh;background:var(--bg-deep-space);color:var(--text-primary);font-family:'Space Grotesk',sans-serif;padding:1.5rem;padding-bottom:5rem;">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+        <button onclick="document.getElementById('setting-module').style.display='none'" style="background:rgba(255,255,255,0.1);color:var(--text-primary);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;">← Back</button>
+        <h2 style="color:var(--neon-tawhid);font-size:1.5rem;font-weight:800;">⚙️ Pengaturan</h2>
+    </div>
+
+    <!-- Theme Section -->
+    <div class="dream-panel" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="color:var(--neon-tawhid);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+            <span>🌓</span> Tema Tampilan
+        </h3>
+        <div style="display:flex;gap:0.75rem;margin-bottom:1rem;">
+            <button id="btn-dark" onclick="setTheme('dark')" style="flex:1;padding:1rem;border-radius:0.75rem;border:2px solid var(--glass-border);background:var(--bg-dark-matter);color:var(--text-primary);cursor:pointer;text-align:center;">
+                <span style="font-size:2rem;">🌙</span>
+                <p style="font-weight:700;margin-top:0.5rem;">Dark Mode</p>
+                <p style="font-size:0.7rem;color:var(--text-secondary);">Untuk ruang kontrol</p>
+            </button>
+            <button id="btn-light" onclick="setTheme('light')" style="flex:1;padding:1rem;border-radius:0.75rem;border:2px solid var(--glass-border);background:#ffffff;color:#0f172a;cursor:pointer;text-align:center;">
+                <span style="font-size:2rem;">☀️</span>
+                <p style="font-weight:700;margin-top:0.5rem;">Light Mode</p>
+                <p style="font-size:0.7rem;color:#475569;">Untuk patroli siang</p>
+            </button>
+        </div>
+        <p id="theme-status" style="font-size:0.8rem;color:var(--text-secondary);text-align:center;"></p>
+    </div>
+
+    <!-- Language Section -->
+    <div class="dream-panel" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="color:var(--neon-tawhid);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+            <span>🌍</span> Bahasa / Language
+        </h3>
+        <div style="display:flex;gap:0.75rem;">
+            <button id="btn-id" onclick="setLanguage('id-ID')" style="flex:1;padding:1rem;border-radius:0.75rem;border:2px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);cursor:pointer;text-align:center;">
+                <span style="font-size:1.5rem;">🇮🇩</span>
+                <p style="font-weight:700;margin-top:0.5rem;">Bahasa Indonesia</p>
+            </button>
+            <button id="btn-en" onclick="setLanguage('en-US')" style="flex:1;padding:1rem;border-radius:0.75rem;border:2px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);cursor:pointer;text-align:center;">
+                <span style="font-size:1.5rem;">🇬🇧</span>
+                <p style="font-weight:700;margin-top:0.5rem;">English</p>
+            </button>
+        </div>
+        <p id="lang-status" style="font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:0.5rem;"></p>
+    </div>
+
+    <!-- System Info Section -->
+    <div class="dream-panel" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="color:var(--neon-tawhid);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+            <span>ℹ️</span> Info Sistem
+        </h3>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.8rem;">
+            <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+                <span>Versi</span>
+                <span>Dream OS v1.0-beta</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+                <span>Lisensi</span>
+                <span>MIT License</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+                <span>Role</span>
+                <span id="sys-role">public</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+                <span>Session</span>
+                <span id="sys-session">active</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Update status tema saat ini
+    function updateThemeStatus() {
+        var current = ThemeEngine ? ThemeEngine.current : 'dark';
+        document.getElementById('theme-status').textContent = 'Aktif: ' + (current === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode');
+        
+        // Highlight tombol yang aktif
+        var btnDark = document.getElementById('btn-dark');
+        var btnLight = document.getElementById('btn-light');
+        if (btnDark && btnLight) {
+            btnDark.style.borderColor = current === 'dark' ? 'var(--neon-tawhid)' : 'var(--glass-border)';
+            btnDark.style.boxShadow = current === 'dark' ? '0 0 15px rgba(0,255,157,0.3)' : 'none';
+            btnLight.style.borderColor = current === 'light' ? 'var(--neon-tawhid)' : 'var(--glass-border)';
+            btnLight.style.boxShadow = current === 'light' ? '0 0 15px rgba(5,150,105,0.3)' : 'none';
+        }
+    }
+
+    // Update status bahasa
+    function updateLangStatus() {
+        var current = I18n ? I18n.locale : 'id-ID';
+        document.getElementById('lang-status').textContent = 'Aktif: ' + (current === 'id-ID' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English');
+        
+        var btnId = document.getElementById('btn-id');
+        var btnEn = document.getElementById('btn-en');
+        if (btnId && btnEn) {
+            btnId.style.borderColor = current === 'id-ID' ? 'var(--neon-tawhid)' : 'var(--glass-border)';
+            btnEn.style.borderColor = current === 'en-US' ? 'var(--neon-tawhid)' : 'var(--glass-border)';
+        }
+    }
+
+    // Fungsi ganti tema
+    window.setTheme = function(mode) {
+        if (ThemeEngine) {
+            ThemeEngine.apply(mode);
+            updateThemeStatus();
+            // Update body background
+            document.body.style.background = 'var(--body-bg)';
+            // Update tombol di navigasi jika ada
+            var navThemeBtn = document.getElementById('theme-toggle-btn');
+            if (navThemeBtn) {
+                navThemeBtn.innerHTML = '<span>' + (mode === 'dark' ? '☀️' : '🌙') + '</span><span style="font-size:0.6rem;">' + (mode === 'dark' ? 'Light' : 'Dark') + '</span>';
+            }
+        }
+    };
+
+    // Fungsi ganti bahasa
+    window.setLanguage = function(loc) {
+        if (I18n) {
+            I18n.setLocale(loc);
+            updateLangStatus();
+            if (typeof updateI18nUI === 'function') updateI18nUI();
+            if (typeof showSlides === 'function') showSlides();
+            alert('🌍 Bahasa diubah ke: ' + loc);
+        }
+    };
+
+    // Init
+    updateThemeStatus();
+    updateLangStatus();
+    
+    // Update role & session
+    var roleEl = document.getElementById('sys-role');
+    if (roleEl && DreamRuleEngine) roleEl.textContent = DreamRuleEngine.currentRole || 'public';
+})();
+</script>

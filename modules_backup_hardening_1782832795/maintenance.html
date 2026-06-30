@@ -1,0 +1,281 @@
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:rgba(15,23,42,0.8);border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:10000;backdrop-filter:blur(5px);">← Kembali</button>
+
+<div style="min-height:100vh;background:#020617;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:4rem;padding-bottom:5rem;" id="maint-app">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+    <div>
+      <h2 style="color:#0ea5e9;font-size:1.5rem;margin:0;font-weight:800;">🔧 Maintenance & Perawatan</h2>
+      <p style="color:#94a3b8;font-size:0.75rem;margin:0.2rem 0 0 0;">ISO 55001 • Asset Bridge • Auto-Stock Deduction</p>
+    </div>
+    <div style="text-align:right;">
+      <div id="maint-sla-rate" style="font-size:1.1rem;color:#10b981;font-weight:700;">100%</div>
+      <div style="font-size:0.7rem;color:#64748b;">Asset Health</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem;">
+    <div class="maint-stat-card"><div style="font-size:1.2rem;color:#e2e8f0;font-weight:700;" id="stat-total">0</div><div style="font-size:0.65rem;color:#94a3b8;">Total Tugas</div></div>
+    <div class="maint-stat-card"><div style="font-size:1.2rem;color:#f59e0b;font-weight:700;" id="stat-pending">0</div><div style="font-size:0.65rem;color:#94a3b8;">Pending</div></div>
+    <div class="maint-stat-card"><div style="font-size:1.2rem;color:#ef4444;font-weight:700;" id="stat-critical">0</div><div style="font-size:0.65rem;color:#94a3b8;">Kritis</div></div>
+    <div class="maint-stat-card"><div style="font-size:1.2rem;color:#10b981;font-weight:700;" id="stat-done">0</div><div style="font-size:0.65rem;color:#94a3b8;">Selesai</div></div>
+  </div>
+
+  <div style="display:flex;gap:0.5rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.1);">
+    <button class="maint-tab active" data-tab="tasks"> Tugas Aktif</button>
+    <button class="maint-tab" data-tab="history"> Riwayat</button>
+  </div>
+
+  <div id="panel-tasks" class="maint-panel"></div>
+  <div id="panel-history" class="maint-panel" style="display:none;"></div>
+</div>
+
+<style>
+  .maint-stat-card{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;padding:0.75rem;text-align:center;}
+  .maint-tab{padding:0.6rem 1rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.8rem;white-space:nowrap;background:rgba(30,41,59,0.5);color:#94a3b8;transition:all 0.3s ease;border:1px solid transparent;}
+  .maint-tab.active{background:rgba(14,165,233,0.15);color:#0ea5e9;border-color:rgba(14,165,233,0.3);}
+  .maint-panel{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1rem;backdrop-filter:blur(10px);}
+  .maint-input,.maint-select{width:100%;margin-bottom:0.5rem;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;transition:border-color 0.2s;}
+  .maint-input:focus,.maint-select:focus{border-color:#0ea5e9;outline:none;box-shadow:0 0 0 2px rgba(14,165,233,0.2);}
+  .maint-btn{padding:0.5rem 0.8rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;transition:opacity 0.2s,transform 0.1s;}
+  .maint-btn:active{transform:scale(0.97);}
+  .btn-primary{background:#0ea5e9;color:#000;}
+  .btn-success{background:#10b981;color:#fff;}
+  .btn-warning{background:#f59e0b;color:#000;}
+  .btn-danger{background:#ef4444;color:#fff;}
+  .btn-ghost{background:rgba(255,255,255,0.05);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1);}  
+  .task-card{background:rgba(30,41,59,0.4);border:1px solid rgba(255,255,255,0.05);border-radius:0.75rem;padding:0.85rem;margin-bottom:0.75rem;transition:transform 0.2s,box-shadow 0.2s;}
+  .task-card:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3);border-color:rgba(14,165,233,0.3);}
+  .prio-badge{padding:0.15rem 0.4rem;border-radius:0.3rem;font-size:0.65rem;font-weight:600;}  .prio-rendah{background:#10b98122;color:#10b981;border:1px solid #10b98144;}
+  .prio-sedang{background:#0ea5e922;color:#0ea5e9;border:1px solid #0ea5e944;}
+  .prio-tinggi{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;}
+  .prio-kritis{background:#ef444422;color:#ef4444;border:1px solid #ef444444;}
+  .asset-link{font-size:0.7rem;color:#0ea5e9;background:rgba(14,165,233,0.1);padding:0.2rem 0.5rem;border-radius:0.3rem;display:inline-block;margin-bottom:0.3rem;}
+</style>
+
+<script src="../js/core/supabase-bridge.js"></script>
+<script>
+(function(){
+  console.log('🟢 Maintenance Pro Bridge init');
+  function sanitizeHTML(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;') : ''; }
+  function safeGet(k, fb){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }catch(e){ return fb; } }
+  function safeSet(k, d){ localStorage.setItem(k, JSON.stringify(d)); }
+  function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function fmtRp(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
+  
+  function verifyPin(cb) {   
+    const pin = prompt('🔐 PIN Admin/Kabag:');   
+    if(!pin) return;
+    const hash = window.parent.hashPin(pin);   
+    if (hash === window.parent.ROLE_HASHES['kabag'] || hash === window.parent.ROLE_HASHES['koord']) {     
+      if(window.parent && typeof window.parent.triggerDzikirFeedback==='function') window.parent.triggerDzikirFeedback();     
+      cb();   
+    } else { alert('❌ PIN salah.'); } 
+  }
+
+  var state = { tab:'tasks', filter:'all', showForm:false };
+  var app = document.getElementById('maint-app');
+
+  function renderStats(){
+    var data = safeGet('dreamos_maintenance_tasks',[]);
+    document.getElementById('stat-total').textContent = data.length;
+    document.getElementById('stat-pending').textContent = data.filter(t=>t.status==='Pending').length;
+    document.getElementById('stat-critical').textContent = data.filter(t=>t.prioritas==='Kritis').length;
+    document.getElementById('stat-done').textContent = data.filter(t=>t.status==='Selesai').length;
+    
+    var assets = safeGet('dreamos_assets',[]);
+    var broken = assets.filter(a=>a.condition==='Rusak').length;
+    var healthy = Math.max(0, 100 - (broken * (100/Math.max(1, assets.length))));
+    document.getElementById('maint-sla-rate').textContent = Math.round(healthy)+'%';
+    document.getElementById('maint-sla-rate').style.color = healthy>=80?'#10b981':'#ef4444';
+  }
+
+  function renderTasks(){
+    var data = safeGet('dreamos_maintenance_tasks',[]);
+    var filtered = state.filter==='all' ? data : data.filter(t=>t.status===state.filter);
+    var assets = safeGet('dreamos_assets',[]);
+
+    var h = '<div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;overflow-x:auto;">';    ['all','Pending','Proses','Selesai'].forEach(f=>{
+      var lbl = f==='all'?'📋 Semua':f;
+      var act = state.filter===f?'background:#0ea5e9;color:#000;border-color:#0ea5e9;':'';
+      h += '<button class="maint-tab '+act+'" data-act="filter" data-val="'+f+'" style="padding:0.4rem 0.7rem;font-size:0.75rem;">'+lbl+'</button>';
+    });
+    h += '</div>';
+    h += '<button class="maint-btn btn-primary" data-act="toggle-form" style="width:100%;margin-bottom:1rem;">'+(state.showForm?'❌ Tutup Form':'+ Buat Tugas Perawatan')+'</button>';
+    
+    if(state.showForm){
+      h += '<div class="maint-panel" style="border:1px solid #0ea5e944;margin-bottom:1rem;">';
+      h += '<input id="m-judul" class="maint-input" placeholder="Judul Pekerjaan *">';
+      h += '<div style="margin-bottom:0.5rem;"><label style="font-size:0.7rem;color:#94a3b8;">🔗 Pilih Aset Terkait (Opsional)</label>';
+      h += '<select id="m-asset" class="maint-select"><option value="">-- Tanpa Aset --</option>';
+      assets.forEach(a => h += '<option value="'+a.id+'">'+sanitizeHTML(a.name)+' ('+sanitizeHTML(a.location)+')</option>');
+      h += '</select></div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">';
+      h += '<select id="m-jenis" class="maint-select"><option>Preventif (Rutin)</option><option>Korektif (Perbaikan)</option><option>Prediktif</option></select>';
+      h += '<select id="m-prio" class="maint-select"><option>Sedang</option><option>Rendah</option><option>Tinggi</option><option>Kritis</option></select>';
+      h += '</div>';
+      h += '<input id="m-lokasi" class="maint-input" placeholder="Lokasi / Area *">';
+      h += '<input id="m-petugas" class="maint-input" placeholder="Nama Teknisi / Petugas *">';
+      h += '<input id="m-cost" type="number" class="maint-input" placeholder="Estimasi Biaya (Rp)">';
+      h += '<textarea id="m-desc" class="maint-input" placeholder="Deskripsi kerusakan & tindakan..." rows="2" style="resize:none;"></textarea>';
+      h += '<button class="maint-btn btn-success" data-act="submit" style="width:100%;">💾 Simpan Tugas</button>';
+      h += '</div>';
+    }
+
+    if(!filtered.length){
+      h += '<div style="text-align:center;padding:2rem;color:#64748b;">'+(state.filter==='all'?'Belum ada data perawatan.':'Tidak ada data dengan filter ini.')+'</div>';
+    } else {
+      h += '<div style="display:flex;flex-direction:column;gap:0.6rem;">';
+      filtered.forEach(t=>{
+        var prioClass = 'prio-'+(t.prioritas||'sedang').toLowerCase();
+        var linkedAsset = assets.find(a => a.id === t.assetId);
+        var assetBadge = linkedAsset ? '<div class="asset-link">🏢 Aset: ' + sanitizeHTML(linkedAsset.name) + '</div>' : '';
+        
+        h += '<div class="task-card" style="border-left:4px solid '+(t.status==='Selesai'?'#10b981':t.status==='Proses'?'#0ea5e9':'#f59e0b')+';">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.4rem;">';
+        h += '<div><strong style="font-size:0.85rem;">'+sanitizeHTML(t.judul)+'</strong>'+assetBadge+'<br><span style="font-size:0.7rem;color:#94a3b8;">📍 '+sanitizeHTML(t.lokasi)+' | 👷 '+sanitizeHTML(t.petugas)+'</span></div>';
+        h += '<span class="prio-badge '+prioClass+'">'+sanitizeHTML(t.prioritas)+'</span></div>';
+        
+        h += '<div style="font-size:0.7rem;color:#cbd5e1;margin-bottom:0.3rem;">🔧 '+sanitizeHTML(t.jenis)+' | '+sanitizeHTML(t.deskripsi)+'</div>';
+        if(t.biaya) h += '<div style="font-size:0.7rem;color:#f59e0b;margin-bottom:0.2rem;">💰 Biaya: '+fmtRp(t.biaya)+'</div>';
+
+        h += '<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">';
+        if(t.status==='Pending'){
+          h += '<button class="maint-btn btn-primary" data-act="status" data-id="'+t.id+'" data-val="Proses" style="flex:1;font-size:0.65rem;">🔵 Mulai</button>';
+          h += '<button class="maint-btn btn-ghost" data-act="del" data-id="'+t.id+'" style="flex:0.3;font-size:0.65rem;">🗑️</button>';
+        } else if(t.status==='Proses'){
+          h += '<button class="maint-btn btn-success" data-act="status" data-id="'+t.id+'" data-val="Selesai" style="flex:1;font-size:0.65rem;">✅ Selesai & Update Stok/Aset</button>';        } else {
+          h += '<div style="flex:1;text-align:center;font-size:0.65rem;color:#10b981;background:rgba(16,185,129,0.1);padding:0.3rem;border-radius:0.3rem;">🔒 Selesai</div>';
+        }
+        h += '</div></div>';
+      });
+      h += '</div>';
+    }
+    document.getElementById('panel-tasks').innerHTML = h;
+    renderStats();
+  }
+
+  function renderHistory(){
+    var data = safeGet('dreamos_maintenance_tasks',[]).filter(t=>t.status==='Selesai');
+    var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">';
+    h += '<h3 style="color:#e2e8f0;margin:0;font-size:0.9rem;">📊 Riwayat Perawatan</h3>';
+    h += '</div>';
+    if(!data.length){ h += '<div style="text-align:center;color:#64748b;padding:2rem;">Belum ada riwayat selesai.</div>'; }
+    else {
+      h += '<div style="max-height:400px;overflow-y:auto;">';
+      data.forEach(t=>{
+        h += '<div style="padding:0.5rem;margin-bottom:0.3rem;background:rgba(30,41,59,0.3);border-radius:0.4rem;display:flex;justify-content:space-between;font-size:0.7rem;">';
+        h += '<div><b>'+sanitizeHTML(t.judul)+'</b><br><span style="color:#94a3b8;">'+sanitizeHTML(t.lokasi)+' | '+sanitizeHTML(t.petugas)+'</span></div>';
+        h += '<div style="text-align:right;color:#64748b;">Selesai<br>'+dt(t.updatedAt)+'</div></div>';
+      });
+      h += '</div>';
+    }
+    document.getElementById('panel-history').innerHTML = h;
+  }
+
+  function submitTask(){
+    var j=document.getElementById('m-judul').value.trim();
+    var l=document.getElementById('m-lokasi').value.trim();
+    var pt=document.getElementById('m-petugas').value.trim();
+    if(!j||!l||!pt) return alert('⚠️ Judul, Lokasi & Petugas wajib diisi!');
+    var prio = document.getElementById('m-prio').value;
+    var data = safeGet('dreamos_maintenance_tasks',[]);
+    data.unshift({
+      id:'maint_'+Date.now(), judul:j, lokasi:l, petugas:pt,
+      assetId: document.getElementById('m-asset').value,
+      biaya: document.getElementById('m-cost').value,
+      jenis:document.getElementById('m-jenis').value,
+      prioritas:prio,
+      deskripsi:document.getElementById('m-desc').value.trim(),
+      status:'Pending', catatan:'', tanggal:new Date().toISOString(), updatedAt:null, updatedBy:null
+    });
+    safeSet('dreamos_maintenance_tasks', data); if(typeof window.HybridSync !== 'undefined') { window.HybridSync.push('maintenance_tasks', payload); }
+    state.showForm=false; renderTasks();
+    
+    if(typeof window.syncToSupabase === 'function') {
+      window.syncToSupabase('maintenance_tasks', { judul:j, lokasi:l, prioritas:prio, status:'Pending' });    }
+  }
+
+  function changeStatus(id, newStat){
+    verifyPin(function(){
+      var note = prompt('Catatan progres/status:'); 
+      if(note===null && newStat!=='Selesai') return;
+      var data = safeGet('dreamos_maintenance_tasks',[]);
+      var updated = data.map(t=>{
+        if(t.id===id){
+          var c=JSON.parse(JSON.stringify(t));
+          c.status=newStat; c.catatan=(note?note+'\n':'')+c.catatan;
+          c.updatedAt=new Date().toISOString(); c.updatedBy='Kabag/Koordinator';
+          return c;
+        } return t;
+      });
+      safeSet('dreamos_maintenance_tasks', updated);
+      
+      if(newStat === 'Selesai'){
+        var task = updated.find(t=>t.id===id);
+        var assets = safeGet('dreamos_assets',[]);
+        var stock = safeGet('dreamos_stok',[]);
+        if(task.assetId){
+          var asset = assets.find(a=>a.id===task.assetId);
+          if(asset){ asset.condition='Baik'; safeSet('dreamos_assets', assets); }
+        }
+        var useMaterial = confirm('Apakah ada sparepart/bahan yang terpakai dari Gudang?');
+        if(useMaterial){
+          var materialName = prompt('Nama Barang/Sparepart yang dipakai:');
+          var qty = parseInt(prompt('Jumlah yang dipakai:', '1'));
+          if(materialName && qty > 0){
+            var item = stock.find(s=>s.nama && s.nama.toLowerCase() === materialName.toLowerCase());
+            if(item){
+              item.jumlah -= qty;
+              safeSet('dreamos_stok', stock);
+              var ks = safeGet('dreamos_kartu_stok',[]);
+              ks.push({id:'ks_'+Date.now(), nama:item.nama, kategori:'Pemakaian Maint', tipe:'KELUAR', jumlah:qty, harga:0, petugas:task.petugas, tanggal:new Date().toISOString()});
+              safeSet('dreamos_kartu_stok', ks);
+            } else { alert('Barang tidak ditemukan di Stok.'); }
+          }
+        }
+      }
+      renderTasks();
+      if(typeof window.syncToSupabase === 'function') {
+        var syncedTask = updated.find(t=>t.id===id);
+        if(syncedTask) window.syncToSupabase('maintenance_tasks', { judul: syncedTask.judul, lokasi: syncedTask.lokasi, prioritas: syncedTask.prioritas, status: newStat });
+      }
+    });
+  }
+  function deleteTask(id){
+    verifyPin(function(){      
+      if(!confirm('Hapus tugas ini?')) return;
+      var data = safeGet('dreamos_maintenance_tasks',[]);
+      safeSet('dreamos_maintenance_tasks', data.filter(t=>t.id!==id));
+      renderTasks();
+    });
+  }
+
+  function init(){
+    renderTasks();
+    document.querySelectorAll('.maint-tab').forEach(btn=>{
+      btn.onclick = function(){
+        var tab = this.dataset.tab;
+        if(!tab) return;
+        state.tab = tab;
+        document.querySelectorAll('.maint-tab[data-tab]').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('panel-tasks').style.display = tab==='tasks'?'block':'none';
+        document.getElementById('panel-history').style.display = tab==='history'?'block':'none';
+        if(tab==='history') renderHistory();
+      };
+    });
+
+    app.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-act]');
+      if(!btn) return;
+      var act = btn.dataset.act, val = btn.dataset.val, id = btn.dataset.id;
+      if(act==='filter'){ state.filter=val; renderTasks(); }
+      else if(act==='toggle-form'){ state.showForm=!state.showForm; renderTasks(); }
+      else if(act==='submit'){ submitTask(); }
+      else if(act==='status'){ changeStatus(id, val); }
+      else if(act==='del'){ deleteTask(id); }
+    });
+    console.log('✅ Maintenance Bridge Ready');
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>

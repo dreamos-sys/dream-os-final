@@ -1,0 +1,279 @@
+<!-- 
+=========================================================================
+🏛️ DREAM OS K3 MODULE - MASTER PLAN & ARCHITECTURAL ROADMAP
+=========================================================================
+👨‍💻 Engineered by: Family Dream Team (Sultan Architect & Co.)
+📅 Current Phase: Phase 1 (Client-Side / LocalStorage / Offline-First)
+🚀 Next Phase: Phase 2 (PWA Native APK + Supabase Backend + Cloudflare)
+
+📌 CORE LOGIC (Sudah Implementasi):
+1. Auto-Dispatch Logic: Kerusakan->Maintenance, Kebersihan->Janitor, Kehilangan->Security.
+2. Image Compression: Foto bukti otomatis di-compress biar hemat memori.
+3. Storage Guard: Monitoring penggunaan LocalStorage (Max 5MB).
+4. Print Engine: Cetak laporan single atau bulk (All).
+5. i18n Global: Support Bahasa Indonesia, English, 中文 (China).
+
+🗺️ FUTURE ROADMAP (To-Do List for Phase 2 - Supabase Migration):
+-------------------------------------------------------------------------
+[DATABASE MAPPING]
+- localStorage 'dreamos_k3_reports' -> Supabase Table 'k3_reports'
+- Schema: id (uuid), nama (text), id_pegawai (text), divisi (text), hp (text),
+  jenis (enum), lokasi (text), deskripsi (text), priority (enum), 
+  status (enum: pending/resolved), created_at (timestamptz), foto (text/url).
+
+[FITUR SULTAN - GLOBAL INDUSTRY STANDARD]
+[ ] 1. GEO-TAGGING & MAP VIEW: Saat lapor, ambil koordinat GPS otomatis. Tampilkan heatmap lokasi rawan kecelakaan di dashboard.[ ] 2. AI IMAGE ANALYSIS: Upload foto, sistem otomatis mendeteksi jenis kerusakan (pakai API Vision).
+[ ] 3. REAL-TIME NOTIFICATION: Push notification ke HP petugas Maintenance/Security saat laporan masuk (via Supabase Realtime).
+
+💡 NOTE FOR DEVELOPER:
+"Logic auto-dispatch ke modul lain (Maintenance/Janitor/Security) harus dipindah ke 
+Supabase Database Triggers (Postgres Functions) di Phase 2 agar data konsisten."
+"The Power Soul Of Shalawat" - Family Dream Team 🕌✨
+=========================================================================
+-->
+
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+
+<div style="min-height:100vh; background:#040814; color:#e2e8f0; font-family:'Inter',sans-serif; padding:1rem; padding-top:3.5rem; padding-bottom:5rem;" id="k3-app">
+    <h2 style="color:#ef4444; font-size:1.4rem; margin-bottom:1rem;" data-i18n="k3_title">⚠️ Laporan K3</h2>
+    
+    <!-- TABS -->
+    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+        <button data-act="tab" data-val="form" id="k3-tab-form" style="padding:0.5rem 1rem; background:#ef4444; color:white; border:none; border-radius:0.5rem; font-weight:bold; cursor:pointer;">📝 Form</button>
+        <button data-act="tab" data-val="history" id="k3-tab-history" style="padding:0.5rem 1rem; background:#1e293b; color:#e2e8f0; border:none; border-radius:0.5rem; cursor:pointer;">📋 Riwayat & Cetak</button>
+    </div>
+
+    <!-- FORM CONTAINER -->
+    <div id="k3-form-container">
+        <form id="k3-form" style="background:rgba(15,23,42,0.6); border:1px solid rgba(239,68,68,0.2); border-radius:1rem; padding:1rem;">
+            <h4 style="color:#00ff9d; margin-bottom:0.75rem;">👤 Data Pelapor</h4>
+            <input type="text" id="k3-nama" data-i18n-ph="k3_ph_nama" placeholder="Nama Lengkap *" required style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+            <input type="text" id="k3-idpegawai" data-i18n-ph="k3_ph_id" placeholder="ID Pegawai" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+            <input type="text" id="k3-divisi" data-i18n-ph="k3_ph_divisi" placeholder="Divisi / Bagian" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+            <input type="tel" id="k3-hp" data-i18n-ph="k3_ph_hp" placeholder="No HP (08xx)" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+
+            <h4 style="color:#00ff9d; margin-bottom:0.75rem;">📋 Detail Kejadian</h4>
+            <select id="k3-jenis" required style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+                <option value="" data-i18n="k3_ph_jenis">-- Pilih Jenis Kejadian --</option>
+                <option value="kerusakan" data-i18n="k3_opt_kerusakan">Kerusakan Sarana</option>
+                <option value="kebersihan" data-i18n="k3_opt_kebersihan">Kebersihan</option>
+                <option value="kehilangan" data-i18n="k3_opt_kehilangan">Kehilangan</option>
+                <option value="kecelakaan" data-i18n="k3_opt_kecelakaan">Kecelakaan</option>
+                <option value="lainnya" data-i18n="k3_opt_lainnya">Lainnya</option>
+            </select>
+            <input type="text" id="k3-lokasi" data-i18n-ph="k3_ph_lokasi" placeholder="Lokasi Kejadian *" required style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+            <textarea id="k3-deskripsi" data-i18n-ph="k3_ph_deskripsi" placeholder="Deskripsi kejadian..." required rows="3" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0; resize:none;"></textarea>
+            
+            <label style="color:#94a3b8; font-size:0.8rem;">📸 Bukti Foto (akan dikompres)</label>
+            <input type="file" id="k3-foto" accept="image/*" capture="environment" style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.5rem; display:block;">
+            
+            <select id="k3-priority" style="width:100%; padding:0.6rem; margin-bottom:0.75rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0;">
+                <option value="normal" data-i18n="k3_opt_normal">Normal</option>
+                <option value="high" data-i18n="k3_opt_high">Tinggi</option>
+                <option value="critical" data-i18n="k3_opt_critical">Kritis</option>
+            </select>
+            <button type="submit" data-act="submit" style="width:100%; padding:1rem; background:#ef4444; color:white; border:none; border-radius:0.5rem; font-weight:bold; font-size:1rem; cursor:pointer;">📩 KIRIM LAPORAN</button>
+            <p id="k3-msg" style="text-align:center; margin-top:0.5rem;"></p>
+        </form>
+    </div>
+    <!-- HISTORY CONTAINER -->
+    <div id="k3-history-container" style="display:none;">
+        <div id="storage-guard" style="background:rgba(15,23,42,0.6); border:1px solid rgba(245,158,11,0.3); border-radius:0.75rem; padding:0.75rem; margin-bottom:1rem; font-size:0.8rem;"></div>
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+            <button data-act="print_all" style="flex:1; padding:0.6rem; background:#6366f1; color:white; border:none; border-radius:0.5rem; cursor:pointer; font-weight:bold;">🖨️ Cetak Semua</button>
+            <button data-act="delete_all" style="flex:1; padding:0.6rem; background:#ef4444; color:white; border:none; border-radius:0.5rem; cursor:pointer; font-weight:bold;">🗑️ Hapus Semua</button>
+        </div>
+        <div id="k3-list"></div>
+    </div>
+</div>
+
+<script>
+(function(){
+    console.log('🟢 K3 init');
+    var lang = localStorage.getItem('dreamos_lang') || 'id';
+    var dict = window.DreamLang ? (window.DreamLang[lang] || window.DreamLang.id) : {};
+function sanitizeHTML(str) {     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');   }
+    function t(key) { return dict[key] || key; }
+
+    function getData(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } }
+    function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+    function compressImage(file, callback, maxWidth, maxHeight, quality) {
+        maxWidth = maxWidth || 800; maxHeight = maxHeight || 600; quality = quality || 0.6;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var w = img.width, h = img.height;
+                if (w > maxWidth) { h *= maxWidth / w; w = maxWidth; }
+                if (h > maxHeight) { w *= maxHeight / h; h = maxHeight; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                callback(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function addToMaintenance(r) {
+        var t = getData('dreamos_maintenance_tasks');
+        t.push({ id:'maint_'+Date.now(), judul:'Perbaikan: '+sanitizeHTML(r.lokasi), lokasi:sanitizeHTML(r.lokasi), deskripsi:sanitizeHTML(r.deskripsi), priority:r.priority, status:'pending', created_at:new Date().toISOString(), source:'K3 #'+r.id });
+        saveData('dreamos_maintenance_tasks', t);
+    }    function addToJanitor(r) {
+        var t = getData('dreamos_janitor_tasks');
+        t.push({ id:'jan_'+Date.now(), area:r.lokasi.toLowerCase().includes('luar')?'outdoor':'indoor', deskripsi:sanitizeHTML(r.deskripsi), lokasi:sanitizeHTML(r.lokasi), priority:r.priority, status:'pending', created_at:new Date().toISOString(), source:'K3 #'+r.id });
+        saveData('dreamos_janitor_tasks', t);
+    }
+    function addToSecurity(r) {
+        var i = getData('dreamos_security_incidents');
+        i.push({ id:'sec_'+Date.now(), deskripsi:sanitizeHTML(r.deskripsi), lokasi:sanitizeHTML(r.lokasi), priority:r.priority, status:'pending', created_at:new Date().toISOString(), source:'K3 #'+r.id });
+        saveData('dreamos_security_incidents', i);
+    }
+
+    function checkStorage() {
+        var total = 0; for(var k in localStorage) { if(localStorage.hasOwnProperty(k)) total += localStorage[k].length * 2; }
+        var mb = (total / 1048576).toFixed(2);
+        var pct = Math.min((mb / 5) * 100, 100);
+        var el = document.getElementById('storage-guard');
+        if(!el) return;
+        var color = pct > 80 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#10b981';
+        el.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;"><span>💾 Local Storage</span><span style="color:'+color+';font-weight:bold;">'+mb+' MB / 5 MB ('+Math.round(pct)+'%)</span></div>' +
+            '<div style="background:#1e293b;border-radius:1rem;height:8px;overflow:hidden;"><div style="background:'+color+';height:100%;width:'+pct+'%;transition:width 0.3s;"></div></div>' +
+            (pct > 80 ? '<p style="color:#ef4444;margin-top:0.4rem;font-size:0.75rem;">⚠️ Storage almost full! Delete old reports.</p>' : '');
+    }
+
+    function buildPrintHTML(reports) {
+        var h = '<html><head><title>K3 Report Dream OS</title><style>body{font-family:sans-serif;padding:20px;color:#111;} .card{border:1px solid #ccc;padding:12px;margin-bottom:12px;page-break-inside:avoid;} h2{margin:0 0 5px;font-size:16px;} .meta{font-size:12px;color:#555;margin-bottom:5px;} img{max-width:100%;max-height:150px;margin-top:5px;border-radius:4px;} @media print{body{padding:0;} .card{border:none;border-bottom:1px solid #eee;}}</style></head><body><h1 style="text-align:center;">📋 K3 Report Dream OS</h1>';
+        reports.forEach(function(r){
+            h += '<div class="card"><h2>'+r.jenis.toUpperCase()+' | '+r.lokasi+'</h2>';
+            h += '<div class="meta">👤 '+r.nama+' ('+r.divisi+') • 📅 '+new Date(r.created_at).toLocaleString(lang)+' • 🚦 '+r.priority.toUpperCase()+'</div>';
+            h += '<p>'+r.deskripsi+'</p>';
+            if(r.foto) h += '<img src="'+r.foto+'">';
+            h += '</div>';
+        });
+        h += '<script>window.print();<\/script></body></html>';
+        return h;
+    }
+
+    function renderK3History() {
+        checkStorage();
+        var list = document.getElementById('k3-list');
+        if(!list) return;
+        var reports = getData('dreamos_k3_reports').sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); });
+        if (!reports.length) { list.innerHTML = '<p style="color:#64748b;text-align:center;padding:2rem;">'+t('k3_msg_empty')+'</p>'; return; }
+        var html = '';
+        reports.forEach(function(r) {
+            var pc = r.priority==='critical'?'#ef4444':r.priority==='high'?'#f59e0b':'#94a3b8';
+            html += '<div style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.05);border-radius:0.75rem;padding:0.75rem;margin-bottom:0.75rem;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">';
+            html += '<span style="font-weight:700;color:#e2e8f0;">'+r.jenis.toUpperCase()+' | '+r.lokasi+'</span>';
+            html += '<span style="background:'+pc+';color:white;padding:0.15rem 0.4rem;border-radius:0.3rem;font-size:0.65rem;">'+r.priority.toUpperCase()+'</span></div>';
+            html += '<div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.3rem;">👤 '+r.nama+' ('+r.divisi+') • 📅 '+new Date(r.created_at).toLocaleDateString(lang)+'</div>';            html += '<div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:0.4rem;">'+r.deskripsi+'</div>';
+            if (r.foto) html += '<img src="'+r.foto+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:0.5rem;margin-bottom:0.4rem;">';
+            html += '<div style="display:flex;gap:0.4rem;">';
+            html += '<button data-act="print" data-id="'+r.id+'" style="flex:1;padding:0.4rem;background:#6366f1;color:white;border:none;border-radius:0.4rem;cursor:pointer;font-size:0.75rem;">'+t('k3_btn_print')+'</button>';
+            html += '<button data-act="delete" data-id="'+r.id+'" style="flex:1;padding:0.4rem;background:#ef4444;color:white;border:none;border-radius:0.4rem;cursor:pointer;font-size:0.75rem;">'+t('k3_btn_delete')+'</button>';
+            html += '</div></div>';
+        });
+        list.innerHTML = html;
+    }
+
+    function switchK3Tab(tab) {
+        document.getElementById('k3-form-container').style.display = tab === 'form' ? 'block' : 'none';
+        document.getElementById('k3-history-container').style.display = tab === 'history' ? 'block' : 'none';
+        document.getElementById('k3-tab-form').style.background = tab === 'form' ? '#ef4444' : '#1e293b';
+        document.getElementById('k3-tab-history').style.background = tab === 'history' ? '#ef4444' : '#1e293b';
+        
+        // Update i18n texts for tabs
+        document.getElementById('k3-tab-form').textContent = t('k3_tab_form');
+        document.getElementById('k3-tab-history').textContent = t('k3_tab_history');
+
+        if (tab === 'history') renderK3History();
+    }
+
+    function applyI18nToForm() {
+        document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.getAttribute('data-i18n')); });
+        document.querySelectorAll('[data-i18n-ph]').forEach(function(el){ el.placeholder = t(el.getAttribute('data-i18n-ph')); });
+        document.querySelector('[data-act="submit"]').textContent = t('k3_btn_submit');
+        document.querySelector('[data-act="print_all"]').textContent = t('k3_btn_print_all');
+        document.querySelector('[data-act="delete_all"]').textContent = t('k3_btn_delete_all');
+    }
+
+    // 🛡️ EVENT DELEGATION (CSP SAFE)
+    var app = document.getElementById('k3-app');
+    if(app) {
+        app.addEventListener('click', function(e){
+            var t = e.target.closest('[data-act]');
+            if(!t) return;
+            var act = t.dataset.act, val = t.dataset.val, id = t.dataset.id;
+            
+            if(act === 'tab') { switchK3Tab(val); }
+            else if(act === 'submit') { 
+                e.preventDefault();
+                var nama = document.getElementById('k3-nama').value.trim();
+                var idPegawai = document.getElementById('k3-idpegawai').value.trim();
+                var divisi = document.getElementById('k3-divisi').value.trim();
+                var hp = document.getElementById('k3-hp').value.trim();
+                var jenis = document.getElementById('k3-jenis').value;
+                var lokasi = document.getElementById('k3-lokasi').value.trim();
+                var deskripsi = document.getElementById('k3-deskripsi').value.trim();
+                var priority = document.getElementById('k3-priority').value;                
+                if (!nama || !jenis || !lokasi || !deskripsi) {
+                    document.getElementById('k3-msg').style.color = '#ef4444';
+                    document.getElementById('k3-msg').textContent = '⚠️ ' + t('k3_ph_nama').replace(' *','') + ' required!';
+                    return;
+                }
+                
+                var report = { 
+                    id:'k3_'+Date.now(), nama:nama, id_pegawai:idPegawai, divisi:divisi, hp:hp, 
+                    jenis:jenis, lokasi:lokasi, deskripsi:deskripsi, priority:priority, 
+                    status:'pending', created_at:new Date().toISOString(), foto: null 
+                };
+                
+                var fotoFile = document.getElementById('k3-foto').files[0];
+                var finalize = function(r) {
+                    var k3 = getData('dreamos_k3_reports'); k3.push(r); saveData('dreamos_k3_reports', k3);
+                    if (r.jenis==='kerusakan') addToMaintenance(r);
+                    else if (r.jenis==='kebersihan') addToJanitor(r);
+                    else if (r.jenis==='kehilangan') addToSecurity(r);
+                    
+                    document.getElementById('k3-msg').style.color = '#10b981';
+                    document.getElementById('k3-msg').textContent = '✅ ' + t('k3_btn_submit') + ' OK!';
+                    document.getElementById('k3-form').reset();
+                    applyI18nToForm(); // Reset placeholders
+                    renderK3History();
+                };
+                
+                if (fotoFile) compressImage(fotoFile, function(b64) { report.foto = b64; finalize(report); });
+                else finalize(report);
+            }
+            else if(act === 'print') {
+                var r = getData('dreamos_k3_reports').find(function(x){ return x.id === id; });
+                if (!r) return alert('Report not found.');
+                var win = window.open('', '_blank'); win.document.write(buildPrintHTML([r]));
+            }
+            else if(act === 'delete') {
+                if (!confirm('Delete this report?')) return;
+                var k3 = getData('dreamos_k3_reports').filter(function(r){ return r.id !== id; });
+                saveData('dreamos_k3_reports', k3); renderK3History();
+            }
+            else if(act === 'print_all') {
+                var reports = getData('dreamos_k3_reports');
+                if (!reports.length) return alert(t('k3_msg_empty'));
+                var win = window.open('', '_blank'); win.document.write(buildPrintHTML(reports));
+            }
+            else if(act === 'delete_all') {
+                if (!confirm('⚠️ Delete ALL K3 reports?')) return;
+                saveData('dreamos_k3_reports', []); renderK3History();
+            }
+        });    }
+
+    // Init
+    setTimeout(function(){
+        applyI18nToForm();
+        renderK3History();
+    }, 80);
+})();
+</script>

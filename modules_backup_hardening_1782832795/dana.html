@@ -1,0 +1,101 @@
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+<div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="dana-app">
+  <h2 style="color:#0ea5e9;font-size:1.3rem;margin-bottom:0.2rem;">💰 Manajemen Dana & Approval</h2>
+  <p style="color:#94a3b8;font-size:0.7rem;margin-bottom:1rem;">ISO 9001 Traceability • ISO 27001 Non-Repudiation • Client-Side Secure</p>
+  <div id="dana-app-content" style="overflow:visible!important;max-height:none!important;"></div>
+</div>
+<style>
+.dana-panel{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:0.75rem;margin-bottom:0.5rem;overflow:visible!important;}
+.dana-input{width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;}
+.dana-select{width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;}
+</style>
+<script>
+(function(){
+  console.log('🟢 Dana init');
+  function safeGet(k, fb){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }catch(e){ return fb; } }
+  function safeSet(k, d){ localStorage.setItem(k, JSON.stringify(d)); }
+  function fmtRp(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
+  function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function logAudit(act, detail){ var a=safeGet('dreamos_profile_audit',[]); a.unshift({action:act,detail:detail,time:new Date().toISOString(),device:'DanaMod'}); if(a.length>50)a.pop(); safeSet('dreamos_profile_audit',a); }
+  function verifyPin(cb){ var pin=prompt('🔐 PIN Admin/Kabag:'); var sysPin=localStorage.getItem('dreamos_pin')||'b15m1ll4h_012443410'; if(pin===sysPin||btoa(pin)===sysPin){ cb(); } else { alert('❌ PIN salah.'); } }
+  
+  var state = { filter: 'all', showForm: false };
+
+  function renderApp(){
+    try {
+      var app = document.getElementById('dana-app-content');
+      if(!app) return;
+      var data = safeGet('dreamos_dana', []);
+      var filtered = state.filter === 'all' ? data : data.filter(function(d){ return d.status === state.filter; });
+      
+      var html = '<div style="display:flex;gap:0.3rem;margin-bottom:0.75rem;overflow-x:auto;">';
+      ['all','pending','approved','rejected'].forEach(function(f){
+        var lbl = f==='all'?'📋 Semua':f==='pending'?'⏳ Pending':f==='approved'?'✅ Disetujui':'❌ Ditolak';
+        var act = state.filter===f ? 'background:#0ea5e9;color:#000;' : 'background:#1e293b;color:#e2e8f0;';
+        html += '<button data-act="filter" data-val="'+f+'" style="padding:0.4rem 0.6rem;border:none;border-radius:0.4rem;cursor:pointer;font-size:0.7rem;white-space:nowrap;'+act+'">'+lbl+'</button>';
+      });
+      html += '</div><button data-act="toggle-form" style="width:100%;padding:0.5rem;margin-bottom:0.75rem;background:#0ea5e9;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">'+(state.showForm?'❌ Batal':'+ Buat Pengajuan Dana')+'</button>';
+      
+      if(state.showForm){
+        html += '<div class="dana-panel"><input id="d-judul" class="dana-input" placeholder="Judul Pengajuan *"><input id="d-nominal" type="number" class="dana-input" placeholder="Nominal (Rp) *"><select id="d-kat" class="dana-select"><option>Operasional</option><option>Maintenance</option><option>K3 Safety</option><option>Kebersihan</option><option>Lainnya</option></select><input id="d-pemohon" class="dana-input" placeholder="Nama Pemohon *"><textarea id="d-catatan" class="dana-input" placeholder="Catatan / Keterangan" rows="2" style="resize:none;"></textarea><button data-act="submit" style="width:100%;padding:0.5rem;background:#10b981;color:white;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">📤 Ajukan ke Papan Approval</button></div>';
+      }
+      
+      if(!filtered.length){
+        html += '<div style="text-align:center;color:#64748b;padding:2rem;font-size:0.75rem;">'+(state.filter==='all'?'Belum ada pengajuan dana.':'Tidak ada data dengan filter ini.')+'</div>';
+      } else {
+        html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
+        filtered.forEach(function(d){
+          var badge = d.status==='pending'?'background:#f59e0b;color:#000;':d.status==='approved'?'background:#10b981;color:#fff;':'background:#ef4444;color:#fff;';          var statusLbl = d.status==='pending'?'⏳ Pending':d.status==='approved'?'✅ Disetujui':'❌ Ditolak';
+          html += '<div class="dana-panel" style="border-left:4px solid '+(d.status==='pending'?'#f59e0b':d.status==='approved'?'#10b981':'#ef4444')+';"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.3rem;"><div><strong style="font-size:0.8rem;">'+d.judul+'</strong><br><span style="font-size:0.65rem;color:#94a3b8;">'+d.kategori+' | '+d.pemohon+'</span></div><span style="padding:0.15rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;font-weight:600;'+badge+'">'+statusLbl+'</span></div>';
+          html += '<div style="color:#00ff9d;font-weight:700;font-size:0.85rem;margin-bottom:0.2rem;">'+fmtRp(d.nominal)+'</div>';
+          if(d.catatan) html += '<div style="font-size:0.7rem;color:#94a3b8;margin-bottom:0.3rem;font-style:italic;">"'+d.catatan+'"</div>';
+          html += '<div style="font-size:0.6rem;color:#64748b;margin-bottom:0.4rem;">📅 '+dt(d.tanggal)+(d.approvedAt?' | ✅ '+dt(d.approvedAt)+' oleh '+d.approver:'')+'</div>';
+          if(d.status==='pending'){
+            html += '<div style="display:flex;gap:0.3rem;"><button data-act="approve" data-id="'+d.id+'" style="flex:1;padding:0.3rem;background:#10b981;color:white;border:none;border-radius:0.3rem;font-size:0.65rem;cursor:pointer;">✅ Setujui</button><button data-act="reject" data-id="'+d.id+'" style="flex:1;padding:0.3rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;font-size:0.65rem;cursor:pointer;">❌ Tolak</button></div>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      app.innerHTML = html;
+      console.log('✅ Dana render success');
+    } catch(e) {
+      console.error('❌ Dana render crash:', e.message);
+      var app = document.getElementById('dana-app-content');
+      if(app) app.innerHTML = '<div style="text-align:center;padding:2rem;color:#ef4444;">⚠️ Gagal memuat Modul Dana.<br><small>'+e.message+'</small><br><button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#1e293b;color:#fff;border:none;border-radius:0.5rem;">🔄 Muat Ulang</button></div>';
+    }
+  }
+
+  setTimeout(function(){
+    var app = document.getElementById('dana-app');
+    if(!app) return;
+    renderApp();
+    app.addEventListener('click', function(e){
+      var t = e.target.closest('[data-act]');
+      if(!t) return;
+      var act = t.dataset.act, val = t.dataset.val, id = t.dataset.id;
+      
+      if(act==='filter'){ state.filter=val; renderApp(); }
+      else if(act==='toggle-form'){ state.showForm=!state.showForm; renderApp(); }
+      else if(act==='submit'){
+        var j=document.getElementById('d-judul').value.trim(), n=parseInt(document.getElementById('d-nominal').value)||0, k=document.getElementById('d-kat').value, p=document.getElementById('d-pemohon').value.trim(), c=document.getElementById('d-catatan').value.trim();
+        if(!j||!p||n<=0) return alert('⚠️ Judul, pemohon, & nominal wajib diisi (>0).');
+        var data = safeGet('dreamos_dana',[]);
+        data.unshift({id:'dana_'+Date.now(), judul:j, nominal:n, kategori:k, status:'pending', pemohon:p, tanggal:new Date().toISOString(), approvedAt:null, approver:null, catatan:c});
+        safeSet('dreamos_dana', data); if(typeof window.HybridSync !== 'undefined') { window.HybridSync.push('dana', payload); } logAudit('Pengajuan dana: '+j, fmtRp(n));
+        state.showForm=false; state.filter='pending'; renderApp(); alert('✅ Pengajuan dikirim ke Papan Approval.');
+      }
+      else if(act==='approve' || act==='reject'){
+        verifyPin(function(){
+          var data = safeGet('dreamos_dana',[]);
+          var updated = data.map(function(d){
+            if(d.id===id){ var copy=JSON.parse(JSON.stringify(d)); copy.status=act==='approve'?'approved':'rejected'; copy.approvedAt=new Date().toISOString(); copy.approver='Kabag/Koordinator'; return copy; }
+            return d;
+          });
+          safeSet('dreamos_dana', updated); logAudit(act==='approve'?'Dana disetujui':'Dana ditolak', id); renderApp(); alert(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.');
+        });
+      }    });
+    console.log('✅ Modul Dana ready');
+  }, 150);
+})();
+</script>

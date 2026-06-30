@@ -1,0 +1,320 @@
+<!-- SECURITY OPS CENTER PRO - DANRU EDITION -->
+<button onclick="window.parent.goHome()" class="no-print" style="background:none;border:none;color:#64748b;padding:0.5rem;cursor:pointer;">← Kembali</button>
+
+<div style="padding:1rem;" id="security-app">
+  <div class="no-print" style="margin-bottom:1rem;">
+      <h2 style="color:#0ea5e9; margin:0; font-size:1.4rem;">🛡️ Security Ops Center Pro</h2>
+      <p style="color:#64748b; font-size:0.75rem;">ISO 27001 • Auto-Sync ke Dashboard Slide</p>
+      
+      <!-- STATUS AKSES DANRU -->
+      <div id="sec-access-status" style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b; color:#f59e0b; padding:0.5rem; border-radius:0.5rem; font-size:0.75rem; margin-top:0.5rem; text-align:center;">
+          ⏳ Memeriksa Device DNA & Hak Akses Danru...
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-top:0.8rem;">
+          <div class="mini-stat"><div class="mini-stat-val" id="stat-total-log">0</div><div class="mini-stat-label">Total Log</div></div>
+          <div class="mini-stat"><div class="mini-stat-val" id="stat-urgent">0</div><div class="mini-stat-label" style="color:#ef4444;">Urgent</div></div>
+          <div class="mini-stat"><div class="mini-stat-val" id="stat-petugas">0</div><div class="mini-stat-label">Petugas Aktif</div></div>
+          <div class="mini-stat"><div class="mini-stat-val" id="sec-live-clock">--:--</div><div class="mini-stat-label">Waktu</div></div>
+      </div>
+  </div>
+
+  <div class="no-print" style="display:flex; gap:0.5rem; margin-bottom:1rem; overflow-x:auto; padding-bottom:0.5rem; border-bottom:1px solid #334155;">
+      <button class="sec-tab active" data-target="tab-jadwal">📅 Jadwal Matriks</button>
+      <button class="sec-tab" data-target="tab-input-log">📝 Input Serah Terima</button>
+      <button class="sec-tab" data-target="tab-report">📊 Buku Laporan (PDF)</button>
+      <button class="sec-tab" data-target="tab-bridge">🚨 Trigger & Slide</button>
+  </div>
+
+  <!-- TAB 1: JADWAL -->
+  <div id="tab-jadwal" class="sec-panel no-print">
+      <div style="background:#0f172a; border-radius:0.75rem; padding:1rem; border:1px solid #334155;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <h3 style="color:#fff; font-size:0.9rem; margin:0;">📅 Matriks Jadwal Shift</h3>
+              <input type="month" id="m-period" class="bk-input" style="width:auto; margin:0; padding:0.4rem;" value="2026-06">
+          </div>
+          <!-- FORM TAMBAH NAMA (HANYA MUNCUL JIKA DANRU/ADMIN) -->
+          <div id="admin-controls" style="display:none; flex-direction:column; gap:0.5rem;">
+              <div style="display:flex; gap:0.5rem;">
+                  <input id="new-name" class="bk-input" placeholder="+ Tambah Nama Personil Baru" style="margin:0;">
+                  <button data-act="add-name" class="disp-btn" style="background:#0ea5e9; white-space:nowrap;">Tambah</button>
+              </div>
+              <p style="font-size:0.6rem; color:#64748b;">*Klik kotak jadwal untuk ubah: L (Libur) -> P (Pagi) -> M (Malam) -> CT (Cuti)</p>
+          </div>
+      </div>
+      <div style="margin-top:1rem; overflow-x:auto; background:#1e293b; border-radius:0.5rem; padding:0.5rem;">
+          <table style="width:100%; font-size:0.65rem; border-collapse:collapse; color:#cbd5e1; text-align:center; min-width:800px;">
+              <thead><tr style="background:#0f172a;" id="matrix-head"></tr></thead>              <tbody id="matrix-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- TAB 2: INPUT LOG -->
+  <div id="tab-input-log" class="sec-panel no-print" style="display:none;">
+      <div style="background:#0f172a; border-radius:0.75rem; padding:1rem; border:1px solid #334155;">
+          <h3 style="color:#fff; font-size:0.9rem; margin-top:0; margin-bottom:1rem;">Form Laporan & Serah Terima</h3>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;">
+              <input id="lap-petugas" class="bk-input" placeholder="Petugas Penyerah">
+              <input id="lap-penerima" class="bk-input" placeholder="Petugas Penerima">
+              <select id="lap-shift" class="bk-input"><option>Shift Pagi (07:00 - 19:00)</option><option>Shift Malam (19:00 - 07:00)</option></select>
+              <select id="lap-pos" class="bk-input"><option>Pos Utama</option><option>Gedung SMP</option><option>Kantin SMP</option><option>Saung Besar & Kecil</option><option>Perpustakaan SD & SMP</option><option>Gedung SD</option><option>Playground SD</option><option>Labkom SD</option><option>Area Parkir</option><option>Lapangan Volley</option><option>Lapangan Futsal</option><option>Lapangan Basket</option><option>Gedung Serbaguna & Masjid</option><option>Gerbang Belakang</option><option>Koridor</option><option>Lapangan & Dapur</option><option>Parkiran Loby SMA</option><option>Gedung SMA</option><option>Kantin SMA</option><option>Patroli Menyeluruh</option></select>
+              <select id="lap-stat" class="bk-input" style="grid-column: span 2;"><option value="AMAN TERKENDALI">Aman Terkendali (Kondusif)</option><option value="URGENT/KEJADIAN">Urgent / Ada Kejadian (K3)</option></select>
+          </div>
+          <textarea id="lap-teks" class="bk-input" rows="4" placeholder="Kronologi & serah terima aset..."></textarea>
+          <div style="display:flex; gap:0.5rem; margin-top:0.5rem; margin-bottom:0.5rem;">
+              <div style="font-size:0.7rem; color:#94a3b8; width:100%;">Upload Foto Bukti (Max 5, Opsional):</div>
+              <input type="file" id="lap-foto" multiple accept="image/*" class="bk-input" style="padding:0.4rem; font-size:0.7rem;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+              <input id="ttd-penyerah" class="bk-input" placeholder="Tanda Tangan Penyerah (Nama)">
+              <input id="ttd-penerima" class="bk-input" placeholder="Tanda Tangan Penerima (Nama)">
+          </div>
+          <button data-act="save-laporan-pro" class="disp-btn" style="background:#10b981; width:100%; font-weight:bold;">SIMPAN LOG SERAH TERIMA</button>
+      </div>
+  </div>
+
+  <!-- TAB 3: REPORT PDF -->
+  <div id="tab-report" class="sec-panel print-area" style="display:none;">
+      <div class="no-print" style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;flex-wrap:wrap;gap:0.5rem;">
+          <h3 style="color:#fff; font-size:0.9rem; margin:0;">📊 Buku Mutasi & Serah Terima</h3>
+          <div style="display:flex;gap:0.3rem;">
+              <select id="filter-shift-report" class="bk-input" style="width:auto; padding:0.3rem;font-size:0.7rem;"><option value="all">Semua Shift</option><option>Shift Pagi (07:00 - 19:00)</option><option>Shift Malam (19:00 - 07:00)</option></select>
+              <button onclick="window.print()" class="disp-btn" style="background:#eab308; color:#000; font-weight:bold;">🖨️ CETAK PDF</button>
+          </div>
+      </div>
+      <div class="print-only-header" style="display:none; text-align:center; margin-bottom:20px;"><h2>BUKU MUTASI DAN LAPORAN KEAMANAN</h2><p>DREAM OS V13 - STANDAR ISO 27001</p><hr></div>
+      <div style="overflow-x:auto; background:#fff; padding:0.5rem; border-radius:0.3rem;">
+          <table class="excel-table" style="width:100%; color:#000; font-size:12px; font-family:Arial, sans-serif; border-collapse:collapse; text-align:left;">
+            <thead><tr style="background:#f1f5f9;"><th>No</th><th>Tgl & Jam</th><th>Shift & Area</th><th>Dari -> Ke</th><th>Uraian / Kronologi</th><th>Status</th><th>TTD</th></tr></thead>
+            <tbody id="lap-table"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- TAB 4: BRIDGE (FIXED AUTO-SYNC) -->
+  <div id="tab-bridge" class="sec-panel no-print" style="display:none;">
+      <div style="background:#0f172a; border-radius:0.75rem; padding:1rem; border:1px solid #334155; margin-bottom:1rem;">          <h3 style="color:#fff; font-size:0.9rem; margin-top:0;">📢 Update Slide Dashboard (7-Detik)</h3>
+          <p style="font-size:0.7rem; color:#10b981; margin-bottom:0.5rem;">✨ Nama petugas di bawah diambil dari Matriks Jadwal hari ini. Klik "UPDATE" untuk langsung tayang di dashboard utama.</p>
+          <textarea id="slide-petugas" class="bk-input" rows="2" style="font-weight:bold; color:#0ea5e9;"></textarea>
+          <button data-act="set-slide" class="disp-btn" style="background:#0ea5e9; width:100%; font-weight:bold;">🚀 UPDATE SLIDE PUBLIK SEKARANG</button>
+      </div>
+  </div>
+</div>
+
+<style>
+.bk-input{width:100%; padding:0.6rem; background:#020617; border:1px solid #334155; border-radius:0.3rem; color:#fff; margin-bottom:0.3rem; box-sizing:border-box;}
+.disp-btn{padding:0.6rem; border:none; border-radius:0.3rem; color:white; cursor:pointer;}
+.sec-tab{padding:0.5rem 1rem; background:rgba(30,41,59,0.5); border:1px solid transparent; border-radius:0.4rem; color:#94a3b8; cursor:pointer; font-size:0.8rem; white-space:nowrap;}
+.sec-tab.active{background:rgba(14,165,233,0.1); border-color:#0ea5e9; color:#0ea5e9;}
+td.sticky-name, th.sticky-name {position: sticky; left: 0; background: #0f172a; z-index: 1;}
+.cell-klik { cursor:pointer; user-select:none; }
+.cell-klik:hover { background: rgba(255,255,255,0.1) !important; }
+.cell-readonly { cursor:not-allowed; opacity: 0.8; }
+.mini-stat {background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:0.5rem;padding:0.5rem;text-align:center;}
+.mini-stat-val {font-size:1.2rem;font-weight:700;color:#e2e8f0;}
+.mini-stat-label {font-size:0.6rem;color:#94a3b8;margin-top:0.2rem;}
+@media print {
+    @page { margin: 1cm; size: landscape; }
+    body, html { background: white !important; color: black !important; }
+    .no-print { display: none !important; }
+    .print-area { display: block !important; }
+    .print-only-header { display: block !important; }
+    .excel-table th, .excel-table td { border: 1px solid #000 !important; padding: 4px !important; color: #000 !important; }
+    .excel-table th { background-color: #e2e8f0 !important; -webkit-print-color-adjust: exact; }
+}
+</style>
+
+<script>
+(function(){
+  let isDanru = false; // Flag hak akses
+
+  function sanitizeHTML(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+  }
+
+  // 🧬 DEVICE DNA GENERATOR (SAMA PERSIS DENGAN INDEX.HTML)
+  async function getDeviceDNA() {
+      try {
+          var c = document.createElement('canvas'); var ctx = c.getContext('2d');
+          ctx.textBaseline = "top"; ctx.font = "14px 'Arial'";
+          ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+          ctx.fillStyle = "#069"; ctx.fillText("DreamOS-Ghost", 2, 15);
+          var metrics = [navigator.hardwareConcurrency || 0, screen.colorDepth, c.toDataURL()].join('|');
+          const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metrics));
+          return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);      } catch(e) { return 'UNKNOWN-DEV'; }
+  }
+
+  // 🛡️ CEK HAK AKSES DANRU SEKURITI
+  async function checkDanruAccess() {
+      var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
+      var statusEl = document.getElementById('sec-access-status');
+      var adminControls = document.getElementById('admin-controls');
+      
+      if (!user) { 
+          statusEl.innerHTML = '🔒 Mode Baca Saja (Silakan Login Terlebih Dahulu)'; 
+          statusEl.style.color = '#ef4444'; statusEl.style.borderColor = '#ef4444';
+          return; 
+      }
+      
+      // Admin (Dev/Kabag/Koord) boleh edit penuh
+      if (['dev', 'kabag', 'koord'].includes(user.role)) {
+          isDanru = true; 
+          statusEl.innerHTML = '🔓 Mode Admin ('+user.name+'): Edit Jadwal Aktif'; 
+          statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
+          if(adminControls) adminControls.style.display = 'flex';
+          return;
+      }
+      
+      // Cek Security Staff
+      if (user.role === 'security' || user.role === 'sec') {
+          var usersDb = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+          var dbUser = usersDb.find(u => u.email === user.email);
+          var dna = await getDeviceDNA();
+          
+          // Jika Device DNA cocok dengan yang terdaftar di database
+          if (dbUser && dbUser.device_dna === dna) {
+              isDanru = true; 
+              statusEl.innerHTML = '🔓 Mode Danru Sekuriti ('+user.name+'): Edit Jadwal Aktif'; 
+              statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
+              if(adminControls) adminControls.style.display = 'flex';
+          } else {
+              statusEl.innerHTML = '🔒 Mode Baca Saja (Device Tidak Terdaftar sebagai Danru)'; 
+              statusEl.style.color = '#f59e0b'; statusEl.style.borderColor = '#f59e0b';
+          }
+      } else {
+          statusEl.innerHTML = '🔒 Mode Baca Saja (Akses Ditolak untuk Role: '+user.role+')'; 
+          statusEl.style.color = '#ef4444'; statusEl.style.borderColor = '#ef4444';
+      }
+  }
+
+  function updateDashboard(){
+    var logs = JSON.parse(localStorage.getItem('dreamos_piket_logs')||'[]');
+    document.getElementById('stat-total-log').textContent = logs.length;
+    document.getElementById('stat-urgent').textContent = logs.filter(l=>l.stat==='URGENT/KEJADIAN').length;    document.getElementById('stat-petugas').textContent = new Set(logs.map(l=>l.petugas)).size;
+    document.getElementById('sec-live-clock').textContent = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function initData() {
+      var m = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]');
+      if(m.length === 0) {
+          // P = Pagi/Siang, M = Malam, L = Libur, CT = Cuti
+          // Om Donih diset full 'P' karena ikut jadwal guru (siang terus)
+          var seedRaw = [
+              {nama: "SUDARSONO", s: ["L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L"]},
+              {nama: "MARHUSIN", s: ["M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M"]},
+              {nama: "HERIYATNO", s: ["L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","P"]},
+              {nama: "SUNARKO", s: ["P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P"]},
+              {nama: "HARIYANSAHC", s: ["P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P"]},
+              {nama: "AGUS SUTISNA", s: ["M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","CT","CT","CT","CT","CT","CT","P","P","M","M","L","L","P","P","M","M"]},
+              {nama: "DONIH", s: ["P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P"]}
+          ];
+          seedRaw.forEach(row => { row.s.forEach((sh, idx) => { m.push({nama: row.nama, tgl: idx + 1, shift: sh, periode: '2026-06'}); }); });
+          localStorage.setItem('dreamos_matrix', JSON.stringify(m));
+      }
+  }
+
+  function autoFillSlide() {
+      var now = new Date();
+      var yyyy = now.getFullYear(); var mm = String(now.getMonth() + 1).padStart(2, '0'); var dd = now.getDate();
+      var period = yyyy + '-' + mm;
+      var m = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]');
+      var todayShifts = m.filter(x => x.periode === period && parseInt(x.tgl) === dd);
+      var pagi = todayShifts.filter(x => x.shift === 'P').map(x => "Sdr. " + x.nama);
+      var malam = todayShifts.filter(x => x.shift === 'M').map(x => "Sdr. " + x.nama);
+      var finalTxt = (pagi.length ? "☀️ SIANG: " + pagi.join(", ") : "") + (malam.length ? " | 🌙 MALAM: " + malam.join(", ") : "") || "Tidak ada jadwal hari ini.";
+
+      // 1. Update Textarea di Tab Bridge
+      var slideInput = document.getElementById('slide-petugas');
+      if(slideInput) slideInput.value = finalTxt;
+
+      // 2. AUTO SAVE ke LocalStorage (Agar Slide No. 1 di Dashboard langsung berubah)
+      localStorage.setItem('dreamos_sec_today', finalTxt);
+
+      // 3. AUTO REFRESH Slide di Dashboard Utama (index.html)
+      if (window.parent && typeof window.parent.showSlides === 'function') {
+          window.parent.showSlides();
+      }
+  }
+
+  window.renderMatrix = function() {
+      var period = document.getElementById('m-period').value; if(!period) return;
+      var parts = period.split('-'); var daysInMonth = new Date(parts[0], parts[1], 0).getDate();
+      var headHTML = '<th class="sticky-name">Nama Petugas</th>';
+      for(var i=1; i<=daysInMonth; i++) headHTML += '<th>'+i+'</th>';
+      document.getElementById('matrix-head').innerHTML = headHTML;
+      var m = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]'); var b = document.getElementById('matrix-body'); b.innerHTML = '';
+      var names = [...new Set(m.map(x=>x.nama))];
+      
+      // Tentukan class CSS berdasarkan hak akses
+      var cellClass = isDanru ? 'cell-klik' : 'cell-readonly';
+      var clickAction = isDanru ? 'onclick="toggleShift(this)"' : 'onclick="alert(\'⛔ Hanya Danru Sekuriti yang terdaftar yang boleh ubah jadwal!\')"';
+
+      names.forEach(n => {          var row = '<tr><td class="sticky-name">'+sanitizeHTML(n)+'</td>';
+          for(var i=1; i<=daysInMonth; i++){
+              var s = m.find(x=>x.nama===n && parseInt(x.tgl)===i && x.periode===period);
+              var sh = s ? s.shift : '';
+              var bg = sh==='L'?'color:#0ea5e9;':sh==='P'?'color:#10b981;':sh==='M'?'color:#ef4444;':sh==='CT'?'color:#eab308;font-weight:bold;':'';
+              row += '<td class="'+cellClass+'" data-nama="'+sanitizeHTML(n)+'" data-tgl="'+i+'" '+clickAction+' style="'+bg+'">'+sanitizeHTML(sh)+'</td>';
+          }
+          b.innerHTML += row + '</tr>';
+      });
+      autoFillSlide(); updateDashboard();
+  }
+
+  window.toggleShift = function(el) {
+      if(!isDanru) return alert('⛔ Akses Ditolak! Hubungi Kabag untuk registrasi Device Danru.');
+      var n = el.dataset.nama, t = parseInt(el.dataset.tgl), p = document.getElementById('m-period').value;
+      var m = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]');
+      var idx = m.findIndex(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p);
+      var cycle = ['L', 'P', 'M', 'CT']; // Libur -> Pagi -> Malam -> Cuti
+      if(idx > -1) { var nextI = cycle.indexOf(m[idx].shift) + 1; if(nextI >= cycle.length) m.splice(idx, 1); else m[idx].shift = cycle[nextI]; }
+      else m.push({nama:n, tgl:t, shift:'L', periode:p});
+      localStorage.setItem('dreamos_matrix', JSON.stringify(m)); renderMatrix();
+  }
+
+  document.getElementById('m-period').addEventListener('change', renderMatrix);
+  document.querySelectorAll('.sec-tab').forEach(btn => { btn.onclick = function(){ document.querySelectorAll('.sec-tab').forEach(b => b.classList.remove('active')); document.querySelectorAll('.sec-panel').forEach(p => p.style.display = 'none'); this.classList.add('active'); document.getElementById(this.dataset.target).style.display = 'block'; }; });
+  
+  function renderLogs(){
+      var logs = JSON.parse(localStorage.getItem('dreamos_piket_logs')||'[]');
+      var filterShift = document.getElementById('filter-shift-report')?.value || 'all';
+      var filtered = filterShift === 'all' ? logs : logs.filter(l => l.shift === filterShift);
+      document.getElementById('lap-table').innerHTML = filtered.map((x, i) => '<tr><td>'+(filtered.length-i)+'</td><td>'+sanitizeHTML(x.tanggal)+'<br><b>'+sanitizeHTML(x.jam)+'</b></td><td>'+sanitizeHTML(x.shift)+'<br><i>'+sanitizeHTML(x.pos)+'</i></td><td><b>D:</b> '+sanitizeHTML(x.petugas)+'<br><b>K:</b> '+sanitizeHTML(x.penerima)+'</td><td>'+sanitizeHTML(x.teks)+'</td><td style="color:'+(x.stat==='URGENT/KEJADIAN'?'red':'green')+'">'+sanitizeHTML(x.stat)+'</td><td>P:'+sanitizeHTML(x.ttd_penyerah||'-')+'<br>K:'+sanitizeHTML(x.ttd_penerima||'-')+'</td></tr>').join('');
+  }
+  document.getElementById('filter-shift-report')?.addEventListener('change', renderLogs);
+  
+  document.getElementById('security-app').onclick = function(e){
+      var btn = e.target.closest('[data-act]'); if(!btn) return; var act = btn.dataset.act;
+      if(act === 'add-name'){
+          if(!isDanru) return alert('⛔ Hanya Danru Sekuriti yang boleh tambah nama!');
+          var newName = document.getElementById('new-name').value.trim().toUpperCase(); if(!newName) return;
+          var m = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]'); m.push({nama:newName, tgl:1, shift:'', periode:document.getElementById('m-period').value});
+          localStorage.setItem('dreamos_matrix', JSON.stringify(m)); document.getElementById('new-name').value = ''; renderMatrix();
+      }
+      else if(act === 'save-laporan-pro'){
+          var logs = JSON.parse(localStorage.getItem('dreamos_piket_logs')||'[]'); var now = new Date();
+          logs.unshift({tanggal: now.toLocaleDateString('id-ID'), jam: now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}), petugas: sanitizeHTML(document.getElementById('lap-petugas').value.substring(0,100)) || 'Anonim', penerima: sanitizeHTML(document.getElementById('lap-penerima').value.substring(0,100)) || 'Regu Selanjutnya', shift: sanitizeHTML(document.getElementById('lap-shift').value.substring(0,50)), pos: sanitizeHTML(document.getElementById('lap-pos').value.substring(0,50)), stat: sanitizeHTML(document.getElementById('lap-stat').value.substring(0,50)), teks: sanitizeHTML(document.getElementById('lap-teks').value.substring(0,500)), ttd_penyerah: sanitizeHTML(document.getElementById('ttd-penyerah').value.substring(0,100)), ttd_penerima: sanitizeHTML(document.getElementById('ttd-penerima').value.substring(0,100))});
+          localStorage.setItem('dreamos_piket_logs', JSON.stringify(logs)); 
+          document.getElementById('lap-teks').value = ''; 
+          updateDashboard(); renderLogs(); 
+          alert('✅ Buku Mutasi Serah Terima Berhasil Disimpan!'); document.querySelector('[data-target="tab-report"]').click();
+      }      else if(act === 'set-slide'){
+          var slideText = document.getElementById('slide-petugas').value;
+          localStorage.setItem('dreamos_sec_today', slideText);
+          if (window.parent && typeof window.parent.showSlides === 'function') { window.parent.showSlides(); }
+          alert('✅ Slide Publik Berhasil Diupdate! Silakan cek dashboard utama.');
+      }
+  };
+
+  // INIT
+  initData(); 
+  checkDanruAccess().then(() => {
+      renderMatrix(); 
+      renderLogs(); 
+      updateDashboard(); 
+      autoFillSlide(); 
+  });
+  setInterval(updateDashboard, 30000);
+})();
+</script>

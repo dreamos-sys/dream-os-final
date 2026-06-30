@@ -1,0 +1,130 @@
+<div id="k3-root"></div>
+<script>
+(function() {
+    function getData(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } }
+    function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+    function addToMaintenance(report) {
+        var tasks = getData('dreamos_maintenance_tasks');
+        tasks.push({ id: 'maint_'+Date.now(), judul: 'Perbaikan: '+report.lokasi, lokasi: report.lokasi, deskripsi: report.deskripsi, priority: report.priority, status: 'pending', created: new Date().toISOString(), source: 'K3 #'+report.id });
+        saveData('dreamos_maintenance_tasks', tasks);
+        if (typeof window.dispatchEvent === 'function') window.dispatchEvent(new CustomEvent('maintenance-updated'));
+    }
+    function addToJanitor(report) {
+        var tasks = getData('dreamos_janitor_tasks');
+        var area = report.lokasi.toLowerCase().includes('luar') ? 'outdoor' : 'indoor';
+        tasks.push({ id: 'jan_'+Date.now(), area: area, deskripsi: report.deskripsi, lokasi: report.lokasi, priority: report.priority, status: 'pending', created: new Date().toISOString(), source: 'K3 #'+report.id });
+        saveData('dreamos_janitor_tasks', tasks);
+    }
+    function addToSecurity(report) {
+        var incidents = getData('dreamos_security_incidents');
+        incidents.push({ id: 'sec_'+Date.now(), deskripsi: report.deskripsi, lokasi: report.lokasi, priority: report.priority, status: 'pending', created: new Date().toISOString(), source: 'K3 #'+report.id });
+        saveData('dreamos_security_incidents', incidents);
+    }
+
+    // FUNGSI KOMPRESI GAMBAR BARU!
+    function compressImage(file, callback, maxWidth = 800, maxHeight = 600, quality = 0.6) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var width = img.width;
+                var height = img.height;
+                if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                var compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                callback(compressedBase64);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    var K3Form = {
+        data: { nama: '', idPegawai: '', divisi: '', hp: '', jenis: '', lokasi: '', deskripsi: '', priority: 'normal', foto: null },
+        msg: { text: '', type: '' },
+        submit: function(e) {
+            e.preventDefault();
+            var d = this.data;
+            if (!d.nama || !d.jenis || !d.lokasi || !d.deskripsi) {
+                this.msg = { text: 'Mohon isi semua field wajib (*)', type: 'error' };
+                return;
+            }
+            var self = this;
+            var report = { id: 'k3_'+Date.now(), nama: d.nama, idPegawai: d.idPegawai, divisi: d.divisi, hp: d.hp, jenis: d.jenis, lokasi: d.lokasi, deskripsi: d.deskripsi, priority: d.priority, status: 'pending', created: new Date().toISOString() };
+            
+            if (d.foto) {
+                // PAKAI FUNGSI KOMPRESI DI SINI
+                compressImage(d.foto, function(compressedBase64) {
+                    report.foto = compressedBase64; 
+                    finalize(report, self);
+                });
+            } else { finalize(report, self); }
+        },
+        view: function() {
+            var self = this;
+            return m("div", { style: "min-height:100vh;background:var(--bg-deep-space);color:var(--text-primary);font-family:'Space Grotesk',sans-serif;padding:1.5rem;padding-bottom:5rem;" }, [
+                m("div", { style: "display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;" }, [
+                    m("button", { onclick: function() { document.getElementById('k3-module').style.display = 'none'; }, style: "background:rgba(255,255,255,0.1);color:var(--text-primary);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;" }, "← Kembali"),
+                    m("div", {style:"display:flex;align-items:center;gap:0.5rem;"}, [m("div", {style:"display:flex;align-items:center;gap:0.5rem;"}, [m("h2", { style: "color:#f59e0b;font-size:1.5rem;font-weight:800;" }, "⚠️ Laporan K3"), m("button", {onclick:function(){self.cetakLaporan();}, style:"padding:0.4rem 0.8rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;"}, "🖨️ Cetak")]), m("button", {onclick:function(){self.cetakLaporan();}, style:"padding:0.4rem 0.8rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;"}, "🖨️ Cetak")])
+                ]),
+                m("form", { onsubmit: function(e) { self.submit(e); } }, [
+                    m("div", { class: "dream-panel", style: "padding:1rem;margin-bottom:0.75rem;" }, [
+                        m("h4", { style: "color:var(--neon-tawhid);margin-bottom:0.75rem;" }, "👤 Data Pelapor"),
+                        m("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;" }, [
+                            m("input", { placeholder: "Nama Lengkap *", required: true, oninput: function(e) { self.data.nama = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;" }),
+                            m("input", { placeholder: "ID Pegawai", oninput: function(e) { self.data.idPegawai = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;" }),
+                            m("input", { placeholder: "Divisi / Bagian", oninput: function(e) { self.data.divisi = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;" }),
+                            m("input", { type: "tel", placeholder: "No HP (08xx)", oninput: function(e) { self.data.hp = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;" })
+                        ])
+                    ]),
+                    m("div", { class: "dream-panel", style: "padding:1rem;margin-bottom:0.75rem;" }, [
+                        m("h4", { style: "color:var(--neon-tawhid);margin-bottom:0.75rem;" }, "📋 Detail Kejadian"),
+                        m("select", { required: true, onchange: function(e) { self.data.jenis = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;margin-bottom:0.5rem;" }, [
+                            m("option", { value: "" }, "-- Pilih Jenis Kejadian --"),
+                            m("option", { value: "kerusakan" }, "🔧 Kerusakan Sarana"),
+                            m("option", { value: "kebersihan" }, "🧹 Kebersihan"),
+                            m("option", { value: "kehilangan" }, "📦 Kehilangan"),
+                            m("option", { value: "kecelakaan" }, "⚠️ Kecelakaan"),
+                            m("option", { value: "lainnya" }, "📌 Lainnya")
+                        ]),
+                        m("input", { placeholder: "Lokasi Kejadian *", required: true, oninput: function(e) { self.data.lokasi = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;margin-bottom:0.5rem;" }),
+                        m("textarea", { placeholder: "Deskripsi kejadian...", required: true, rows: 3, oninput: function(e) { self.data.deskripsi = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;resize:none;margin-bottom:0.5rem;" }),
+                        m("label", { style: "color:var(--text-secondary);font-size:0.7rem;" }, "📸 Bukti Foto (akan dikompres)"),
+                        m("input", { type: "file", accept: "image/*", capture: "environment", onchange: function(e) { self.data.foto = e.target.files[0]; }, style: "color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.5rem;" }),
+                        m("select", { onchange: function(e) { self.data.priority = e.target.value; }, style: "width:100%;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.6rem;color:var(--text-primary);font-size:0.8rem;" }, [
+                            m("option", { value: "normal" }, "⚪ Normal"),
+                            m("option", { value: "high" }, "🟡 Tinggi"),
+                            m("option", { value: "critical" }, "🔴 Kritis")
+                        ])
+                    ]),
+                    m("button", { type: "submit", class: "dream-btn", style: "padding:1rem;font-size:1rem;width:100%;margin-bottom:0.5rem;" }, "📩 KIRIM LAPORAN"),
+                    self.msg.text ? m("div", { style: "padding:0.75rem;border-radius:0.5rem;font-size:0.8rem;background:"+(self.msg.type==='error'?'rgba(239,68,68,0.1)':'rgba(16,185,129,0.1)')+";color:"+(self.msg.type==='error'?'#ef4444':'#10b981') }, self.msg.text) : null
+                ])
+            ]);
+        }
+    };
+
+    function finalize(report, self) {
+        var k3 = getData('dreamos_k3_reports');
+        k3.push(report);
+        saveData('dreamos_k3_reports', k3);
+        if (report.jenis === 'kerusakan') addToMaintenance(report);
+        else if (report.jenis === 'kebersihan') addToJanitor(report);
+        else if (report.jenis === 'kehilangan') addToSecurity(report);
+        
+        // PANCARKAN EVENT UNTUK DASHBOARD
+        if (typeof window.dispatchEvent === 'function') window.dispatchEvent(new CustomEvent('k3-new-report'));
+
+        self.msg = { text: '✅ Laporan K3 berhasil dikirim & dikompres!', type: 'success' };
+        self.data = { nama: '', idPegawai: '', divisi: '', hp: '', jenis: '', lokasi: '', deskripsi: '', priority: 'normal', foto: null };
+        m.redraw();
+    }
+
+    m.mount(document.getElementById('k3-root'), K3Form);
+})();
+</script>

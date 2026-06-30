@@ -1,0 +1,226 @@
+<div id="maint-root"></div>
+<script>
+(function() {
+    function g(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
+    function s(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+    function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+    function fmt(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
+
+    var MaintenanceApp = {
+        tasks: [],
+        showForm: false,
+        showDeleted: false,
+        search: '',
+        filterStatus: 'all',
+        editData: { judul: '', lokasi: '', deskripsi: '', priority: 'normal', asset: '', teknisi: '', deadline: '', kategori: 'umum' },
+        expandedId: null,
+
+        oninit: function() {
+            this.refreshTasks();
+            window.addEventListener('k3-new-report', this.refreshTasks.bind(this));
+        },
+
+        refreshTasks: function() {
+            var all = g('dreamos_maintenance_tasks');
+            if (!this.showDeleted) all = all.filter(function(t) { return t.status !== 'dihapus'; });
+            if (this.filterStatus !== 'all') all = all.filter(function(t) { return t.status === this.filterStatus; }.bind(this));
+            if (this.search) {
+                var s = this.search.toLowerCase();
+                all = all.filter(function(t) {
+                    return (t.judul||'').toLowerCase().includes(s) || (t.lokasi||'').toLowerCase().includes(s) || (t.teknisi||'').toLowerCase().includes(s);
+                });
+            }
+            this.tasks = all;
+            m.redraw();
+        },
+
+        getStats: function() {
+            var all = g('dreamos_maintenance_tasks');
+            var today = new Date().toISOString().split('T')[0];
+            return {
+                total: all.length,
+                pending: all.filter(function(t) { return t.status === 'pending'; }).length,
+                proses: all.filter(function(t) { return t.status === 'proses'; }).length,
+                selesai: all.filter(function(t) { return t.status === 'selesai'; }).length,
+                overdue: all.filter(function(t) { return t.deadline && t.deadline < today && t.status !== 'selesai' && t.status !== 'dihapus'; }).length
+            };
+        },
+
+        saveTask: function() {
+            var d = this.editData;
+            if (!d.judul || !d.lokasi) { alert('Judul dan Lokasi wajib diisi!'); return; }
+            var tasks = g('dreamos_maintenance_tasks');
+            tasks.push({
+                id: 'maint_' + Date.now(),
+                judul: d.judul,
+                lokasi: d.lokasi,
+                deskripsi: d.deskripsi,
+                priority: d.priority,
+                asset: d.asset,
+                teknisi: d.teknisi,
+                deadline: d.deadline,
+                kategori: d.kategori,
+                status: 'pending',
+                created: new Date().toISOString()
+            });
+            s('dreamos_maintenance_tasks', tasks);
+            this.showForm = false;
+            this.editData = { judul: '', lokasi: '', deskripsi: '', priority: 'normal', asset: '', teknisi: '', deadline: '', kategori: 'umum' };
+            this.refreshTasks();
+            if (window.DreamRuleEngine) DreamRuleEngine.logAction('maintenance_add_task', { judul: d.judul, lokasi: d.lokasi });
+            if (typeof window.dispatchEvent === 'function') window.dispatchEvent(new CustomEvent('maintenance-updated'));
+        },
+
+        updateStatus: function(id, newStatus) {
+            var tasks = g('dreamos_maintenance_tasks');
+            var task = tasks.find(function(t) { return t.id === id; });
+            if (task) {
+                task.status = newStatus;
+                if (newStatus === 'selesai') task.completedAt = new Date().toISOString();
+                s('dreamos_maintenance_tasks', tasks);
+                this.refreshTasks();
+                if (window.DreamRuleEngine) DreamRuleEngine.logAction('maintenance_status_updated', { taskId: id, newStatus: newStatus });
+                if (typeof window.dispatchEvent === 'function') window.dispatchEvent(new CustomEvent('maintenance-updated', { detail: { id: id, status: newStatus } }));
+            }
+        },
+
+        hardDelete: function(id) {
+            if (!confirm('Hapus permanen tugas ini?')) return;
+            var tasks = g('dreamos_maintenance_tasks').filter(function(t) { return t.id !== id; });
+            s('dreamos_maintenance_tasks', tasks);
+            this.refreshTasks();
+            if (window.DreamRuleEngine) DreamRuleEngine.logAction('maintenance_hard_delete', { taskId: id });
+        },
+
+        // ========== CETAK LAPORAN ==========
+        cetakLaporan: function() {
+            var all = g('dreamos_maintenance_tasks');
+            var win = window.open('', '_blank', 'width=900,height=600');
+            win.document.write('<html><head><title>Laporan Maintenance</title><style>body{font-family:sans-serif;padding:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #000;padding:8px}th{background:#eee}.high{color:red}.med{color:orange}@media print{button{display:none}}</style></head><body>');
+            win.document.write('<h2>LAPORAN MAINTENANCE</h2>');
+            win.document.write('<p>Tanggal Cetak: '+new Date().toLocaleDateString('id-ID')+' | Total: '+all.length+' tugas</p>');
+            win.document.write('<button onclick="window.print()" style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;margin-bottom:10px;">🖨️ Cetak</button>');
+            win.document.write('<table><tr><th>No</th><th>Judul</th><th>Lokasi</th><th>Kategori</th><th>Prioritas</th><th>Teknisi</th><th>Status</th><th>Deadline</th><th>Tanggal</th></tr>');
+            all.forEach(function(t, i) {
+                var prioClass = t.priority === 'critical' ? 'high' : (t.priority === 'high' ? 'med' : '');
+                win.document.write('<tr><td>'+(i+1)+'</td><td>'+(t.judul||'')+'</td><td>'+t.lokasi+'</td><td>'+t.kategori+'</td><td class="'+prioClass+'">'+t.priority+'</td><td>'+(t.teknisi||'-')+'</td><td>'+t.status+'</td><td>'+(t.deadline||'-')+'</td><td>'+dt(t.created)+'</td></tr>');
+            });
+            win.document.write('</table><p style="margin-top:30px;text-align:right;">Mengetahui,<br><br><br>Kepala Bagian Umum</p></body></html>');
+            win.document.close();
+        },
+
+        view: function() {
+            var self = this;
+            var stats = self.getStats();
+            var today = new Date().toISOString().split('T')[0];
+
+            return m("div", { style: "min-height:100vh;background:var(--bg-deep-space);color:var(--text-primary);font-family:'Space Grotesk',sans-serif;padding:1rem;padding-bottom:5rem;" }, [
+                // Header dengan tombol Cetak
+                m("div", { style: "display:flex;align-items:center;gap:1rem;margin-bottom:1rem;" }, [
+                    m("button", { onclick: function() { document.getElementById('maintenance-module').style.display = 'none'; }, style: "background:rgba(255,255,255,0.1);color:var(--text-primary);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;" }, "← Kembali"),
+                    m("div", { style: "display:flex;align-items:center;gap:0.5rem;flex:1;" }, [
+                        m("h2", { style: "color:#3b82f6;font-size:1.3rem;font-weight:800;" }, "🔧 Maintenance"),
+                        m("button", { onclick: function() { self.cetakLaporan(); }, style: "padding:0.4rem 0.8rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;" }, "🖨️ Cetak")
+                    ])
+                ]),
+
+                // Statistik Ringkasan
+                m("div", { class: "dream-panel", style: "padding:0.75rem;margin-bottom:0.75rem;display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;text-align:center;" }, [
+                    m("div", [m("div", { style: "font-size:1.2rem;font-weight:700;color:#f59e0b;" }, stats.pending), m("div", { style: "font-size:0.55rem;color:var(--text-secondary);" }, "Pending")]),
+                    m("div", [m("div", { style: "font-size:1.2rem;font-weight:700;color:#3b82f6;" }, stats.proses), m("div", { style: "font-size:0.55rem;color:var(--text-secondary);" }, "Proses")]),
+                    m("div", [m("div", { style: "font-size:1.2rem;font-weight:700;color:#10b981;" }, stats.selesai), m("div", { style: "font-size:0.55rem;color:var(--text-secondary);" }, "Selesai")]),
+                    m("div", [m("div", { style: "font-size:1.2rem;font-weight:700;color:#ef4444;" }, stats.overdue), m("div", { style: "font-size:0.55rem;color:var(--text-secondary);" }, "Overdue")]),
+                    m("div", [m("div", { style: "font-size:1.2rem;font-weight:700;color:var(--text-primary);" }, stats.total), m("div", { style: "font-size:0.55rem;color:var(--text-secondary);" }, "Total")])
+                ]),
+
+                // Search & Filter Bar
+                m("div", { style: "display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;" }, [
+                    m("input", { type: "text", placeholder: "🔍 Cari judul, lokasi, teknisi...", oninput: function(e) { self.search = e.target.value; self.refreshTasks(); }, style: "flex:1;min-width:120px;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }),
+                    m("select", { onchange: function(e) { self.filterStatus = e.target.value; self.refreshTasks(); }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }, [
+                        m("option", { value: "all" }, "Semua Status"),
+                        m("option", { value: "pending" }, "Pending"),
+                        m("option", { value: "proses" }, "Proses"),
+                        m("option", { value: "selesai" }, "Selesai")
+                    ]),
+                    m("button", { onclick: function() { self.showDeleted = !self.showDeleted; self.refreshTasks(); }, style: "background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-secondary);padding:0.5rem;border-radius:0.5rem;font-size:0.7rem;cursor:pointer;" }, self.showDeleted ? "👻 Sembunyikan Dihapus" : "👻 Lihat Dihapus"),
+                    m("button", { onclick: function() { self.showForm = !self.showForm; }, class: "dream-btn", style: "padding:0.5rem 1rem;font-size:0.75rem;" }, self.showForm ? "❌ Batal" : "+ Tambah Tugas")
+                ]),
+
+                // Form Tambah Tugas
+                self.showForm ? m("div", { class: "dream-panel", style: "padding:0.75rem;margin-bottom:0.75rem;" }, [
+                    m("h4", { style: "color:var(--neon-tawhid);margin-bottom:0.5rem;" }, "📝 Tambah Tugas Maintenance"),
+                    m("input", { type: "text", placeholder: "Judul / Perbaikan *", oninput: function(e) { self.editData.judul = e.target.value; }, style: "width:100%;margin-bottom:0.4rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }),
+                    m("input", { type: "text", placeholder: "Lokasi *", oninput: function(e) { self.editData.lokasi = e.target.value; }, style: "width:100%;margin-bottom:0.4rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }),
+                    m("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;" }, [
+                        m("select", { onchange: function(e) { self.editData.kategori = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }, [
+                            m("option", { value: "umum" }, "Umum"),
+                            m("option", { value: "listrik" }, "⚡ Listrik"),
+                            m("option", { value: "ac" }, "❄️ AC"),
+                            m("option", { value: "plumbing" }, "🚿 Plumbing"),
+                            m("option", { value: "bangunan" }, "🏗️ Bangunan"),
+                            m("option", { value: "elektronik" }, "💻 Elektronik"),
+                            m("option", { value: "lainnya" }, "📦 Lainnya")
+                        ]),
+                        m("select", { onchange: function(e) { self.editData.priority = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }, [
+                            m("option", { value: "normal" }, "⚪ Normal"),
+                            m("option", { value: "high" }, "🟡 Tinggi"),
+                            m("option", { value: "critical" }, "🔴 Kritis")
+                        ])
+                    ]),
+                    m("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-top:0.4rem;" }, [
+                        m("input", { type: "text", placeholder: "Teknisi", oninput: function(e) { self.editData.teknisi = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }),
+                        m("input", { type: "date", placeholder: "Deadline", oninput: function(e) { self.editData.deadline = e.target.value; }, style: "background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" })
+                    ]),
+                    m("input", { type: "text", placeholder: "Aset terkait (opsional)", oninput: function(e) { self.editData.asset = e.target.value; }, style: "width:100%;margin-top:0.4rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;" }),
+                    m("textarea", { placeholder: "Deskripsi...", rows: 2, oninput: function(e) { self.editData.deskripsi = e.target.value; }, style: "width:100%;margin-top:0.4rem;background:var(--input-bg);border:1px solid var(--glass-border);border-radius:0.5rem;padding:0.5rem;color:var(--text-primary);font-size:0.75rem;resize:none;" }),
+                    m("button", { onclick: function() { self.saveTask(); }, class: "dream-btn", style: "width:100%;padding:0.5rem;margin-top:0.4rem;font-size:0.8rem;" }, "💾 Simpan Tugas")
+                ]) : null,
+
+                // Daftar Tugas
+                m("div", { style: "display:flex;flex-direction:column;gap:0.5rem;" },
+                    self.tasks.length === 0 ? m("p", { style: "color:var(--text-secondary);text-align:center;padding:2rem;" }, "✅ Tidak ada tugas yang perlu ditampilkan.") :
+                    self.tasks.map(function(task) {
+                        var isExpanded = self.expandedId === task.id;
+                        var statusColor = task.status === 'pending' ? '#f59e0b' : (task.status === 'proses' ? '#3b82f6' : (task.status === 'selesai' ? '#10b981' : '#64748b'));
+                        var isDeleted = task.status === 'dihapus';
+                        var isOverdue = task.deadline && task.deadline < today && task.status !== 'selesai' && task.status !== 'dihapus';
+                        return m("div", { class: "dream-panel", style: "padding:0.75rem;border-left:4px solid " + statusColor + ";opacity:" + (isDeleted ? '0.5' : '1') + ";" }, [
+                            // Baris Utama
+                            m("div", { style: "display:flex;justify-content:space-between;align-items:start;gap:0.5rem;cursor:pointer;", onclick: function() { self.expandedId = isExpanded ? null : task.id; } }, [
+                                m("div", { style: "flex:1;" }, [
+                                    m("div", { style: "font-weight:700;color:var(--text-primary);font-size:0.85rem;" }, task.judul || "Tanpa Judul"),
+                                    m("div", { style: "font-size:0.65rem;color:var(--text-secondary);" }, "📍 " + task.lokasi + " | 🕐 " + dt(task.created) + (task.teknisi ? " | 👤 " + task.teknisi : "")),
+                                    m("div", { style: "display:flex;gap:0.3rem;margin-top:0.3rem;flex-wrap:wrap;" }, [
+                                        m("span", { style: "background:" + statusColor + ";color:white;padding:0.1rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;" }, task.status),
+                                        task.priority === 'critical' ? m("span", { style: "background:#ef4444;color:white;padding:0.1rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;" }, "🔴") : null,
+                                        task.priority === 'high' ? m("span", { style: "background:#f59e0b;color:black;padding:0.1rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;" }, "🟡") : null,
+                                        isOverdue ? m("span", { style: "background:#ef4444;color:white;padding:0.1rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;" }, "⚠️ Overdue") : null,
+                                        task.kategori ? m("span", { style: "background:rgba(255,255,255,0.1);color:var(--text-secondary);padding:0.1rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;" }, task.kategori) : null,
+                                        task.source ? m("span", { style: "color:#f59e0b;font-size:0.6rem;" }, "Sumber: " + task.source) : null
+                                    ])
+                                ]),
+                                m("span", { style: "color:var(--text-secondary);font-size:1.2rem;" }, isExpanded ? "▲" : "▼")
+                            ]),
+                            // Detail Expanded
+                            isExpanded ? m("div", { style: "margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--glass-border);" }, [
+                                task.deskripsi ? m("p", { style: "font-size:0.7rem;color:var(--text-secondary);margin-bottom:0.5rem;" }, "📋 " + task.deskripsi) : null,
+                                task.asset ? m("p", { style: "font-size:0.65rem;color:var(--text-secondary);" }, "🏢 Aset: " + task.asset) : null,
+                                task.deadline ? m("p", { style: "font-size:0.65rem;color:" + (isOverdue ? '#ef4444' : 'var(--text-secondary)') + ";" }, "⏰ Deadline: " + task.deadline) : null,
+                                task.completedAt ? m("p", { style: "font-size:0.65rem;color:#10b981;" }, "✅ Selesai: " + dt(task.completedAt)) : null,
+                                m("div", { style: "display:flex;gap:0.3rem;flex-wrap:wrap;margin-top:0.5rem;" }, [
+                                    task.status === 'pending' ? m("button", { onclick: function(e) { e.stopPropagation(); self.updateStatus(task.id, 'proses'); }, style: "background:#3b82f6;color:white;border:none;border-radius:0.3rem;padding:0.2rem 0.5rem;font-size:0.65rem;cursor:pointer;" }, "▶ Proses") : null,
+                                    task.status === 'proses' ? m("button", { onclick: function(e) { e.stopPropagation(); self.updateStatus(task.id, 'selesai'); }, style: "background:#10b981;color:white;border:none;border-radius:0.3rem;padding:0.2rem 0.5rem;font-size:0.65rem;cursor:pointer;" }, "✓ Selesai") : null,
+                                    !isDeleted ? m("button", { onclick: function(e) { e.stopPropagation(); self.updateStatus(task.id, 'dihapus'); }, style: "background:#ef4444;color:white;border:none;border-radius:0.3rem;padding:0.2rem 0.5rem;font-size:0.65rem;cursor:pointer;" }, "🗑 Hapus") : null,
+                                    isDeleted ? m("button", { onclick: function(e) { e.stopPropagation(); self.hardDelete(task.id); }, style: "background:#dc2626;color:white;border:none;border-radius:0.3rem;padding:0.2rem 0.5rem;font-size:0.65rem;cursor:pointer;" }, "Hapus Permanen") : null
+                                ])
+                            ]) : null
+                        ]);
+                    })
+                )
+            ]);
+        }
+    };
+
+    m.mount(document.getElementById('maint-root'), MaintenanceApp);
+})();
+</script>

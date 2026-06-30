@@ -1,0 +1,107 @@
+// i18n.js - Sistem Internasionalisasi Dream OS
+const I18n = {
+    locale: localStorage.getItem('dreamos_locale') || 'id-ID',
+    fallback: 'en-US',
+    strings: {
+        'id-ID': {
+            login_title: 'بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ',
+            login_shalawat: 'اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ',
+            login_version: 'Dream OS • v1.0-beta',
+            login_placeholder: 'Kata Sandi',
+            login_button: 'AKSES INTI',
+            login_error: '❌ Kata Sandi Salah!',
+            dashboard_welcome: 'Selamat {waktu}, tim Dream OS!',
+            dashboard_shift: 'Shift: {shift} | 🛡️ Petugas aktif',
+            dashboard_booking: '📅 Booking Hari Ini',
+            dashboard_booking_pending: 'Pending: {count}',
+            dashboard_k3_pending: 'K3 Pending: {count}',
+            dashboard_maint_active: 'Maintenance Aktif: {count}',
+            dashboard_ai_insights: '🤖 Wawasan AI',
+            dashboard_ai_waiting: 'Menunggu analisis AI...',
+            dashboard_ai_normal: '✅ Semua sistem normal',
+            module_cmd: 'Pusat Komando',
+            module_booking: 'Pemesanan',
+            module_k3: 'K3 Safety',
+            module_security: 'Keamanan',
+            module_janin: 'Kebersihan Dalam',
+            module_janout: 'Kebersihan Luar',
+            module_stok: 'Stok Barang',
+            module_maint: 'Perawatan',
+            module_asset: 'Aset',
+            nav_home: 'Beranda',
+            nav_profile: 'Profil',
+            nav_qr: 'QR',
+            nav_about: 'Tentang',
+            nav_setting: 'Pengaturan',
+            ghost_title: '4S Pusat DevOps',
+            ghost_subtitle: 'Shadow Soul Spirit • v2.0',
+            ghost_status: 'ONLINE',
+            ghost_log_ready: '> 4S DevOps Center siap...',
+            access_denied: '⛔ Akses ditolak! Anda tidak memiliki izin untuk modul ini.',
+            session_expired: '⏰ Sesi berakhir! Silakan login ulang.',
+            coming_soon: 'Segera Hadir',
+            system_normal: '✅ Semua sistem normal',
+            ai_analyzing: '🤖 AI Core: Menganalisis sistem...',
+            ai_done: '✅ AI Core: Analisis selesai',
+            security_issue: '🔐 Terdapat {count} isu keamanan. Segera perbaiki.',
+            k3_review: '⚠️ Banyak laporan K3 pending. Perlu review segera.',
+            maint_schedule: '🔧 Tugas maintenance menumpuk. Jadwalkan ulang.'
+        },
+        'en-US': {
+            login_title: 'In the Name of God, Most Gracious, Most Merciful',
+            login_shalawat: 'O Allah, send blessings upon our master Muhammad',
+            login_version: 'Dream OS • v1.0-beta',
+            login_placeholder: 'Password',
+            login_button: 'ACCESS CORE',
+            login_error: '❌ Wrong Password!',
+            dashboard_welcome: 'Good {waktu}, Dream OS team!',
+            dashboard_shift: 'Shift: {shift} | 🛡️ Active Personnel',
+            dashboard_booking: '📅 Today\'s Booking',
+            dashboard_booking_pending: 'Pending: {count}',
+            dashboard_k3_pending: 'K3 Pending: {count}',
+            dashboard_maint_active: 'Active Maintenance: {count}',
+            dashboard_ai_insights: '🤖 AI Insights',
+            dashboard_ai_waiting: 'Waiting for AI analysis...',
+            dashboard_ai_normal: '✅ All systems normal',
+            module_cmd: 'Command Center',
+            module_booking: 'Booking',
+            module_k3: 'K3 Safety',
+            module_security: 'Security',
+            module_janin: 'Janitor Indoor',
+            module_janout: 'Janitor Outdoor',
+            module_stok: 'Stock',
+            module_maint: 'Maintenance',
+            module_asset: 'Asset',
+            nav_home: 'Home',
+            nav_profile: 'Profile',
+            nav_qr: 'QR',
+            nav_about: 'About',
+            nav_setting: 'Settings',
+            ghost_title: '4S DevOps Center',
+            ghost_subtitle: 'Shadow Soul Spirit • v2.0',
+            ghost_status: 'ONLINE',
+            ghost_log_ready: '> 4S DevOps Center ready...',
+            access_denied: '⛔ Access denied! You do not have permission for this module.',
+            session_expired: '⏰ Session expired! Please login again.',
+            coming_soon: 'Coming Soon',
+            system_normal: '✅ All systems normal',
+            ai_analyzing: '🤖 AI Core: Analyzing system...',
+            ai_done: '✅ AI Core: Analysis complete',
+            security_issue: '🔐 There are {count} security issues. Please fix immediately.',
+            k3_review: '⚠️ Many K3 reports pending. Immediate review needed.',
+            maint_schedule: '🔧 Maintenance tasks piling up. Please reschedule.'
+        }
+    },
+    t(key, params) {
+        let str = this.strings[this.locale]?.[key] || this.strings[this.fallback]?.[key] || key;
+        if (params) {
+            Object.keys(params).forEach(k => str = str.replace(`{${k}}`, params[k]));
+        }
+        return str;
+    },
+    setLocale(loc) {
+        this.locale = loc;
+        localStorage.setItem('dreamos_locale', loc);
+    }
+};
+console.log('🌍 i18n System ready (' + I18n.locale + ')');

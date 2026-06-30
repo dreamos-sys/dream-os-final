@@ -1,0 +1,390 @@
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+
+<div style="min-height:100vh; background:#040814; color:#e2e8f0; font-family:'Inter',sans-serif; padding:1rem; padding-top:3.5rem; padding-bottom:5rem; position:relative; z-index:1;" id="sec-app">
+    <h2 style="color:#8b5cf6; font-size:1.4rem; margin-bottom:0.3rem;">🛡️ Security Command</h2>
+    <p style="color:#94a3b8; font-size:0.7rem; margin-bottom:1rem;">ISO 18788 • Profesional</p>
+
+    <!-- Print Buttons -->
+    <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+        <button onclick="printLaporan24()" style="padding:0.5rem 0.8rem; background:#10b981; color:white; border:none; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📄 Laporan 24 Jam</button>
+        <button onclick="printKalender()" style="padding:0.5rem 0.8rem; background:#f59e0b; color:#000; border:none; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📅 Jadwal Bulanan</button>
+        <button onclick="printHandover()" style="padding:0.5rem 0.8rem; background:#6366f1; color:white; border:none; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">🤝 Serah Terima</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex; gap:0.3rem; margin-bottom:1rem; overflow-x:auto; padding-bottom:0.3rem;">
+        <button class="sec-tab active" onclick="switchSecTab('patroli', this)">📍 Patroli</button>
+        <button class="sec-tab" onclick="switchSecTab('jadwal', this)">👥 Personel</button>
+        <button class="sec-tab" onclick="switchSecTab('kalender', this)">📅 Kalender</button>
+        <button class="sec-tab" onclick="switchSecTab('handover', this)">🤝 Serah Terima</button>
+        <button class="sec-tab" onclick="switchSecTab('laporan', this)">📋 Laporan</button>
+    </div>
+
+    <!-- Controls -->
+    <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:1rem;">
+        <input type="text" id="sec-nama" placeholder="Nama Petugas" oninput="state.nama=this.value; savePatroli();" style="width:100%; padding:0.5rem; margin-bottom:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0; font-size:0.8rem;">
+        <div style="display:flex; gap:0.5rem;">
+            <input type="date" id="sec-date" onchange="state.date=this.value; loadData(); renderTab(state.tab);" style="flex:1; padding:0.5rem; background:#0f172a; border:1px solid #334155; border-radius:0.5rem; color:#e2e8f0; font-size:0.8rem;">
+            <button class="shift-btn active" id="btn-pagi" onclick="setShift('pagi')">🌅 Pagi</button>
+            <button class="shift-btn" id="btn-malam" onclick="setShift('malam')">🌙 Malam</button>
+        </div>
+    </div>
+
+    <!-- Tab Contents -->
+    <div id="content-patroli" class="sec-content"></div>
+    <div id="content-jadwal" class="sec-content" style="display:none;"></div>
+    <div id="content-kalender" class="sec-content" style="display:none;"></div>
+    <div id="content-handover" class="sec-content" style="display:none;"></div>
+    <div id="content-laporan" class="sec-content" style="display:none;"></div>
+</div>
+
+<style>
+    .sec-tab { padding:0.5rem 0.8rem; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem; white-space:nowrap; background:#1e293b; color:#e2e8f0; transition:0.3s; }
+    .sec-tab.active { background:#8b5cf6; color:white; }    .shift-btn { padding:0.5rem 0.8rem; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem; background:#1e293b; color:#e2e8f0; transition:0.3s; }
+    .shift-btn.active { background:#00ff9d; color:#000; }
+    .sec-panel { background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:0.75rem; }
+</style>
+
+<script>
+(function(){
+    function g(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
+    function s(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+    function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+    var CP = ['Pos Utama','Gerbang Masuk','Parkir Motor','Parkir Mobil','Loby Utama','Lorong Gedung','Lapangan','Taman','Area Belakang'];
+    var MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+    window.state = {
+        tab: 'patroli', date: new Date().toISOString().split('T')[0], shift: 'pagi',
+        nama: '', patroli: {}, photos: [], jadwal: [],
+        handoverPagi: {}, handoverMalam: {}, log24: '',
+        calendarData: {}, calYear: new Date().getFullYear(), calMonth: new Date().getMonth(), editDay: null
+    };
+
+    window.loadData = function(){
+        var all = g('dreamos_security_patroli');
+        if(!all[state.date]) all[state.date] = { shifts:{pagi:{},malam:{}}, nama:'', log24:'', handoverPagi:{}, handoverMalam:{}, photos:{pagi:[],malam:[]} };
+        if(!all[state.date].shifts[state.shift]) all[state.date].shifts[state.shift] = {};
+        if(!all[state.date].photos) all[state.date].photos = { pagi:[], malam:[] };
+        state.nama = all[state.date].nama || '';
+        state.patroli = all[state.date].shifts[state.shift] || {};
+        state.log24 = all[state.date].log24 || '';
+        state.handoverPagi = all[state.date].handoverPagi || {};
+        state.handoverMalam = all[state.date].handoverMalam || {};
+        state.photos = all[state.date].photos[state.shift] || [];
+        state.jadwal = g('dreamos_security_jadwal');
+        state.calendarData = JSON.parse(localStorage.getItem('dreamos_security_calendar')||'{}');
+        document.getElementById('sec-nama').value = state.nama;
+        document.getElementById('sec-date').value = state.date;
+    };
+
+    window.savePatroli = function(){
+        var all = g('dreamos_security_patroli');
+        if(!all[state.date]) all[state.date] = { shifts:{pagi:{},malam:{}}, nama:'', log24:'', handoverPagi:{}, handoverMalam:{}, photos:{pagi:[],malam:[]} };
+        all[state.date].nama = state.nama;
+        all[state.date].shifts[state.shift] = state.patroli;
+        all[state.date].log24 = state.log24;
+        all[state.date].handoverPagi = state.handoverPagi;
+        all[state.date].handoverMalam = state.handoverMalam;
+        if(!all[state.date].photos) all[state.date].photos = { pagi:[], malam:[] };
+        all[state.date].photos[state.shift] = state.photos;
+        s('dreamos_security_patroli', all);
+    };
+    // ✅ FIXED: Tidak lagi bergantung pada global `event`
+    window.switchSecTab = function(tab, btn){
+        state.tab = tab;
+        document.querySelectorAll('.sec-tab').forEach(function(b){ b.classList.remove('active'); });
+        if(btn) btn.classList.add('active');
+        document.querySelectorAll('.sec-content').forEach(function(c){ c.style.display = 'none'; });
+        var target = document.getElementById('content-'+tab);
+        if(target) target.style.display = 'block';
+        renderTab(tab);
+    };
+
+    window.setShift = function(sh){
+        state.shift = sh;
+        document.getElementById('btn-pagi').classList.toggle('active', sh==='pagi');
+        document.getElementById('btn-malam').classList.toggle('active', sh==='malam');
+        loadData();
+        renderTab(state.tab);
+    };
+
+    window.toggleCP = function(cp){
+        state.patroli[cp] = !state.patroli[cp];
+        savePatroli();
+        renderPatroli();
+    };
+
+    window.uploadPhoto = function(){
+        var input = document.createElement('input');
+        input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+        input.onchange = function(e){
+            var file = e.target.files[0]; if(!file) return;
+            if(state.photos.length >= 5) return alert('Maksimal 5 foto per shift!');
+            var reader = new FileReader();
+            reader.onload = function(ev){
+                state.photos.push(ev.target.result);
+                savePatroli();
+                renderPatroli();
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    };
+
+    window.deletePhoto = function(idx){
+        state.photos.splice(idx, 1);
+        savePatroli();
+        renderPatroli();
+    };
+
+    window.saveJadwal = function(){
+        var nama = document.getElementById('jadwal-nama').value.trim();        var role = document.getElementById('jadwal-role').value;
+        var shift = document.getElementById('jadwal-shift').value;
+        var tglMulai = document.getElementById('jadwal-mulai').value;
+        if(!nama) return alert('Nama wajib!');
+        state.jadwal.push({id:'jadwal_'+Date.now(), nama:nama, role:role, shift:shift, tglMulai:tglMulai, created: new Date().toISOString()});
+        s('dreamos_security_jadwal', state.jadwal);
+        renderJadwal();
+        document.getElementById('jadwal-nama').value = '';
+    };
+
+    window.deleteJadwal = function(id){
+        state.jadwal = state.jadwal.filter(function(j){return j.id!==id;});
+        s('dreamos_security_jadwal', state.jadwal);
+        renderJadwal();
+    };
+
+    window.assignPersonel = function(day, shift, personel){
+        if(!state.calendarData[day]) state.calendarData[day] = { siang:[], malam:[], cuti:[] };
+        if(!state.calendarData[day][shift]) state.calendarData[day][shift] = [];
+        var idx = state.calendarData[day][shift].indexOf(personel);
+        if(idx > -1) state.calendarData[day][shift].splice(idx, 1);
+        else state.calendarData[day][shift].push(personel);
+        var other = shift==='siang'?'malam':'siang';
+        if(state.calendarData[day][other]){
+            var oIdx = state.calendarData[day][other].indexOf(personel);
+            if(oIdx > -1) state.calendarData[day][other].splice(oIdx, 1);
+        }
+        if(state.calendarData[day].cuti){
+            var cIdx = state.calendarData[day].cuti.indexOf(personel);
+            if(cIdx > -1) state.calendarData[day].cuti.splice(cIdx, 1);
+        }
+        saveCalendar();
+        renderKalender();
+    };
+
+    window.toggleCuti = function(day, personel){
+        if(!state.calendarData[day]) state.calendarData[day] = { siang:[], malam:[], cuti:[] };
+        var idx = state.calendarData[day].cuti.indexOf(personel);
+        if(idx > -1) state.calendarData[day].cuti.splice(idx, 1);
+        else {
+            state.calendarData[day].cuti.push(personel);
+            ['siang','malam'].forEach(function(sh){
+                if(state.calendarData[day][sh]){
+                    var sIdx = state.calendarData[day][sh].indexOf(personel);
+                    if(sIdx > -1) state.calendarData[day][sh].splice(sIdx, 1);
+                }
+            });
+        }
+        saveCalendar();
+        renderKalender();    };
+
+    window.saveCalendar = function(){
+        localStorage.setItem('dreamos_security_calendar', JSON.stringify(state.calendarData));
+        var today = new Date().toISOString().split('T')[0];
+        if(state.calendarData[today]){
+            var siang = (state.calendarData[today].siang||[]).join(', ');
+            var malam = (state.calendarData[today].malam||[]).join(', ');
+            var piketStr = [siang, malam].filter(Boolean).join(' / ');
+            if(piketStr){
+                var piket = JSON.parse(localStorage.getItem('dreamos_piket')||'{}');
+                piket[today] = piketStr;
+                localStorage.setItem('dreamos_piket', JSON.stringify(piket));
+            }
+        }
+    };
+
+    window.saveHandover = function(waktu){
+        var penerima = document.getElementById('ho-penerima-'+waktu).value.trim();
+        var catatan = document.getElementById('ho-catatan-'+waktu).value.trim();
+        if(!penerima) return alert('Nama penerima wajib!');
+        state['handover'+(waktu==='pagi'?'Pagi':'Malam')] = {
+            penerima: penerima, penyerah: state.nama, catatan: catatan, waktu: new Date().toISOString()
+        };
+        savePatroli();
+        alert('✅ Serah terima tersimpan!');
+        renderHandover();
+    };
+
+    window.saveLog24 = function(){
+        state.log24 = document.getElementById('log24-input').value;
+        savePatroli();
+        alert('✅ Laporan 24 jam tersimpan');
+    };
+
+    // ========== RENDER FUNCTIONS ==========
+    window.renderTab = function(tab){
+        if(tab==='patroli') renderPatroli();
+        else if(tab==='jadwal') renderJadwal();
+        else if(tab==='kalender') renderKalender();
+        else if(tab==='handover') renderHandover();
+        else if(tab==='laporan') renderLaporan();
+    };
+
+    window.renderPatroli = function(){
+        var c=0; CP.forEach(function(cp){ if(state.patroli[cp]) c++; });
+        var pct = Math.round(c/CP.length*100);
+        var col = pct===100?'#10b981':pct>=50?'#f59e0b':'#ef4444';
+        var h = '<div class="sec-panel" style="text-align:center;"><div style="font-size:1.2rem;font-weight:700;color:#00ff9d;">'+c+'/'+CP.length+' checkpoint</div>';
+        h += '<div style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:0.3rem;"><div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:4px;"></div></div></div>';        h += '<div class="sec-panel">';
+        CP.forEach(function(cp){
+            var chk = state.patroli[cp];
+            h += '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:'+(chk?'rgba(139,92,246,0.15)':'rgba(255,255,255,0.03)')+';border-radius:0.5rem;margin-bottom:0.3rem;cursor:pointer;font-size:0.8rem;">';
+            h += '<input type="checkbox" '+(chk?'checked':'')+' onchange="toggleCP(\''+cp+'\')"> '+cp+' <span style="margin-left:auto;font-size:0.6rem;color:#94a3b8;">🔳 QR</span></label>';
+        });
+        h += '</div>';
+        h += '<div class="sec-panel"><h4 style="color:#00ff9d;margin-bottom:0.5rem;">📸 Foto Patroli ('+state.photos.length+'/5)</h4>';
+        h += '<button onclick="uploadPhoto()" style="background:rgba(59,130,246,0.2);color:#3b82f6;border:none;border-radius:0.5rem;padding:0.5rem 1rem;cursor:pointer;font-size:0.8rem;margin-bottom:0.5rem;">+ Tambah Foto</button>';
+        h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:0.3rem;">';
+        state.photos.forEach(function(ph, idx){
+            h += '<div style="position:relative;"><img src="'+ph+'" style="width:100%;height:80px;object-fit:cover;border-radius:0.3rem;">';
+            h += '<button onclick="deletePhoto('+idx+')" style="position:absolute;top:2px;right:2px;background:#ef4444;color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:0.5rem;cursor:pointer;">✕</button></div>';
+        });
+        h += '</div></div>';
+        document.getElementById('content-patroli').innerHTML = h;
+    };
+
+    window.renderJadwal = function(){
+        var h = '<div class="sec-panel"><h4 style="color:#00ff9d;margin-bottom:0.5rem;">➕ Tambah Personel</h4>';
+        h += '<input type="text" id="jadwal-nama" placeholder="Nama Personel" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">';
+        h += '<select id="jadwal-role" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;"><option value="komandan">Komandan Regu</option><option value="anggota">Anggota (Shift 12 Jam)</option><option value="guru">Guru (07:00-17:00)</option></select>';
+        h += '<select id="jadwal-shift" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;"><option value="siang">Shift Siang</option><option value="malam">Shift Malam</option><option value="non_shift">Non-Shift</option></select>';
+        h += '<input type="date" id="jadwal-mulai" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">';
+        h += '<button onclick="saveJadwal()" style="width:100%;padding:0.5rem;background:#8b5cf6;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;">Simpan</button></div>';
+        h += '<div class="sec-panel"><h4 style="color:#00ff9d;margin-bottom:0.5rem;">👥 Daftar Personel ('+state.jadwal.length+')</h4>';
+        if(state.jadwal.length){
+            state.jadwal.forEach(function(j){
+                h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;background:rgba(255,255,255,0.03);border-radius:0.5rem;margin-bottom:0.3rem;font-size:0.75rem;">';
+                h += '<div><strong>'+j.nama+'</strong><br><span style="color:#94a3b8;font-size:0.65rem;">'+j.role+' | '+j.shift+' | Mulai: '+j.tglMulai+'</span></div>';
+                h += '<button onclick="deleteJadwal(\''+j.id+'\')" style="background:#ef4444;color:white;border:none;border-radius:0.3rem;padding:0.15rem 0.5rem;font-size:0.6rem;cursor:pointer;">✕</button></div>';
+            });
+        } else { h += '<div style="color:#94a3b8;">Belum ada personel</div>'; }
+        h += '</div>';
+        document.getElementById('content-jadwal').innerHTML = h;
+    };
+
+    window.renderKalender = function(){
+        var daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
+        var h = '<div class="sec-panel" style="text-align:center;display:flex;justify-content:space-between;align-items:center;">';
+        h += '<button onclick="state.calMonth--;if(state.calMonth<0){state.calMonth=11;state.calYear--;}renderKalender();" style="background:#1e293b;border:none;color:#e2e8f0;padding:0.5rem;border-radius:0.5rem;cursor:pointer;">◀</button>';
+        h += '<span style="font-weight:700;">'+MONTHS[state.calMonth]+' '+state.calYear+'</span>';
+        h += '<button onclick="state.calMonth++;if(state.calMonth>11){state.calMonth=0;state.calYear++;}renderKalender();" style="background:#1e293b;border:none;color:#e2e8f0;padding:0.5rem;border-radius:0.5rem;cursor:pointer;">▶</button>';
+        h += '</div>';
+        h += '<div class="sec-panel" style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.7rem;">';
+        h += '<tr><th style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;">Tanggal</th><th style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;">Siang</th><th style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;">Malam</th><th style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;color:#ef4444;">Cuti</th></tr>';
+        for(var d=1; d<=daysInMonth; d++){
+            var ds = state.calYear+'-'+String(state.calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+            var e = state.calendarData[ds] || {};
+            // ✅ FIXED: Safe string fallback            var sStr = (e.siang && e.siang.length) ? e.siang.join(', ') : '-';
+            var mStr = (e.malam && e.malam.length) ? e.malam.join(', ') : '-';
+            var cStr = (e.cuti && e.cuti.length) ? e.cuti.join(', ') : '-';
+            h += '<tr><td style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;font-weight:700;cursor:pointer;" onclick="state.editDay=\''+ds+'\';renderKalender();">'+d+'</td>';
+            h += '<td style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;">'+sStr+'</td>';
+            h += '<td style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;">'+mStr+'</td>';
+            h += '<td style="padding:0.3rem;border:1px solid rgba(255,255,255,0.1);text-align:center;color:#ef4444;">'+cStr+'</td></tr>';
+        }
+        h += '</table></div>';
+        if(state.editDay){
+            h += '<div class="sec-panel"><h4 style="color:#00ff9d;margin-bottom:0.5rem;">Edit '+state.editDay+'</h4>';
+            state.jadwal.forEach(function(p){
+                var isS = (state.calendarData[state.editDay]?.siang||[]).includes(p.nama);
+                var isM = (state.calendarData[state.editDay]?.malam||[]).includes(p.nama);
+                var isC = (state.calendarData[state.editDay]?.cuti||[]).includes(p.nama);
+                h += '<div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.3rem;"><span style="flex:1;font-size:0.8rem;">'+p.nama+'</span>';
+                h += '<button onclick="assignPersonel(\''+state.editDay+'\',\'siang\',\''+p.nama+'\')" style="padding:0.2rem 0.5rem;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;background:'+(isS?'#10b981':'#1e293b')+';color:'+(isS?'white':'#94a3b8')+';">☀️</button>';
+                h += '<button onclick="assignPersonel(\''+state.editDay+'\',\'malam\',\''+p.nama+'\')" style="padding:0.2rem 0.5rem;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;background:'+(isM?'#3b82f6':'#1e293b')+';color:'+(isM?'white':'#94a3b8')+';">🌙</button>';
+                h += '<button onclick="toggleCuti(\''+state.editDay+'\',\''+p.nama+'\')" style="padding:0.2rem 0.5rem;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;background:'+(isC?'#ef4444':'#1e293b')+';color:'+(isC?'white':'#94a3b8')+';">Cuti</button></div>';
+            });
+            h += '<button onclick="state.editDay=null;renderKalender();" style="width:100%;margin-top:0.5rem;padding:0.5rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;">Tutup</button></div>';
+        }
+        document.getElementById('content-kalender').innerHTML = h;
+    };
+
+    window.renderHandover = function(){
+        var h = '<div class="sec-panel"><h4 style="color:#f59e0b;margin-bottom:0.5rem;">🤝 Serah Terima Pagi (07:00)</h4>';
+        if(state.handoverPagi.waktu) h += '<div style="color:#10b981;font-size:0.8rem;margin-bottom:0.5rem;">✅ Selesai: '+dt(state.handoverPagi.waktu)+' | Penerima: '+state.handoverPagi.penerima+'</div>';
+        h += '<input type="text" id="ho-penerima-pagi" placeholder="Nama Penerima" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">';
+        h += '<textarea id="ho-catatan-pagi" placeholder="Catatan..." rows="2" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;resize:none;"></textarea>';
+        h += '<button onclick="saveHandover(\'pagi\')" style="width:100%;padding:0.5rem;background:#f59e0b;color:#000;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;">Simpan Pagi</button></div>';
+        h += '<div class="sec-panel"><h4 style="color:#3b82f6;margin-bottom:0.5rem;">🤝 Serah Terima Malam (19:00)</h4>';
+        if(state.handoverMalam.waktu) h += '<div style="color:#10b981;font-size:0.8rem;margin-bottom:0.5rem;">✅ Selesai: '+dt(state.handoverMalam.waktu)+' | Penerima: '+state.handoverMalam.penerima+'</div>';
+        h += '<input type="text" id="ho-penerima-malam" placeholder="Nama Penerima" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">';
+        h += '<textarea id="ho-catatan-malam" placeholder="Catatan..." rows="2" style="width:100%;margin-bottom:0.3rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;resize:none;"></textarea>';
+        h += '<button onclick="saveHandover(\'malam\')" style="width:100%;padding:0.5rem;background:#3b82f6;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;">Simpan Malam</button></div>';
+        document.getElementById('content-handover').innerHTML = h;
+    };
+
+    window.renderLaporan = function(){
+        var c=0; CP.forEach(function(cp){ if(state.patroli[cp]) c++; });
+        var h = '<div class="sec-panel"><h4 style="color:#00ff9d;margin-bottom:0.5rem;">📋 Laporan 24 Jam</h4>';
+        h += '<textarea id="log24-input" placeholder="Laporan aktivitas 24 jam..." rows="6" style="width:100%;margin-bottom:0.5rem;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;resize:vertical;">'+(state.log24||'')+'</textarea>';
+        h += '<button onclick="saveLog24()" style="width:100%;padding:0.5rem;background:#10b981;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;">💾 Simpan Laporan</button></div>';
+        h += '<div class="sec-panel"><h4 style="color:#00ff9d;margin-bottom:0.5rem;">📊 Ringkasan Hari Ini</h4>';
+        h += '<div style="font-size:0.8rem;line-height:1.6;">✅ Patroli: '+c+'/'+CP.length+' checkpoint<br>🛡️ Personel: '+state.jadwal.length+' orang<br>🤝 Serah Terima: '+(state.handoverPagi.waktu?'Pagi ✅':'Pagi ❌')+' | '+(state.handoverMalam.waktu?'Malam ✅':'Malam ❌')+'<br>📸 Foto: '+state.photos.length+' foto<br>📋 Log: '+(state.log24?'✅ Tersimpan':'❌ Kosong')+'</div></div>';
+        document.getElementById('content-laporan').innerHTML = h;
+    };
+
+    // ========== PRINT FUNCTIONS (FIXED SYNTAX) ==========    window.printLaporan24 = function(){
+        var win = window.open('', '_blank', 'width=900,height=600');
+        var doc = '<html><head><title>Laporan 24 Jam</title><style>body{font-family:sans-serif;padding:20px;color:#111;}h2,h3{text-align:center;}@media print{button{display:none;}}</style></head><body>';
+        doc += '<h2>LAPORAN 24 JAM KEAMANAN</h2><p>Tanggal: '+new Date(state.date).toLocaleDateString('id-ID')+'</p>';
+        doc += '<button onclick="window.print()" style="padding:10px 20px;background:#10b981;color:white;border:none;border-radius:5px;cursor:pointer;margin-bottom:10px;">🖨️ Cetak</button>';
+        doc += '<h3>Catatan Petugas</h3><p style="white-space:pre-wrap;">'+(state.log24||'Tidak ada laporan.')+'</p>';
+        doc += '<p style="margin-top:30px;text-align:right;">Mengetahui,<br><br><br>Kepala Bagian Umum</p></body></html>';
+        win.document.write(doc); win.document.close();
+    };
+
+    window.printKalender = function(){
+        var win = window.open('', '_blank', 'width=900,height=600');
+        var daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
+        var doc = '<html><head><title>Jadwal Bulanan</title><style>body{font-family:sans-serif;padding:20px;color:#111;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #000;padding:8px;text-align:center;}th{background:#eee;}.cuti{color:red;}@media print{button{display:none;}}</style></head><body>';
+        doc += '<h2>JADWAL BULANAN KEAMANAN</h2><p>Bulan: '+(state.calMonth+1)+' / '+state.calYear+'</p>';
+        doc += '<button onclick="window.print()" style="padding:10px 20px;background:#f59e0b;color:black;border:none;border-radius:5px;cursor:pointer;margin-bottom:10px;">🖨️ Cetak</button>';
+        doc += '<table><tr><th>Tanggal</th><th>Shift Siang</th><th>Shift Malam</th><th>Cuti</th></tr>';
+        for(var d=1; d<=daysInMonth; d++){
+            var ds = state.calYear+'-'+String(state.calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+            var e = state.calendarData[ds] || {};
+            var sStr = (e.siang && e.siang.length) ? e.siang.join(', ') : '-';
+            var mStr = (e.malam && e.malam.length) ? e.malam.join(', ') : '-';
+            var cStr = (e.cuti && e.cuti.length) ? e.cuti.join(', ') : '-';
+            doc += '<tr><td>'+d+'</td><td>'+sStr+'</td><td>'+mStr+'</td><td class="cuti">'+cStr+'</td></tr>';
+        }
+        doc += '</table></body></html>';
+        win.document.write(doc); win.document.close();
+    };
+
+    window.printHandover = function(){
+        var win = window.open('', '_blank', 'width=900,height=600');
+        var doc = '<html><head><title>Serah Terima</title><style>body{font-family:sans-serif;padding:20px;color:#111;}h2,h3{text-align:center;}@media print{button{display:none;}}</style></head><body>';
+        doc += '<h2>BERITA ACARA SERAH TERIMA JAGA</h2><p>Tanggal: '+new Date(state.date).toLocaleDateString('id-ID')+'</p>';
+        doc += '<button onclick="window.print()" style="padding:10px 20px;background:#6366f1;color:white;border:none;border-radius:5px;cursor:pointer;margin-bottom:10px;">🖨️ Cetak</button>';
+        doc += '<h3>Serah Terima Pagi (07:00)</h3>';
+        if(state.handoverPagi.waktu){
+            doc += '<p>Waktu: '+new Date(state.handoverPagi.waktu).toLocaleString('id-ID')+'</p><p>Penyerah: '+state.handoverPagi.penyerah+'</p><p>Penerima: '+state.handoverPagi.penerima+'</p><p>Catatan: '+state.handoverPagi.catatan+'</p>';
+        } else { doc += '<p>Belum dilakukan.</p>'; }
+        doc += '<h3>Serah Terima Malam (19:00)</h3>';
+        if(state.handoverMalam.waktu){
+            doc += '<p>Waktu: '+new Date(state.handoverMalam.waktu).toLocaleString('id-ID')+'</p><p>Penyerah: '+state.handoverMalam.penyerah+'</p><p>Penerima: '+state.handoverMalam.penerima+'</p><p>Catatan: '+state.handoverMalam.catatan+'</p>';
+        } else { doc += '<p>Belum dilakukan.</p>'; }
+        doc += '</body></html>';
+        win.document.write(doc); win.document.close();
+    };
+
+    // INIT
+    try {
+        loadData();
+        renderTab('patroli');    } catch(e) {
+        console.error('❌ Security Init Error:', e);
+    }
+})();
+</script>

@@ -1,0 +1,103 @@
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+<div style="min-height:100vh; background:#040814; color:#e2e8f0; font-family:'Inter',sans-serif; padding:1rem; padding-top:3.5rem; padding-bottom:5rem;" id="settings-app">
+    <h2 style="color:#06b6d4; font-size:1.4rem; margin-bottom:0.3rem;">⚙️ Pengaturan Sistem</h2>
+    <p style="color:#94a3b8; font-size:0.7rem; margin-bottom:1rem;">ISO 9241-171 • WCAG 2.2 • Inklusi Digital</p>
+    <div style="display:flex; gap:0.3rem; margin-bottom:1rem; overflow-x:auto; padding-bottom:0.3rem;">
+        <button class="set-tab active" onclick="switchSetTab('tampilan')">🎨 Tampilan</button>
+        <button class="set-tab" onclick="switchSetTab('bahasa')">🌍 Bahasa</button>
+        <button class="set-tab" onclick="switchSetTab('aksesibilitas')">♿ Aksesibilitas</button>
+        <button class="set-tab" onclick="switchSetTab('keamanan')">🔒 Keamanan</button>
+        <button class="set-tab" onclick="switchSetTab('data')">💾 Data & Sistem</button>
+    </div>
+    <div id="content-tampilan" class="set-content"></div>
+    <div id="content-bahasa" class="set-content" style="display:none;"></div>
+    <div id="content-aksesibilitas" class="set-content" style="display:none;"></div>
+    <div id="content-keamanan" class="set-content" style="display:none;"></div>
+    <div id="content-data" class="set-content" style="display:none;"></div>
+</div>
+<style>
+    .set-tab { padding:0.5rem 0.8rem; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem; white-space:nowrap; background:#1e293b; color:#e2e8f0; transition:0.3s; }
+    .set-tab.active { background:#06b6d4; color:#000; }
+    .set-panel { background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; margin-bottom:0.75rem; }
+    .set-row { display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .set-row:last-child { border-bottom:none; }
+    .set-label { font-size:0.8rem; color:#e2e8f0; }
+    .set-desc { font-size:0.65rem; color:#94a3b8; margin-top:0.2rem; }
+    .toggle { width:44px; height:24px; background:#334155; border-radius:12px; position:relative; cursor:pointer; transition:0.3s; }
+    .toggle.active { background:#10b981; }
+    .toggle::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; background:white; border-radius:50%; transition:0.3s; }
+    .toggle.active::after { left:23px; }
+    select.set-input { background:#0f172a; border:1px solid #334155; color:#e2e8f0; padding:0.4rem; border-radius:0.4rem; font-size:0.75rem; }
+</style>
+<script>
+(function(){
+    var defaults = { theme:'dark', fontSize:100, highContrast:false, reduceMotion:false, language:'id', dateFormat:'DD/MM/YYYY', dyslexiaFont:false, colorBlind:'none', largeTouch:false, simplifiedUI:false, visualAlerts:false, focusRuler:false, autoLogout:30, sessionTimeout:15 };
+    window.state = JSON.parse(localStorage.getItem('dreamos_settings') || JSON.stringify(defaults));
+
+    function applyCSS(){
+        var r = document.documentElement;
+        r.style.setProperty('--font-scale', state.fontSize+'%');
+        r.style.setProperty('--touch-target', state.largeTouch?'48px':'auto');
+        if(state.theme==='light'){ r.style.setProperty('--bg-primary','#f8fafc'); r.style.setProperty('--text-primary','#0f172a'); r.style.setProperty('--panel-bg','rgba(255,255,255,0.8)'); }
+        else { r.style.setProperty('--bg-primary','#040814'); r.style.setProperty('--text-primary','#e2e8f0'); r.style.setProperty('--panel-bg','rgba(15,23,42,0.6)'); }        document.body.classList.toggle('high-contrast', state.highContrast);
+        document.body.classList.toggle('reduce-motion', state.reduceMotion);
+        document.body.classList.toggle('dyslexia-font', state.dyslexiaFont);
+        document.body.classList.toggle('simplified-ui', state.simplifiedUI);
+        document.body.classList.toggle('visual-alerts', state.visualAlerts);
+        var f = {none:'none',protan:'sepia(0.5) saturate(1.5) hue-rotate(-30deg)',deutan:'sepia(0.3) saturate(1.2) hue-rotate(10deg)',tritan:'saturate(0.6) hue-rotate(180deg)'};
+        r.style.filter = f[state.colorBlind]||'none';
+        if(state.language==='ar'){ r.dir='rtl'; r.lang='ar'; } else { r.dir='ltr'; r.lang=state.language; }
+    }
+    function save(){ localStorage.setItem('dreamos_settings', JSON.stringify(state)); applyCSS(); if(window.DreamI18n&&window.DreamI18n.apply) DreamI18n.apply(state.language); }
+    window.switchSetTab = function(tab){ document.querySelectorAll('.set-tab').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); document.querySelectorAll('.set-content').forEach(c=>c.style.display='none'); document.getElementById('content-'+tab).style.display='block'; renderTab(tab); };
+    function toggle(k){ state[k]=!state[k]; save(); renderTab(currentTab); }
+    function setVal(k,v){ state[k]=v; save(); renderTab(currentTab); }
+    var currentTab='tampilan';
+    function renderTab(tab){
+        currentTab=tab; var h='';
+        if(tab==='tampilan'){
+            h+='<div class="set-panel"><h4 style="color:#06b6d4;margin:0 0 0.5rem;">🎨 Preferensi Visual</h4>';
+            h+=row('Tema Gelap/Terang','Sesuaikan kenyamanan mata',toggleBtn('theme',state.theme==='dark'));
+            h+=row('Ukuran Font','Skala teks global (WCAG 1.4.4)','<input type="range" min="80" max="140" value="'+state.fontSize+'" oninput="state.fontSize=this.value;save();renderTab(\'tampilan\');" style="width:100%;"><span style="font-size:0.7rem;">'+state.fontSize+'%</span>');
+            h+=row('Kontras Tinggi','Rasio 7:1 untuk low vision (WCAG 1.4.6)',toggleBtn('highContrast',state.highContrast));
+            h+=row('Kurangi Animasi','Hindari motion sickness (WCAG 2.3.3)',toggleBtn('reduceMotion',state.reduceMotion));
+            h+='</div>';
+        } else if(tab==='bahasa'){
+            h+='<div class="set-panel"><h4 style="color:#06b6d4;margin:0 0 0.5rem;">🌍 Bahasa & Wilayah</h4>';
+            h+=row('Bahasa Antarmuka','ID / EN / AR / ZH','<select class="set-input" onchange="setVal(\'language\',this.value)"><option value="id" '+(state.language==='id'?'selected':'')+'>🇮🇩 Indonesia</option><option value="en" '+(state.language==='en'?'selected':'')+'>🇬🇧 English</option><option value="ar" '+(state.language==='ar'?'selected':'')+'>🇸🇦 العربية</option><option value="zh" '+(state.language==='zh'?'selected':'')+'>🇨🇳 中文</option></select>');
+            h+=row('Format Tanggal','Standar regional','<select class="set-input" onchange="setVal(\'dateFormat\',this.value)"><option value="DD/MM/YYYY" '+(state.dateFormat==='DD/MM/YYYY'?'selected':'')+'>DD/MM/YYYY</option><option value="MM/DD/YYYY" '+(state.dateFormat==='MM/DD/YYYY'?'selected':'')+'>MM/DD/YYYY</option><option value="YYYY-MM-DD" '+(state.dateFormat==='YYYY-MM-DD'?'selected':'')+'>ISO 8601</option></select>');
+            h+='<div class="set-desc" style="margin-top:0.5rem;">💡 Bahasa Arab otomatis mengaktifkan layout RTL sesuai standar Unicode BIDI.</div></div>';
+        } else if(tab==='aksesibilitas'){
+            h+='<div class="set-panel"><h4 style="color:#06b6d4;margin:0 0 0.5rem;">♿ Aksesibilitas & Inklusi (ISO 9241-171)</h4>';
+            h+=row('Font Disleksia','OpenDyslexic / Comic Sans fallback',toggleBtn('dyslexiaFont',state.dyslexiaFont));
+            h+=row('Filter Buta Warna','Simulasi & koreksi kontras','<select class="set-input" onchange="setVal(\'colorBlind\',this.value)"><option value="none" '+(state.colorBlind==='none'?'selected':'')+'>Normal</option><option value="protan" '+(state.colorBlind==='protan'?'selected':'')+'>Protanopia (Merah)</option><option value="deutan" '+(state.colorBlind==='deutan'?'selected':'')+'>Deuteranopia (Hijau)</option><option value="tritan" '+(state.colorBlind==='tritan'?'selected':'')+'>Tritanopia (Biru)</option></select>');
+            h+=row('Target Sentuh Besar','Min 48x48px (WCAG 2.5.5)',toggleBtn('largeTouch',state.largeTouch));
+            h+=row('UI Sederhana','Kurangi clutter, fokus konten utama',toggleBtn('simplifiedUI',state.simplifiedUI));
+            h+=row('Alert Visual','Ganti suara notifikasi dengan flash layar',toggleBtn('visualAlerts',state.visualAlerts));
+            h+=row('Focus Ruler','Garis bantu baca untuk Disleksia/ADHD',toggleBtn('focusRuler',state.focusRuler));
+            h+='<div class="set-desc" style="margin-top:0.5rem;">♿ Fitur ini mematuhi ISO 9241-171 & WCAG 2.2 Level AA. Tidak mengubah data operasional.</div></div>';
+        } else if(tab==='keamanan'){
+            h+='<div class="set-panel"><h4 style="color:#06b6d4;margin:0 0 0.5rem;">🔒 Keamanan & Sesi (ISO 27001)</h4>';
+            h+=row('Auto Logout','Waktu idle sebelum terkunci (menit)','<input type="number" value="'+state.autoLogout+'" min="5" max="120" onchange="setVal(\'autoLogout\',parseInt(this.value))" style="width:60px;padding:0.3rem;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:0.3rem;text-align:center;">');
+            h+=row('Timeout Sesi','Batas aktif tanpa interaksi (menit)','<input type="number" value="'+state.sessionTimeout+'" min="5" max="60" onchange="setVal(\'sessionTimeout\',parseInt(this.value))" style="width:60px;padding:0.3rem;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:0.3rem;text-align:center;">');
+            h+=row('Ganti PIN Akses','Ubah kredensial inti sistem','<button onclick="changePIN()" style="padding:0.3rem 0.8rem;background:#f59e0b;color:#000;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;">Ubah PIN</button>');
+            h+='<div class="set-desc" style="margin-top:0.5rem;">🔐 Sesi disimpan di localStorage. Auto-reset jika browser di-clear atau device diganti.</div></div>';
+        } else if(tab==='data'){
+            h+='<div class="set-panel"><h4 style="color:#06b6d4;margin:0 0 0.5rem;">💾 Data & Pemeliharaan Sistem</h4>';
+            h+=row('Export Backup JSON','Unduh seluruh data localStorage','<button onclick="exportBackup()" style="padding:0.3rem 0.8rem;background:#10b981;color:white;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;">📥 Download</button>');
+            h+=row('Import Backup JSON','Restore data dari file','<input type="file" accept=".json" onchange="importBackup(this)" style="font-size:0.7rem;color:#94a3b8;">');
+            h+=row('Hapus Cache Lokal','Bersihkan temporary & error log','<button onclick="clearCache()" style="padding:0.3rem 0.8rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;">🧹 Bersihkan</button>');
+            h+=row('Reset Pengaturan','Kembalikan ke default pabrik','<button onclick="resetSettings()" style="padding:0.3rem 0.8rem;background:#64748b;color:white;border:none;border-radius:0.3rem;cursor:pointer;font-size:0.7rem;">↩️ Reset</button>');
+            h+='<div class="set-desc" style="margin-top:0.5rem;">📦 Backup mencakup: booking, k3, security, stok, aset, dana, audit log, & preferensi.</div></div>';        }
+        document.getElementById('content-'+tab).innerHTML=h;
+    }
+    function row(l,d,c){ return '<div class="set-row"><div><div class="set-label">'+l+'</div><div class="set-desc">'+d+'</div></div><div>'+c+'</div></div>'; }
+    function toggleBtn(k,a){ return '<div class="toggle '+(a?'active':'')+'" onclick="toggle(\''+k+'\')"></div>'; }
+    window.changePIN=function(){ var o=prompt('PIN lama:'); if(o!==localStorage.getItem('dreamos_pin')) return alert('❌ Salah!'); var n=prompt('PIN baru (min 6 digit):'); if(!n||n.length<6) return alert('❌ Min 6 digit!'); localStorage.setItem('dreamos_pin',n); alert('✅ PIN diubah!'); };
+    window.exportBackup=function(){ var a={}; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); a[k]=localStorage.getItem(k); } var b=new Blob([JSON.stringify(a)],{type:'application/json'}); var l=document.createElement('a'); l.href=URL.createObjectURL(b); l.download='dreamos_backup_'+new Date().toISOString().split('T')[0]+'.json'; l.click(); };
+    window.importBackup=function(i){ var f=i.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(e){ try{ var d=JSON.parse(e.target.result); for(var k in d){ if(d.hasOwnProperty(k)) localStorage.setItem(k,d[k]); } alert('✅ Restore berhasil! Reload...'); location.reload(); }catch(err){ alert('❌ Invalid: '+err.message); } }; r.readAsText(f); };
+    window.clearCache=function(){ if(!confirm('Hapus cache & log? Data operasional aman.')) return; localStorage.removeItem('dreamos_error_log'); ['id','en','ar','zh'].forEach(function(l){localStorage.removeItem('dreamos_lang_cache_'+l);}); alert('✅ Cache bersih.'); };
+    window.resetSettings=function(){ if(!confirm('Reset semua pengaturan?')) return; localStorage.removeItem('dreamos_settings'); state=JSON.parse(JSON.stringify(defaults)); save(); renderTab('tampilan'); alert('✅ Reset selesai.'); };
+    try{ applyCSS(); renderTab('tampilan'); }catch(e){ console.error('❌ Settings Init:',e); }
+})();
+</script>

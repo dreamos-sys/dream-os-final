@@ -1,0 +1,103 @@
+<button data-act="back" style="position:fixed;top:1rem;left:1rem;background:rgba(15,23,42,0.8);border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;backdrop-filter:blur(5px);">← Kembali</button>
+<div id="report-app" style="min-height:100vh;background:#020617;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1.5rem;padding-top:4rem;padding-bottom:5rem;max-width:900px;margin:0 auto;">
+  <div class="report-header">
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <img src="../assets/logo-sultan.png" style="width:64px;border-radius:12px;border:2px solid #0ea5e9;margin-bottom:0.5rem;" alt="Logo">
+      <h2 style="color:#0ea5e9;margin:0.3rem 0;font-size:1.6rem;">🕌 DREAM OS • LAPORAN OPERASIONAL</h2>
+      <p style="font-family:'Amiri',serif;font-size:1.4rem;color:#00ff9d;margin:0.4rem 0;letter-spacing:0.5px;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+      <p style="font-size:0.8rem;color:#94a3b8;">Departemen Bagian Umum • Depok Area</p>
+    </div>
+    <div class="no-print" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;padding:1rem;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;">
+      <input type="date" id="start-date" class="dream-input" style="flex:1;min-width:130px;">
+      <input type="date" id="end-date" class="dream-input" style="flex:1;min-width:130px;">
+      <select id="data-type" class="dream-input" style="flex:1;min-width:130px;">
+        <option value="k3">⚠️ Laporan K3</option>
+        <option value="maint">🔧 Maintenance</option>
+        <option value="access">🔍 Access Verifier</option>
+      </select>
+      <button data-act="generate" class="dream-btn primary" style="min-width:100px;">📊 Generate</button>
+      <button data-act="print" class="dream-btn ghost" style="min-width:100px;">🖨️ Print / PDF</button>
+    </div>
+  </div>
+  <div id="report-output" style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;padding:1rem;min-height:200px;"></div>
+</div>
+
+<style>
+.dream-input{width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;}
+.dream-btn{padding:0.6rem 1rem;border:none;border-radius:0.5rem;font-weight:700;font-size:0.8rem;cursor:pointer;transition:0.2s;}
+.dream-btn:active{transform:scale(0.98);}
+.dream-btn.primary{background:#0ea5e9;color:#000;}
+.dream-btn.ghost{background:rgba(255,255,255,0.05);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1);}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;margin-top:0.5rem;}
+th,td{padding:0.5rem;border-bottom:1px solid #334155;text-align:left;}
+th{background:#0f172a;color:#0ea5e9;position:sticky;top:0;}
+.empty-state{text-align:center;color:#64748b;padding:2rem;font-size:0.85rem;}
+@media print{
+  .no-print{display:none!important;}
+  body{background:#fff!important;color:#000!important;font-family:'Inter',sans-serif;}
+  #report-app{padding:0!important;max-width:100%!important;}
+  .report-header{page-break-after:avoid;margin-bottom:1.5rem;}
+  table{width:100%;border:1px solid #000;}
+  th,td{border:1px solid #000!important;color:#000!important;padding:6px;font-size:0.75rem;}
+  th{background:#e5e5e5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  @page{margin:1.5cm;size:A4;}
+}
+</style>
+
+<script>(function(){
+  var app = document.getElementById('report-app');
+  if(!app) return;
+  var output = document.getElementById('report-output');
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('start-date').value = today;
+  document.getElementById('end-date').value = today;
+
+  function safeGet(k){try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return [];}}
+
+  function renderTable(data, columns){
+    if(!data.length) return '<div class="empty-state">📭 Tidak ada data pada rentang tanggal ini.</div>';
+    var h = '<table><thead><tr>';
+    columns.forEach(c=>h+='<th>'+c+'</th>');
+    h+='</tr></thead><tbody>';
+    data.forEach(row=>{
+      h+='<tr>';
+      columns.forEach(c=>h+='<td>'+String(row[c]||'-')+'</td>');
+      h+='</tr>';
+    });
+    return h+'</tbody></table>';
+  }
+
+  function generate(){
+    var start = document.getElementById('start-date').value;
+    var end = document.getElementById('end-date').value;
+    var type = document.getElementById('data-type').value;
+    var data = [], cols = [], title = '';
+
+    if(type==='k3'){
+      data = safeGet('dreamos_k3_reports').filter(d=>d.created_at>=start+'T00:00:00'&&d.created_at<=end+'T23:59:59');
+      cols = ['Waktu','Pelapor','Lokasi','Jenis','Status','Deskripsi'];
+      title = '⚠️ LAPORAN K3 & KESELAMATAN';
+    } else if(type==='maint'){
+      data = safeGet('dreamos_maintenance_tasks').filter(d=>d.tanggal>=start&&d.tanggal<=end);
+      cols = ['Tanggal','Judul','Lokasi','Petugas','Status','Prioritas'];
+      title = '🔧 LAPORAN MAINTENANCE';
+    } else {
+      data = safeGet('dreamos_verifier_audit').filter(d=>d.time.startsWith(start)||d.time.startsWith(end));
+      cols = ['Waktu','Aksi','Status','Detail'];
+      title = '🔍 LAPORAN ACCESS VERIFIER';
+    }
+
+    output.innerHTML = '<h3 style="color:#0ea5e9;margin:0 0 0.5rem;text-align:center;">'+title+'</h3>'+renderTable(data, cols);
+  }
+
+  app.addEventListener('click', function(e){
+    var t = e.target.closest('[data-act]');
+    if(!t) return;
+    if(t.dataset.act==='back') window.parent.goHome();    else if(t.dataset.act==='generate') generate();
+    else if(t.dataset.act==='print') window.print();
+  });
+
+  // Auto generate on load
+  setTimeout(generate, 100);
+})();
+</script>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <!-- CSP_PHASE1_READY: Strict migration in progress for Dream OS v1.0 Beta -->
+
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://services.nvd.nist.gov https://cve.circl.lu https://urlhaus-api.abuse.ch; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dream OS • v1.0 Final</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <script>document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "dark");</script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <style>
+    .logo-img, img[onclick="tapLogo()"] { background: transparent !important; border-radius: 12px; isolation: isolate; }
+        /* ==============================================
+           FLUID RESPONSIVE VARIABLE CORE + TINTA SULTAN
+           ============================================== */
+        :root {
+            /* Light Mode Variables (Default fallback) */
+            --bg-primary: #f8fafc;
+            --bg-void: #ffffff;
+            --panel-bg: rgba(255, 255, 255, 0.7);
+            --text-primary: #1e293b;
+            --text-main: #334155;
+            --text-dim: #64748b;
+            --neon-core: #059669;      /* Emerald Sultan */
+            --neon-accent: #0284c7;    /* Cyber Blue Sultan */
+            --neon-warning: #e11d48;
+            --neon-amber: #d97706;
+            --glass-border: rgba(0, 0, 0, 0.05);
+            --shadow-glow: rgba(0, 0, 0, 0.05);
+            --iso-9001: #059669;
+            --iso-27001-b: #0284c7;
+            --iso-27001-r: #e11d48;
+            --iso-55001: #d97706;
+            --arabic-color: #0f172a;
+            --arabic-shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #040814;
+            --bg-void: #040814;
+            --panel-bg: rgba(15, 23, 42, 0.4);
+            --text-primary: #e2e8f0;
+            --text-main: #e2e8f0;
+            --text-dim: #64748b;
+            --neon-core: #00ff9d;
+            --neon-accent: #0ea5e9;
+            --neon-warning: #e11d48;
+            --neon-amber: #f59e0b;
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --shadow-glow: rgba(0, 255, 157, 0.15);
+            --iso-9001: #10b981;
+            --iso-27001-b: #0ea5e9;
+            --iso-27001-r: #e11d48;
+            --iso-55001: #f59e0b;
+            --arabic-color: #00ff9d;
+            --arabic-shadow: rgba(0, 255, 157, 0.3);
+        }
+
+        body { 
+            margin: 0; padding: 0; overflow-x: hidden; 
+            background: var(--bg-void); 
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        /* Login Screen */
+        #login-screen { 
+            position: fixed; inset: 0; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            background: var(--bg-void);
+            z-index: 10000; transition: opacity 0.5s ease;
+        }
+        
+        .stealth-gate { position: relative; margin-top: 2rem; display: flex; flex-direction: column; align-items: center; min-height: 80px; }
+        .eye-btn { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--text-dim); transition: all 0.3s ease; }
+        .eye-btn:active { color: var(--neon-core); text-shadow: 0 0 15px var(--neon-core); transform: scale(0.9); }
+
+        .hidden-input-area { display: none; margin-top: 1rem; animation: fadeIn 0.4s ease; position: relative; }
+        .hidden-input-area input {
+            background: var(--panel-bg); border: 1px solid var(--neon-core);
+            color: var(--neon-core); font-family: 'Orbitron', monospace; letter-spacing: 4px;
+            text-align: center; padding: 0.75rem 1rem; border-radius: 8px; outline: none; width: 180px;
+            box-shadow: inset 0 0 10px var(--shadow-glow);
+        }
+        .lockout-msg { color: var(--neon-warning); font-size: 0.8rem; margin-top: 10px; display: none; font-weight: 600; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #main-app { display: none; }
+        #dashboard-container { position: relative; z-index: 1; }
+
+        /* Header */
+        .header-main {
+            padding: 2rem 1.5rem 1rem; text-align: center;
+            border-bottom: 1px solid var(--glass-border); margin-bottom: 0.5rem;
+            background: var(--bg-primary); transition: background 0.4s ease;
+        }
+        .header-main .logo-img { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; margin-bottom: 0.5rem; }
+        .header-main .arabic {
+            font-family: 'Amiri', serif; color: var(--arabic-color);
+            text-shadow: 0 0 20px var(--arabic-shadow); font-size: 1.5rem; margin-bottom: 0.2rem;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+        .header-main .shalawat { font-family: 'Amiri', serif; color: var(--neon-accent); font-size: 0.8rem; opacity: 0.9; }
+        .info-badges { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+        .badge {
+            background: rgba(16, 185, 129, 0.1); border: 1px solid var(--neon-core);
+            padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.7rem; color: var(--neon-core); font-weight: 600;
+            transition: all 0.4s ease;
+        }
+
+        /* Slideshow */
+        #dream-slideshow { position: relative; width: 100%; height: 200px; overflow: hidden; margin-bottom: 1.5rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--panel-bg); }
+        #dream-slide-track { display: flex; transition: transform 0.7s ease; height: 100%; }
+        .dream-slide { min-width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--bg-void), var(--panel-bg)); font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--neon-core); text-align: center; padding: 20px; box-sizing: border-box; }
+
+        /* Grid Modules */
+        .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 1.5rem 6rem; }
+        .mod-card { background: var(--panel-bg); backdrop-filter: blur(12px); border-radius: 16px; padding: 1.25rem 0.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-top: 1px solid var(--glass-border); }
+        .mod-card:active { transform: scale(0.95); }
+        .mod-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .mod-title { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; transition: color 0.4s ease; }
+
+        /* Bottom Nav */
+        nav { background: var(--bg-primary) !important; backdrop-filter: blur(20px); border-top: 1px solid var(--glass-border); transition: background 0.4s ease; }
+        .dream-nav-item { background:none; border:none; color: var(--text-dim); font-size:0.65rem; display:flex; flex-direction:column; align-items:center; gap:0.2rem; cursor:pointer; font-weight: 600;}
+        .dream-nav-item span { font-size:1.3rem; opacity: 0.8; transition: all 0.3s ease;}
+        .dream-nav-item:active span { opacity: 1; color: var(--neon-core); }
+
+        /* System Info */
+        .system-info-box { margin: 2rem 1.5rem; padding: 1rem; border-radius: 12px; background: var(--panel-bg); border: 1px solid var(--glass-border); font-size: 0.65rem; color: var(--text-dim); text-align: center; line-height: 1.6; }
+        .system-info-box strong { color: var(--text-primary); }
+    </style>
+
+<style>
+/* Accessibility & System Overrides */
+.reduce-motion * { transition: none !important; animation: none !important; }
+.high-contrast { --text-primary: #ffffff !important; --bg-primary: #000000 !important; --panel-bg: #111 !important; }
+.high-contrast * { border-color: #fff !important; color: #fff !important; }
+.dyslexia-font { font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important; letter-spacing: 0.05em; word-spacing: 0.1em; line-height: 1.6 !important; }
+.simplified-ui .dream-panel:not(.essential) { opacity: 0.3; pointer-events: none; }
+.visual-alerts .sys-flash { animation: flashScreen 0.4s ease-in-out 3; }
+@keyframes flashScreen { 0%,100%{box-shadow:inset 0 0 0 0 transparent} 50%{box-shadow:inset 0 0 60px 0 rgba(0,255,157,0.6)} }
+#focus-ruler { position:fixed; left:0; width:100%; height:28px; background:rgba(0,255,157,0.12); border-top:2px solid #00ff9d; border-bottom:2px solid #00ff9d; pointer-events:none; z-index:9998; transform:translateY(-50%); display:none; mix-blend-mode:screen; }
+</style>
+<div id="focus-ruler"></div>
+
+    <script>console.log('🛡️ Dream OS v1.0 Beta CSP Bootstrap Ready');</script>
+    <!-- CSP_BOOTSTRAP_HASH: sha256-nYuqFdg4p68Skw4f5XwvJSgqUzfB6rX0HTKTqN64lU8= -->
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+        <div style="text-align:center;">
+            <img src="assets/logo-sultan.png" style="width:75px;height:75px;border-radius:18px;cursor:pointer;margin-bottom:1.5rem;box-shadow:0 0 25px var(--shadow-glow); border: 1px solid var(--glass-border);" onclick="tapLogo()">
+            <div style="font-family:'Amiri',serif;font-size:2.5rem;color:#00ff9d;text-shadow:0 0 30px var(--shadow-glow);margin-bottom:0.2rem;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+            <div style="font-family:'Amiri',serif;font-size:1rem;color:var(--neon-accent);opacity:0.9;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <div style="margin-top:1.5rem;color:var(--text-dim);font-size:0.75rem; letter-spacing: 2px; font-weight: 800;">DREAM OS • V1.0 FINAL</div>
+        </div>
+        <div class="stealth-gate">
+            <button class="eye-btn" id="eye-toggle" onclick="toggleStealth()">👁️</button>
+            <div class="hidden-input-area" id="stealth-input">
+                <input type="password" id="pass" placeholder="CORE PIN" onkeypress="handleEnter(event)">
+            </div>
+            <div class="lockout-msg" id="lock-msg"></div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app">
+        <div id="dashboard-container"></div>
+    </div>
+
+    <!-- GHOST HUB CONTAINER -->
+    <div id="ghost-container"></div>
+
+    <!-- BOTTOM NAV -->
+    <nav id="bottom-nav" style="display:none; position:fixed; bottom:0; left:0; right:0; height:4rem; justify-content:space-around; align-items:center; z-index:40;">
+        <button class="dream-nav-item" onclick="goHome()"><span>⌂</span>Home</button>
+        <button class="dream-nav-item" onclick="openMod('profile')"><span>👤</span>Profile</button>
+        <button class="dream-nav-item" onclick="openMod('qr')"><span>⎚</span>QR</button>
+        <button class="dream-nav-item" onclick="openMod('about')"><span>ℹ️</span>About</button>
+        <button class="dream-nav-item" onclick="openMod('setting')"><span>⚙</span>System</button>
+    </nav>
+
+    <script>
+        // --- THEME INIT ---
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+
+        // --- CORE VARIABLES ---
+        let attempts = 0;
+        let lockoutUntil = localStorage.getItem('dream_lockout') || 0;
+        let taps = 0, tapTimer, slideInterval;
+        window.slideIdx = 0;
+
+        // --- STEALTH SECURITY SYSTEM ---
+        function checkLockout() {
+            if (Date.now() < lockoutUntil) {
+                let remain = Math.ceil((lockoutUntil - Date.now()) / 60000);
+                document.getElementById('lock-msg').innerText = `SYSTEM LOCKED. RETRY IN ${remain} MINS.`;
+                document.getElementById('lock-msg').style.display = 'block';
+                document.getElementById('stealth-input').style.display = 'none';
+                return true;
+            } else {
+                document.getElementById('lock-msg').style.display = 'none';
+                return false;
+            }
+        }
+
+        window.toggleStealth = function() {
+            if (checkLockout()) return;
+            let inp = document.getElementById('stealth-input');
+            let passField = document.getElementById('pass');
+            if (inp.style.display === 'block') {
+                authenticate();
+            } else {
+                inp.style.display = 'block';
+                passField.focus();
+                if (!document.getElementById('toggle-pass')) {
+                    let toggleBtn = document.createElement('span');
+                    toggleBtn.id = 'toggle-pass';
+                    toggleBtn.innerHTML = '👁️';
+                    toggleBtn.style.cssText = 'position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); cursor:pointer; font-size:1.2rem; color:#00ff9d; z-index:2;';
+                    toggleBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        passField.type = passField.type === 'password' ? 'text' : 'password';
+                        toggleBtn.innerHTML = passField.type === 'password' ? '👁️' : '🙈';
+                    };
+                    inp.style.position = 'relative';
+                    inp.appendChild(toggleBtn);
+                }
+            }
+        };
+
+        window.handleEnter = function(e) {
+            if(e.key === 'Enter') authenticate();
+        }
+
+        function authenticate() {
+            if (checkLockout()) return;
+            var passEl = document.getElementById('pass');
+            if (!passEl || btoa(passEl.value) !== btoa('b15m1ll4h_012443410')) {
+                attempts++;
+                if(attempts >= 3) {
+                    lockoutUntil = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('dream_lockout', lockoutUntil);
+                    
+    // === GLOBAL ERROR BOUNDARY & LOGGER ===
+    window.__dreamErrors = [];
+    function logDreamError(err) {
+        try {
+            var logs = JSON.parse(localStorage.getItem('dreamos_error_log') || '[]');
+            logs.unshift(err);
+            if (logs.length > 50) logs.pop();
+            localStorage.setItem('dreamos_error_log', JSON.stringify(logs));
+            window.__dreamErrors = logs;
+        } catch(e) {}
+    }
+    window.onerror = function(msg, url, line, col, error) {
+        logDreamError({ type:'runtime', msg:msg, line:line, col:col, stack:error?.stack||'', time:new Date().toISOString() });
+        return false;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        logDreamError({ type:'promise', msg:e.reason?.message||String(e.reason), stack:e.reason?.stack||'', time:new Date().toISOString() });
+    });
+
+    // === BUG REPORTER UI ===
+    window.showBugReporter = function() {
+        var logs = JSON.parse(localStorage.getItem('dreamos_error_log') || '[]');
+        if (!logs.length) return alert('✅ Tidak ada error tercatat. Sistem sehat!');
+        var report = '🐞 DREAM OS BUG REPORT\n📅 ' + new Date().toLocaleString('id-ID') + '\n📱 ' + navigator.userAgent + '\n\n';
+        logs.slice(0, 5).forEach(function(e, i) {
+            report += '❌ #' + (i+1) + ' [' + e.type.toUpperCase() + '] ' + e.time.split('T')[0] + ' ' + e.time.split('T')[1].split('.')[0] + '\n';
+            report += '📝 ' + e.msg + '\n';
+            if (e.line) report += '📍 Line: ' + e.line + ' Col: ' + e.col + '\n';
+            report += '---\n';
+        });
+        report += '\n💡 Kirim laporan ini ke Developer via WhatsApp.';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(report).then(function() {
+                alert('✅ Laporan disalin ke clipboard!\nSilakan paste ke WhatsApp Developer.');
+            }).catch(function() {
+                prompt('Salin manual:', report);
+            });
+        } else {
+            prompt('Salin manual:', report);
+        }
+    };
+    checkLockout();
+                } else {
+                    document.getElementById('lock-msg').innerText = `ACCESS DENIED. REMAINING: ${3 - attempts}`;
+                    document.getElementById('lock-msg').style.display = 'block';
+                    setTimeout(() => { document.getElementById('lock-msg').style.display = 'none'; }, 2000);
+                }
+                passEl.value = '';
+                return;
+            }
+            attempts = 0;
+            localStorage.removeItem('dream_lockout');
+            document.getElementById('login-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('bottom-nav').style.display = 'flex';
+                renderDashboard();
+            }, 500);
+        }
+
+        // --- GHOST HUB LOGIC ---
+        window.tapLogo = function() {
+            clearTimeout(tapTimer);
+            taps++;
+            if (taps >= 7) { taps = 0; openGhostHub(); return; }
+            tapTimer = setTimeout(() => { taps = 0; }, 2000);
+        };
+
+        window.openGhostHub = function() {
+            var hub = document.getElementById('ghost-hub');
+            if (hub) { hub.style.display = 'block'; if (typeof injectGhostTools === 'function') injectGhostTools(); }
+        };
+
+        window.hideGhostHub = function() {
+            var hub = document.getElementById('ghost-hub');
+            if (hub) hub.style.display = 'none';
+        };
+
+        window.log = function(msg) {
+            var el = document.getElementById('ghost-log');
+            if (el) { el.innerHTML += '> ' + msg + '\n'; el.scrollTop = el.scrollHeight; }
+        };
+
+        window.injectGhostTools = function() {
+            var grid = document.getElementById('ghost-tools-inject');
+            if (!grid) return;
+            var tools = [
+                { l: 'Sys Analyzer', i: '🔍', c: '#f59e0b', action: function() { log('🔍 System Analysis...'); } },
+                { l: 'Network', i: '📡', c: '#10b981', action: function() { log('📡 '+(navigator.onLine?'Online':'Offline')); } },
+                { l: 'Atomic Test', i: '🧪', c: '#8b5cf6', action: function() { openMod('atomic'); } },
+                { l: 'Eruda Tools', i: '🛠️', c: '#ff5722', action: function() { if (typeof eruda !== 'undefined') { eruda.init(); eruda.show(); } else { alert('Eruda not loaded'); } } },
+                { l: 'OSINT Pro', i: '🕵️', c: '#f97316', action: function() { alert('OSINT Module ready.\n\nHubungkan ke API eksternal.'); } },
+                { l: 'Net Tools', i: '🌐', c: '#3b82f6', action: function() { alert('Net Tools Module.\n\nNmap, Spider, TShark siap digunakan.'); } }
+            ];
+            grid.innerHTML = '';
+            tools.forEach(function(t) {
+                var btn = document.createElement('button');
+                btn.style.cssText = 'background:#1e293b;border:2px solid ' + t.c + ';border-radius:12px;padding:16px 8px;text-align:center;cursor:pointer;color:white;min-height:75px;';
+                btn.innerHTML = '<div style="font-size:2rem;margin-bottom:6px;">' + t.i + '</div><div style="font-size:0.65rem;font-weight:600;color:#94a3b8;">' + t.l + '</div>';
+                btn.addEventListener('click', t.action);
+                grid.appendChild(btn);
+            });
+        };
+
+        // --- DASHBOARD RENDERER ---
+        window.renderDashboard = function() {
+            var container = document.getElementById('dashboard-container');
+            if (!container) return;
+            container.innerHTML = '';
+            var header = document.createElement('div');
+            header.className = 'header-main';
+            header.innerHTML = `<img src="assets/logo-sultan.png" class="logo-img" onclick="tapLogo()" /><div class="arabic">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div><div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div><div class="info-badges"><span class="badge" id="prayer-badge">🕌 ...</span><span class="badge" id="live-clock">⏱️ --:--:--</span><span class="badge" id="battery-status">🔋 --%</span></div>`;
+            container.appendChild(header);
+            var slideDiv = document.createElement('div');
+            slideDiv.id = 'dream-slideshow';
+            slideDiv.innerHTML = '<div id="dream-slide-track"></div>';
+            container.appendChild(slideDiv);
+            var grid = document.createElement('div');
+            grid.className = 'module-grid';
+            var modules = [
+                { i: '⎈', n: 'CMD Center', id: 'cmd', cls: 'iso-27001-b' },
+                { i: '◈', n: 'Security', id: 'sec', cls: 'iso-27001-b' },
+                { i: '⚠', n: 'K3 Safety', id: 'k3', cls: 'iso-27001-r' },
+                { i: '⌾', n: 'Jan Indoor', id: 'in', cls: 'iso-9001' },
+                { i: '⎉', n: 'Jan Outdoor', id: 'out', cls: 'iso-9001' },
+                { i: '◷', n: 'Booking', id: 'book', cls: 'iso-9001' },
+                { i: '⛊', n: 'Asset', id: 'asset', cls: 'iso-55001' },
+                { i: '◫', n: 'Stok Gudang', id: 'stok', cls: 'iso-55001' },
+                { i: '⚙', n: 'Maintenance', id: 'maint', cls: 'iso-55001' }
+            ];
+            modules.forEach(function(m) {
+                grid.innerHTML += `<div class="mod-card ${m.cls}" onclick="openMod('${m.id}')"><div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div></div>`;
+            });
+            container.appendChild(grid);
+            var infoBox = document.createElement('div');
+            infoBox.className = 'system-info-box';
+            infoBox.innerHTML = `<strong>Dream OS v1.0 Final</strong><br>Engineered by Family Dream Team<br><br><span style="color:var(--neon-accent); font-family:'Amiri',serif; font-size:0.8rem;">"The Power Soul Of Shalawat"</span><br><br>Compliance: <strong>ISO 27001, ISO 9001, ISO 55001</strong><br>Approver: Bapak Hanung Budianto S. E<br>Applicant: Bapak Erwinsyah`;
+            container.appendChild(infoBox);
+            startLiveClock();
+            startBatteryMonitor();
+            showSlides();
+        };
+
+        function updatePrayerBadge() {
+            var pEl = document.getElementById('prayer-badge');
+            if (!pEl) return;
+            var today = new Date().toISOString().split('T')[0];
+            var cached = localStorage.getItem('prayer_timings_' + today);
+            if (cached) { applyPrayerStatus(JSON.parse(cached), pEl); return; }
+            pEl.textContent = '📍 Fetching Jadwal...';
+            if (!navigator.geolocation) { pEl.textContent = '🕌 Dzuhur (GPS N/A)'; return; }
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                var lat = pos.coords.latitude.toFixed(4), lon = pos.coords.longitude.toFixed(4);
+                fetch(`https://api.aladhan.com/v1/timings/${today}?latitude=${lat}&longitude=${lon}&method=20`)
+                .then(r => r.json()).then(data => {
+                    var t = data.data.timings;
+                    localStorage.setItem('prayer_timings_' + today, JSON.stringify(t));
+                    applyPrayerStatus(t, pEl);
+                }).catch(() => { pEl.textContent = '🕌 Dzuhur (Offline)'; });
+            }, function() { pEl.textContent = '📍 GPS Denied'; }, {timeout: 8000, enableHighAccuracy: false});
+        }
+        function applyPrayerStatus(t, el) {
+            var now = new Date(), h = now.getHours(), m = now.getMinutes(), cur = h * 60 + m;
+            var toMin = function(s) { var p = s.split(':'); return +p[0]*60 + +p[1]; };
+            var f=toMin(t.Fajr), sr=toMin(t.Sunrise), dh=toMin(t.Dhuhr), as=toMin(t.Asr), mg=toMin(t.Maghrib), is=toMin(t.Isha);
+            var st = '🌌 Sepertiga Malam';
+            if (cur >= f && cur < sr) st = '🕌 Subuh';
+            else if (cur >= sr && cur < dh) st = '☀️ Syuruk';
+            else if (cur >= dh && cur < as) st = '🕌 Dzuhur';
+            else if (cur >= as && cur < mg) st = '🕌 Ashar';
+            else if (cur >= mg && cur < is) st = '🕌 Maghrib';
+            else if (cur >= is) st = '🕌 Isya';
+            el.textContent = st;
+        }
+        function startLiveClock() {
+            setInterval(() => { 
+                var el = document.getElementById('live-clock'); 
+                if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
+                updatePrayerBadge();
+            }, 1000);
+        }
+
+        function startBatteryMonitor() {
+            if (navigator.getBattery) {
+                navigator.getBattery().then(function(battery) {
+                    function updateBattery() { var el = document.getElementById('battery-status'); if (el) el.textContent = (battery.charging ? '⚡' : '🔋') + ' ' + Math.round(battery.level * 100) + '%'; }
+                    updateBattery();
+                    battery.addEventListener('levelchange', updateBattery);
+                    battery.addEventListener('chargingchange', updateBattery);
+                });
+            }
+        }
+
+        window.openMod = function(id) {
+            var fetchMod = function(modId, file, containerId) {
+                var container = document.getElementById(containerId);
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = containerId;
+                    container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#040814; padding-bottom: 5rem;';
+                    document.body.appendChild(container);
+                }
+                container.style.display = 'block';
+                var nocacheUrl = 'modules/' + file + '?v=' + new Date().getTime();
+                fetch(nocacheUrl).then(function(r){ 
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.text(); 
+                }).then(function(h) {
+                    container.innerHTML = h;
+                    var scripts = container.querySelectorAll('script');
+                    scripts.forEach(function(old) { var ns = document.createElement('script'); ns.textContent = old.textContent; document.body.appendChild(ns); });
+                }).catch(function(err) {
+                    container.innerHTML = '<div style="color:red;padding:4rem 2rem;text-align:center;"><h3>⚠️ Modul ' + modId + ' Gagal Dimuat</h3><p>Error: ' + err.message + '</p><button onclick="goHome()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10b981;border:none;border-radius:8px;color:white;font-weight:bold;">Kembali</button></div>';
+                });
+            };
+            var map = {
+                book: ['Booking', 'booking.html', 'booking-module'], k3: ['K3 Safety', 'k3.html', 'k3-module'],
+                in: ['Janitor Indoor', 'janitor-indoor.html', 'janitor-in-module'], out: ['Janitor Outdoor', 'janitor-outdoor.html', 'janitor-out-module'],
+                maint: ['Maintenance', 'maintenance.html', 'maintenance-module'], sec: ['Security', 'security.html', 'security-module'],
+                stok: ['Stok', 'stok.html', 'stok-module'], asset: ['Asset', 'asset.html', 'asset-module'],
+                cmd: ['Command Center', 'commandcenter.html', 'cmd-module'], profile: ['Profile', 'profile.html', 'profile-module'],
+                qr: ['QR', 'qr.html', 'qr-module'], about: ['About', 'about.html', 'about-module'],
+                setting: ['Setting', 'setting.html', 'setting-module'], atomic: ['Atomic Test', 'atomic-test-v2.html', 'atomic-test-module']
+            };
+            var m = map[id];
+            if (m) { fetchMod(m[0], m[1], m[2]); } else { alert('Modul tidak dikenali: ' + id); }
+        };
+
+        window.goHome = function() {
+            if (slideInterval) { clearInterval(slideInterval); slideInterval = null; }
+            var mods = document.querySelectorAll('[id$="-module"]');
+            for (var i = 0; i < mods.length; i++) { mods[i].style.display = 'none'; }
+            window.scrollTo(0, 0);
+            showSlides();
+        };
+
+        window.showSlides = function() {
+            var track = document.getElementById('dream-slide-track');
+            if (!track) return;
+            if (slideInterval) clearInterval(slideInterval);
+            track.innerHTML = '';
+            function S(c){return '<div class="dream-slide">'+c+'</div>';}
+            track.innerHTML = S('🕌 Selamat Datang di Dream OS!<br><small>🛡️ Petugas Aktif</small>') + S('📅 Dashboard Operasional<br><small>Monitoring Real-time</small>') + S('⚠️ Status Keamanan Normal<br><small>ISO 27001 Perimeter Checked</small>') + S('☁️ Cuaca Area<br><span id="slide4-weather">⏳ Fetching...</span>') + S('💚 Terima kasih tim hebat!<br><small>"Jangan pernah lelah menebar kebaikan"</small>');
+            setTimeout(() => {
+                var wEl = document.getElementById('slide4-weather');
+                if (!wEl) return;
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`)
+                        .then(r => r.json()).then(d => { wEl.textContent = '🌡️ ' + d.current_weather.temperature + '°C'; }).catch(() => { wEl.textContent = '🌤️ Offline'; });
+                    }, () => { wEl.textContent = '📍 GPS Denied'; });
+                }
+            }, 1000);
+            window.slideIdx = 0;
+            slideInterval = setInterval(() => {
+                var slides = track.children;
+                if (!slides.length) return;
+                window.slideIdx = (window.slideIdx + 1) % slides.length;
+                track.style.transform = 'translateX(-' + (window.slideIdx * 100) + '%)';
+            }, 7000);
+        };
+
+        (function() {
+            if (!document.getElementById('ghost-hub')) {
+                var ghostHTML = '<div id="ghost-hub" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,8,20,0.98); backdrop-filter: blur(20px); overflow-y:auto;"><div style="background:rgba(15, 23, 42, 0.95); border-bottom:2px solid #2dd4bf; padding:1rem; display:flex; justify-content:space-between; align-items:center;"><div><h2 style="color:#2dd4bf; margin:0; font-family: \'Orbitron\', sans-serif; font-size:1rem;">4S DevOps Center</h2><p style="color:#64748b; font-size:0.6rem; margin:0;">Shadow Soul Spirit • v2.0</p></div><button onclick="hideGhostHub()" style="background:#ef4444; color:white; border:none; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">✕</button></div><div style="padding:1rem; display:grid; grid-template-columns:repeat(3,1fr); gap:8px;" id="ghost-tools-inject"></div><div style="margin:1rem; background:#000; border:1px solid #2dd4bf; border-radius:12px; padding:0.75rem; font-family:monospace; font-size:0.7rem; color:#2dd4bf; height:120px; overflow-y:auto;" id="ghost-log">> 4S DevOps Center ready...<br></div></div>';
+                document.getElementById('ghost-container').innerHTML = ghostHTML;
+            }
+        })();
+
+        if(location.search.includes("debug=true")||location.hostname==="localhost"){var es=document.createElement("script");es.src="//cdn.jsdelivr.net/npm/eruda";es.onload=function(){eruda.init();};document.head.appendChild(es);}
+    
+    
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+    }
+    
+    // === GLOBAL ERROR BOUNDARY & LOGGER ===
+    window.__dreamErrors = [];
+    function logDreamError(err) {
+        try {
+            var logs = JSON.parse(localStorage.getItem('dreamos_error_log') || '[]');
+            logs.unshift(err);
+            if (logs.length > 50) logs.pop();
+            localStorage.setItem('dreamos_error_log', JSON.stringify(logs));
+            window.__dreamErrors = logs;
+        } catch(e) {}
+    }
+    window.onerror = function(msg, url, line, col, error) {
+        logDreamError({ type:'runtime', msg:msg, line:line, col:col, stack:error?.stack||'', time:new Date().toISOString() });
+        return false;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        logDreamError({ type:'promise', msg:e.reason?.message||String(e.reason), stack:e.reason?.stack||'', time:new Date().toISOString() });
+    });
+
+    // === BUG REPORTER UI ===
+    window.showBugReporter = function() {
+        var logs = JSON.parse(localStorage.getItem('dreamos_error_log') || '[]');
+        if (!logs.length) return alert('✅ Tidak ada error tercatat. Sistem sehat!');
+        var report = '🐞 DREAM OS BUG REPORT\n📅 ' + new Date().toLocaleString('id-ID') + '\n📱 ' + navigator.userAgent + '\n\n';
+        logs.slice(0, 5).forEach(function(e, i) {
+            report += '❌ #' + (i+1) + ' [' + e.type.toUpperCase() + '] ' + e.time.split('T')[0] + ' ' + e.time.split('T')[1].split('.')[0] + '\n';
+            report += '📝 ' + e.msg + '\n';
+            if (e.line) report += '📍 Line: ' + e.line + ' Col: ' + e.col + '\n';
+            report += '---\n';
+        });
+        report += '\n💡 Kirim laporan ini ke Developer via WhatsApp.';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(report).then(function() {
+                alert('✅ Laporan disalin ke clipboard!\nSilakan paste ke WhatsApp Developer.');
+            }).catch(function() {
+                prompt('Salin manual:', report);
+            });
+        } else {
+            prompt('Salin manual:', report);
+        }
+    };
+    checkLockout();
+</script>
+
+    <!-- 🐞 Floating Bug Reporter -->
+    <button onclick="showBugReporter()" style="position:fixed;bottom:5.5rem;right:1rem;width:48px;height:48px;border-radius:50%;background:#ef4444;color:white;border:none;font-size:1.5rem;cursor:pointer;z-index:9990;box-shadow:0 4px 12px rgba(239,68,68,0.4);display:flex;align-items:center;justify-content:center;">🐞</button>
+
+<script>
+// === DREAM OS SESSION WATCHDOG & FOCUS RULER ===
+(function(){
+  var ruler = document.getElementById('focus-ruler');
+  var lastActivity = Date.now();
+  var warningShown = false;
+  function getSettings(){ try{return JSON.parse(localStorage.getItem('dreamos_settings')||'{}');}catch(e){return {};} }
+
+  document.addEventListener('mousemove', function(e){
+    var s = getSettings();    if(s.focusRuler && ruler){ ruler.style.display='block'; ruler.style.top=e.clientY+'px'; }
+    else if(ruler){ ruler.style.display='none'; }
+    lastActivity = Date.now(); warningShown = false;
+  });
+  document.addEventListener('touchmove', function(e){
+    var s = getSettings();
+    if(s.focusRuler && ruler && e.touches[0]){ ruler.style.display='block'; ruler.style.top=e.touches[0].clientY+'px'; }
+    lastActivity = Date.now(); warningShown = false;
+  });
+  ['keydown','click','scroll'].forEach(function(ev){ document.addEventListener(ev, function(){ lastActivity=Date.now(); warningShown=false; }); });
+
+  setInterval(function(){
+    var s = getSettings();
+    var timeout = (s.sessionTimeout||15)*60000;
+    var autoLogout = (s.autoLogout||30)*60000;
+    var idle = Date.now() - lastActivity;
+    if(idle > timeout && !warningShown){
+      warningShown = true;
+      if(s.visualAlerts) document.body.classList.add('sys-flash');
+      setTimeout(function(){ document.body.classList.remove('sys-flash'); }, 1500);
+    }
+    if(idle > autoLogout){
+      localStorage.removeItem('dreamos_session');
+      alert('🔒 Sesi berakhir karena tidak aktif. Silakan login ulang.');
+      location.reload();
+    }
+  }, 10000);
+})();
+// === DREAM_OS_WATCHDOG_INJECTED ===
+</script>
+
+
+<!-- GHOST HUB STEALTH V2 -->
+<div id="ghost-hub" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0a0e27,#1a1f3a,#0f1419);overflow-y:auto;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+    <button onclick="try{window.parent.goHome()}catch(e){window.location.href='./index.html'}" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:100000;">← Kembali</button>
+    <div style="background:linear-gradient(90deg,rgba(15,23,42,0.95),rgba(30,41,59,0.95));border-bottom:2px solid #2dd4bf;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(10px);">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:40px;height:40px;background:linear-gradient(135deg,#2dd4bf,#06b6d4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 0 20px rgba(45,212,191,0.5);">🕌</div>
+            <div>
+                <h2 style="color:#2dd4bf;font-size:1rem;font-weight:800;margin:0;letter-spacing:0.5px;">4S DevOps Center</h2>
+                <p style="color:#64748b;font-size:0.6rem;margin:0;">Shadow Soul Spirit • v2.0 • The Power of Shalawat</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;align-items:center;">
+            <span style="display:flex;align-items:center;gap:0.3rem;color:#10b981;font-size:0.65rem;font-weight:600;">
+                <span style="width:6px;height:6px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;"></span>ONLINE
+            </span>
+            <button onclick="hideGhostHub()" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.75rem;box-shadow:0 4px 15px rgba(239,68,68,0.3);">✕ TUTUP</button>
+        </div>
+    </div>
+    <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(85px,1fr));gap:8px;" id="ghost-tools-inject"></div>
+    <div style="margin:0 1rem 1rem;background:rgba(0,0,0,0.8);border:1px solid rgba(45,212,191,0.3);border-radius:12px;padding:0.75rem;font-family:'Courier New',monospace;font-size:0.7rem;color:#2dd4bf;height:120px;overflow-y:auto;" id="ghost-log">
+        <div style="color:#64748b;">> 4S DevOps Center ready...</div>
+    </div>
+    <div style="text-align:center;padding:0.5rem;color:#2dd4bf;font-size:0.6rem;font-family:monospace;">⚡ THE POWER SOUL OF SHALAWAT • SHADOW SOUL SPIRIT SYSTEM v2.0 ⚡</div>
+</div>
+<script>
+(function(){
+    window.hideGhostHub=function(){document.getElementById('ghost-hub').style.display='none';ghostLog('Hub closed','warn');};
+    window.showGhostHub=function(){document.getElementById('ghost-hub').style.display='block';ghostLog('Hub opened','success');};
+    window.ghostLog=function(m,t){var l=document.getElementById('ghost-log');if(!l)return;var c={info:'#2dd4bf',warn:'#f59e0b',error:'#ef4444',success:'#10b981',sys:'#8b5cf6'};var n=new Date().toLocaleTimeString('id-ID');l.innerHTML+='<div style="color:'+(c[t]||'#94a3b8')+';margin-bottom:4px;">['+n+'] '+m+'</div>';l.scrollTop=l.scrollHeight;};
+    function injectTools(){var c=document.getElementById('ghost-tools-inject');if(!c)return;var tools=[{l:'🔍 Eruda',f:'toggleEruda()',b:'#3b82f6'},{l:'🧹 Clear Cache',f:'clearDreamCache()',b:'#ef4444'},{l:'📦 LocalStorage',f:'viewLocalStorage()',b:'#8b5cf6'},{l:'🐞 Error Log',f:'exportErrorLog()',b:'#f59e0b'},{l:'🔄 Reload',f:'location.reload()',b:'#06b6d4'},{l:'📊 Sys Info',f:'showSysInfo()',b:'#10b981'},{l:'🔐 Session',f:'clearSession()',b:'#dc2626'},{l:'📋 Copy State',f:'copyGlobalState()',b:'#6366f1'}];c.innerHTML=tools.map(function(t){return '<button onclick="'+t.f+'" style="background:'+t.b+';color:white;border:none;padding:0.6rem;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.7rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);">'+t.l+'</button>';}).join('');}
+    window.toggleEruda=function(){if(window.eruda){eruda.destroy();ghostLog('Eruda destroyed','warn');}else{var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init();ghostLog('Eruda initialized','success');};s.onerror=function(){ghostLog('Failed to load Eruda','error');};document.head.appendChild(s);}};
+    window.clearDreamCache=function(){if(confirm('🧹 Hapus cache, error log & reload?')){localStorage.removeItem('dreamos_error_log');['id','en','ar','zh'].forEach(function(l){localStorage.removeItem('dreamos_lang_cache_'+l);});ghostLog('Cache cleared. Reloading...','sys');setTimeout(function(){location.reload();},500);}};
+    window.viewLocalStorage=function(){var d={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);d[k]=localStorage.getItem(k);}ghostLog('LocalStorage: '+Object.keys(d).length+' keys','info');console.table(d);};
+    window.exportErrorLog=function(){var l=localStorage.getItem('dreamos_error_log')||'[]';var b=new Blob([l],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='dreamos_errors_'+new Date().toISOString().split('T')[0]+'.json';a.click();ghostLog('Error log exported','success');};
+    window.showSysInfo=function(){var i=['UA:'+navigator.userAgent.split(' ')[0],'Screen:'+screen.width+'x'+screen.height,'Lang:'+navigator.language,'Online:'+navigator.onLine,'Cores:'+(navigator.hardwareConcurrency||'N/A')].join(' | ');ghostLog(i,'sys');};
+    window.clearSession=function(){if(confirm('🔐 Hapus sesi & logout?')){localStorage.removeItem('dreamos_session');localStorage.removeItem('dreamos_pin_verified');ghostLog('Session cleared.','warn');setTimeout(function(){location.reload();},500);}};
+    window.copyGlobalState=function(){var s={};if(window.state)s.main=window.state;if(window.DreamI18n)s.i18n=window.DreamI18n.current;var t=JSON.stringify(s,null,2);if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){ghostLog('State copied','success');});}else{prompt('Copy:',t);}};
+    try{injectTools();ghostLog('4S DevOps v2 stealth ready','success');}catch(e){console.error('❌ Ghost Init:',e);}
+})();
+</script>
+<script>
+(function(){
+    var taps=0, timer=null;
+    document.addEventListener('click',function(e){
+        var target = e.target.closest('h1, .logo, #app-header, [data-dream-logo], header');
+        if(!target) return;
+        taps++;
+        clearTimeout(timer);
+        timer = setTimeout(function(){taps=0;}, 2000);
+        if(taps>=7){
+            taps=0;
+            var pin = prompt('🔐 4S DevOps PIN:');
+            if(pin === localStorage.getItem('dreamos_pin') || pin === '4s_ghost_2026'){
+                if(typeof window.showGhostHub==='function') window.showGhostHub();
+            } else {
+                alert('❌ PIN salah. Akses ditolak.');
+            }
+        }
+    });
+})();
+</script>
+<!-- GHOST_HUB_STEALTH_V2 -->
+
+
+<script src="js/core/ghostStealth.js"></script>
+<script>
+(function(){
+    // Bridge: Tambah tool Stealth Vault ke 4S Ghost Hub
+    const addVaultTool = () => {
+        const container = document.getElementById('ghost-tools-inject');
+        if (!container) return;
+        const btn = document.createElement('button');
+        btn.textContent = '🕳️ Stealth Vault';
+        btn.style.cssText = 'background:#10b981;color:white;border:none;padding:0.6rem;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.7rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+        btn.onclick = async () => {
+            const action = prompt('🕳️ Pecak Jengkol Vault:
+1. Simpan
+2. Muat
+3. List Key
+4. Hapus Semua
+
+Ketik angka (1-4):');
+            if (!action) return;
+            try {
+                if (action === '1') {
+                    const k = prompt('Key/Nama File:');
+                    const v = prompt('Data JSON/Text:');
+                    if (k && v) { await GhostStealth.storage.save(k, {data:v, ts:new Date().toISOString()}); ghostLog('✅ Pecak Jengkol disimpan: '+k,'success'); }
+                } else if (action === '2') {
+                    const k = prompt('Key/Nama File:');
+                    if (k) { const d = await GhostStealth.storage.load(k); ghostLog(d ? '📥 Loaded: '+JSON.stringify(d) : '❌ Tidak ditemukan', d?'info':'warn'); }
+                } else if (action === '3') {
+                    const keys = await GhostStealth.storage.list();
+                    ghostLog('🗂️ Keys: '+ (keys.length ? keys.join(', ') : 'Kosong'), 'info');
+                } else if (action === '4') {
+                    if (confirm('Hapus semua cache font palsu?')) { await GhostStealth.storage.clear(); ghostLog('🧹 Vault dikosongkan','warn'); }
+                }
+            } catch(e) { ghostLog('❌ Vault error: '+e.message, 'error'); }
+        };
+        container.appendChild(btn);
+    };
+    // Delay inject sampai Hub ready
+    const obs = new MutationObserver((m, o) => {
+        if (document.getElementById('ghost-tools-inject')) { addVaultTool(); o.disconnect(); }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => obs.disconnect(), 5000);
+})();
+</script>
+<!-- GHOST_STEALTH_BRIDGE_V1 -->
+
+<script src="js/core/aegisDefense.js"></script>
+<script>
+(function(){
+    // Auto-init Aegis saat boot
+    const masterPIN = localStorage.getItem('dreamos_pin') || 'b15m1ll4h_012443410';
+    const status = AegisDefense.init(masterPIN);
+
+    // Bridge: Tambah tool Aegis Matrix ke 4S Ghost Hub
+    const addAegisTool = () => {
+        const c = document.getElementById('ghost-tools-inject');
+        if (!c) return;
+        const btn = document.createElement('button');
+        btn.textContent = '🛡️ Aegis Matrix';
+        btn.style.cssText = 'background:#ef4444;color:white;border:none;padding:0.6rem;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.7rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+        btn.onclick = () => {
+            const action = prompt('🛡️ Aegis Defense Matrix:
+1. Status Integritas
+2. Lihat Incident Log
+3. Export Forensik
+4. Hapus Log
+5. Toggle Sentinel
+
+Ketik angka (1-5):');
+            if (!action) return;
+            try {
+                if (action==='1') { const s = AegisDefense.integrity.verify(); ghostLog(`Integrity: ${s.status} (${s.score}/${s.threshold})`, s.status==='SECURE'?'success':'error'); }
+                else if (action==='2') { const logs = AegisDefense.incident.getLog(); ghostLog(logs.length ? '📜 '+logs.slice(0,3).map(l=>l.type).join(', ')+'...' : '✅ Clean', 'info'); }
+                else if (action==='3') { AegisDefense.incident.exportForensics(); ghostLog('📦 Forensik exported','success'); }
+                else if (action==='4') { if(confirm('Hapus semua incident log?')){ AegisDefense.incident.clear(); ghostLog('🧹 Incident log cleared','warn'); } }
+                else if (action==='5') { AegisDefense.sentinel.active ? AegisDefense.sentinel.disable() : AegisDefense.sentinel.enable(); ghostLog('Sentinel: '+(AegisDefense.sentinel.active?'ON':'OFF'), 'sys'); }
+            } catch(e) { ghostLog('❌ Aegis error: '+e.message, 'error'); }
+        };
+        c.appendChild(btn);
+    };
+    const obs = new MutationObserver((m, o) => {
+        if (document.getElementById('ghost-tools-inject')) { addAegisTool(); o.disconnect(); }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => obs.disconnect(), 5000);
+})();
+</script>
+<!-- AEGIS_MATRIX_V4_INJECTED -->
+
+</body>
+</html>
