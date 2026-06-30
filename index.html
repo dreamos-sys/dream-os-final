@@ -1,264 +1,333 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; font-src 'self' https: data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta charset="UTF-8">
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#020617">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dream OS • v1.0 Final</title>
+    <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <script src="js/config-supabase.js"></script>
-    <script>
-    window.DreamGeo = { get: () => new Promise((res, rej) => { if (!navigator.geolocation) return rej('GPS Not Supported'); navigator.geolocation.getCurrentPosition(pos => res({ lat: pos.coords.latitude.toFixed(6), lng: pos.coords.longitude.toFixed(6), acc: Math.round(pos.coords.accuracy) }), err => rej(err.message), { enableHighAccuracy: true, timeout: 10000 }); }), stamp: async function(payload) { try { const loc = await this.get(); payload.gps_lat = loc.lat; payload.gps_lng = loc.lng; payload.gps_acc = loc.acc + 'm'; } catch(e) { payload.gps_lat = 'DENIED'; } return payload; } };
-    window.HybridSync = { outboxKey: 'dreamos_sync_outbox', push: function(table, payload) { let box = JSON.parse(localStorage.getItem(this.outboxKey) || '[]'); payload._table = table; payload._timestamp = new Date().toISOString(); box.push(payload); localStorage.setItem(this.outboxKey, JSON.stringify(box)); this.updateUI(); if (navigator.onLine) this.flush(); }, flush: async function() { if (!navigator.onLine) return; let box = JSON.parse(localStorage.getItem(this.outboxKey) || '[]'); if (box.length === 0) return; let successCount = 0; for (let i = 0; i < box.length; i++) { let item = box[i]; let table = item._table; delete item._table; delete item._timestamp; try { let res = await fetch(window.DREAMOS_CONFIG.supabaseUrl + '/rest/v1/' + table, { method: 'POST', headers: { 'apikey': window.DREAMOS_CONFIG.supabaseKey, 'Authorization': 'Bearer ' + window.DREAMOS_CONFIG.supabaseKey, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify(item) }); if (res.ok) successCount++; } catch(e) {} } if (successCount > 0) { box.splice(0, successCount); localStorage.setItem(this.outboxKey, JSON.stringify(box)); } this.updateUI(); }, updateUI: function() { let box = JSON.parse(localStorage.getItem(this.outboxKey) || '[]'); let badge = document.getElementById('sync-badge'); if (badge) { if (box.length > 0) { badge.innerHTML = '📦 Outbox: ' + box.length; badge.style.background = 'rgba(245,158,11,0.2)'; badge.style.color = '#f59e0b'; } else { badge.innerHTML = '☁️ Synced'; badge.style.background = 'rgba(16,185,129,0.1)'; badge.style.color = '#10b981'; } } } };
-    window.addEventListener('online', () => { if(window.HybridSync) window.HybridSync.flush(); });
-    document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "dark");
-    </script>
+    <link rel="stylesheet" href="dream-ui.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <style>
-        :root { --bg-void: #F1F5F9; --text-main: #334155; --neon-accent: #0284C7; --neon-warning: #E11D48; --glass-border: rgba(15,23,42,0.08); --panel-bg: #fff; --text-primary: #0F172A; --text-dim: #64748B; }
-        [data-theme="dark"] { --bg-void: #020617; --text-main: #e2e8f0; --neon-accent: #0ea5e9; --neon-warning: #e11d48; --glass-border: rgba(255,255,255,0.05); --panel-bg: #1e293b; --text-primary: #f8fafc; --text-dim: #94a3b8; }
-        body { margin:0; background:transparent; color:var(--text-main); font-family:'Inter',sans-serif; min-height:100vh; }
-        #login-screen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; z-index:10000; overflow:hidden; }
-        .login-content { width:100%; max-width:400px; padding:2rem; text-align:center; position:relative; z-index:1; }
-        .logo-img { width:90px; height:90px; border-radius:1.2rem; margin:1rem 0; cursor:pointer; }
-        .arabic { font-family:'Amiri',serif; color:#00ff9d; font-size:1.8rem; font-weight:800; }
-        .shalawat { font-family:'Amiri',serif; color:#0ea5e9; font-size:0.9rem; margin-bottom:1rem; }
-        .login-input { width:100%; padding:1rem; border:1px solid rgba(45,212,191,0.3); border-radius:1rem; background:#020617 !important; -webkit-appearance: none; color:#00ff9d !important; font-family:'Orbitron',monospace; letter-spacing:1px; text-align:left; outline:none; box-sizing:border-box; margin-bottom:1rem; }
-        .btn-login { width:100%; padding:1rem; background:linear-gradient(135deg,#0ea5e9,#06b6d4); color:#fff; border:none; border-radius:1rem; font-weight:700; cursor:pointer; font-size:1.1rem; }
-        .lockout-msg { color:var(--neon-warning); font-size:0.8rem; margin-top:10px; display:none; }
-        #main-app { display:none; padding-bottom:70px; }
-        .header-main { padding:2rem 1.5rem 1rem; text-align:center; border-bottom:2px solid var(--neon-accent); }
-        .header-main .logo-img { width:48px; height:48px; border-radius:12px; cursor:pointer; }
-        .header-main .arabic { font-size:1.5rem; margin-bottom:0.2rem; }
-        .header-main .shalawat { font-size:0.8rem; opacity:0.9; }
-        .info-badges { display:flex; justify-content:center; gap:0.75rem; margin-top:1rem; flex-wrap:wrap; }
-        .badge { background:rgba(128,128,128,0.05); border:1px solid var(--glass-border); padding:0.4rem 1rem; border-radius:2rem; font-size:0.7rem; }
-        #dream-slideshow { width:100%; height:160px; overflow:hidden; margin:1.5rem 0; border-radius:16px; border:1px solid var(--glass-border); background:var(--panel-bg); }
-        #dream-slide-track { display:flex; transition:transform 0.7s ease; height:100%; }
-        .dream-slide { min-width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:1rem; color:var(--text-primary); text-align:center; padding:20px; box-sizing:border-box; }
-        .module-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; padding:0 1rem 2rem; }
-        @media(min-width:600px){ .module-grid{grid-template-columns:repeat(4,1fr);} }
-        .mod-card { background:var(--panel-bg); padding:1rem 0.5rem; border-radius:20px; border:2px solid var(--glass-border); text-align:center; cursor:pointer; }
-        .mod-card:active { transform:scale(0.95); }
-        .mod-icon { font-size:2.2rem; margin:0 auto 0.4rem; width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(255,255,255,0.04); }
-        .mod-title { font-size:0.65rem; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; }
-        .iso-27001-b { border-color:rgba(14,165,233,0.6); box-shadow:0 0 15px rgba(14,165,233,0.2); }
-        .iso-27001-r { border-color:rgba(239,68,68,0.6); box-shadow:0 0 15px rgba(239,68,68,0.2); }
-        .iso-9001 { border-color:rgba(16,185,129,0.6); box-shadow:0 0 15px rgba(16,185,129,0.2); }
-        .iso-55001 { border-color:rgba(245,158,11,0.6); box-shadow:0 0 15px rgba(245,158,11,0.2); }
-        nav#bottom-nav { position:fixed; bottom:0; left:0; right:0; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border-top:1px solid rgba(255,255,255,0.05); height:60px; display:none; z-index:40; }
-        .dream-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.1rem; background:none; border:none; color:var(--text-dim); font-size:0.6rem; font-weight:600; cursor:pointer; }
-        .dream-nav-item.active { color:var(--neon-accent); }
-        .system-info-box { margin:2rem 1.5rem; padding:1rem; border-radius:12px; background:var(--panel-bg); border:1px solid var(--glass-border); font-size:0.65rem; color:var(--text-dim); text-align:center; }
-        #ai-float-btn { position:fixed; bottom:5.5rem; right:1.5rem; width:56px; height:56px; background:linear-gradient(135deg,#0ea5e9,#06b6d4); border:none; border-radius:50%; box-shadow:0 4px 20px rgba(14,165,233,0.4); cursor:pointer; z-index:999; font-size:1.8rem; display:none; align-items:center; justify-content:center; color:#fff; }
+        :root { --bg-void: #040814; --panel-bg: rgba(15, 23, 42, 0.4); --text-main: #e2e8f0; --iso-9001: #10b981; --iso-27001-b: #0ea5e9; --iso-27001-r: #e11d48; --iso-55001: #f59e0b; }
+        body { margin: 0; padding: 0; overflow-x: hidden; background: var(--bg-void); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; }
+        #login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent; z-index: 10000; transition: opacity 0.5s ease; }
+        .stealth-gate { position: relative; margin-top: 2rem; display: flex; flex-direction: column; align-items: center; min-height: 80px; }
+        .eye-btn { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: rgba(255, 255, 255, 0.2); transition: all 0.3s ease; }
+        .eye-btn:active { color: #00ff9d; text-shadow: 0 0 15px #00ff9d; transform: scale(0.9); }
+        .hidden-input-area { display: none; margin-top: 1rem; animation: fadeIn 0.4s ease; position: relative; }
+        .hidden-input-area input { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,157,0.3); color: #00ff9d; font-family: 'Orbitron', monospace; letter-spacing: 4px; text-align: center; padding: 0.75rem 1rem; border-radius: 8px; outline: none; width: 180px; box-shadow: inset 0 0 10px rgba(0,255,157,0.1); }
+        .lockout-msg { color: #ef4444; font-size: 0.8rem; margin-top: 10px; display: none; font-weight: 600; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        #main-app { display: none; }
+        #dashboard-container { position: relative; z-index: 1; }
+        .header-main { padding: 2rem 1.5rem 1rem; text-align: center; border-bottom: 1px solid rgba(0, 255, 157, 0.1); margin-bottom: 0.5rem; }
+        .header-main .logo-img { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; margin-bottom: 0.5rem; }
+        .header-main .arabic { font-family: 'Amiri', serif; color: #00ff9d; text-shadow: 0 0 20px rgba(0,255,157,0.3); font-size: 1.5rem; margin-bottom: 0.2rem; }
+        .header-main .shalawat { font-family: 'Amiri', serif; color: #0ea5e9; font-size: 0.8rem; opacity: 0.8; }
+        .info-badges { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+        .badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.7rem; color: #2dd4bf; font-weight: 600; }
+        #dream-slideshow { position: relative; width: 100%; height: 200px; overflow: hidden; margin-bottom: 1.5rem; border-radius: 16px; border: 1px solid rgba(0, 255, 157, 0.2); background: rgba(0,0,0,0.3); }
+        #dream-slide-track { display: flex; transition: transform 0.7s ease; height: 100%; }
+        .dream-slide { min-width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a, #1e293b); font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00ff9d; text-align: center; padding: 20px; box-sizing: border-box; }
+        .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 1.5rem 6rem; }
+        .mod-card { background: var(--panel-bg); backdrop-filter: blur(12px); border-radius: 16px; padding: 1.25rem 0.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-top: 1px solid rgba(255,255,255,0.05); }
+        .mod-card:active { transform: scale(0.95); }
+        .mod-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .mod-title { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+        .iso-9001 { border-top-color: rgba(16, 185, 129, 0.4); box-shadow: inset 0 20px 40px -20px rgba(16, 185, 129, 0.15); }
+        .iso-9001 .mod-title { color: var(--iso-9001); }
+        .iso-27001-b { border-top-color: rgba(14, 165, 233, 0.4); box-shadow: inset 0 20px 40px -20px rgba(14, 165, 233, 0.15); }
+        .iso-27001-b .mod-title { color: var(--iso-27001-b); }
+        .iso-27001-r { border-top-color: rgba(225, 29, 72, 0.4); box-shadow: inset 0 20px 40px -20px rgba(225, 29, 72, 0.15); }
+        .iso-27001-r .mod-title { color: var(--iso-27001-r); }
+        .iso-55001 { border-top-color: rgba(245, 158, 11, 0.4); box-shadow: inset 0 20px 40px -20px rgba(245, 158, 11, 0.15); }
+        .iso-55001 .mod-title { color: var(--iso-55001); }
+        nav { background: rgba(4, 8, 20, 0.85) !important; backdrop-filter: blur(20px); border-top: 1px solid rgba(0,255,157,0.1); }
+        .dream-nav-item { background:none; border:none; color:#64748b; font-size:0.65rem; display:flex; flex-direction:column; align-items:center; gap:0.2rem; cursor:pointer; font-weight: 600;}
+        .dream-nav-item span { font-size:1.3rem; opacity: 0.7;}
+        .dream-nav-item:active span { opacity: 1; color: #00ff9d; }
+        .system-info-box { margin: 2rem 1.5rem; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 0.65rem; color: #64748b; text-align: center; line-height: 1.6; }
+        .system-info-box strong { color: #94a3b8; }
     </style>
-    <script src="js/auto-sync.js"></script>
 </head>
 <body>
-    <canvas id="star-field" style="position:fixed;inset:0;z-index:-1;width:100%;height:100%;display:block;"></canvas>
     <div id="login-screen">
-        <div class="login-content">
-            <img id="logo-main" src="assets/logo-sultan.png" class="logo-img" onclick="tapLogo(event)">
-            <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
-            <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
-            <div style="position:relative;width:100%;margin-top:1rem;">
-                <input type="email" id="login-email" class="login-input" placeholder="EMAIL AKSES" style="margin-bottom:1rem;">
-                <div style="position:relative;">
-                    <input type="password" id="login-pass" class="login-input" placeholder="PASSWORD" onkeydown="if(event.key==='Enter')authenticate()" style="margin-bottom:0;">
-                    <span onclick="togglePass()" style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#2dd4bf;font-size:1.3rem;z-index:2;">👁️</span>
-                </div>
+        <div style="text-align:center;">
+            <img src="assets/logo-sultan.png" style="width:75px;height:75px;border-radius:18px;cursor:pointer;margin-bottom:1.5rem;box-shadow:0 0 25px rgba(0,255,157,0.15); border: 1px solid rgba(0,255,157,0.2);" onclick="tapLogo()">
+            <div style="font-family:'Amiri',serif;font-size:2.5rem;color:#00ff9d;text-shadow:0 0 30px rgba(0,255,157,0.3);margin-bottom:0.2rem;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+            <div style="font-family:'Amiri',serif;font-size:1rem;color:#0ea5e9;opacity:0.8;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <div style="margin-top:1.5rem;color:#475569;font-size:0.75rem; letter-spacing: 2px; font-weight: 800;">DREAM OS • V1.0 FINAL</div>
+        </div>
+        <div class="stealth-gate">
+            <button class="eye-btn" id="eye-toggle" onclick="toggleStealth()">👁️</button>
+            <div class="hidden-input-area" id="stealth-input">
+                <input type="password" id="pass" placeholder="CORE PIN" onkeypress="handleEnter(event)">
             </div>
-            <button class="btn-login" onclick="authenticate()">🔐 ACCESS CORE (GPS CHECK)</button>
             <div class="lockout-msg" id="lock-msg"></div>
-            <div id="aegis-status" style="margin-top:1.5rem;padding:0.5rem;border:1px solid rgba(16,185,129,0.3);border-radius:0.5rem;background:rgba(16,185,129,0.05);color:#10b981;font-size:0.65rem;font-family:'Orbitron',monospace;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
-                <span style="width:6px;height:6px;background:#10b981;border-radius:50%;box-shadow:0 0 8px #10b981;animation:pulse 2s infinite;"></span>
-                AEGIS CORE ACTIVE • SHA-256 SALT • ISO 27001
-            </div>
-            <style>@keyframes pulse{0%{opacity:1;}50%{opacity:0.3;}100%{opacity:1;}}</style>
         </div>
     </div>
     <div id="main-app">
         <div id="dashboard-container"></div>
-        <button id="ai-float-btn" onclick="openMod('core-ai')">🤖</button>
     </div>
-    <nav id="bottom-nav">
-        <button class="dream-nav-item active" onclick="goHome()"><span style="font-size:1.3rem;">⌂</span><span>Home</span></button>
-        <button class="dream-nav-item" onclick="openMod('profile')"><span style="font-size:1.3rem;">👤</span><span>Profile</span></button>
-        <button class="dream-nav-item" onclick="openMod('qr')"><span style="font-size:1.3rem;">⎚</span><span>QR</span></button>
-        <button class="dream-nav-item" onclick="openMod('about')"><span style="font-size:1.3rem;">ℹ️</span><span>About</span></button>
-        <button class="dream-nav-item" onclick="openMod('setting')"><span style="font-size:1.3rem;">⚙</span><span>System</span></button>
+    <div id="ghost-container"></div>
+    <nav id="bottom-nav" style="display:none; position:fixed; bottom:0; left:0; right:0; height:4rem; justify-content:space-around; align-items:center; z-index:40;">
+        <button class="dream-nav-item" onclick="goHome()"><span>⌂</span>Home</button>
+        <button class="dream-nav-item" onclick="openMod('profile')"><span>👤</span>Profile</button>
+        <button class="dream-nav-item" onclick="openMod('qr')"><span>⎚</span>QR</button>
+        <button class="dream-nav-item" onclick="openMod('about')"><span>ℹ️</span>About</button>
+        <button class="dream-nav-item" onclick="openMod('setting')"><span>⚙</span>System</button>
     </nav>
     <script>
-    let attempts=0,lockoutUntil=localStorage.getItem('dream_lockout')||0,taps=0,tapTimer,slideInterval;window.slideIdx=0;
-    
-    // ✅ FIX LOGO CLICK
-    window.tapLogo=function(e){if(e)e.stopPropagation();clearTimeout(tapTimer);taps++;if(taps>=7){taps=0;var pin=prompt('🔐 4S DevOps PIN:');if(pin==='4s_ghost_2026'||pin==='b15m1ll4h_012443410'){document.getElementById('login-screen').style.display='none';window.openMod('4s-ghost');}else{alert('❌ PIN salah.');}return;}tapTimer=setTimeout(function(){taps=0;},2000);};
-    
-    async function hashPin(pin){const e=new TextEncoder();const d=e.encode(pin+'dreamos_salt_2026');const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-    function checkLockout(){if(Date.now()<lockoutUntil){let r=Math.ceil((lockoutUntil-Date.now())/60000);document.getElementById('lock-msg').innerText='SYSTEM LOCKED. RETRY IN '+r+' MINS.';document.getElementById('lock-msg').style.display='block';return true;}document.getElementById('lock-msg').style.display='none';return false;}
-    
-    // 🔰 ROLE-BASED ACCESS CONTROL (RBAC)
-    window.ROLE_PERMISSIONS = {
-        dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting','4s-ghost','core-ai'],
-        kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting','core-ai'],
-        koord: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting','core-ai'],
-        security: ['sec','qr','profile','about','setting'],
-        janitor: ['in','out','profile','qr','about','setting'],
-        maintenance: ['maint','profile','qr','about','setting'],
-        staff: ['book','stok','asset','profile','qr','about','setting']
-    };
-    window.canAccess = function(modId) {
-        var role = window.currentRole || 'staff';
-        var permissions = window.ROLE_PERMISSIONS[role] || window.ROLE_PERMISSIONS['staff'];
-        return permissions.includes(modId);
-    };
-    window.escapeHtml=function(s){return String(s).replace(/[&<>"'"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});};
-    
-    // ✅ FIX TOGGLE PASSWORD
-    window.togglePass=function(){var x=document.getElementById("login-pass");x.type=x.type==="password"?"text":"password";};
-    
-    const DEV_HASH_CONFIG = "ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece";
-    const DEV_EMAIL_CONFIG = "dreamos.sch.id@gmail.com";
-    const KABAG_HASH_CONFIG = "5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5";
-    const KABAG_EMAIL_CONFIG = "vespaexcelhijaucedar@gmail.com";
-    const KOORD_HASH_CONFIG = "9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288";
-    const KOORD_EMAIL_CONFIG = "erwinsyah1679@gmail.com";
+        let attempts = 0;
+        let lockoutUntil = localStorage.getItem('dream_lockout') || 0;
+        let taps = 0, tapTimer, slideInterval;
+        window.slideIdx = 0;
 
-    async function getDeviceDNA() {
-        var c = document.createElement('canvas'); var ctx = c.getContext('2d');
-        ctx.textBaseline = "top"; ctx.font = "14px 'Arial'";
-        ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
-        ctx.fillStyle = "#069"; ctx.fillText("DreamOS-Ghost", 2, 15);
-        var metrics = [navigator.hardwareConcurrency || 0, screen.colorDepth, c.toDataURL()].join('|');
-        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metrics));
-        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
-    }
-
-    
-
-    // ✅ FIX TWA MULTI-USER LOGIN
-    window.authenticate = async function() {
-        if(checkLockout()) return;
-        var email = document.getElementById('login-email').value.trim().toLowerCase();
-        var pass = document.getElementById('login-pass').value;
-        var msg = document.getElementById('lock-msg');
-        if(!email || !pass) { msg.innerText = '⚠️ Email dan Password wajib diisi!'; msg.style.display='block'; return; }
-        var inputHash = await hashPin(pass);
-
-        if(email === DEV_EMAIL_CONFIG) {
-            if(inputHash !== DEV_HASH_CONFIG) { msg.innerText = '⛔ Password Developer Salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-            enterSystem('dev', 'Sultan Architect', email);
-            return;
+        function checkLockout() {
+            if (Date.now() < lockoutUntil) {
+                let remain = Math.ceil((lockoutUntil - Date.now()) / 60000);
+                document.getElementById('lock-msg').innerText = `SYSTEM LOCKED. RETRY IN ${remain} MINS.`;
+                document.getElementById('lock-msg').style.display = 'block';
+                document.getElementById('stealth-input').style.display = 'none';
+                return true;
+            } else {
+                document.getElementById('lock-msg').style.display = 'none';
+                return false;
+            }
         }
 
-        if(email === KABAG_EMAIL_CONFIG) {
-            if(inputHash !== KABAG_HASH_CONFIG) { msg.innerText = '⛔ Password Kabag Salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-            enterSystem('kabag', 'Bpk. Hanung', email);
-            return;
-        }
-
-        if(email === KOORD_EMAIL_CONFIG) {
-            if(inputHash !== KOORD_HASH_CONFIG) { msg.innerText = '⛔ Password Koordinator Salah!'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-            enterSystem('koord', 'Bpk. Erwinsyah', email);
-            return;
-        }
-
-        var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-        var user = users.find(u => u.email === email);
-
-        if (!user && navigator.onLine && window.DREAMOS_CONFIG) {
-            msg.innerText = '☁️ Mengecek database pusat (Supabase)...'; msg.style.color='#0ea5e9'; msg.style.display='block';
-            try {
-                const res = await fetch(window.DREAMOS_CONFIG.supabaseUrl + '/rest/v1/users?email=eq.' + encodeURIComponent(email), {
-                    headers: { 'apikey': window.DREAMOS_CONFIG.supabaseKey, 'Authorization': 'Bearer ' + window.DREAMOS_CONFIG.supabaseKey }
-                });
-                const data = await res.json();
-                if (data && data.length > 0) {
-                    user = data[0];
-                    if (!users.find(u => u.email === user.email)) {
-                        users.push(user);
-                        localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-                    }
-                    msg.innerText = '✅ Ditemukan di Cloud! Memproses...'; msg.style.color='#10b981';
+        window.toggleStealth = function() {
+            if (checkLockout()) return;
+            let inp = document.getElementById('stealth-input');
+            let passField = document.getElementById('pass');
+            if (inp.style.display === 'block') {
+                authenticate();
+            } else {
+                inp.style.display = 'block';
+                passField.focus();
+                if (!document.getElementById('toggle-pass')) {
+                    let toggleBtn = document.createElement('span');
+                    toggleBtn.id = 'toggle-pass';
+                    toggleBtn.innerHTML = '👁️';
+                    toggleBtn.style.cssText = 'position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); cursor:pointer; font-size:1.2rem; color:#00ff9d; z-index:2;';
+                    toggleBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        passField.type = passField.type === 'password' ? 'text' : 'password';
+                        toggleBtn.innerHTML = passField.type === 'password' ? '👁️' : '🙈';
+                    };
+                    inp.style.position = 'relative';
+                    inp.appendChild(toggleBtn);
                 }
-            } catch(e) { console.error('Supabase error:', e); }
+            }
+        };
+
+        window.handleEnter = function(e) {
+            if(e.key === 'Enter') authenticate();
         }
 
-        if(!user) { msg.innerText = '⛔ Email tidak terdaftar! Hubungi Admin untuk didaftarkan.'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
-        if(user.password_hash !== inputHash) { 
-            attempts++; msg.innerText = '⛔ Password Salah! Sisa: ' + (3-attempts); msg.style.color='#ef4444'; msg.style.display='block'; 
-            if(attempts>=3) { lockoutUntil = Date.now()+(5*60*1000); localStorage.setItem('dream_lockout', lockoutUntil); checkLockout(); } 
-            return; 
-        }
-
-        if(user.role !== 'kabag' && user.role !== 'koord' && user.role !== 'dev') {
-            msg.innerText = '🛰️ Memeriksa Lokasi Kantor...'; msg.style.color='#f59e0b'; msg.style.display='block';
-            if(!navigator.geolocation) { msg.innerText = '⛔ GPS Wajib Aktif!'; return; }
-            navigator.geolocation.getCurrentPosition(async function(position) {
-                var R = 6371e3; var phi1 = -6.4025 * Math.PI/180; var phi2 = position.coords.latitude * Math.PI/180;
-                var dPhi = (position.coords.latitude - -6.4025) * Math.PI/180; var dLambda = (position.coords.longitude - 106.7942) * Math.PI/180;
-                var a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
-                var distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                if(distance > 2000) { msg.innerText = '⛔ Di luar area kantor ('+Math.round(distance)+'m).'; msg.style.color='#ef4444'; return; }
-                
-                // Device Binding
-                var currentDNA = await getDeviceDNA();
-                if(!user.device_dna) {
-                    if(confirm('🔐 Device baru terdeteksi! Ikatkan HP ini permanen ke akun '+user.nama+'?')) {
-                        user.device_dna = currentDNA;
-                        localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-                        enterSystem(user.role, user.nama, user.email);
-                    } else { msg.innerText = '⛔ Binding Ditolak.'; msg.style.color='#ef4444'; msg.style.display='block'; }
-                } else if(user.device_dna === currentDNA) {
-                    enterSystem(user.role, user.nama, user.email);
+        function authenticate() {
+            if (checkLockout()) return;
+            var passEl = document.getElementById('pass');
+            if (!passEl || btoa(passEl.value) !== btoa('b15m1ll4h_012443410')) {
+                attempts++;
+                if(attempts >= 3) {
+                    lockoutUntil = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('dream_lockout', lockoutUntil);
+                    checkLockout();
                 } else {
-                    msg.innerText = '⛔ DEVICE TIDAK DIKENALI! Hubungi Admin.'; msg.style.color='#ef4444'; msg.style.display='block';
+                    document.getElementById('lock-msg').innerText = `ACCESS DENIED. REMAINING: ${3 - attempts}`;
+                    document.getElementById('lock-msg').style.display = 'block';
+                    setTimeout(() => { document.getElementById('lock-msg').style.display = 'none'; }, 2000);
                 }
-            }, function() { msg.innerText = '⛔ Gagal ambil lokasi!'; msg.style.color='#ef4444'; }, { enableHighAccuracy: true });
+                passEl.value = '';
+                return;
+            }
+            attempts = 0;
+            localStorage.removeItem('dream_lockout');
+            document.getElementById('login-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('bottom-nav').style.display = 'flex';
+                renderDashboard();
+            }, 500);
         }
-    };
 
-    function enterSystem(role, name, email) {
-        window.currentRole = role; window.currentUser = { role, name, email };
-        localStorage.setItem('dreamos_bound_user', JSON.stringify(window.currentUser));
-        localStorage.setItem('dreamos_session_active', 'true'); attempts = 0;
-        document.getElementById('login-screen').style.opacity='0';
-        setTimeout(function(){ document.getElementById('login-screen').style.display='none'; document.getElementById('main-app').style.display='block'; document.getElementById('bottom-nav').style.display='flex'; document.getElementById('ai-float-btn').style.display='flex'; renderDashboard(); }, 500);
-    }
+        window.tapLogo = function() {
+            clearTimeout(tapTimer);
+            taps++;
+            if (taps >= 7) { taps = 0; openGhostHub(); return; }
+            tapTimer = setTimeout(() => { taps = 0; }, 2000);
+        };
 
-    window.openMod=function(id){ if(!window.canAccess(id)){ alert('⛔ Akses Ditolak! Role Anda tidak diizinkan.'); return; }
-        if(id === 'cmd') { if(window.currentRole !== 'dev' && window.currentRole !== 'kabag' && window.currentRole !== 'koord') { alert('⛔ Akses Ditolak! Hanya Admin/Kabag/Koord.'); return; } }
-        var map={book:['Booking','booking.html','booking-module'],k3:['K3','k3.html','k3-module'],in:['Jan Indoor','janitor-indoor.html','janitor-in-module'],out:['Jan Outdoor','janitor-outdoor.html','janitor-out-module'],maint:['Maintenance','maintenance.html','maintenance-module'],sec:['Security','security.html','security-module'],stok:['Stok','stok.html','stok-module'],asset:['Asset','asset.html','asset-module'],cmd:['CMD','commandcenter.html','cmd-module'],profile:['Profile','profile.html','profile-module'],qr:['QR','qr.html','qr-module'],about:['About','about.html','about-module'],setting:['Setting','setting.html','setting-module'],dana:['Dana','dana.html','dana-module'],'4s-ghost':['4S Ghost Hub','4s-ghost-hub.html','ghost-hub-module'],'core-ai':['Core AI','core-ai.html','core-ai-module']};
-        var m=map[id];if(!m)return alert('Modul tidak dikenali: '+id);
-        var c=document.getElementById(m[2]);if(!c){c=document.createElement('div');c.id=m[2];c.style.cssText='position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#040814;padding-bottom:5rem;';document.body.appendChild(c);}
-        c.style.display='block';c.innerHTML='<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Memuat '+m[0]+'...</div>';
-        fetch('modules/'+m[1]+'?v='+Date.now()).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(h=>{c.innerHTML=h;var q=[];c.querySelectorAll('script').forEach(old=>{if(old.textContent)q.push(old.textContent);});setTimeout(()=>{q.forEach(src=>{try{var ns=document.createElement('script');ns.textContent=src;document.body.appendChild(ns);}catch(e){console.error('Script Error:',e.message);}});},120);}).catch(err=>{c.innerHTML='<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal</h3><p>'+err.message+'</p></div>';});
-    };
-    window.goHome=function(){document.querySelectorAll('[id$="-module"]').forEach(m=>m.style.display='none');if(document.getElementById('main-app').style.display!=='block'){document.getElementById('login-screen').style.display='flex';}else{document.querySelectorAll('.dream-nav-item').forEach(b=>b.classList.remove('active'));document.querySelector('.dream-nav-item').classList.add('active');window.scrollTo(0,0);showSlides(); if(window.HybridSync) window.HybridSync.updateUI();}};
-    function safeGet(k,fb){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb));}catch(e){return fb;}}
-    async function checkWeatherAndNotify() { try { const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.4025&longitude=106.7942&current_weather=true'); const data = await res.json(); const code = data.current_weather.weathercode; const rainCodes = [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99]; const isRaining = rainCodes.includes(code); const weatherText = isRaining ? '🌧️ HUJAN (Waspada!)' : '☀️ CERAH / BERAWAN'; localStorage.setItem('dreamos_weather_text', weatherText); localStorage.setItem('dreamos_is_raining', isRaining); } catch(e) { localStorage.setItem('dreamos_weather_text', '🌤️ Tidak diketahui'); localStorage.setItem('dreamos_is_raining', false); } }
-    function updateSecuritySlideAuto(){ var now = new Date(); var yyyy = now.getFullYear(); var mm = String(now.getMonth() + 1).padStart(2, '0'); var dd = now.getDate(); var period = yyyy + '-' + mm; var m = safeGet('dreamos_matrix',[]); var todayShifts = m.filter(x => x.periode === period && parseInt(x.tgl) === dd); var pagi = todayShifts.filter(x => x.shift === 'L' || x.shift === 'P').map(x => x.nama); var malam = todayShifts.filter(x => x.shift === 'M').map(x => x.nama); if(!localStorage.getItem('dreamos_sec_today') || localStorage.getItem('dreamos_sec_date') !== now.toDateString()){ var finalTxt = "🛡️ SECURITY: " + (pagi.length ? pagi.join(", ") : "Libur") + (malam.length ? " | Malam: "+malam.join(", ") : ""); localStorage.setItem('dreamos_sec_today', finalTxt); localStorage.setItem('dreamos_sec_date', now.toDateString()); } }
-    window.showSlides=function(){ var t=document.getElementById('dream-slide-track'); if(!t)return; if(slideInterval)clearInterval(slideInterval); var sec=localStorage.getItem('dreamos_sec_today')||'Petugas Siaga'; var todayStr = new Date().toISOString().split('T')[0]; var tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1); var tomorrowStr = tomorrowDate.toISOString().split('T')[0]; var bookings = safeGet('dreamos_bookings',[]).filter(b => b.status === 'approved'); var todayBookings = bookings.filter(b => b.tgl === todayStr); var tomorrowBookings = bookings.filter(b => b.tgl === tomorrowStr); var todayTxt = todayBookings.length ? todayBookings.map(b => b.ruang+' ('+b.jam_mulai+'-'+b.jam_selesai+')').join(', ') : 'Kosong'; var tomorrowTxt = tomorrowBookings.length ? tomorrowBookings.map(b => b.ruang+' ('+b.jam_mulai+'-'+b.jam_selesai+')').join(', ') : 'Kosong'; var k3 = safeGet('dreamos_k3_reports',[]); var k3Pending = k3.filter(x=>x.status==='pending').length; var k3Proses = k3.filter(x=>x.status==='Proses' || x.status==='proses').length; var k3Selesai = k3.filter(x=>x.status==='Selesai' || x.status==='selesai' || x.status==='disposisi').length; var totalK3 = k3.length; var k3Pct = totalK3 > 0 ? Math.round((k3Selesai/totalK3)*100) : 100; var weather = localStorage.getItem('dreamos_weather_text') || 'Memuat Cuaca...'; var isRaining = localStorage.getItem('dreamos_is_raining') === 'true'; var rainAlert = isRaining ? ' | ⚠️ Booking Outdoor Hubungi Bpk. Erwinsyah!' : ''; var slide5Info = localStorage.getItem('dreamos_slide_5') || 'Tidak ada agenda Manajemen hari ini.'; var slide6Info = localStorage.getItem('dreamos_slide_6') || 'Tidak ada agenda Bagian Umum hari ini.'; var slide7Info = localStorage.getItem('dreamos_slide_7') || 'Selamat Bekerja! The Power Soul Of Shalawat!'; var s=[ {t:'🕌 Selamat Datang', s:'Security: '+sec}, {t:'📅 Booking (Hari & Besok)', s:'Hari: '+todayTxt+' | Besok: '+tomorrowTxt}, {t:'⚠️ K3 Progress Laporan', s:'Total:'+totalK3+' | Pending:'+k3Pending+' | Proses:'+k3Proses+' | Selesai:'+k3Selesai+' ('+k3Pct+'%)'}, {t:'🌦️ Cuaca Depok Hari Ini', s: weather + rainAlert}, {t:'🏛️ Slide 5: Info Manajemen', s: slide5Info}, {t:'📋 Slide 6: Info Bag. Umum', s: slide6Info}, {t:'🎉 Slide 7: Ucapan & Info', s: slide7Info} ]; t.innerHTML=s.map(sl=>'<div class="dream-slide">'+sl.t+'<br><small style="font-size:0.8rem;opacity:0.9;word-wrap:break-word;">'+sl.s+'</small></div>').join(''); window.slideIdx=0; slideInterval=setInterval(()=>{if(!t.children.length)return;window.slideIdx=(window.slideIdx+1)%t.children.length;t.style.transform='translateX(-'+(window.slideIdx*100)+'%)';},7000); };
-    window.fetchPrayerTimes = function() { var el = document.getElementById('prayer-times-dash'); if(!el) return; function addIhtiyat(timeStr, mins) { var parts = timeStr.split(':'); var h = parseInt(parts[0]); var m = parseInt(parts[1]) + mins; if (m >= 60) { h++; m -= 60; } return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); } var today = new Date(); var dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0'); fetch('https://api.aladhan.com/v1/timings/'+dateStr+'?latitude=-6.3940&longitude=106.8228&method=20') .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }) .then(d => { if (d && d.data && d.data.timings) { var t = d.data.timings; var maghrib = addIhtiyat(t.Maghrib, 2); var isya = addIhtiyat(t.Isha, 2); el.innerHTML = '🕌 Subuh ' + t.Fajr + ' • Dzuhur ' + t.Dhuhr + ' • Ashar ' + t.Asr + ' • Maghrib ' + maghrib + ' • Isya ' + isya; } else { el.innerHTML = '⚠️ Data tidak lengkap'; } }) .catch(e => { el.innerHTML = '⚠️ Gagal memuat jadwal shalat'; }); };
-    
-    // ✅ FIX SYNTAX ERROR DISINI (Dulu: +gridHTML</div>)
-    window.renderDashboard=function(){ var c=document.getElementById('dashboard-container'); if(!c)return; var modules=[{i:'⎈',n:'CMD Center',id:'cmd',cls:'iso-27001-b'},{i:'◈',n:'Security',id:'sec',cls:'iso-27001-b'},{i:'⚠',n:'K3 Safety',id:'k3',cls:'iso-27001-r'},{i:'⌾',n:'Jan Indoor',id:'in',cls:'iso-9001'},{i:'⎉',n:'Jan Outdoor',id:'out',cls:'iso-9001'},{i:'◷',n:'Booking',id:'book',cls:'iso-9001'},{i:'⛊',n:'Asset',id:'asset',cls:'iso-55001'},{i:'◫',n:'Stok',id:'stok',cls:'iso-55001'},{i:'⚙',n:'Maintenance',id:'maint',cls:'iso-55001'},{i:'💰',n:'Dana',id:'dana',cls:'iso-9001'}];var allowed=modules.filter(function(m){return window.canAccess(m.id);});var gridHTML='';allowed.forEach(function(m){gridHTML+='<div class="mod-card '+m.cls+'" onclick="openMod(\''+m.id+'\')"><div class="mod-icon">'+m.i+'</div><div class="mod-title">'+m.n+'</div></div>';});
-    c.innerHTML='<div class="header-main"><img src="assets/logo-sultan.png" class="logo-img" onclick="tapLogo(event)"/><div class="arabic">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div><div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div><div class="info-badges"><span class="badge">🕌 Depok Area</span><span class="badge" id="live-clock">⏱️ --:--:--</span><span class="badge" id="sync-badge" style="background:rgba(16,185,129,0.1);color:#10b981;">☁️ Synced</span></div><div id="prayer-times-dash" style="font-size:0.65rem; color:var(--text-dim); margin-top:10px; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px;">🕌 Memuat jadwal shalat...</div></div><div id="dream-slideshow"><div id="dream-slide-track"></div></div><div class="module-grid">'+gridHTML+'</div><div class="system-info-box"><strong>Dream OS v1.0 Final</strong><br>Family Dream Team<br><span style="color:var(--neon-accent);">"The Power Soul Of Shalawat"</span></div>'; 
-    setInterval(()=>{var clockEl=document.getElementById('live-clock');if(clockEl)clockEl.textContent='⏱️ '+new Date().toLocaleTimeString('id-ID');},1000); updateSecuritySlideAuto(); checkWeatherAndNotify(); showSlides(); fetchPrayerTimes(); };
-    
-    document.addEventListener('click',function(e){var c=e.target.closest('.mod-card');if(c&&c.dataset.mod){e.preventDefault();window.openMod(c.dataset.mod);}});
-    setTimeout(()=>{var p=document.getElementById('login-pass');if(p)p.focus();},500);
+        window.openGhostHub = function() {
+            var hub = document.getElementById('ghost-hub');
+            if (hub) { hub.style.display = 'block'; if (typeof injectGhostTools === 'function') injectGhostTools(); }
+        };
+
+        window.hideGhostHub = function() {
+            var hub = document.getElementById('ghost-hub');
+            if (hub) hub.style.display = 'none';
+        };
+
+        window.log = function(msg) {
+            var el = document.getElementById('ghost-log');
+            if (el) { el.innerHTML += '> ' + msg + '\n'; el.scrollTop = el.scrollHeight; }
+        };
+
+        window.injectGhostTools = function() {
+            var grid = document.getElementById('ghost-tools-inject');
+            if (!grid) return;
+            var tools = [
+                { l: 'Sys Analyzer', i: '🔍', c: '#f59e0b', action: function() { log('🔍 System Analysis...'); } },
+                { l: 'Network', i: '📡', c: '#10b981', action: function() { log('📡 '+(navigator.onLine?'Online':'Offline')); } },
+                { l: 'Atomic Test', i: '🧪', c: '#8b5cf6', action: function() { openMod('atomic'); } },
+                { l: 'Eruda Tools', i: '🛠️', c: '#ff5722', action: function() { if (typeof eruda !== 'undefined') { eruda.init(); eruda.show(); } else { alert('Eruda not loaded'); } } },
+                { l: 'OSINT Pro', i: '🕵️', c: '#f97316', action: function() { alert('OSINT Module ready.\n\nHubungkan ke API eksternal.'); } },
+                { l: 'Net Tools', i: '🌐', c: '#3b82f6', action: function() { alert('Net Tools Module.\n\nNmap, Spider, TShark siap digunakan.'); } }
+            ];
+            grid.innerHTML = '';
+            tools.forEach(function(t) {
+                var btn = document.createElement('button');
+                btn.style.cssText = 'background:#1e293b;border:2px solid ' + t.c + ';border-radius:12px;padding:16px 8px;text-align:center;cursor:pointer;color:white;min-height:75px;';
+                btn.innerHTML = '<div style="font-size:2rem;margin-bottom:6px;">' + t.i + '</div><div style="font-size:0.65rem;font-weight:600;color:#94a3b8;">' + t.l + '</div>';
+                btn.addEventListener('click', t.action);
+                grid.appendChild(btn);
+            });
+        };
+
+        window.renderDashboard = function() {
+            var container = document.getElementById('dashboard-container');
+            if (!container) return;
+            container.innerHTML = '';
+            var header = document.createElement('div');
+            header.className = 'header-main';
+            header.innerHTML = `<img src="assets/logo-sultan.png" class="logo-img" onclick="tapLogo()" /><div class="arabic">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div><div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div><div class="info-badges"><span class="badge">🕌 Dzuhur</span><span class="badge" id="live-clock">⏱️ --:--:--</span><span class="badge" id="battery-status">🔋 --%</span></div>`;
+            container.appendChild(header);
+            var slideDiv = document.createElement('div');
+            slideDiv.id = 'dream-slideshow';
+            slideDiv.innerHTML = '<div id="dream-slide-track"></div>';
+            container.appendChild(slideDiv);
+            var grid = document.createElement('div');
+            grid.className = 'module-grid';
+            var modules = [
+                { i: '⎈', n: 'CMD Center', id: 'cmd', cls: 'iso-27001-b' },
+                { i: '◈', n: 'Security', id: 'sec', cls: 'iso-27001-b' },
+                { i: '⚠', n: 'K3 Safety', id: 'k3', cls: 'iso-27001-r' },
+                { i: '⌾', n: 'Jan Indoor', id: 'in', cls: 'iso-9001' },
+                { i: '⎉', n: 'Jan Outdoor', id: 'out', cls: 'iso-9001' },
+                { i: '◷', n: 'Booking', id: 'book', cls: 'iso-9001' },
+                { i: '⛊', n: 'Asset', id: 'asset', cls: 'iso-55001' },
+                { i: '◫', n: 'Stok Gudang', id: 'stok', cls: 'iso-55001' },
+                { i: '⚙', n: 'Maintenance', id: 'maint', cls: 'iso-55001' }
+            ];
+            modules.forEach(function(m) {
+                grid.innerHTML += `<div class="mod-card ${m.cls}" onclick="openMod('${m.id}')"><div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div></div>`;
+            });
+            container.appendChild(grid);
+            var infoBox = document.createElement('div');
+            infoBox.className = 'system-info-box';
+            infoBox.innerHTML = `<strong>Dream OS v1.0 Final</strong><br>Engineered by Family Dream Team<br><br><span style="color:#0ea5e9; font-family:'Amiri',serif; font-size:0.8rem;">"The Power Soul Of Shalawat"</span><br><br>Compliance: <strong>ISO 27001, ISO 9001, ISO 55001</strong><br>Approver: Bapak Hanung Budianto S. E<br>Applicant: Bapak Erwinsyah`;
+            container.appendChild(infoBox);
+            startLiveClock();
+            startBatteryMonitor();
+            showSlides();
+        };
+
+        function startLiveClock() {
+            setInterval(() => { var el = document.getElementById('live-clock'); if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID'); }, 1000);
+        }
+
+        function startBatteryMonitor() {
+            if (navigator.getBattery) {
+                navigator.getBattery().then(function(battery) {
+                    function updateBattery() { var el = document.getElementById('battery-status'); if (el) el.textContent = (battery.charging ? '⚡' : '🔋') + ' ' + Math.round(battery.level * 100) + '%'; }
+                    updateBattery();
+                    battery.addEventListener('levelchange', updateBattery);
+                    battery.addEventListener('chargingchange', updateBattery);
+                });
+            }
+        }
+
+        window.openMod = function(id) {
+            var fetchMod = function(modId, file, containerId) {
+                var container = document.getElementById(containerId);
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = containerId;
+                    container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:var(--bg-void); padding-bottom: 5rem;';
+                    document.body.appendChild(container);
+                }
+                container.style.display = 'block';
+                var nocacheUrl = 'modules/' + file + '?v=' + new Date().getTime();
+                fetch(nocacheUrl).then(function(r){ 
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.text(); 
+                }).then(function(h) {
+                    container.innerHTML = h;
+                    var scripts = container.querySelectorAll('script');
+                    scripts.forEach(function(old) { var ns = document.createElement('script'); ns.textContent = old.textContent; document.body.appendChild(ns); });
+                }).catch(function(err) {
+                    container.innerHTML = '<div style="color:red;padding:4rem 2rem;text-align:center;"><h3>⚠️ Modul ' + modId + ' Gagal Dimuat</h3><p>Error: ' + err.message + '</p><button onclick="goHome()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10b981;border:none;border-radius:8px;color:white;font-weight:bold;">Kembali</button></div>';
+                });
+            };
+            var map = {
+                book: ['Booking', 'booking.html', 'booking-module'], k3: ['K3 Safety', 'k3.html', 'k3-module'],
+                in: ['Janitor Indoor', 'janitor-indoor.html', 'janitor-in-module'], out: ['Janitor Outdoor', 'janitor-outdoor.html', 'janitor-out-module'],
+                maint: ['Maintenance', 'maintenance.html', 'maintenance-module'], sec: ['Security', 'security.html', 'security-module'],
+                stok: ['Stok', 'stok.html', 'stok-module'], asset: ['Asset', 'asset.html', 'asset-module'],
+                cmd: ['Command Center', 'commandcenter.html', 'cmd-module'], profile: ['Profile', 'profile.html', 'profile-module'],
+                qr: ['QR', 'qr.html', 'qr-module'], about: ['About', 'about.html', 'about-module'],
+                setting: ['Setting', 'setting.html', 'setting-module'], atomic: ['Atomic Test', 'atomic-test-v2.html', 'atomic-test-module']
+            };
+            var m = map[id];
+            if (m) { fetchMod(m[0], m[1], m[2]); } else { alert('Modul tidak dikenali: ' + id); }
+        };
+
+        window.goHome = function() {
+            if (slideInterval) { clearInterval(slideInterval); slideInterval = null; }
+            var mods = document.querySelectorAll('[id$="-module"]');
+            for (var i = 0; i < mods.length; i++) { mods[i].style.display = 'none'; }
+            window.scrollTo(0, 0);
+            showSlides();
+        };
+
+        window.showSlides = function() {
+            var track = document.getElementById('dream-slide-track');
+            if (!track) return;
+            if (slideInterval) clearInterval(slideInterval);
+            track.innerHTML = '';
+            function S(c){return '<div class="dream-slide">'+c+'</div>';}
+            track.innerHTML = S('🕌 Selamat Datang di Dream OS!<br><small>🛡️ Petugas Aktif</small>') + S('📅 Dashboard Operasional<br><small>Monitoring Real-time</small>') + S('⚠️ Status Keamanan Normal<br><small>ISO 27001 Perimeter Checked</small>') + S('☁️ Cuaca Area<br><span id="slide4-weather">⏳ Fetching...</span>') + S('💚 Terima kasih tim hebat!<br><small>"Jangan pernah lelah menebar kebaikan"</small>');
+            setTimeout(() => {
+                var wEl = document.getElementById('slide4-weather');
+                if (!wEl) return;
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`)
+                        .then(r => r.json()).then(d => { wEl.textContent = '🌡️ ' + d.current_weather.temperature + '°C'; }).catch(() => { wEl.textContent = '🌤️ Offline'; });
+                    }, () => { wEl.textContent = '📍 GPS Denied'; });
+                }
+            }, 1000);
+            window.slideIdx = 0;
+            slideInterval = setInterval(() => {
+                var slides = track.children;
+                if (!slides.length) return;
+                window.slideIdx = (window.slideIdx + 1) % slides.length;
+                track.style.transform = 'translateX(-' + (window.slideIdx * 100) + '%)';
+            }, 7000);
+        };
+
+        (function() {
+            if (!document.getElementById('ghost-hub')) {
+                var ghostHTML = '<div id="ghost-hub" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,8,20,0.98); backdrop-filter: blur(20px); overflow-y:auto;"><div style="background:rgba(15, 23, 42, 0.95); border-bottom:2px solid #2dd4bf; padding:1rem; display:flex; justify-content:space-between; align-items:center;"><div><h2 style="color:#2dd4bf; margin:0; font-family: \'Orbitron\', sans-serif; font-size:1rem;">4S DevOps Center</h2><p style="color:#64748b; font-size:0.6rem; margin:0;">Shadow Soul Spirit • v2.0</p></div><button onclick="hideGhostHub()" style="background:#ef4444; color:white; border:none; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">✕</button></div><div style="padding:1rem; display:grid; grid-template-columns:repeat(3,1fr); gap:8px;" id="ghost-tools-inject"></div><div style="margin:1rem; background:#000; border:1px solid #2dd4bf; border-radius:12px; padding:0.75rem; font-family:monospace; font-size:0.7rem; color:#2dd4bf; height:120px; overflow-y:auto;" id="ghost-log">> 4S DevOps Center ready...<br></div></div>';
+                document.getElementById('ghost-container').innerHTML = ghostHTML;
+            }
+        })();
+
+        if(location.search.includes("debug=true")||location.hostname==="localhost"){var es=document.createElement("script");es.src="//cdn.jsdelivr.net/npm/eruda";es.onload=function(){eruda.init();};document.head.appendChild(es);}
+        checkLockout();
     </script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function(){ const c = document.getElementById("star-field"); if(!c) return; const x = c.getContext("2d"); let w, h, s = []; function resize(){ w = c.width = window.innerWidth; h = c.height = window.innerHeight; } function init(){ resize(); s = []; for(let i=0; i<120; i++) s.push({x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.5, v: Math.random()*0.3}); } function draw(){ x.fillStyle = "#020617"; x.fillRect(0, 0, w, h); x.fillStyle = "rgba(255,255,255,0.5)"; s.forEach(p => { p.y -= p.v; if(p.y < 0) p.y = h; x.beginPath(); x.arc(p.x, p.y, p.r, 0, Math.PI*2); x.fill(); }); requestAnimationFrame(draw); } window.addEventListener("resize", () => { resize(); init(); }); init(); draw(); });
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(() => console.log('🛡️ Offline Bastion Ready')).catch(err => console.error('SW Error:', err)); }); }
-    </script>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js");
-  }
-</script>
 </body>
 </html>
