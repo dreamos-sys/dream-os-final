@@ -60,13 +60,9 @@
             <div style="margin-top:1.5rem;color:#475569;font-size:0.75rem; letter-spacing: 2px; font-weight: 800;">DREAM OS • V1.0 FINAL</div>
         </div>
         <div class="stealth-gate">
-            <button class="eye-btn" id="eye-toggle" onclick="toggleStealth()">
-                <span style="font-size:2.5rem; display:block; margin-bottom:0.5rem;">👁️</span>
-                <span id="eye-label" style="font-size:0.7rem; color:#475569; font-weight:600; letter-spacing:1px;">TAP TO LOGIN</span>
-            </button>
-            <div class="hidden-input-area" id="stealth-input">
-                <input type="password" id="pass" placeholder="ENTER PIN" onkeypress="handleEnter(event)" style="width:200px; font-size:1.1rem;">
-                <div style="margin-top:0.5rem; font-size:0.65rem; color:#64748b;">🔐 Secure Access</div>
+            <div class="hidden-input-area" id="stealth-input" style="display:block;">
+                <input type="password" id="pass" placeholder="ENTER PIN" onkeypress="handleEnter(event)" style="width:220px; font-size:1.1rem; padding-right:3rem;">
+                <span onclick="togglePassword()" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); cursor:pointer; font-size:1.3rem; color:#00ff9d; z-index:2;">👁️</span>
             </div>
             <div class="lockout-msg" id="lock-msg"></div>
         </div>
@@ -101,31 +97,29 @@
             }
         }
 
+        window.togglePassword = function() {
+            var passField = document.getElementById('pass');
+            var eyeIcon = event.target;
+            if (passField.type === 'password') {
+                passField.type = 'text';
+                eyeIcon.innerHTML = '🙈';
+                eyeIcon.style.color = '#f59e0b';
+            } else {
+                passField.type = 'password';
+                eyeIcon.innerHTML = '👁️';
+                eyeIcon.style.color = '#00ff9d';
+            }
+        };
+
         window.toggleStealth = function() {
             if (checkLockout()) return;
-            let inp = document.getElementById('stealth-input');
-            let passField = document.getElementById('pass');
-            let eyeLabel = document.getElementById('eye-label');
-            if (inp.style.display === 'block') {
-                authenticate();
-            } else {
+            var inp = document.getElementById('stealth-input');
+            var passField = document.getElementById('pass');
+            if (inp.style.display === 'none') {
                 inp.style.display = 'block';
-                if (eyeLabel) eyeLabel.textContent = 'ENTER PIN';
                 passField.focus();
-                if (!document.getElementById('toggle-pass')) {
-                    let toggleBtn = document.createElement('span');
-                    toggleBtn.id = 'toggle-pass';
-                    toggleBtn.innerHTML = '👁️';
-                    toggleBtn.style.cssText = 'position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); cursor:pointer; font-size:1.2rem; color:#00ff9d; z-index:2;';
-                    toggleBtn.onclick = function(e) {
-                        e.stopPropagation();
-                        passField.type = passField.type === 'password' ? 'text' : 'password';
-                        toggleBtn.innerHTML = passField.type === 'password' ? '👁️' : '🙈';
-                        toggleBtn.style.color = passField.type === 'password' ? '#00ff9d' : '#f59e0b';
-                    };
-                    inp.style.position = 'relative';
-                    inp.appendChild(toggleBtn);
-                }
+            } else {
+                authenticate();
             }
         };
 
