@@ -147,3 +147,9 @@
   };
 
 })(window);
+
+// Dev role bypass
+function isDev() {
+    const user = getCurrentUser();
+    return user && user.role === 'dev';
+}
