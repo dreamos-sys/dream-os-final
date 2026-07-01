@@ -89,6 +89,19 @@
   .quick-actions { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
   .chart-container { min-height: 200px; position: relative; }
   .loading-text { text-align: center; padding: 2rem; color: #94a3b8; }
+
+  /* Cross-browser consistency */
+  .glass {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(0, 255, 157, 0.2) !important;
+  }
+  .mod-card {
+    border: 2px solid rgba(0, 255, 157, 0.15) !important;
+  }
+  .mod-card:hover {
+    border-color: rgba(0, 255, 157, 0.5) !important;
+  }
+
 </style>
 </head>
 <body>
@@ -497,9 +510,9 @@
   window.approveDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); SEC.auditLog('ACC_DANA',i.judul); renderAll();} };
   window.rejectDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='rejected'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); SEC.auditLog('REJECT_DANA',i.judul); renderAll();} };
   window.setBudgetCap = function() { var c=prompt('Pagu (Rp):', localStorage.getItem('dreamos_budget_cap')||'50000000'); if(c){localStorage.setItem('dreamos_budget_cap',c); renderAll();} };
-  window.quickAddDana = function() { var j=prompt('Judul:'), n=prompt('Nominal (Rp):'); if(!j||!n)return; var d=safeGet('dreamos_dana',[]); d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_dana',JSON.stringify(d)); SEC.auditLog('SUBMIT_DANA',j); renderAll(); alert('✅ Diajukan!'); };
-  window.quickAddK3 = function() { var l=prompt('Lokasi:'), k=prompt('Kategori:'); if(!l)return; var d=safeGet('dreamos_k3_reports',[]); d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); SEC.auditLog('ADD_K3',l); renderAll(); alert('✅ Dilaporkan!'); };
-  window.quickAddMaint = function() { var j=prompt('Judul:'), l=prompt('Lokasi:'); if(!j)return; var d=safeGet('dreamos_maintenance_tasks',[]); d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); SEC.auditLog('ADD_MAINT',j); renderAll(); alert('✅ Ditambahkan!'); };
+  window.quickAddDana = function() { if(!confirm("Tambah Dana?")) return; var j=prompt('Judul:'), n=prompt('Nominal (Rp):'); if(!j||!n)return; var d=safeGet('dreamos_dana',[]); d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_dana',JSON.stringify(d)); SEC.auditLog('SUBMIT_DANA',j); renderAll(); alert('✅ Diajukan!'); };
+  window.quickAddK3 = function() { if(!confirm("Lapor K3?")) return; var l=prompt('Lokasi:'), k=prompt('Kategori:'); if(!l)return; var d=safeGet('dreamos_k3_reports',[]); d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); SEC.auditLog('ADD_K3',l); renderAll(); alert('✅ Dilaporkan!'); };
+  window.quickAddMaint = function() { if(!confirm("Tambah Maintenance?")) return; var j=prompt('Judul:'), l=prompt('Lokasi:'); if(!j)return; var d=safeGet('dreamos_maintenance_tasks',[]); d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); SEC.auditLog('ADD_MAINT',j); renderAll(); alert('✅ Ditambahkan!'); };
   window.openSlideManager = function() { var p=document.getElementById('slide-manager-panel'); p.style.display=(p.style.display==='none'||!p.style.display)?'block':'none'; document.getElementById('slide5-input').value=localStorage.getItem('dreamos_slide_5')||''; document.getElementById('slide6-input').value=localStorage.getItem('dreamos_slide_6')||''; document.getElementById('slide7-input').value=localStorage.getItem('dreamos_slide_7')||''; document.getElementById('slide-sec-input').value=localStorage.getItem('dreamos_sec_today')||''; };
   window.saveSlides = function() { localStorage.setItem('dreamos_slide_5',document.getElementById('slide5-input').value); localStorage.setItem('dreamos_slide_6',document.getElementById('slide6-input').value); localStorage.setItem('dreamos_slide_7',document.getElementById('slide7-input').value); localStorage.setItem('dreamos_sec_today',document.getElementById('slide-sec-input').value); SEC.auditLog('UPDATE_SLIDES','OK'); alert('✅ Disimpan!'); };
   window.openExecutiveNote = function() { var p=document.getElementById('executive-note-panel'); p.style.display=(p.style.display==='none'||!p.style.display)?'block':'none'; document.getElementById('executive-note-input').value=localStorage.getItem('dreamos_executive_note')||''; };
@@ -519,9 +532,43 @@
   window.doLogout = function() { localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); window.parent.location.reload(); };
 
   // ========== INIT ==========
-  // Initialize default data if empty
-  initializeDefaultData();
+  var initialized = false;
   
+  function initializeDefaultData() {
+    if (initialized) return;
+    initialized = true;
+    
+    var defaults = {
+      'dreamos_dana': [],
+      'dreamos_k3_reports': [],
+      'dreamos_maintenance_tasks': [],
+      'dreamos_bookings': [],
+      'dreamos_stok': [],
+      'dreamos_audit_logs': [],
+      'dreamos_budget_cap': '50000000'
+    };
+    
+    Object.keys(defaults).forEach(function(key) {
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, JSON.stringify(defaults[key]));
+      }
+    });
+    
+    // Default admin user
+    if (!localStorage.getItem('dreamos_users_db')) {
+      var defaultUsers = [{
+        nama: 'Administrator',
+        email: 'admin@dreamos.local',
+        role: 'dev',
+        password_hash: '',
+        device_dna: '',
+        created_at: new Date().toISOString()
+      }];
+      localStorage.setItem('dreamos_users_db', JSON.stringify(defaultUsers));
+    }
+  }
+  
+  initializeDefaultData();
   renderAll();
   SEC.auditLog('ACCESS', 'v4.3 Standalone');
 })();
