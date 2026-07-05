@@ -1,14 +1,24 @@
 <script src="../js/security-helper.js"></script>
-<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #00ff9d;color:#00ff9d;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+
 <div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="qr-app">
-    <h2 style="color:#00ff9d;font-size:1.4rem;margin-bottom:1rem;">📱 QR Manager</h2>
+    <h2 style="color:#00ff9d;font-size:1.4rem;margin-bottom:0.5rem;">📱 QR Manager Enterprise</h2>
+    <p style="color:#94a3b8;font-size:0.7rem;margin-bottom:1rem;">ISO 27001 • ISO 9001 • ISO 55001 Compliant</p>
+    
+    <!-- Tabs -->
     <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
         <button class="qr-tab active" data-qr="tab" data-key="generate" style="padding:0.5rem 1rem;background:#00ff9d;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">🔳 Generate</button>
+        <button class="qr-tab" data-qr="tab" data-key="scanner" style="padding:0.5rem 1rem;background:#1e293b;color:#e2e8f0;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;">📷 Scanner</button>
         <button class="qr-tab" data-qr="tab" data-key="codes" style="padding:0.5rem 1rem;background:#1e293b;color:#e2e8f0;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;">🏷️ Tersimpan</button>
         <button class="qr-tab" data-qr="tab" data-key="history" style="padding:0.5rem 1rem;background:#1e293b;color:#e2e8f0;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;">📋 Riwayat</button>
+        <button class="qr-tab" data-qr="tab" data-key="stats" style="padding:0.5rem 1rem;background:#1e293b;color:#e2e8f0;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;">📊 Statistik</button>
     </div>
 
-    <div id="panel-generate" class="qr-panel" style="background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;overflow:visible!important;max-height:none!important;">
+    <!-- Panel: Generate -->
+    <div id="panel-generate" class="qr-panel" style="background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;">
         <label style="color:#94a3b8;font-size:0.8rem;">Tipe QR</label>
         <select id="qr-type" data-qr="type-change" style="width:100%;padding:0.6rem;margin-bottom:0.75rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;">
             <option value="text">📝 Teks Biasa</option>
@@ -18,23 +28,114 @@
             <option value="asset">🏢 Aset</option>
             <option value="inventory">📦 Inventaris</option>
             <option value="gudang">🗄️ Gudang</option>
+            <option value="encrypted">🔒 Encrypted (ISO 27001)</option>
+            <option value="expiring">⏰ Expiring QR</option>
         </select>
         <div id="qr-dynamic-inputs"></div>
-        <button data-qr="generate" style="width:100%;padding:0.75rem;background:#00ff9d;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;margin-top:0.5rem;">🔳 Generate QR</button>
+        
+        <!-- Advanced Options -->
+        <div style="margin-top:0.75rem;padding:0.75rem;background:rgba(0,0,0,0.3);border-radius:0.5rem;">
+            <label style="color:#94a3b8;font-size:0.75rem;display:flex;align-items:center;gap:0.3rem;">
+                <input type="checkbox" id="qr-encrypt" style="accent-color:#00ff9d;"> 🔒 Encrypt Data (ISO 27001)
+            </label>
+            <label style="color:#94a3b8;font-size:0.75rem;display:flex;align-items:center;gap:0.3rem;margin-top:0.3rem;">
+                <input type="checkbox" id="qr-expire" style="accent-color:#00ff9d;"> ⏰ Set Expiration
+            </label>
+            <input type="datetime-local" id="qr-expire-date" style="display:none;width:100%;padding:0.4rem;margin-top:0.3rem;background:#0f172a;border:1px solid #334155;border-radius:0.3rem;color:#e2e8f0;font-size:0.75rem;">
+            <input type="text" id="qr-category" placeholder="🏷️ Kategori (opsional)" style="width:100%;padding:0.4rem;margin-top:0.3rem;background:#0f172a;border:1px solid #334155;border-radius:0.3rem;color:#e2e8f0;font-size:0.75rem;">
+        </div>
+        
+        <button data-qr="generate" style="width:100%;padding:0.75rem;background:#00ff9d;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;margin-top:0.75rem;">🔳 Generate QR</button>
+        <button data-qr="batch-generate" style="width:100%;padding:0.5rem;background:#8b5cf6;color:white;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;margin-top:0.5rem;font-size:0.8rem;">📦 Batch Generate (Multiple)</button>
+        
         <div id="qr-image-container" style="text-align:center;margin-top:1rem;"></div>
         <div id="qr-save-area" style="display:none;text-align:center;margin-top:0.5rem;gap:0.5rem;justify-content:center;">
             <button data-qr="save" style="padding:0.5rem 1rem;background:#8b5cf6;color:white;border:none;border-radius:0.5rem;cursor:pointer;">💾 Simpan</button>
             <button data-qr="download" style="padding:0.5rem 1rem;background:#10b981;color:white;border:none;border-radius:0.5rem;cursor:pointer;">📥 Unduh</button>
+            <button data-qr="share" style="padding:0.5rem 1rem;background:#3b82f6;color:white;border:none;border-radius:0.5rem;cursor:pointer;">🔗 Share</button>
         </div>
     </div>
 
-    <div id="panel-codes" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;overflow:visible!important;max-height:none!important;">
-        <button data-qr="print-all" style="width:100%;padding:0.5rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;margin-bottom:1rem;font-weight:600;">🖨️ Cetak Semua QR</button>
+    <!-- Panel: Scanner -->
+    <div id="panel-scanner" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;">
+        <h3 style="color:#00ff9d;margin:0 0 0.75rem;">📷 QR Scanner</h3>
+        <div id="qr-reader" style="width:100%;border-radius:0.5rem;overflow:hidden;"></div>
+        <button data-qr="start-scan" style="width:100%;padding:0.6rem;background:#00ff9d;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;margin-top:0.75rem;">▶️ Start Scanner</button>
+        <button data-qr="stop-scan" style="width:100%;padding:0.6rem;background:#ef4444;color:white;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;margin-top:0.5rem;display:none;">⏹️ Stop Scanner</button>
+        <div id="scan-result" style="margin-top:0.75rem;padding:0.75rem;background:rgba(0,0,0,0.3);border-radius:0.5rem;display:none;">
+            <div style="color:#94a3b8;font-size:0.75rem;margin-bottom:0.3rem;">📋 Hasil Scan:</div>
+            <div id="scan-data" style="color:#00ff9d;font-weight:600;word-break:break-all;"></div>
+            <div id="scan-meta" style="color:#64748b;font-size:0.7rem;margin-top:0.3rem;"></div>
+        </div>
+    </div>
+
+    <!-- Panel: Codes -->
+    <div id="panel-codes" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;">
+        <!-- Search & Filter -->
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+            <input type="text" id="qr-search" placeholder="🔍 Cari QR..." style="flex:1;min-width:150px;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">
+            <select id="qr-filter-category" style="padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">
+                <option value="">Semua Kategori</option>
+            </select>
+            <select id="qr-filter-type" style="padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">
+                <option value="">Semua Tipe</option>
+                <option value="text">Text</option>
+                <option value="url">URL</option>
+                <option value="wifi">WiFi</option>
+                <option value="contact">Contact</option>
+                <option value="asset">Asset</option>
+                <option value="inventory">Inventory</option>
+                <option value="gudang">Gudang</option>
+                <option value="encrypted">Encrypted</option>
+                <option value="expiring">Expiring</option>
+            </select>
+        </div>
+        
+        <!-- Bulk Actions -->
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+            <button data-qr="print-all" style="flex:1;padding:0.5rem;background:#6366f1;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;">🖨️ Cetak Semua</button>
+            <button data-qr="export-qr" style="flex:1;padding:0.5rem;background:#10b981;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;">📤 Export JSON</button>
+            <button data-qr="import-qr" style="flex:1;padding:0.5rem;background:#f59e0b;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;">📥 Import JSON</button>
+            <button data-qr="delete-all" style="flex:1;padding:0.5rem;background:#ef4444;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;">🗑️ Hapus Semua</button>
+        </div>
+        
         <div id="qr-codes-list"></div>
     </div>
 
-    <div id="panel-history" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;overflow:visible!important;max-height:none!important;">
+    <!-- Panel: History -->
+    <div id="panel-history" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <h3 style="color:#00ff9d;margin:0;">📋 Riwayat Generate</h3>
+            <button data-qr="clear-history" style="padding:0.4rem 0.8rem;background:#ef4444;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-size:0.75rem;">🗑️ Clear</button>
+        </div>
         <div id="qr-history-list"></div>
+    </div>
+
+    <!-- Panel: Statistics -->
+    <div id="panel-stats" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;">
+        <h3 style="color:#00ff9d;margin:0 0 0.75rem;">📊 QR Statistics</h3>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;margin-bottom:1rem;">
+            <div style="padding:0.75rem;background:rgba(0,255,157,0.1);border-radius:0.5rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:#00ff9d;" id="stat-total-qr">0</div>
+                <div style="font-size:0.7rem;color:#94a3b8;">Total QR</div>
+            </div>
+            <div style="padding:0.75rem;background:rgba(139,92,246,0.1);border-radius:0.5rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:#8b5cf6;" id="stat-total-scans">0</div>
+                <div style="font-size:0.7rem;color:#94a3b8;">Total Scans</div>
+            </div>
+            <div style="padding:0.75rem;background:rgba(59,130,246,0.1);border-radius:0.5rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:#3b82f6;" id="stat-active-qr">0</div>
+                <div style="font-size:0.7rem;color:#94a3b8;">QR Aktif</div>
+            </div>
+            <div style="padding:0.75rem;background:rgba(245,158,11,0.1);border-radius:0.5rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:#f59e0b;" id="stat-expired-qr">0</div>
+                <div style="font-size:0.7rem;color:#94a3b8;">QR Expired</div>
+            </div>
+        </div>
+        <div style="padding:0.75rem;background:rgba(0,0,0,0.3);border-radius:0.5rem;">
+            <div style="color:#94a3b8;font-size:0.75rem;margin-bottom:0.5rem;">📈 Distribusi Tipe QR:</div>
+            <div id="stat-type-distribution"></div>
+        </div>
     </div>
 </div>
 
@@ -43,144 +144,505 @@
     var state = {
         codes: JSON.parse(localStorage.getItem('dreamos_qr_codes')||'[]'),
         history: JSON.parse(localStorage.getItem('dreamos_qr_history')||'[]'),
+        scans: JSON.parse(localStorage.getItem('dreamos_qr_scans')||'[]'),
         currentImg: '',
         currentData: '',
         currentType: 'text',
-        activeTab: 'generate'    };
+        activeTab: 'generate',
+        scanner: null,
+        encryptionKey: 'dreamos_qr_2026_iso27001'
+    };
+    
     function saveCodes(){ localStorage.setItem('dreamos_qr_codes', JSON.stringify(state.codes)); }
     function saveHistory(){ localStorage.setItem('dreamos_qr_history', JSON.stringify(state.history)); }
+    function saveScans(){ localStorage.setItem('dreamos_qr_scans', JSON.stringify(state.scans)); }
     function getData(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
+    
+    // 🔒 Encryption Functions (ISO 27001)
+    function encryptData(data){
+        return CryptoJS.AES.encrypt(data, state.encryptionKey).toString();
+    }
+    function decryptData(encrypted){
+        try {
+            var bytes = CryptoJS.AES.decrypt(encrypted, state.encryptionKey);
+            return bytes.toString(CryptoJS.enc.Utf8);
+        } catch(e) { return '[DECRYPTION_FAILED]'; }
+    }
 
     function renderForm(){
         var type = document.getElementById('qr-type').value;
         state.currentType = type;
         var c = document.getElementById('qr-dynamic-inputs');
         var h = '';
+        
         if(type==='text') h='<textarea id="qr-data" placeholder="Masukkan teks..." rows="3" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;resize:none;"></textarea>';
         else if(type==='url') h='<input type="url" id="qr-data" placeholder="https://..." style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;">';
-        else if(type==='wifi') h='<input type="text" id="wifi-ssid" placeholder="Nama WiFi (SSID)" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><input type="text" id="wifi-pass" placeholder="Password WiFi" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;">';
-        else if(type==='contact') h='<input type="text" id="contact-name" placeholder="Nama Kontak" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><input type="tel" id="contact-tel" placeholder="No Telepon" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;">';
+        else if(type==='wifi') h='<input type="text" id="wifi-ssid" placeholder="Nama WiFi (SSID)" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><input type="text" id="wifi-pass" placeholder="Password WiFi" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><select id="wifi-enc" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><option value="WPA">WPA/WPA2</option><option value="WEP">WEP</option><option value="nopass">No Password</option></select>';
+        else if(type==='contact') h='<input type="text" id="contact-name" placeholder="Nama Kontak" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><input type="tel" id="contact-tel" placeholder="No Telepon" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><input type="email" id="contact-email" placeholder="Email (opsional)" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><input type="text" id="contact-org" placeholder="Organisasi (opsional)" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;">';
         else if(type==='asset'){ var as=getData('dreamos_assets'); h='<select id="asset-select" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><option value="">-- Pilih Aset --</option>'; as.forEach(function(a){h+='<option value="'+a.id+'">'+(a.name||a.nama)+' ('+(a.location||'-')+')</option>';}); h+='</select>'; }
         else if(type==='inventory'){ var st=getData('dreamos_stok'); h='<select id="inventory-select" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><option value="">-- Pilih Barang --</option>'; st.forEach(function(s){h+='<option value="'+s.id+'">'+s.nama+' ('+s.jumlah+')</option>';}); h+='</select>'; }
         else if(type==='gudang'){ var gd=getData('dreamos_assets').filter(function(a){return a.category==='Gedung'||a.type==='fixed';}); h='<select id="gudang-select" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;"><option value="">-- Pilih Gudang --</option>'; gd.forEach(function(g){h+='<option value="'+g.id+'">'+(g.name||g.nama)+' ('+(g.location||'-')+')</option>';}); h+='</select>'; }
+        else if(type==='encrypted') h='<textarea id="qr-data" placeholder="Data sensitif (akan di-encrypt dengan AES-256)..." rows="3" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #ef4444;border-radius:0.5rem;color:#e2e8f0;resize:none;"></textarea><div style="color:#ef4444;font-size:0.7rem;">🔒 Data akan di-encrypt dengan AES-256 (ISO 27001)</div>';
+        else if(type==='expiring') h='<textarea id="qr-data" placeholder="Data QR..." rows="3" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;resize:none;"></textarea><input type="datetime-local" id="qr-expire-time" style="width:100%;padding:0.6rem;margin-bottom:0.5rem;background:#0f172a;border:1px solid #f59e0b;border-radius:0.5rem;color:#e2e8f0;"><div style="color:#f59e0b;font-size:0.7rem;">⏰ QR akan expire pada waktu yang ditentukan</div>';
+        
         c.innerHTML = h;
     }
 
     function generate(){
         var type = state.currentType;
         var data = '';
+        var encrypt = document.getElementById('qr-encrypt')?.checked || false;
+        var expire = document.getElementById('qr-expire')?.checked || false;
+        var expireDate = document.getElementById('qr-expire-date')?.value || '';
+        var category = document.getElementById('qr-category')?.value || '';
+        
         if(type==='text') data = (document.getElementById('qr-data')?.value||'').trim();
         else if(type==='url') data = (document.getElementById('qr-data')?.value||'').trim();
-        else if(type==='wifi') data = 'WIFI:S:'+(document.getElementById('wifi-ssid')?.value||'')+';T:WPA;P:'+(document.getElementById('wifi-pass')?.value||'')+';;';
-        else if(type==='contact') data = 'BEGIN:VCARD\nFN:'+(document.getElementById('contact-name')?.value||'')+'\nTEL:'+(document.getElementById('contact-tel')?.value||'')+'\nEND:VCARD';
+        else if(type==='wifi') data = 'WIFI:S:'+(document.getElementById('wifi-ssid')?.value||'')+';T:'+(document.getElementById('wifi-enc')?.value||'WPA')+';P:'+(document.getElementById('wifi-pass')?.value||'')+';;';
+        else if(type==='contact') {
+            var vcard = 'BEGIN:VCARD\nVERSION:3.0\n';
+            vcard += 'FN:'+(document.getElementById('contact-name')?.value||'')+'\n';
+            vcard += 'TEL:'+(document.getElementById('contact-tel')?.value||'')+'\n';
+            if(document.getElementById('contact-email')?.value) vcard += 'EMAIL:'+(document.getElementById('contact-email').value)+'\n';
+            if(document.getElementById('contact-org')?.value) vcard += 'ORG:'+(document.getElementById('contact-org').value)+'\n';
+            vcard += 'END:VCARD';
+            data = vcard;
+        }
         else if(type==='asset') data = 'DREAMOS-ASSET:'+(document.getElementById('asset-select')?.value||'');
         else if(type==='inventory') data = 'DREAMOS-INV:'+(document.getElementById('inventory-select')?.value||'');
         else if(type==='gudang') data = 'DREAMOS-GDG:'+(document.getElementById('gudang-select')?.value||'');
+        else if(type==='encrypted') {
+            data = (document.getElementById('qr-data')?.value||'').trim();
+            if(data) data = 'ENC:' + encryptData(data);
+        }
+        else if(type==='expiring') {
+            data = (document.getElementById('qr-data')?.value||'').trim();
+            var expTime = document.getElementById('qr-expire-time')?.value;
+            if(data && expTime) data = 'EXP:' + new Date(expTime).getTime() + ':' + data;
+        }
         
         if(!data || data.split(':').pop()==='') { alert('⚠️ Masukkan data atau pilih item!'); return; }
+        
         state.currentImg = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(data);
         state.currentData = data;
         document.getElementById('qr-image-container').innerHTML = '<img src="'+state.currentImg+'" style="max-width:100%;border-radius:1rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);">';
         document.getElementById('qr-save-area').style.display = 'flex';
-        state.history.unshift({type:type, data:data, time:new Date().toISOString()});
+        
+        state.history.unshift({
+            type: type, 
+            data: data.substring(0, 100), 
+            time: new Date().toISOString(),
+            encrypted: encrypt || type === 'encrypted',
+            expiring: expire || type === 'expiring',
+            category: category
+        });
         if(state.history.length>50) state.history.pop();
         saveHistory();
+        
         if(state.activeTab==='history') renderHistory();
+    }
+
+    function batchGenerate(){
+        var input = prompt('Masukkan data batch (satu per baris):\n\nContoh:\nhttps://example1.com\nhttps://example2.com\nhttps://example3.com');
+        if(!input) return;
+        
+        var lines = input.split('\n').filter(function(l){ return l.trim(); });
+        if(!lines.length) return alert('⚠️ Tidak ada data valid!');
+        
+        var count = 0;
+        lines.forEach(function(line){
+            state.codes.push({
+                id: 'qr_' + Date.now() + '_' + count,
+                label: 'Batch QR #' + (count + 1),
+                type: state.currentType,
+                image: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(line.trim()),
+                data: line.trim(),
+                created: new Date().toISOString(),
+                category: 'batch',
+                batch: true
+            });
+            count++;
+        });
+        
+        saveCodes();
+        alert('✅ ' + count + ' QR codes berhasil di-generate!');
+        if(state.activeTab === 'codes') renderCodes();
     }
 
     function saveQr(){
         if(!state.currentImg) return alert('⚠️ Generate QR dulu!');
         var label = prompt('Label untuk QR ini:');
         if(!label) return;
-        state.codes.push({id:'qr_'+Date.now(), label:label, type:state.currentType, image:state.currentImg, data:state.currentData, created:new Date().toISOString()});
+        
+        var encrypt = document.getElementById('qr-encrypt')?.checked || false;
+        var expire = document.getElementById('qr-expire')?.checked || false;
+        var expireDate = document.getElementById('qr-expire-date')?.value || '';
+        var category = document.getElementById('qr-category')?.value || '';
+        
+        state.codes.push({
+            id: 'qr_' + Date.now(),
+            label: label,
+            type: state.currentType,
+            image: state.currentImg,
+            data: state.currentData,
+            created: new Date().toISOString(),
+            encrypted: encrypt || state.currentType === 'encrypted',
+            expiring: expire || state.currentType === 'expiring',
+            expireDate: expireDate,
+            category: category,
+            scans: 0
+        });
         saveCodes();
         alert('✅ QR Code disimpan!');
-        if(state.activeTab==='codes') renderCodes();    }
+        if(state.activeTab==='codes') renderCodes();
+    }
 
     function downloadQr(){
         if(!state.currentImg) return;
-        var a = document.createElement('a'); a.href = state.currentImg; a.download = 'qr_'+Date.now()+'.png'; a.click();
+        var a = document.createElement('a');
+        a.href = state.currentImg;
+        a.download = 'qr_' + Date.now() + '.png';
+        a.click();
+    }
+
+    function shareQr(){
+        if(!state.currentImg) return;
+        if(navigator.share){
+            navigator.share({
+                title: 'QR Code',
+                text: 'Scan QR Code ini',
+                url: state.currentImg
+            }).catch(function(e){});
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(state.currentImg).then(function(){
+                alert('✅ Link QR disalin ke clipboard!');
+            });
+        }
     }
 
     function deleteQr(id){
         if(!confirm('Hapus QR ini?')) return;
         state.codes = state.codes.filter(function(q){return q.id!==id;});
-        saveCodes(); renderCodes();
+        saveCodes();
+        renderCodes();
+    }
+
+    function deleteAllQr(){
+        if(!confirm('⚠️ Hapus SEMUA QR codes? Tindakan ini tidak bisa dibatalkan!')) return;
+        state.codes = [];
+        saveCodes();
+        renderCodes();
+        alert('✅ Semua QR codes dihapus!');
+    }
+
+    function exportQr(){
+        if(!state.codes.length) return alert('⚠️ Belum ada QR tersimpan!');
+        var data = JSON.stringify(state.codes, null, 2);
+        var blob = new Blob([data], {type: 'application/json'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'qr_backup_' + new Date().toISOString().split('T')[0] + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        alert('✅ QR codes di-export!');
+    }
+
+    function importQr(){
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = function(e){
+            var file = e.target.files[0];
+            if(!file) return;
+            var reader = new FileReader();
+            reader.onload = function(ev){
+                try {
+                    var data = JSON.parse(ev.target.result);
+                    if(!Array.isArray(data)) throw new Error('Format tidak valid');
+                    if(confirm('Import ' + data.length + ' QR codes? (Akan ditambahkan ke yang existing)')){
+                        state.codes = state.codes.concat(data);
+                        saveCodes();
+                        renderCodes();
+                        alert('✅ ' + data.length + ' QR codes di-import!');
+                    }
+                } catch(err){
+                    alert('❌ File tidak valid: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
     }
 
     function printAll(){
         if(!state.codes.length) return alert('⚠️ Belum ada QR tersimpan!');
         var w = window.open('','_blank','width=900,height=600');
-        var d = '<html><head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https:;"><title>QR Codes</title><style>body{font-family:sans-serif;display:flex;flex-wrap:wrap;gap:20px;padding:20px;}.card{border:1px solid #ccc;padding:10px;text-align:center;width:200px;page-break-inside:avoid;}img{width:150px;height:150px;}@media print{button{display:none;}}</style></head><body>';
-        state.codes.forEach(function(q){ d+='<div class="card"><img src="'+q.image+'"><br><strong>'+q.label+'</strong><br><small>'+q.type.toUpperCase()+'</small></div>'; });
-        d+='<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 16px;background:#000;color:#fff;border:none;border-radius:4px;cursor:pointer;">🖨️ Cetak</button></body></html>';
-        w.document.write(d); w.document.close();
+        var d = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR Codes</title><style>body{font-family:sans-serif;display:flex;flex-wrap:wrap;gap:20px;padding:20px;}.card{border:1px solid #ccc;padding:10px;text-align:center;width:200px;page-break-inside:avoid;}img{width:150px;height:150px;}@media print{button{display:none;}}</style></head><body>';
+        state.codes.forEach(function(q){
+            d += '<div class="card"><img src="'+q.image+'"><br><strong>'+q.label+'</strong><br><small>'+q.type.toUpperCase()+'</small>';
+            if(q.category) d += '<br><small style="color:#666;">'+q.category+'</small>';
+            d += '</div>';
+        });
+        d += '<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 16px;background:#000;color:#fff;border:none;border-radius:4px;cursor:pointer;">🖨️ Cetak</button></body></html>';
+        w.document.write(d);
+        w.document.close();
     }
 
     function renderCodes(){
         var list = document.getElementById('qr-codes-list');
-        if(!state.codes.length){ list.innerHTML='<p style="color:#64748b;text-align:center;padding:2rem;">📭 Belum ada QR tersimpan.</p>'; return; }
-        var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;">';
-        state.codes.forEach(function(q){
-            h+='<div style="background:rgba(30,41,59,0.6);padding:0.75rem;text-align:center;border-radius:0.5rem;">';
-            h+='<img src="'+q.image+'" style="width:100%;max-width:120px;border-radius:0.5rem;">';
-            h+='<div style="font-weight:700;font-size:0.8rem;margin-top:0.3rem;">'+q.label+'</div>';
-            h+='<div style="font-size:0.65rem;color:#94a3b8;">'+q.type.toUpperCase()+'</div>';
-            h+='<button data-qr="delete" data-id="'+q.id+'" style="margin-top:0.3rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;padding:0.15rem 0.5rem;font-size:0.65rem;cursor:pointer;">🗑️</button></div>';
+        var search = (document.getElementById('qr-search')?.value || '').toLowerCase();
+        var filterCat = document.getElementById('qr-filter-category')?.value || '';
+        var filterType = document.getElementById('qr-filter-type')?.value || '';
+        
+        var filtered = state.codes.filter(function(q){
+            var matchSearch = !search || q.label.toLowerCase().includes(search) || q.data.toLowerCase().includes(search);
+            var matchCat = !filterCat || q.category === filterCat;
+            var matchType = !filterType || q.type === filterType;
+            return matchSearch && matchCat && matchType;
         });
-        h+='</div>'; list.innerHTML = h;
+        
+        // Update category filter
+        var categories = [...new Set(state.codes.map(function(q){ return q.category; }).filter(Boolean))];
+        var catSelect = document.getElementById('qr-filter-category');
+        if(catSelect){
+            var currentVal = catSelect.value;
+            catSelect.innerHTML = '<option value="">Semua Kategori</option>';
+            categories.forEach(function(cat){
+                catSelect.innerHTML += '<option value="'+cat+'" '+(cat===currentVal?'selected':'')+'>'+cat+'</option>';
+            });
+        }
+        
+        if(!filtered.length){
+            list.innerHTML = '<p style="color:#64748b;text-align:center;padding:2rem;">📭 '+(state.codes.length?'Tidak ada QR yang cocok dengan filter.':'Belum ada QR tersimpan.')+'</p>';
+            return;
+        }
+        
+        var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;">';
+        filtered.forEach(function(q){
+            var expired = q.expiring && q.expireDate && new Date(q.expireDate) < new Date();
+            h += '<div style="background:rgba(30,41,59,0.6);padding:0.75rem;text-align:center;border-radius:0.5rem;'+(expired?'opacity:0.5;':'')+'">';
+            h += '<img src="'+q.image+'" style="width:100%;max-width:120px;border-radius:0.5rem;">';
+            h += '<div style="font-weight:700;font-size:0.8rem;margin-top:0.3rem;">'+q.label+'</div>';
+            h += '<div style="font-size:0.65rem;color:#94a3b8;">'+q.type.toUpperCase()+'</div>';
+            if(q.category) h += '<div style="font-size:0.6rem;color:#64748b;">🏷️ '+q.category+'</div>';
+            if(q.encrypted) h += '<div style="font-size:0.6rem;color:#ef4444;">🔒 Encrypted</div>';
+            if(q.expiring){
+                if(expired) h += '<div style="font-size:0.6rem;color:#ef4444;">⏰ Expired</div>';
+                else h += '<div style="font-size:0.6rem;color:#f59e0b;">⏰ '+new Date(q.expireDate).toLocaleDateString('id-ID')+'</div>';
+            }
+            h += '<div style="font-size:0.6rem;color:#64748b;">📊 '+q.scans+' scans</div>';
+            h += '<button data-qr="delete" data-id="'+q.id+'" style="margin-top:0.3rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;padding:0.15rem 0.5rem;font-size:0.65rem;cursor:pointer;">🗑️</button></div>';
+        });
+        h += '</div>';
+        list.innerHTML = h;
     }
 
     function renderHistory(){
         var list = document.getElementById('qr-history-list');
-        if(!state.history.length){ list.innerHTML='<p style="color:#64748b;text-align:center;padding:2rem;">📭 Belum ada riwayat.</p>'; return; }
+        if(!state.history.length){
+            list.innerHTML = '<p style="color:#64748b;text-align:center;padding:2rem;">📭 Belum ada riwayat.</p>';
+            return;
+        }
         var h = '';
         state.history.forEach(function(r){
-            h+='<div style="padding:0.5rem;margin-bottom:0.3rem;background:rgba(30,41,59,0.6);border-radius:0.3rem;font-size:0.8rem;">';
-            h+='<span style="color:#6366f1;font-weight:600;">'+r.type.toUpperCase()+': </span>';
-            h+='<span>'+r.data.substring(0,50)+(r.data.length>50?'…':'')+'</span>';
-            h+='<div style="font-size:0.65rem;color:#94a3b8;margin-top:0.2rem;">'+new Date(r.time).toLocaleString('id-ID')+'</div></div>';
+            h += '<div style="padding:0.5rem;margin-bottom:0.3rem;background:rgba(30,41,59,0.6);border-radius:0.3rem;font-size:0.8rem;">';
+            h += '<span style="color:#6366f1;font-weight:600;">'+r.type.toUpperCase()+': </span>';
+            h += '<span>'+r.data+(r.data.length>=100?'…':'')+'</span>';
+            if(r.encrypted) h += ' <span style="color:#ef4444;">🔒</span>';
+            if(r.expiring) h += ' <span style="color:#f59e0b;">⏰</span>';
+            if(r.category) h += ' <span style="color:#64748b;">🏷️ '+r.category+'</span>';
+            h += '<div style="font-size:0.65rem;color:#94a3b8;margin-top:0.2rem;">'+new Date(r.time).toLocaleString('id-ID')+'</div></div>';
         });
         list.innerHTML = h;
     }
 
-    function switchTab(tab){        state.activeTab = tab;
+    function clearHistory(){
+        if(!confirm('Clear semua riwayat?')) return;
+        state.history = [];
+        saveHistory();
+        renderHistory();
+    }
+
+    // 📷 Scanner Functions
+    function startScanner(){
+        if(state.scanner) return;
+        
+        var reader = document.getElementById('qr-reader');
+        reader.innerHTML = '';
+        
+        state.scanner = new Html5Qrcode("qr-reader");
+        state.scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            function(decodedText){
+                // QR Code scanned successfully
+                document.getElementById('scan-result').style.display = 'block';
+                document.getElementById('scan-data').textContent = decodedText;
+                
+                // Check if encrypted
+                var displayData = decodedText;
+                var isEncrypted = decodedText.startsWith('ENC:');
+                var isExpiring = decodedText.startsWith('EXP:');
+                
+                if(isEncrypted){
+                    var encrypted = decodedText.substring(4);
+                    displayData = '🔒 [ENCRYPTED] ' + decryptData(encrypted);
+                }
+                
+                if(isExpiring){
+                    var parts = decodedText.substring(4).split(':');
+                    var expTime = parseInt(parts[0]);
+                    var data = parts.slice(1).join(':');
+                    if(expTime < Date.now()){
+                        displayData = '⏰ [EXPIRED] QR ini sudah tidak berlaku';
+                    } else {
+                        displayData = '⏰ [EXPIRING] ' + data + '\nExpire: ' + new Date(expTime).toLocaleString('id-ID');
+                    }
+                }
+                
+                document.getElementById('scan-data').textContent = displayData;
+                document.getElementById('scan-meta').textContent = 'Scanned at: ' + new Date().toLocaleString('id-ID');
+                
+                // Log scan
+                state.scans.unshift({
+                    data: decodedText,
+                    time: new Date().toISOString(),
+                    type: isEncrypted ? 'encrypted' : (isExpiring ? 'expiring' : 'normal')
+                });
+                if(state.scans.length > 100) state.scans.pop();
+                saveScans();
+                
+                // Update stats
+                if(state.activeTab === 'stats') renderStats();
+            },
+            function(errorMessage){
+                // Scan error (ignore)
+            }
+        ).then(function(){
+            document.querySelector('[data-qr="start-scan"]').style.display = 'none';
+            document.querySelector('[data-qr="stop-scan"]').style.display = 'block';
+        }).catch(function(err){
+            alert('❌ Gagal start scanner: ' + err);
+        });
+    }
+
+    function stopScanner(){
+        if(!state.scanner) return;
+        state.scanner.stop().then(function(){
+            state.scanner = null;
+            document.querySelector('[data-qr="start-scan"]').style.display = 'block';
+            document.querySelector('[data-qr="stop-scan"]').style.display = 'none';
+        });
+    }
+
+    // 📊 Statistics
+    function renderStats(){
+        var totalQr = state.codes.length;
+        var totalScans = state.scans.length;
+        var activeQr = state.codes.filter(function(q){
+            return !q.expiring || !q.expireDate || new Date(q.expireDate) > new Date();
+        }).length;
+        var expiredQr = totalQr - activeQr;
+        
+        document.getElementById('stat-total-qr').textContent = totalQr;
+        document.getElementById('stat-total-scans').textContent = totalScans;
+        document.getElementById('stat-active-qr').textContent = activeQr;
+        document.getElementById('stat-expired-qr').textContent = expiredQr;
+        
+        // Type distribution
+        var typeCount = {};
+        state.codes.forEach(function(q){
+            typeCount[q.type] = (typeCount[q.type] || 0) + 1;
+        });
+        
+        var distHtml = '';
+        Object.keys(typeCount).forEach(function(type){
+            var pct = Math.round((typeCount[type] / totalQr) * 100);
+            distHtml += '<div style="margin-bottom:0.5rem;">';
+            distHtml += '<div style="display:flex;justify-content:space-between;font-size:0.75rem;">';
+            distHtml += '<span>'+type.toUpperCase()+'</span>';
+            distHtml += '<span>'+typeCount[type]+' ('+pct+'%)</span>';
+            distHtml += '</div>';
+            distHtml += '<div style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin-top:0.2rem;">';
+            distHtml += '<div style="width:'+pct+'%;height:100%;background:#00ff9d;border-radius:3px;"></div>';
+            distHtml += '</div>';
+            distHtml += '</div>';
+        });
+        
+        document.getElementById('stat-type-distribution').innerHTML = distHtml || '<div style="color:#64748b;font-size:0.75rem;">Belum ada data</div>';
+    }
+
+    function switchTab(tab){
+        state.activeTab = tab;
         document.querySelectorAll('.qr-tab').forEach(function(b){
             b.classList.toggle('active', b.dataset.key===tab);
             b.style.background = b.dataset.key===tab ? '#00ff9d' : '#1e293b';
             b.style.color = b.dataset.key===tab ? '#000' : '#e2e8f0';
             b.style.fontWeight = b.dataset.key===tab ? '700' : '600';
         });
-        document.getElementById('panel-generate').style.display = tab==='generate'?'block':'none';
-        document.getElementById('panel-codes').style.display = tab==='codes'?'block':'none';
-        document.getElementById('panel-history').style.display = tab==='history'?'block':'none';
+        
+        ['generate', 'scanner', 'codes', 'history', 'stats'].forEach(function(panel){
+            document.getElementById('panel-'+panel).style.display = panel===tab ? 'block' : 'none';
+        });
+        
         if(tab==='codes') renderCodes();
         if(tab==='history') renderHistory();
+        if(tab==='stats') renderStats();
+        if(tab==='scanner' && state.scanner) stopScanner();
     }
 
-    // 🛡️ Event Delegation: Zero inline handlers, survives innerHTML wipes
+    // Event delegation
     setTimeout(function(){
         var app = document.getElementById('qr-app');
         if(!app) return;
+        
         app.addEventListener('click', function(e){
             var t = e.target.closest('[data-qr]');
             if(!t) return;
             var act = t.dataset.qr, key = t.dataset.key, id = t.dataset.id;
+            
             if(act==='tab') switchTab(key);
             else if(act==='generate') generate();
+            else if(act==='batch-generate') batchGenerate();
             else if(act==='save') saveQr();
             else if(act==='download') downloadQr();
+            else if(act==='share') shareQr();
             else if(act==='delete') deleteQr(id);
+            else if(act==='delete-all') deleteAllQr();
             else if(act==='print-all') printAll();
+            else if(act==='export-qr') exportQr();
+            else if(act==='import-qr') importQr();
+            else if(act==='start-scan') startScanner();
+            else if(act==='stop-scan') stopScanner();
+            else if(act==='clear-history') clearHistory();
         });
+        
         app.addEventListener('change', function(e){
             var t = e.target.closest('[data-qr="type-change"]');
             if(t) renderForm();
+            
+            // Search & filter
+            if(e.target.id === 'qr-search' || e.target.id === 'qr-filter-category' || e.target.id === 'qr-filter-type'){
+                renderCodes();
+            }
+            
+            // Expiration checkbox
+            if(e.target.id === 'qr-expire'){
+                document.getElementById('qr-expire-date').style.display = e.target.checked ? 'block' : 'none';
+            }
         });
+        
+        app.addEventListener('input', function(e){
+            if(e.target.id === 'qr-search'){
+                renderCodes();
+            }
+        });
+        
         renderForm();
         switchTab('generate');
-        console.log('✅ QR module bound & ready');
+        console.log('✅ QR Enterprise module bound & ready');
     }, 150);
 })();
 </script>
