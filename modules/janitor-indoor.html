@@ -71,8 +71,27 @@
     .ji-shift { padding:0.5rem 0.8rem; border:none; border-radius:0.5rem; cursor:pointer; font-weight:600; font-size:0.75rem; background:#1e293b; color:#e2e8f0; transition:0.3s; }
     .ji-shift.active { background:#10b981; color:#000; }
     .ji-panel { background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:0.75rem; }
-    .ji-checkbox { cursor:pointer; }
-    .ji-checkbox input[type="checkbox"] { cursor:pointer; width:16px; height:16px; accent-color:#10b981; }
+    .ji-checkbox-label { 
+        display:flex; 
+        align-items:center; 
+        gap:0.5rem; 
+        padding:0.5rem; 
+        background:rgba(255,255,255,0.03); 
+        border-radius:0.4rem; 
+        cursor:pointer; 
+        font-size:0.75rem;
+        transition: background 0.2s;
+        user-select: none;
+    }
+    .ji-checkbox-label:hover { background:rgba(255,255,255,0.08); }
+    .ji-checkbox-label.checked { background:rgba(16,185,129,0.15); }
+    .ji-checkbox-label input[type="checkbox"] { 
+        cursor:pointer; 
+        width:18px; 
+        height:18px; 
+        accent-color:#10b981;
+        flex-shrink: 0;
+    }
     .history-item { background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem; }
     .history-item h4 { color:#10b981; margin:0 0 0.5rem; font-size:0.9rem; }
     .history-item p { margin:0.25rem 0; font-size:0.75rem; color:#94a3b8; }
@@ -137,17 +156,34 @@
         document.getElementById('btn-sore').classList.toggle('active', state.shift==='sore');
     }
 
-    window.toggleItem = function(area, item, event){
-        if(event) event.stopPropagation();
-        if(!state.data[state.date].shifts[state.shift]) state.data[state.date].shifts[state.shift] = {};
-        if(!state.data[state.date].shifts[state.shift][area]) state.data[state.date].shifts[state.shift][area] = {};
-        state.data[state.date].shifts[state.shift][area][item] = !state.data[state.date].shifts[state.shift][area][item];
-        s('dreamos_janitor_indoor', state.data);
-        renderChecklist();
-        updateStats();
-    };
+    // EVENT DELEGATION - Handle checkbox clicks
+    document.addEventListener('change', function(e){
+        var checkbox = e.target;
+        if(checkbox.type === 'checkbox' && checkbox.dataset.area && checkbox.dataset.item){
+            var area = checkbox.dataset.area;
+            var item = checkbox.dataset.item;
+            var isChecked = checkbox.checked;
+            
+            // Update state
+            if(!state.data[state.date].shifts[state.shift]) state.data[state.date].shifts[state.shift] = {};
+            if(!state.data[state.date].shifts[state.shift][area]) state.data[state.date].shifts[state.shift][area] = {};
+            state.data[state.date].shifts[state.shift][area][item] = isChecked;
+            
+            // Save
+            s('dreamos_janitor_indoor', state.data);
+            
+            // Update UI
+            var label = checkbox.closest('.ji-checkbox-label');
+            if(label){
+                label.classList.toggle('checked', isChecked);
+            }
+            
+            updateStats();
+        }
+    });
 
-    window.toggleExpand = function(area){
+    window.toggleExpand = function(area, event){
+        if(event) event.stopPropagation();
         state.expanded[area] = !state.expanded[area];
         renderChecklist();
     };
@@ -212,7 +248,7 @@
 
             html += '<div class="ji-panel">';
             html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">';
-            html += '<div style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;" onclick="toggleExpand(\''+areaKey+'\')">';
+            html += '<div style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;" onclick="toggleExpand(\''+areaKey+'\',event)">';
             html += '<h4 style="color:#10b981;font-size:0.9rem;margin:0;">'+area.title+'</h4>';
             html += '<span style="font-size:0.7rem;color:#94a3b8;">'+checked+'/'+total+'</span></div>';
             html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
@@ -223,11 +259,13 @@
             if(isExp){
                 html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.3rem;margin-top:0.3rem;">';
                 area.items.forEach(function(item){
-                    var chk = shiftData[item] ? 'checked' : '';
-                    var bg = shiftData[item] ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)';
+                    var isChecked = shiftData[item] ? true : false;
+                    var checkedClass = isChecked ? 'checked' : '';
+                    var checkedAttr = isChecked ? 'checked' : '';
                     var safeItem = item.replace(/'/g, "\\'");
-                    html += '<label class="ji-checkbox" style="display:flex;align-items:center;gap:0.3rem;padding:0.3rem;background:'+bg+';border-radius:0.3rem;cursor:pointer;font-size:0.75rem;">';
-                    html += '<input type="checkbox" '+chk+' onclick="toggleItem(\''+areaKey+'\',\''+safeItem+'\',event)"> '+item+'</label>';
+                    html += '<label class="ji-checkbox-label '+checkedClass+'">';
+                    html += '<input type="checkbox" '+checkedAttr+' data-area="'+areaKey+'" data-item="'+safeItem+'"> ';
+                    html += '<span>'+item+'</span></label>';
                 });
                 html += '</div>';
             }
