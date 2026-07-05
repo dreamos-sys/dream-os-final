@@ -1,86 +1,461 @@
 <script src="../js/security-helper.js"></script>
-<button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:rgba(15,23,42,0.8);border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;backdrop-filter:blur(5px);">← Kembali</button>
 
-<div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="settings-app">
-    <h2 style="color:#06b6d4;font-size:1.4rem;margin-bottom:0.2rem;">⚙️ Enterprise Settings</h2>
-    <p style="color:#94a3b8;font-size:0.7rem;margin-bottom:1rem;">ISO 9241-171 • Multi-Language Engine • Global Config</p>
-    
-    <div style="display:flex;gap:0.4rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:0.4rem;border-bottom:1px solid rgba(255,255,255,0.1);">
-        <button class="set-tab active" data-tab="tampilan">🎨 Display</button>
-        <button class="set-tab" data-tab="aksesibilitas">♿ Access</button>
-        <button class="set-tab" data-tab="bahasa">🌍 Language</button>
+<!-- HEADER WITH BACK BUTTON -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:0 0.5rem;">
+    <button onclick="window.parent.goHome()" style="background:rgba(15,23,42,0.6);border:2px solid rgba(0,255,157,0.3);color:#00ff9d;padding:0.6rem 1.2rem;border-radius:12px;cursor:pointer;font-weight:700;font-size:0.8rem;backdrop-filter:blur(10px);transition:all 0.3s;">← Home</button>
+    <div style="text-align:right;">
+        <div style="color:#00ff9d;font-weight:800;font-size:1.1rem;text-shadow:0 0 15px rgba(0,255,157,0.5);">⚙️ Enterprise Settings</div>
+        <div style="color:#94a3b8;font-size:0.65rem;">ISO 9241-171 • v1.0 Final</div>
     </div>
-    <div id="set-content"></div>
+</div>
+
+<!-- TABS -->
+<div style="display:flex;gap:8px;margin-bottom:1.5rem;overflow-x:auto;padding-bottom:0.5rem;">
+    <button class="set-tab active" data-tab="tampilan">🎨 Display</button>
+    <button class="set-tab" data-tab="aksesibilitas">♿ Access</button>
+    <button class="set-tab" data-tab="bahasa">🌍 Language</button>
+    <button class="set-tab" data-tab="advanced">🔬 Advanced</button>
+</div>
+
+<!-- CONTENT -->
+<div id="set-content"></div>
+
+<!-- RESET BUTTON -->
+<div style="margin-top:2rem;text-align:center;">
+    <button onclick="resetSettings()" style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:0.8rem 1.5rem;border-radius:12px;cursor:pointer;font-weight:700;font-size:0.8rem;transition:all 0.3s;">
+        🔄 Reset to Defaults
+    </button>
 </div>
 
 <style>
-    .set-tab{padding:0.6rem 1rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.75rem;white-space:nowrap;background:rgba(30,41,59,0.5);color:#94a3b8;transition:0.3s;border:1px solid transparent;}
-    .set-tab.active{background:rgba(6,182,212,0.15);color:#06b6d4;border-color:rgba(6,182,212,0.3);}
-    .set-panel{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1rem;margin-bottom:0.75rem;backdrop-filter:blur(10px);}
-    .set-panel h4{color:#06b6d4;margin:0 0 0.75rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;}
-    .set-row{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);}
-    .set-label{font-size:0.85rem;color:#e2e8f0;font-weight:500;}
-    .set-desc{font-size:0.7rem;color:#94a3b8;margin-top:0.2rem;}
-    .toggle{width:44px;height:24px;background:#334155;border-radius:12px;position:relative;cursor:pointer;transition:0.3s;}
-    .toggle.active{background:#10b981;}
-    .toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:0.3s;}
-    .toggle.active::after{left:23px;}
-    .set-input{background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:0.5rem;border-radius:0.4rem;font-size:0.8rem;outline:none;}
+    /* TABS - MODERN STYLE */
+    .set-tab {
+        padding: 0.7rem 1.2rem;
+        border: 2px solid rgba(0, 255, 157, 0.2);
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        background: rgba(15, 23, 42, 0.6);
+        color: #94a3b8;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    .set-tab:hover {
+        border-color: rgba(0, 255, 157, 0.4);
+        color: #00ff9d;
+        transform: translateY(-2px);
+    }
+    .set-tab.active {
+        background: rgba(0, 255, 157, 0.15);
+        color: #00ff9d;
+        border-color: #00ff9d;
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    /* PANELS - GLASS MORPHISM */
+    .set-panel {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(0, 255, 157, 0.2);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .set-panel h4 {
+        color: #00ff9d;
+        margin: 0 0 1rem;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+        padding-bottom: 0.75rem;
+    }
+    
+    /* ROWS */
+    .set-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.2s ease;
+    }
+    .set-row:last-child { border-bottom: none; }
+    .set-row:hover {
+        background: rgba(0, 255, 157, 0.03);
+        padding-left: 8px;
+        padding-right: 8px;
+        margin: 0 -8px;
+        border-radius: 8px;
+    }
+    .set-label {
+        font-size: 0.9rem;
+        color: #e2e8f0;
+        font-weight: 600;
+    }
+    .set-desc {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+    
+    /* TOGGLE - FUTURISTIC */
+    .toggle {
+        width: 52px;
+        height: 28px;
+        background: #334155;
+        border-radius: 14px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+    }
+    .toggle.active {
+        background: #00ff9d;
+        border-color: #00ff9d;
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
+    }
+    .toggle::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+    .toggle.active::after {
+        left: 27px;
+    }
+    
+    /* INPUTS */
+    .set-input {
+        background: rgba(0, 0, 0, 0.4);
+        border: 2px solid rgba(0, 255, 157, 0.2);
+        color: #e2e8f0;
+        padding: 0.6rem 1rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        min-width: 140px;
+    }
+    .set-input:focus {
+        border-color: #00ff9d;
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+    }
+    
+    /* RANGE SLIDER */
+    .set-range {
+        width: 120px;
+        height: 6px;
+        background: rgba(0, 255, 157, 0.2);
+        border-radius: 3px;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    .set-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #00ff9d;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.6);
+    }
+    .set-range::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #00ff9d;
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.6);
+    }
+    
+    .range-value {
+        display: inline-block;
+        min-width: 50px;
+        text-align: center;
+        color: #00ff9d;
+        font-weight: 700;
+        margin-left: 8px;
+    }
+    
+    /* PREVIEW BOX */
+    .preview-box {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 157, 0.2);
+        text-align: center;
+    }
+    .preview-box .preview-title {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* ANIMATIONS */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .set-panel {
+        animation: fadeIn 0.4s ease;
+    }
 </style>
 
 <script>
 (function(){
-    var defaults = { theme:'dark', fontSize:100, highContrast:false, lang:'id' };
+    var defaults = {
+        theme: 'dark',
+        fontSize: 100,
+        highContrast: false,
+        reduceMotion: false,
+        screenReader: false,
+        starfield: true,
+        glassIntensity: 70,
+        lang: 'id',
+        autoDetect: false
+    };
+    
     var state = JSON.parse(localStorage.getItem('dreamos_settings') || JSON.stringify(defaults));
     var currentTab = 'tampilan';
 
-    function applySettings(){
+    function showNotification(title, text) {
+        if (window.parent.showNotification) {
+            window.parent.showNotification(title, text);
+        } else {
+            alert(title + ': ' + text);
+        }
+    }
+
+    function applySettings() {
         var r = document.documentElement;
         r.style.setProperty('--font-scale', state.fontSize + '%');
         r.setAttribute('data-theme', state.theme);
         localStorage.setItem('dreamos_settings', JSON.stringify(state));
         localStorage.setItem('dreamos_lang', state.lang);
-        // Event custom untuk update UI di modul lain
+        
+        // Apply to parent
+        if (window.parent.document) {
+            var pr = window.parent.document.documentElement;
+            pr.style.setProperty('--font-scale', state.fontSize + '%');
+            pr.setAttribute('data-theme', state.theme);
+            
+            // Toggle starfield
+            var canvas = window.parent.document.getElementById('star-field');
+            if (canvas) {
+                canvas.style.display = state.starfield ? 'block' : 'none';
+            }
+            
+            // Apply glass intensity
+            var glassBg = `rgba(15, 23, 42, ${(state.glassIntensity / 100).toFixed(2)})`;
+            pr.style.setProperty('--glass-bg', glassBg);
+            
+            // Apply theme colors
+            if (state.theme === 'light') {
+                pr.style.setProperty('--glass-bg', `rgba(240, 245, 255, ${(state.glassIntensity / 100).toFixed(2)})`);
+                pr.style.setProperty('--neon', '#0ea5e9');
+                window.parent.document.body.style.background = '#f1f5f9';
+            } else {
+                pr.style.setProperty('--neon', '#00ff9d');
+                window.parent.document.body.style.background = '#0a0e27';
+            }
+            
+            // High contrast
+            if (state.highContrast) {
+                pr.style.setProperty('--text-main', '#ffffff');
+                pr.style.setProperty('--glass-border', 'rgba(0, 255, 157, 0.5)');
+            }
+            
+            // Reduced motion
+            if (state.reduceMotion) {
+                window.parent.document.body.style.setProperty('--animation-duration', '0s');
+            }
+        }
+        
+        // Dispatch event
         window.dispatchEvent(new CustomEvent('langChanged', { detail: state.lang }));
     }
 
-    function render(){
+    function render() {
         var h = '';
-        if(currentTab === 'tampilan'){
+        
+        if (currentTab === 'tampilan') {
             h += '<div class="set-panel"><h4>🎨 Visual Preferences</h4>';
             h += row('Dark Mode', 'Enterprise dark theme', toggle('theme', state.theme === 'dark'));
-            h += row('Font Scale', 'Global text size ('+state.fontSize+'%)', '<input type="range" min="80" max="140" value="'+state.fontSize+'" data-act="font-size" style="width:100px;accent-color:#06b6d4;">');
+            h += row('Font Scale', 'Global text size', 
+                '<input type="range" class="set-range" min="80" max="140" value="' + state.fontSize + '" data-act="font-size">' +
+                '<span class="range-value">' + state.fontSize + '%</span>');
+            h += row('Starfield Animation', 'NVIDIA animated background', toggle('starfield', state.starfield));
+            h += row('Glass Intensity', 'Glass morphism opacity (' + state.glassIntensity + '%)', 
+                '<input type="range" class="set-range" min="30" max="90" value="' + state.glassIntensity + '" data-act="glass-intensity">' +
+                '<span class="range-value">' + state.glassIntensity + '%</span>');
             h += '</div>';
-        } else if(currentTab === 'aksesibilitas'){
+            
+        } else if (currentTab === 'aksesibilitas') {
             h += '<div class="set-panel"><h4>♿ Accessibility Suite</h4>';
             h += row('High Contrast', 'WCAG 2.2 AA compliant', toggle('highContrast', state.highContrast));
-            h += row('Reduced Motion', 'Performance mode', toggle('reduceMotion', state.reduceMotion));
+            h += row('Reduced Motion', 'Performance mode (no animations)', toggle('reduceMotion', state.reduceMotion));
+            h += row('Screen Reader', 'ARIA labels for accessibility', toggle('screenReader', state.screenReader));
             h += '</div>';
-        } else if(currentTab === 'bahasa'){
+            
+        } else if (currentTab === 'bahasa') {
             h += '<div class="set-panel"><h4>🌍 Global Language Engine</h4>';
-            h += row('System Interface', 'Select operational language', select('lang', {id:'🇮🇩 Indonesia', en:'🇬🇧 English', ar:'🇸🇦 العربية', zh:'🇨🇳 中文'}, state.lang));
-            h += '<div style="margin-top:1rem; font-size:0.7rem; color:#64748b; font-style:italic;">*Perubahan bahasa akan diterapkan ke seluruh modul Enterprise.</div>';
+            h += row('System Language', 'Select operational language', 
+                select('lang', {
+                    id: '🇮🇩 Indonesia',
+                    en: '🇬🇧 English',
+                    ar: '🇸🇦 العربية',
+                    zh: '🇨🇳 中文'
+                }, state.lang));
+            h += row('Auto-Detect', 'Automatically detect browser language', toggle('autoDetect', state.autoDetect));
+            h += '<div class="preview-box">';
+            h += '<div class="preview-title">📝 Preview</div>';
+            h += '<div style="font-size:1rem;color:#00ff9d;font-weight:700;">' + getGreeting() + '</div>';
+            h += '<div style="font-size:0.75rem;color:#94a3b8;margin-top:0.3rem;">' + getSubtitle() + '</div>';
+            h += '</div>';
+            h += '</div>';
+            
+        } else if (currentTab === 'advanced') {
+            h += '<div class="set-panel"><h4>🔬 Advanced Options</h4>';
+            h += row('Developer Mode', 'Show debug information', toggle('devMode', state.devMode));
+            h += row('Auto-Save', 'Save data every 30 seconds', toggle('autoSave', state.autoSave !== false));
+            h += row('Cache Busting', 'Force reload on startup', toggle('cacheBust', state.cacheBust));
+            h += '<div style="margin-top:1rem;padding:1rem;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(0,255,157,0.2);">';
+            h += '<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">📊 Current Settings</div>';
+            h += '<pre style="font-size:0.65rem;color:#00ff9d;overflow-x:auto;margin:0;">' + JSON.stringify(state, null, 2) + '</pre>';
+            h += '</div>';
             h += '</div>';
         }
+        
         document.getElementById('set-content').innerHTML = h;
     }
     
-    function row(l, d, c){ return '<div class="set-row"><div><div class="set-label">'+l+'</div><div class="set-desc">'+d+'</div></div><div>'+c+'</div></div>'; }
-    function toggle(k, a){ return '<div class="toggle '+(a?'active':'')+'" data-act="toggle" data-key="'+k+'"></div>'; }
-    function select(k, opts, val){ var h = '<select class="set-input" data-act="select" data-key="'+k+'">'; for(var o in opts) h += '<option value="'+o+'" '+(val===o?'selected':'')+'>'+opts[o]+'</option>'; return h + '</select>'; }
+    function getGreeting() {
+        var greetings = {
+            id: '🕌 Assalamualaikum!',
+            en: '🕌 Peace be upon you!',
+            ar: '🕌 السلام عليكم',
+            zh: '🕌 你好!'
+        };
+        return greetings[state.lang] || greetings.id;
+    }
+    
+    function getSubtitle() {
+        var subtitles = {
+            id: 'The Power Soul Of Shalawat',
+            en: 'The Power Soul Of Shalawat',
+            ar: 'قوة روح الصلاة',
+            zh: '祈祷的力量'
+        };
+        return subtitles[state.lang] || subtitles.id;
+    }
+    
+    function row(l, d, c) {
+        return '<div class="set-row"><div><div class="set-label">' + l + '</div><div class="set-desc">' + d + '</div></div><div style="display:flex;align-items:center;">' + c + '</div></div>';
+    }
+    
+    function toggle(k, a) {
+        return '<div class="toggle ' + (a ? 'active' : '') + '" data-act="toggle" data-key="' + k + '"></div>';
+    }
+    
+    function select(k, opts, val) {
+        var h = '<select class="set-input" data-act="select" data-key="' + k + '">';
+        for (var o in opts) {
+            h += '<option value="' + o + '" ' + (val === o ? 'selected' : '') + '>' + opts[o] + '</option>';
+        }
+        return h + '</select>';
+    }
 
-    document.getElementById('settings-app').addEventListener('click', function(e){
+    window.resetSettings = function() {
+        if (confirm('🔄 Reset semua setting ke default?')) {
+            state = JSON.parse(JSON.stringify(defaults));
+            applySettings();
+            render();
+            showNotification('Settings Reset', 'All settings restored to defaults ✅');
+        }
+    };
+
+    // Event handlers
+    document.addEventListener('click', function(e) {
         var t = e.target.closest('[data-tab]');
-        if(t){ currentTab = t.dataset.tab; document.querySelectorAll('.set-tab').forEach(b => b.classList.remove('active')); t.classList.add('active'); render(); return; }
+        if (t) {
+            currentTab = t.dataset.tab;
+            document.querySelectorAll('.set-tab').forEach(function(b) { b.classList.remove('active'); });
+            t.classList.add('active');
+            render();
+            return;
+        }
+        
         var a = e.target.closest('[data-act="toggle"]');
-        if(a){ state[a.dataset.key] = !state[a.dataset.key]; if(a.dataset.key === 'theme') state.theme = state.theme === 'dark' ? 'light' : 'dark'; applySettings(); render(); }
+        if (a) {
+            state[a.dataset.key] = !state[a.dataset.key];
+            if (a.dataset.key === 'theme') {
+                state.theme = state.theme === 'dark' ? 'light' : 'dark';
+                showNotification('Theme Changed', state.theme === 'dark' ? 'Dark Mode 🌙' : 'Light Mode ☀️');
+            }
+            applySettings();
+            render();
+            return;
+        }
     });
     
-    document.getElementById('settings-app').addEventListener('change', function(e){
+    document.addEventListener('input', function(e) {
+        var a = e.target.closest('[data-act="font-size"]');
+        if (a) {
+            state.fontSize = parseInt(a.value);
+            document.querySelector('.range-value').textContent = state.fontSize + '%';
+            applySettings();
+            return;
+        }
+        
+        a = e.target.closest('[data-act="glass-intensity"]');
+        if (a) {
+            state.glassIntensity = parseInt(a.value);
+            var rv = a.parentElement.querySelector('.range-value');
+            if (rv) rv.textContent = state.glassIntensity + '%';
+            applySettings();
+            return;
+        }
+    });
+    
+    document.addEventListener('change', function(e) {
         var a = e.target.closest('[data-act="select"]');
-        if(a){ state[a.dataset.key] = a.value; applySettings(); render(); }
+        if (a) {
+            state[a.dataset.key] = a.value;
+            applySettings();
+            render();
+            showNotification('Language Changed', 'Updated to ' + a.options[a.selectedIndex].text);
+            return;
+        }
     });
 
+    // Init
     render();
+    applySettings();
+    
+    // Listen for language changes
+    window.addEventListener('langChanged', function(e) {
+        console.log('🌍 Language changed to:', e.detail);
+    });
 })();
 </script>
