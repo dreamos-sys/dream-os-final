@@ -368,18 +368,116 @@
             }
         }
 
+        // === PRAYER TIMES WITH AUTO-UPDATE ===
+        let prayerInterval;
+        let nextPrayerTime = null;
+        
         async function fetchPrayerTimes() {
             try {
-                const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Depok&country=Indonesia&method=20');
+                const today = new Date();
+                const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+                
+                const res = await fetch(`https://api.aladhan.com/v1/timings/${dateStr}?latitude=-6.4025&longitude=106.7942&method=20`);
                 const data = await res.json();
+                
                 if (data.code === 200) {
                     const t = data.data.timings;
-                    document.getElementById('prayer-times-dash').textContent = 
-                        `🕌 Subuh ${t.Fajr} • Dzuhur ${t.Dhuhr} • Ashar ${t.Asr} • Maghrib ${t.Maghrib} • Isya ${t.Isha}`;
+                    const prayers = [
+                        { name: 'Subuh', time: t.Fajr, icon: '🌅' },
+                        { name: 'Dzuhur', time: t.Dhuhr, icon: '☀️' },
+                        { name: 'Ashar', time: t.Asr, icon: '🌤️' },
+                        { name: 'Maghrib', time: t.Maghrib, icon: '🌅' },
+                        { name: 'Isya', time: t.Isha, icon: '🌙' }
+                    ];
+                    
+                    // Find next prayer
+                    const now = new Date();
+                    let nextPrayer = null;
+                    let nextPrayerInfo = null;
+                    
+                    prayers.forEach(prayer => {
+                        const [hours, minutes] = prayer.time.split(':').map(Number);
+                        const prayerTime = new Date();
+                        prayerTime.setHours(hours, minutes, 0);
+                        
+                        if (prayerTime > now && !nextPrayer) {
+                            nextPrayer = prayerTime;
+                            nextPrayerInfo = prayer;
+                        }
+                    });
+                    
+                    // If no next prayer today, next is Subuh tomorrow
+                    if (!nextPrayer) {
+                        nextPrayerInfo = prayers[0];
+                        const [hours, minutes] = prayers[0].time.split(':').map(Number);
+                        nextPrayer = new Date();
+                        nextPrayer.setDate(nextPrayer.getDate() + 1);
+                        nextPrayer.setHours(hours, minutes, 0);
+                    }
+                    
+                    // Display with highlight
+                    const prayerText = prayers.map(p => {
+                        const isNext = nextPrayerInfo && p.name === nextPrayerInfo.name;
+                        const style = isNext ? 'color:#00ff9d;font-weight:bold;' : 'color:#94a3b8;';
+                        return `<span style="${style}">${p.icon} ${p.name} ${p.time}</span>`;
+                    }).join(' • ');
+                    
+                    const el = document.getElementById('prayer-times-dash');
+                    if (el) {
+                        el.innerHTML = prayerText;
+                    }
+                    
+                    // Update countdown every second
+                    updatePrayerCountdown(nextPrayer, nextPrayerInfo);
+                    
+                    // Auto-update every hour
+                    if (prayerInterval) clearInterval(prayerInterval);
+                    prayerInterval = setInterval(() => {
+                        fetchPrayerTimes();
+                    }, 3600000); // Update every hour
                 }
             } catch(e) {
+                console.error('Prayer times error:', e);
                 document.getElementById('prayer-times-dash').textContent = '🕌 Gagal memuat jadwal shalat';
             }
+        }
+        
+        function updatePrayerCountdown(nextPrayer, nextPrayerInfo) {
+            function updateCountdown() {
+                const now = new Date();
+                const diff = nextPrayer - now;
+                
+                if (diff <= 0) {
+                    // Prayer time arrived!
+                    document.getElementById('prayer-times-dash').innerHTML = 
+                        `<span style="color:#00ff9d;font-weight:bold;">🕌 WAKTU ${nextPrayerInfo.name.toUpperCase()} TELAH TIBA!</span>`;
+                    setTimeout(() => fetchPrayerTimes(), 60000); // Refresh after 1 minute
+                    return;
+                }
+                
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                const countdown = String(hours).padStart(2,'0') + ':' + 
+                                 String(minutes).padStart(2,'0') + ':' + 
+                                 String(seconds).padStart(2,'0');
+                
+                // Add countdown to display
+                const el = document.getElementById('prayer-times-dash');
+                if (el && !el.querySelector('.countdown')) {
+                    const countdownSpan = document.createElement('span');
+                    countdownSpan.className = 'countdown';
+                    countdownSpan.style.cssText = 'margin-left:10px;padding:2px 8px;background:rgba(0,255,157,0.1);border-radius:10px;font-size:0.65rem;';
+                    countdownSpan.innerHTML = `⏱️ ${nextPrayerInfo.icon} ${nextPrayerInfo.name} dalam ${countdown}`;
+                    el.appendChild(countdownSpan);
+                } else if (el && el.querySelector('.countdown')) {
+                    el.querySelector('.countdown').innerHTML = `⏱️ ${nextPrayerInfo.icon} ${nextPrayerInfo.name} dalam ${countdown}`;
+                }
+            }
+            
+            updateCountdown();
+            setInterval(updateCountdown, 1000); // Update every second
         }
 
         // === 7 SLIDES AUTO-CONNECTED ===
