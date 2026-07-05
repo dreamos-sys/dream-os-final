@@ -146,7 +146,7 @@
     window.setShift = function(sh){
         state.shift = sh;
         updateShiftBtns();
-        renderChecklist();
+        renderChecklist(); // Re-render saat ganti shift
         updateStats();
     };
 
@@ -156,7 +156,7 @@
         document.getElementById('btn-sore').classList.toggle('active', state.shift==='sore');
     }
 
-    // CRITICAL FIX: Toggle dengan onchange inline + stopPropagation
+    // CRITICAL FIX: Toggle TANPA re-render!
     window.toggleItem = function(area, item, checkbox, event){
         if(event) event.stopPropagation();
         var isChecked = checkbox.checked;
@@ -175,13 +175,16 @@
             label.classList.toggle('checked', isChecked);
         }
         
+        // Update stats saja
         updateStats();
+        
+        // JANGAN panggil renderChecklist() - checkbox akan hilang!
     };
 
     window.toggleExpand = function(area, event){
         if(event) event.stopPropagation();
         state.expanded[area] = !state.expanded[area];
-        renderChecklist();
+        renderChecklist(); // Re-render saat expand/collapse
     };
 
     function updateStats(){
@@ -211,7 +214,7 @@
                 state.data[state.date].photos[key] = ev.target.result;
                 state.photoData = state.data[state.date].photos;
                 s('dreamos_janitor_indoor', state.data);
-                renderChecklist();
+                renderChecklist(); // Re-render untuk show foto
             };
             reader.readAsDataURL(file);
         };
@@ -223,7 +226,7 @@
         if(state.data[state.date] && state.data[state.date].shifts){
             state.data[state.date].shifts[state.shift] = {};
             s('dreamos_janitor_indoor', state.data);
-            renderChecklist();
+            renderChecklist(); // Re-render setelah reset
             updateStats();
         }
     };
@@ -259,7 +262,7 @@
                     var checkedClass = isChecked ? 'checked' : '';
                     var checkedAttr = isChecked ? 'checked' : '';
                     var safeItem = item.replace(/'/g, "\\'");
-                    // CRITICAL: onchange inline dengan stopPropagation
+                    // CRITICAL: onchange inline, TANPA re-render setelahnya
                     html += '<label class="ji-checkbox-label '+checkedClass+'">';
                     html += '<input type="checkbox" '+checkedAttr+' onchange="toggleItem(\''+areaKey+'\',\''+safeItem+'\',this,event)"> ';
                     html += '<span>'+item+'</span></label>';
