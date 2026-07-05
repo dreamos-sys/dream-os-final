@@ -101,7 +101,8 @@
 <script>
 (function(){
     var AREAS = {
-        toilet: { title:'🚻 Toilet', items:['Pintu Utama','Pintu Kubikal','Kaca / Cermin','Exhoust','Dinding','Tempat Wudhu','Lantai','Floor Drain','Kloset','Flapond / Ceilling','Tempat Sampah'] },
+        toilet_male: { title:'🚹 Toilet Laki-Laki', items:['Pintu Utama','Pintu Kubikal','Kaca / Cermin','Exhoust','Dinding','Tempat Wudhu','Lantai','Floor Drain','Kloset','Flapond / Ceilling','Tempat Sampah'] },
+        toilet_female: { title:'🚺 Toilet Perempuan', items:['Pintu Utama','Pintu Kubikal','Kaca / Cermin','Exhoust','Dinding','Tempat Wudhu','Lantai','Floor Drain','Kloset','Flapond / Ceilling','Tempat Sampah'] },
         ruangan: { title:'🏢 Ruangan', items:['Loby Utama','Teras','Lorong Utama Gedung','Balkon','Pintu Utama','Pintu Kelas dan R Lain','Jendela','Kelas','Aula','Sentra Musik','Sentra Kreasi','UKS','Psikolog','Lab Kom','Lab IPA','Perpustakaan','Kepala Sekolah','R.Guru (Laki/Perempuan)','R. Pemasaran','R. Admin TU','R. Rapat','R.CEO, Direktur dan Yayasan','R. Kepala Bidang (Kabid)','R. Osis','R. Mushalla','R. Inklusi','R. Gudang Olah Raga','R. Serbaguna','R. Masjid','Kantin','Saung Besar','Saung Kecil','Pos','Gudang Umum','Tangga','Lift','Keterangan Dll'] }
     };
 
@@ -109,7 +110,7 @@
         date: new Date().toISOString().split('T')[0],
         shift: 'pagi',
         petugas: '', gedung: '', lantai: '',
-        data: {}, expanded: { toilet: true, ruangan: true },
+        data: {}, expanded: { toilet_male: true, toilet_female: true, ruangan: true },
         photoData: {}
     };
 
@@ -146,7 +147,7 @@
     window.setShift = function(sh){
         state.shift = sh;
         updateShiftBtns();
-        renderChecklist(); // Re-render saat ganti shift
+        renderChecklist();
         updateStats();
     };
 
@@ -156,35 +157,28 @@
         document.getElementById('btn-sore').classList.toggle('active', state.shift==='sore');
     }
 
-    // CRITICAL FIX: Toggle TANPA re-render!
     window.toggleItem = function(area, item, checkbox, event){
         if(event) event.stopPropagation();
         var isChecked = checkbox.checked;
         
-        // Update state
         if(!state.data[state.date].shifts[state.shift]) state.data[state.date].shifts[state.shift] = {};
         if(!state.data[state.date].shifts[state.shift][area]) state.data[state.date].shifts[state.shift][area] = {};
         state.data[state.date].shifts[state.shift][area][item] = isChecked;
         
-        // Save to localStorage
         s('dreamos_janitor_indoor', state.data);
         
-        // Update UI - HANYA update class label, JANGAN re-render semua!
         var label = checkbox.closest('.ji-checkbox-label');
         if(label){
             label.classList.toggle('checked', isChecked);
         }
         
-        // Update stats saja
         updateStats();
-        
-        // JANGAN panggil renderChecklist() - checkbox akan hilang!
     };
 
     window.toggleExpand = function(area, event){
         if(event) event.stopPropagation();
         state.expanded[area] = !state.expanded[area];
-        renderChecklist(); // Re-render saat expand/collapse
+        renderChecklist();
     };
 
     function updateStats(){
@@ -214,7 +208,7 @@
                 state.data[state.date].photos[key] = ev.target.result;
                 state.photoData = state.data[state.date].photos;
                 s('dreamos_janitor_indoor', state.data);
-                renderChecklist(); // Re-render untuk show foto
+                renderChecklist();
             };
             reader.readAsDataURL(file);
         };
@@ -226,7 +220,7 @@
         if(state.data[state.date] && state.data[state.date].shifts){
             state.data[state.date].shifts[state.shift] = {};
             s('dreamos_janitor_indoor', state.data);
-            renderChecklist(); // Re-render setelah reset
+            renderChecklist();
             updateStats();
         }
     };
@@ -262,7 +256,6 @@
                     var checkedClass = isChecked ? 'checked' : '';
                     var checkedAttr = isChecked ? 'checked' : '';
                     var safeItem = item.replace(/'/g, "\\'");
-                    // CRITICAL: onchange inline, TANPA re-render setelahnya
                     html += '<label class="ji-checkbox-label '+checkedClass+'">';
                     html += '<input type="checkbox" '+checkedAttr+' onchange="toggleItem(\''+areaKey+'\',\''+safeItem+'\',this,event)"> ';
                     html += '<span>'+item+'</span></label>';
