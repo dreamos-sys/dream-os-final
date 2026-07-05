@@ -28,7 +28,6 @@
 </div>
 
 <style>
-    /* TABS - MODERN STYLE */
     .set-tab {
         padding: 0.7rem 1.2rem;
         border: 2px solid rgba(0, 255, 157, 0.2);
@@ -56,7 +55,6 @@
         transform: translateY(-2px);
     }
     
-    /* PANELS - GLASS MORPHISM */
     .set-panel {
         background: rgba(15, 23, 42, 0.7);
         border: 1px solid rgba(0, 255, 157, 0.2);
@@ -78,7 +76,6 @@
         padding-bottom: 0.75rem;
     }
     
-    /* ROWS */
     .set-row {
         display: flex;
         justify-content: space-between;
@@ -106,7 +103,6 @@
         margin-top: 0.25rem;
     }
     
-    /* TOGGLE - FUTURISTIC */
     .toggle {
         width: 52px;
         height: 28px;
@@ -139,7 +135,6 @@
         left: 27px;
     }
     
-    /* INPUTS */
     .set-input {
         background: rgba(0, 0, 0, 0.4);
         border: 2px solid rgba(0, 255, 157, 0.2);
@@ -157,7 +152,6 @@
         box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
     }
     
-    /* RANGE SLIDER */
     .set-range {
         width: 120px;
         height: 6px;
@@ -195,7 +189,6 @@
         margin-left: 8px;
     }
     
-    /* PREVIEW BOX */
     .preview-box {
         margin-top: 1rem;
         padding: 1rem;
@@ -212,7 +205,36 @@
         letter-spacing: 1px;
     }
     
-    /* ANIMATIONS */
+    /* HIDDEN JSON PREVIEW - Toggle with button */
+    .json-preview {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 157, 0.2);
+    }
+    .json-preview.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    .json-toggle-btn {
+        background: rgba(0, 255, 157, 0.1);
+        border: 1px solid rgba(0, 255, 157, 0.3);
+        color: #00ff9d;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        transition: all 0.3s;
+    }
+    .json-toggle-btn:hover {
+        background: rgba(0, 255, 157, 0.2);
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+    }
+    
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
@@ -233,7 +255,10 @@
         starfield: true,
         glassIntensity: 70,
         lang: 'id',
-        autoDetect: false
+        autoDetect: false,
+        devMode: false,
+        autoSave: true,
+        cacheBust: false
     };
     
     var state = JSON.parse(localStorage.getItem('dreamos_settings') || JSON.stringify(defaults));
@@ -254,8 +279,8 @@
         localStorage.setItem('dreamos_settings', JSON.stringify(state));
         localStorage.setItem('dreamos_lang', state.lang);
         
-        // Apply to parent
-        if (window.parent.document) {
+        // Apply to parent window (index.html)
+        if (window.parent && window.parent.document) {
             var pr = window.parent.document.documentElement;
             pr.style.setProperty('--font-scale', state.fontSize + '%');
             pr.setAttribute('data-theme', state.theme);
@@ -288,11 +313,10 @@
             
             // Reduced motion
             if (state.reduceMotion) {
-                window.parent.document.body.style.setProperty('--animation-duration', '0s');
+                pr.style.setProperty('--animation-duration', '0s');
             }
         }
         
-        // Dispatch event
         window.dispatchEvent(new CustomEvent('langChanged', { detail: state.lang }));
     }
 
@@ -324,8 +348,8 @@
                 select('lang', {
                     id: '🇮🇩 Indonesia',
                     en: '🇬🇧 English',
-                    ar: '🇸🇦 العربية',
-                    zh: '🇨🇳 中文'
+                    ar: '🇸 العربية',
+                    zh: '🇨 中文'
                 }, state.lang));
             h += row('Auto-Detect', 'Automatically detect browser language', toggle('autoDetect', state.autoDetect));
             h += '<div class="preview-box">';
@@ -340,15 +364,30 @@
             h += row('Developer Mode', 'Show debug information', toggle('devMode', state.devMode));
             h += row('Auto-Save', 'Save data every 30 seconds', toggle('autoSave', state.autoSave !== false));
             h += row('Cache Busting', 'Force reload on startup', toggle('cacheBust', state.cacheBust));
-            h += '<div style="margin-top:1rem;padding:1rem;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(0,255,157,0.2);">';
-            h += '<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">📊 Current Settings</div>';
-            h += '<pre style="font-size:0.65rem;color:#00ff9d;overflow-x:auto;margin:0;">' + JSON.stringify(state, null, 2) + '</pre>';
+            
+            // Hidden JSON preview with toggle button
+            h += '<button class="json-toggle-btn" onclick="toggleJsonPreview()">📊 ' + (document.querySelector('.json-preview.show') ? 'Hide' : 'Show') + ' Current Settings</button>';
+            h += '<div class="json-preview" id="json-preview">';
+            h += '<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">📊 Current Settings (JSON)</div>';
+            h += '<pre style="font-size:0.65rem;color:#00ff9d;overflow-x:auto;margin:0;white-space:pre-wrap;word-wrap:break-word;">' + JSON.stringify(state, null, 2) + '</pre>';
             h += '</div>';
             h += '</div>';
         }
         
         document.getElementById('set-content').innerHTML = h;
     }
+    
+    // Toggle JSON preview visibility
+    window.toggleJsonPreview = function() {
+        var preview = document.getElementById('json-preview');
+        if (preview) {
+            preview.classList.toggle('show');
+            var btn = document.querySelector('.json-toggle-btn');
+            if (btn) {
+                btn.innerHTML = preview.classList.contains('show') ? '📊 Hide Current Settings' : '📊 Show Current Settings';
+            }
+        }
+    };
     
     function getGreeting() {
         var greetings = {
@@ -423,7 +462,8 @@
         var a = e.target.closest('[data-act="font-size"]');
         if (a) {
             state.fontSize = parseInt(a.value);
-            document.querySelector('.range-value').textContent = state.fontSize + '%';
+            var rv = a.parentElement.querySelector('.range-value');
+            if (rv) rv.textContent = state.fontSize + '%';
             applySettings();
             return;
         }
@@ -453,7 +493,6 @@
     render();
     applySettings();
     
-    // Listen for language changes
     window.addEventListener('langChanged', function(e) {
         console.log('🌍 Language changed to:', e.detail);
     });
