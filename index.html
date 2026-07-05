@@ -31,10 +31,12 @@
             content: '';
             position: fixed; inset: 0;
             background: 
+                #0a0e27,
                 radial-gradient(circle at 20% 50%, rgba(0, 255, 157, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 40% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
-            pointer-events: none; z-index: -2;
+            pointer-events: none; 
+            z-index: -2;
             animation: gradientFlow 15s ease-in-out infinite;
         }
         @keyframes gradientFlow {
@@ -51,7 +53,22 @@
             pointer-events: none; z-index: -1;
         }
         canvas#star-field {
-            position: fixed; inset: 0; z-index: -3; pointer-events: none;
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            z-index: 0; 
+            pointer-events: none;
+        }
+        
+        /* Body harus transparent biar bintang keliatan */
+        body {
+            background: transparent !important;
+        }
+        
+        /* Gradient background dipindah ke body::before */
+        body::before {
+            z-index: -1 !important;
         }
 
         /* ========== GLASS UTILITY ========== */
@@ -489,32 +506,73 @@
 
         window.tapLogo = () => {}; // placeholder
 
-        // === STARFIELD ===
+        // === NVIDIA STARFIELD ===
         (function(){
-            const c = document.getElementById('star-field');
-            if (!c) return;
-            const ctx = c.getContext('2d');
-            let w, h, stars = [];
-            function resize() { w = c.width = innerWidth; h = c.height = innerHeight; }
-            function init() {
-                resize(); stars = [];
-                for (let i=0; i<150; i++) stars.push({
-                    x: Math.random()*w, y: Math.random()*h,
-                    r: Math.random()*1.5+0.3, v: Math.random()*0.5+0.1
-                });
+            const canvas = document.getElementById('star-field');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+            const STAR_COUNT = 200;
+            
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
             }
+            
+            function init() {
+                resize();
+                stars = [];
+                for (let i = 0; i < STAR_COUNT; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 2 + 0.5,
+                        speed: Math.random() * 0.8 + 0.2,
+                        opacity: Math.random() * 0.5 + 0.5
+                    });
+                }
+            }
+            
             function draw() {
-                ctx.clearRect(0,0,w,h);
-                ctx.fillStyle = 'rgba(255,255,255,0.8)';
-                stars.forEach(p => {
-                    p.y -= p.v;
-                    if (p.y < -5) { p.y = h+5; p.x = Math.random()*w; }
-                    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                stars.forEach(star => {
+                    // Draw star with glow
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + star.opacity + ')';
+                    ctx.fill();
+                    
+                    // Add glow effect
+                    if (star.size > 1.5) {
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, star.size * 2, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(0, 255, 157, 0.1)';
+                        ctx.fill();
+                    }
+                    
+                    // Move star
+                    star.y -= star.speed;
+                    
+                    // Reset star if out of screen
+                    if (star.y < -10) {
+                        star.y = canvas.height + 10;
+                        star.x = Math.random() * canvas.width;
+                    }
                 });
+                
                 requestAnimationFrame(draw);
             }
-            addEventListener('resize', ()=>{ resize(); init(); });
-            init(); draw();
+            
+            // Proper event listener
+            window.addEventListener('resize', function() {
+                resize();
+                init();
+            });
+            
+            init();
+            draw();
+            console.log('🌟 NVIDIA Starfield Active - ' + STAR_COUNT + ' stars');
         })();
     </script>
 <script src="js/dev-tools.js"></script>
