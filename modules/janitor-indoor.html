@@ -156,31 +156,27 @@
         document.getElementById('btn-sore').classList.toggle('active', state.shift==='sore');
     }
 
-    // EVENT DELEGATION - Handle checkbox clicks
-    document.addEventListener('change', function(e){
-        var checkbox = e.target;
-        if(checkbox.type === 'checkbox' && checkbox.dataset.area && checkbox.dataset.item){
-            var area = checkbox.dataset.area;
-            var item = checkbox.dataset.item;
-            var isChecked = checkbox.checked;
-            
-            // Update state
-            if(!state.data[state.date].shifts[state.shift]) state.data[state.date].shifts[state.shift] = {};
-            if(!state.data[state.date].shifts[state.shift][area]) state.data[state.date].shifts[state.shift][area] = {};
-            state.data[state.date].shifts[state.shift][area][item] = isChecked;
-            
-            // Save
-            s('dreamos_janitor_indoor', state.data);
-            
-            // Update UI
-            var label = checkbox.closest('.ji-checkbox-label');
-            if(label){
-                label.classList.toggle('checked', isChecked);
-            }
-            
-            updateStats();
+    // CRITICAL FIX: Toggle dengan onchange inline + stopPropagation
+    window.toggleItem = function(area, item, checkbox, event){
+        if(event) event.stopPropagation();
+        var isChecked = checkbox.checked;
+        
+        // Update state
+        if(!state.data[state.date].shifts[state.shift]) state.data[state.date].shifts[state.shift] = {};
+        if(!state.data[state.date].shifts[state.shift][area]) state.data[state.date].shifts[state.shift][area] = {};
+        state.data[state.date].shifts[state.shift][area][item] = isChecked;
+        
+        // Save to localStorage
+        s('dreamos_janitor_indoor', state.data);
+        
+        // Update UI - HANYA update class label, JANGAN re-render semua!
+        var label = checkbox.closest('.ji-checkbox-label');
+        if(label){
+            label.classList.toggle('checked', isChecked);
         }
-    });
+        
+        updateStats();
+    };
 
     window.toggleExpand = function(area, event){
         if(event) event.stopPropagation();
@@ -263,8 +259,9 @@
                     var checkedClass = isChecked ? 'checked' : '';
                     var checkedAttr = isChecked ? 'checked' : '';
                     var safeItem = item.replace(/'/g, "\\'");
+                    // CRITICAL: onchange inline dengan stopPropagation
                     html += '<label class="ji-checkbox-label '+checkedClass+'">';
-                    html += '<input type="checkbox" '+checkedAttr+' data-area="'+areaKey+'" data-item="'+safeItem+'"> ';
+                    html += '<input type="checkbox" '+checkedAttr+' onchange="toggleItem(\''+areaKey+'\',\''+safeItem+'\',this,event)"> ';
                     html += '<span>'+item+'</span></label>';
                 });
                 html += '</div>';
