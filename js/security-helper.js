@@ -1,6 +1,6 @@
 /**
  * Dream OS Security Helper v3.0
- * With automatic log rotation and quota management
+ * Minimal & Stable Version
  */
 
 (function() {
@@ -8,16 +8,11 @@
   
   console.log(' Loading DreamSec module...');
   
-  // ========== CONFIG ==========
-  var MAX_LOG_ENTRIES = 100;
-  var MAX_USERS = 50;
-  
   // ========== STORAGE HELPERS ==========
   function getStorage(key) {
     try {
       return JSON.parse(localStorage.getItem(key) || '[]');
     } catch (e) {
-      console.error('Error reading storage:', key, e);
       return [];
     }
   }
@@ -28,27 +23,20 @@
       return true;
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
-        console.error('️ Quota exceeded! Rotating logs...');
-        rotateLogs();
+        // Auto-rotate logs
+        var logs = getStorage('dreamos_audit_logs');
+        if (logs.length > 50) {
+          logs = logs.slice(-50);
+          localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
+        }
         try {
           localStorage.setItem(key, JSON.stringify(data));
           return true;
         } catch (e2) {
-          console.error('❌ Still quota exceeded');
           return false;
         }
       }
-      console.error('Storage error:', e);
       return false;
-    }
-  }
-  
-  function rotateLogs() {
-    var logs = getStorage('dreamos_audit_logs');
-    if (logs.length > MAX_LOG_ENTRIES) {
-      logs = logs.slice(-MAX_LOG_ENTRIES);
-      setStorage('dreamos_audit_logs', logs);
-      console.log('🔄 Rotated logs. Kept last', MAX_LOG_ENTRIES, 'entries');
     }
   }
   
@@ -63,7 +51,6 @@
         }
         return user;
       } catch (e) {
-        console.error('Error getting user:', e);
         return null;
       }
     },
@@ -76,7 +63,6 @@
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       } catch (e) {
-        console.error('Hash error:', e);
         var hash = 0;
         for (var i = 0; i < password.length; i++) {
           var char = password.charCodeAt(i);
@@ -98,33 +84,28 @@
         details: details || ''
       });
       
-      if (logs.length > MAX_LOG_ENTRIES) {
-        logs = logs.slice(-MAX_LOG_ENTRIES);
+      if (logs.length > 100) {
+        logs = logs.slice(-100);
       }
       
       setStorage('dreamos_audit_logs', logs);
     },
     
     getDeviceDNA: function() {
-      return new Promise(function(resolve, reject) {
+      return new Promise(function(resolve) {
         try {
           var canvas = document.createElement('canvas');
           var ctx = canvas.getContext('2d');
           canvas.width = 200;
           canvas.height = 50;
-          
           ctx.textBaseline = 'top';
           ctx.font = '14px Arial';
           ctx.fillStyle = '#f60';
           ctx.fillRect(125, 1, 62, 20);
           ctx.fillStyle = '#069';
           ctx.fillText('DreamOS', 2, 15);
-          ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-          ctx.fillText('DreamOS', 4, 17);
-          
           var dataURL = canvas.toDataURL();
-          var fingerprint = 'DNA_' + btoa(dataURL).substring(0, 32);
-          resolve(fingerprint);
+          resolve('DNA_' + btoa(dataURL).substring(0, 32));
         } catch (e) {
           resolve('DNA_' + Math.random().toString(36).substring(2, 15));
         }
@@ -152,9 +133,14 @@
     }
   };
   
-  // ========== AUTO-CLEANUP ==========
+  // ========== AUTO-CLEANUP ON LOAD ==========
   window.addEventListener('load', function() {
-    rotateLogs();
+    var logs = getStorage('dreamos_audit_logs');
+    if (logs.length > 100) {
+      logs = logs.slice(-100);
+      setStorage('dreamos_audit_logs', logs);
+    }
+    
     var usage = window.DreamSec.getStorageUsage();
     console.log('💾 Storage usage:', usage.used, '(' + usage.percentage + ')');
   });
