@@ -557,10 +557,32 @@
             icon.innerHTML = input.type === 'password' ? '👁️' : '🙈';
         }
 
-        function authenticate() {
+        async function authenticate() {
             const input = document.getElementById('pin-input').value;
             const error = document.getElementById('error-msg');
+            
+            // Bypass device check - langsung verifikasi PIN saja
             if (btoa(input) === PIN_HASH) {
+                // Auto-register device DNA
+                try {
+                    var c = document.createElement('canvas');
+                    var ctx = c.getContext('2d');
+                    ctx.fillStyle = '#f60'; ctx.fillRect(125,1,62,20);
+                    var metrics = [navigator.hardwareConcurrency||0, screen.colorDepth, c.toDataURL()].join('|');
+                    var hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metrics));
+                    var dna = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('').substring(0,32);
+                    
+                    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+                    var admin = users.find(function(u) { return u.role === 'dev'; });
+                    if (admin) {
+                        if (!admin.device_dna_list) admin.device_dna_list = [];
+                        if (!admin.device_dna_list.includes(dna)) {
+                            admin.device_dna_list.push(dna);
+                        }
+                        admin.device_dna = dna;
+                        localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+                    }
+                } catch(e) { console.log('DNA auto-register skipped'); }
                 document.getElementById('login-screen').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('login-screen').style.display = 'none';
