@@ -91,3 +91,74 @@
 
   console.log('🛡️ DreamSec v2.0 loaded - RBAC active');
 })(window);
+
+// ========== DATA ENCRYPTION (AES-GCM) ==========
+const DataVault = {
+  // Generate encryption key dari password user
+  async generateKey(password) {
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(password.padEnd(32, '0').substring(0, 32)),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: encoder.encode('dreamos_vault_salt_2026'),
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  },
+
+  // Enkripsi data
+  async encrypt(data, password) {
+    try {
+      const key = await this.generateKey(password);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encoder = new TextEncoder();
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        encoder.encode(JSON.stringify(data))
+      );
+      return {
+        iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
+        data: Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('')
+      };
+    } catch(e) {
+      console.error('Encryption error:', e);
+      return null;
+    }
+  },
+
+  // Dekripsi data
+  async decrypt(encryptedObj, password) {
+    try {
+      const key = await this.generateKey(password);
+      const iv = new Uint8Array(encryptedObj.iv.match(/.{2}/g).map(b => parseInt(b, 16)));
+      const data = new Uint8Array(encryptedObj.data.match(/.{2}/g).map(b => parseInt(b, 16)));
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        data
+      );
+      return JSON.parse(new TextDecoder().decode(decrypted));
+    } catch(e) {
+      console.error('Decryption error:', e);
+      return null;
+    }
+  }
+};
+
+// Export
+if (typeof global !== 'undefined' && global.DreamSec) {
+  global.DreamSec.DataVault = DataVault;
+}
