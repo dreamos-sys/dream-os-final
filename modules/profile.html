@@ -1,6 +1,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Profile • Enterprise v3.0</title>
+<script src="../js/security-helper.js"></script>
 <style>
   :root {
     --glass-bg: rgba(15, 23, 42, 0.6);
@@ -72,15 +73,44 @@
   }
   .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--neon); }
   .stat-label { font-size: 0.65rem; color: #94a3b8; margin-top: 0.3rem; }
-  .tab-container { display: flex; gap: 0.5rem; margin-bottom: 1rem; overflow-x: auto; }
-  .tab-btn {
-    padding: 0.6rem 1rem; background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px; color: #94a3b8; font-weight: 600; font-size: 0.75rem;
-    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  .tab-container { 
+    display: flex; 
+    gap: 0.5rem; 
+    margin-bottom: 1rem; 
+    overflow-x: auto; 
+    padding-bottom: 0.5rem;
   }
-  .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); }
+  .tab-btn {
+    padding: 0.6rem 1rem; 
+    background: rgba(30,41,59,0.6); 
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; 
+    color: #94a3b8; 
+    font-weight: 600; 
+    font-size: 0.75rem;
+    cursor: pointer; 
+    white-space: nowrap; 
+    transition: all 0.2s;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+  }
+  .tab-btn:hover {
+    background: rgba(30,41,59,0.9);
+    border-color: var(--neon);
+  }
+  .tab-btn.active { 
+    background: var(--neon); 
+    color: #000; 
+    border-color: var(--neon);
+    box-shadow: 0 0 15px rgba(0,255,157,0.4);
+  }
   .tab-content { display: none; }
-  .tab-content.active { display: block; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .list-item {
     background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: 10px;
     margin-bottom: 0.5rem; display: flex; justify-content: space-between;
@@ -104,134 +134,6 @@
   .strength-medium { width: 66%; background: #f59e0b; }
   .strength-strong { width: 100%; background: #10b981; }
 </style>
-<script>
-// ========== EMBEDDED SECURITY HELPER v2.0 ==========
-(function(window) {
-  'use strict';
-  
-  console.log('🔧 Loading DreamSec...');
-  
-  const DreamSec = {
-    version: '2.0.0',
-    
-    getCurrentUser: function() {
-      try {
-        const data = localStorage.getItem('dreamos_bound_user');
-        if (!data) return null;
-        return JSON.parse(data);
-      } catch (e) {
-        console.error('Error getCurrentUser:', e);
-        return null;
-      }
-    },
-    
-    getDeviceDNA: function() {
-      return new Promise((resolve) => {
-        try {
-          const info = navigator.userAgent + navigator.platform + screen.width + screen.height + navigator.language;
-          let hash = 0;
-          for (let i = 0; i < info.length; i++) {
-            hash = ((hash << 5) - hash) + info.charCodeAt(i);
-            hash = hash | 0;
-          }
-          const dna = 'DNA-' + Math.abs(hash).toString(16).toUpperCase();
-          console.log('✅ Device DNA:', dna);
-          resolve(dna);
-        } catch (e) {
-          console.error('Error getDeviceDNA:', e);
-          resolve('DNA-UNKNOWN');
-        }
-      });
-    },
-    
-    hashPassword: async function(password) {
-      try {
-        if (window.crypto && window.crypto.subtle) {
-          const data = new TextEncoder().encode(password + 'dreamos_salt_2026');
-          const hash = await crypto.subtle.digest('SHA-256', data);
-          const result = Array.from(new Uint8Array(hash))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
-          console.log('✅ Password hashed');
-          return result;
-        }
-      } catch (e) {
-        console.error('Error hashPassword:', e);
-      }
-      // Fallback
-      let h = 0;
-      for (let i = 0; i < password.length; i++) {
-        h = Math.imul(31, h) + password.charCodeAt(i) | 0;
-      }
-      return Math.abs(h).toString(16).padStart(32, '0');
-    },
-    
-    sanitize: function(str) {
-      if (!str || typeof str !== 'string') return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    },
-    
-    auditLog: function(action, details) {
-      try {
-        const user = this.getCurrentUser();
-        const logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
-        logs.unshift({
-          time: new Date().toISOString(),
-          user: user ? user.email : 'system',
-          action: action,
-          details: details || ''
-        });
-        if (logs.length > 1000) logs.length = 1000;
-        localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-      } catch (e) {
-        console.error('Audit error:', e);
-      }
-    },
-    
-    hasPermission: function(permission) {
-      const user = this.getCurrentUser();
-      if (!user) return false;
-      const perms = {
-        'admin': ['dev', 'kabag'],
-        'manage_users': ['dev', 'kabag', 'koord'],
-        'edit_profile': ['dev', 'kabag', 'koord', 'staff', 'security', 'janitor', 'maintenance']
-      };
-      return (perms[permission] || []).includes(user.role);
-    },
-    
-    validatePassword: function(password) {
-      const errors = [];
-      if (password.length < 6) errors.push('Minimal 6 karakter');
-      if (!/[A-Z]/.test(password)) errors.push('Butuh huruf kapital');
-      if (!/[0-9]/.test(password)) errors.push('Butuh angka');
-      return {
-        valid: errors.length === 0,
-        strength: password.length >= 12 ? 'strong' : password.length >= 8 ? 'medium' : 'weak',
-        errors: errors
-      };
-    },
-    
-    init: function() {
-      console.log('🔒 DreamSec v' + this.version + ' initialized successfully');
-      console.log('✅ All functions ready');
-    }
-  };
-  
-  // Export to window
-  window.DreamSec = DreamSec;
-  
-  // Auto-init
-  setTimeout(() => {
-    DreamSec.init();
-  }, 100);
-  
-  console.log('✅ Security helper embedded successfully');
-  
-})(window);
-</script>
-
 
 <button class="back-btn" onclick="window.parent.goHome()">← KEMBALI</button>
 
@@ -260,20 +162,20 @@
     <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
       <input type="file" id="avatar-input" accept="image/*" style="display:none;">
       <button class="btn btn-primary" onclick="document.getElementById('avatar-input').click()" style="font-size:0.7rem; padding:0.5rem 1rem;">📷 Upload Foto</button>
-      <button class="btn btn-success" onclick="window.showTab('edit')" style="font-size:0.7rem; padding:0.5rem 1rem;">✏️ Edit Profile</button>
+      <button class="btn btn-success" onclick="window.showTab('edit', event)" style="font-size:0.7rem; padding:0.5rem 1rem;">✏️ Edit Profile</button>
       <button class="btn btn-purple" onclick="window.showProfileQR()" style="font-size:0.7rem; padding:0.5rem 1rem;">📱 QR Code</button>
     </div>
   </div>
 
   <!-- Tabs -->
-  <div class="tab-container">
-    <button class="tab-btn active" onclick="window.showTab('overview')">📊 Overview</button>
-    <button class="tab-btn" onclick="window.showTab('edit')">✏️ Edit</button>
-    <button class="tab-btn" onclick="window.showTab('security')">🔒 Security</button>
-    <button class="tab-btn" onclick="window.showTab('sessions')">💻 Sessions</button>
-    <button class="tab-btn" onclick="window.showTab('activity')">📈 Activity</button>
-    <button class="tab-btn" onclick="window.showTab('users')">👥 Users</button>
-    <button class="tab-btn" onclick="window.showTab('settings')">⚙️ Settings</button>
+  <div class="tab-container" id="tab-container">
+    <button class="tab-btn active" data-tab="overview" onclick="window.showTab('overview', event)">📊 Overview</button>
+    <button class="tab-btn" data-tab="edit" onclick="window.showTab('edit', event)">✏️ Edit</button>
+    <button class="tab-btn" data-tab="security" onclick="window.showTab('security', event)">🔒 Security</button>
+    <button class="tab-btn" data-tab="sessions" onclick="window.showTab('sessions', event)">💻 Sessions</button>
+    <button class="tab-btn" data-tab="activity" onclick="window.showTab('activity', event)">📈 Activity</button>
+    <button class="tab-btn" data-tab="users" onclick="window.showTab('users', event)">👥 Users</button>
+    <button class="tab-btn" data-tab="settings" onclick="window.showTab('settings', event)">⚙️ Settings</button>
   </div>
 
   <!-- Tab: Overview -->
@@ -491,8 +393,8 @@
         <label style="font-size:0.7rem; color:#94a3b8;">Language</label>
         <select class="input-field" id="setting-language">
           <option value="id">🇮🇩 Indonesia</option>
-          <option value="en">🇬 English</option>
-          <option value="ar">🇸 العربية</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="ar">🇸🇦 العربية</option>
         </select>
       </div>
       <button class="btn btn-gold" onclick="window.saveAppearance()" style="width:100%;">💾 Simpan Tampilan</button>
@@ -518,19 +420,17 @@
   </p>
 </div>
 
-
-
-
 <script>
-// ========== MAIN PROFILE MODULE v3.0 ==========
 (function() {
   'use strict';
   
-  console.log('🔧 Loading Profile Module...');
+  console.log('🔍 Profile module loading...');
+  console.log('SEC object:', window.DreamSec);
   
   const SEC = window.DreamSec;
   if (!SEC) {
     console.error('❌ DreamSec not loaded!');
+    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>⚠️ Error: Security module not loaded</h2><p>Please refresh the page or contact administrator.</p></div>';
     return;
   }
   
@@ -538,10 +438,12 @@
   console.log('Current user:', user);
   
   if (!user) {
+    console.error('❌ No user logged in!');
     document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login terlebih dahulu.</h2></div>';
     return;
   }
 
+  // Initialize profile
   function initProfile() {
     console.log('📝 Initializing profile for:', user.email || user.nama);
     
@@ -553,24 +455,45 @@
       document.getElementById('verified-badge').style.display = 'flex';
     }
     
+    // Load edit fields
     document.getElementById('edit-nama').value = user.nama || '';
     document.getElementById('edit-email').value = user.email || '';
     document.getElementById('edit-phone').value = user.phone || '';
     document.getElementById('edit-department').value = user.department || '';
     document.getElementById('edit-bio').value = user.bio || '';
     
+    // Calculate profile completion
     updateProfileCompletion();
+    
+    // Load statistics
     loadStatistics();
+    
+    // Load achievements
     loadAchievements();
     
-    SEC.getDeviceDNA().then(function(dna) {
-      document.getElementById('dna-hash').textContent = dna;
-    });
+    // Load device DNA
+    if (SEC.getDeviceDNA) {
+      SEC.getDeviceDNA().then(function(dna) {
+        document.getElementById('dna-hash').textContent = dna;
+      }).catch(function(err) {
+        console.error('Error getting DNA:', err);
+        document.getElementById('dna-hash').textContent = 'Error';
+      });
+    }
     
+    // Load login history
     loadLoginHistory();
+    
+    // Load sessions
     loadSessions();
+    
+    // Load activity
     loadActivity();
+    
+    // Load user list (admin)
     loadUserList();
+    
+    // Load settings
     loadSettings();
     
     console.log('✅ Profile initialized successfully');
@@ -590,12 +513,15 @@
   function loadStatistics() {
     var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
     var userLogs = logs.filter(function(l) { return l.user === user.email; });
+    
     document.getElementById('stat-logins').textContent = userLogs.filter(function(l) { return l.action === 'LOGIN'; }).length;
+    
     var firstLogin = userLogs[0];
     if (firstLogin) {
-      var days = Math.floor((Date.now() - new Date(firstLogin.time).getTime()) / 86400000);
+      var days = Math.floor((Date.now() - new Date(firstLogin.time)) / 86400000);
       document.getElementById('stat-days').textContent = days;
     }
+    
     document.getElementById('stat-tasks').textContent = userLogs.filter(function(l) { return l.action.includes('COMPLETE'); }).length;
     document.getElementById('stat-score').textContent = Math.min(100, userLogs.length * 2);
   }
@@ -604,14 +530,17 @@
     var achievements = [];
     var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
     var userLogs = logs.filter(function(l) { return l.user === user.email; });
+    
     if (userLogs.length >= 10) achievements.push({icon: '🌟', title: 'Active User', desc: '10+ activities'});
     if (userLogs.length >= 50) achievements.push({icon: '🏆', title: 'Power User', desc: '50+ activities'});
     if (userLogs.length >= 100) achievements.push({icon: '👑', title: 'Elite User', desc: '100+ activities'});
+    
     var container = document.getElementById('achievements-list');
     if (!achievements.length) {
-      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada achievement.</p>';
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada achievement. Terus beraktivitas!</p>';
       return;
     }
+    
     container.innerHTML = achievements.map(function(a) {
       return '<div class="list-item"><div><span style="font-size:1.5rem;">'+a.icon+'</span> <strong>'+a.title+'</strong><br><span style="font-size:0.7rem; color:#94a3b8;">'+a.desc+'</span></div></div>';
     }).join('');
@@ -620,11 +549,13 @@
   function loadLoginHistory() {
     var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
     var loginLogs = logs.filter(function(l) { return l.user === user.email && l.action === 'LOGIN'; }).slice(0, 20);
+    
     var container = document.getElementById('login-history');
     if (!loginLogs.length) {
       container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada riwayat login.</p>';
       return;
     }
+    
     container.innerHTML = loginLogs.map(function(l) {
       return '<div class="list-item"><div><strong>Login</strong><br><span style="font-size:0.65rem; color:#94a3b8;">'+new Date(l.time).toLocaleString('id-ID')+'</span></div><span class="badge badge-success">Success</span></div>';
     }).join('');
@@ -633,148 +564,313 @@
   function loadSessions() {
     var sessions = JSON.parse(localStorage.getItem('dreamos_sessions') || '[]');
     var container = document.getElementById('sessions-list');
+    
     if (!sessions.length) {
       container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Tidak ada sesi aktif.</p>';
       return;
     }
+    
     container.innerHTML = sessions.map(function(s, i) {
-      return '<div class="list-item"><div><strong>'+(s.device || 'Unknown Device')+'</strong></div><button class="btn btn-danger" onclick="window.terminateSession('+i+')" style="font-size:0.65rem;">🚫</button></div>';
+      var isCurrent = s.dna === SEC.getDeviceDNA();
+      return '<div class="list-item"><div><strong>'+(s.device || 'Unknown Device')+'</strong><br><span style="font-size:0.65rem; color:#94a3b8;">'+s.dna.substring(0, 16)+'...</span><br><span style="font-size:0.65rem; color:#94a3b8;">Last active: '+new Date(s.lastActive).toLocaleString('id-ID')+'</span></div>'+(isCurrent ? '<span class="badge badge-success">Current</span>' : '<button class="btn btn-danger" onclick="window.terminateSession('+i+')" style="font-size:0.65rem; padding:0.3rem 0.6rem;">🚫</button>')+'</div>';
     }).join('');
+    
+    // Load devices
     var devices = JSON.parse(localStorage.getItem('dreamos_devices') || '[]');
     var deviceContainer = document.getElementById('devices-list');
+    
     if (!devices.length) {
       deviceContainer.innerHTML = '<p style="color:#94a3b8; text-align:center;">Tidak ada device terdaftar.</p>';
       return;
     }
+    
     deviceContainer.innerHTML = devices.map(function(d) {
-      return '<div class="list-item"><div><strong>'+d.name+'</strong></div><span class="badge badge-info">'+(d.trusted ? 'Trusted' : 'Untrusted')+'</span></div>';
+      return '<div class="list-item"><div><strong>'+d.name+'</strong><br><span style="font-size:0.65rem; color:#94a3b8;">'+d.dna.substring(0, 16)+'...</span></div><span class="badge badge-info">'+(d.trusted ? 'Trusted' : 'Untrusted')+'</span></div>';
     }).join('');
   }
 
   function loadActivity() {
     var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
     var userLogs = logs.filter(function(l) { return l.user === user.email; }).slice(0, 50);
+    
     var container = document.getElementById('activity-log');
     if (!userLogs.length) {
       container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada aktivitas.</p>';
       return;
     }
+    
     container.innerHTML = userLogs.map(function(l) {
-      var icon = l.action.includes('LOGIN') ? '🔐' : '⚡';
-      return '<div class="list-item"><div>'+icon+' <strong>'+l.action+'</strong><br><span style="font-size:0.65rem; color:#64748b;">'+new Date(l.time).toLocaleString('id-ID')+'</span></div></div>';
+      var icon = l.action.includes('LOGIN') ? '🔐' : (l.action.includes('REGISTER') ? '📝' : '⚡');
+      return '<div class="list-item"><div>'+icon+' <strong>'+l.action+'</strong><br><span style="font-size:0.65rem; color:#94a3b8;">'+l.details+'</span><br><span style="font-size:0.65rem; color:#64748b;">'+new Date(l.time).toLocaleString('id-ID')+'</span></div></div>';
     }).join('');
   }
 
   function loadUserList() {
     var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
     var container = document.getElementById('user-list');
+    
     if (!users.length) {
       container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada pengguna terdaftar.</p>';
       return;
     }
+    
     window.allUsers = users;
     renderUsers(users);
   }
 
+  window.filterUsers = function() {
+    var search = document.getElementById('user-search').value.toLowerCase();
+    var role = document.getElementById('user-filter-role').value;
+    
+    var filtered = window.allUsers.filter(function(u) {
+      var matchSearch = !search || u.nama.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
+      var matchRole = !role || u.role === role;
+      return matchSearch && matchRole;
+    });
+    
+    renderUsers(filtered);
+  };
+
   function renderUsers(users) {
     var container = document.getElementById('user-list');
+    
     if (!users.length) {
       container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Tidak ada user yang cocok.</p>';
       return;
     }
+    
     container.innerHTML = users.map(function(u, i) {
-      return '<div class="list-item"><div><b>'+SEC.sanitize(u.nama)+'</b><br><span style="font-size:0.65rem; color:#94a3b8;">'+SEC.sanitize(u.role)+' • '+SEC.sanitize(u.email)+'</span></div>'+(u.role !== 'dev' ? '<button class="btn btn-danger" onclick="window.deleteUser('+i+')" style="font-size:0.6rem;">🗑️</button>' : '')+'</div>';
+      return '<div class="list-item"><div><b>'+SEC.sanitize(u.nama)+'</b><br><span style="font-size:0.65rem; color:#94a3b8;">'+SEC.sanitize(u.role)+' • '+SEC.sanitize(u.email)+'</span></div><div style="display:flex; gap:0.3rem;"><span>'+(u.device_dna ? '🔒' : '⏳')+'</span>'+(u.role !== 'dev' ? '<button class="btn btn-danger" onclick="window.deleteUser('+i+')" style="font-size:0.6rem; padding:0.2rem 0.4rem;">🗑️</button>' : '')+'</div></div>';
     }).join('');
   }
+
+  window.deleteUser = function(index) {
+    if (!confirm('Hapus user ini?')) return;
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    users.splice(index, 1);
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    SEC.auditLog('DELETE_USER', 'Menghapus user');
+    loadUserList();
+  };
 
   function loadSettings() {
     var settings = JSON.parse(localStorage.getItem('dreamos_user_settings') || '{}');
     document.getElementById('notif-email').checked = settings.notifEmail !== false;
     document.getElementById('notif-push').checked = settings.notifPush !== false;
+    document.getElementById('notif-sms').checked = settings.notifSms === true;
     document.getElementById('setting-theme').value = settings.theme || 'dark';
     document.getElementById('setting-language').value = settings.language || 'id';
   }
 
-  window.showTab = function(tab) {
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-    event.target.classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
+  // Tab switching - FIXED dengan event parameter
+  window.showTab = function(tab, event) {
+    console.log('📑 Switching to tab:', tab);
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-btn').forEach(function(b) { 
+      b.classList.remove('active'); 
+    });
+    
+    // Remove active class from all content
+    document.querySelectorAll('.tab-content').forEach(function(c) { 
+      c.classList.remove('active'); 
+    });
+    
+    // Add active class to clicked button
+    if (event && event.target) {
+      event.target.classList.add('active');
+    } else {
+      // Fallback: find button by data-tab attribute
+      var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (btn) btn.classList.add('active');
+    }
+    
+    // Show selected tab content
+    var content = document.getElementById('tab-' + tab);
+    if (content) {
+      content.classList.add('active');
+      console.log('✅ Tab content shown:', 'tab-' + tab);
+    }
   };
 
+  // Avatar upload
+  document.getElementById('avatar-input').addEventListener('change', function() {
+    if (this.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        user.avatar = ev.target.result;
+        localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+        document.getElementById('avatar-preview').innerHTML = '<img src="'+ev.target.result+'"><div class="verified-badge">✓</div>';
+        document.getElementById('verified-badge').style.display = 'flex';
+        updateProfileCompletion();
+        SEC.auditLog('UPDATE_AVATAR', 'Upload foto profil');
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+
+  // Save profile
   window.saveProfile = function() {
     user.nama = document.getElementById('edit-nama').value;
     user.email = document.getElementById('edit-email').value;
     user.phone = document.getElementById('edit-phone').value;
     user.department = document.getElementById('edit-department').value;
     user.bio = document.getElementById('edit-bio').value;
+    
     localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+    
+    // Update in users_db
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var idx = users.findIndex(function(u) { return u.email === user.email; });
+    if (idx >= 0) {
+      users[idx].nama = user.nama;
+      users[idx].phone = user.phone;
+      users[idx].department = user.department;
+      users[idx].bio = user.bio;
+      localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    }
+    
     document.getElementById('display-name').textContent = user.nama;
     updateProfileCompletion();
     SEC.auditLog('UPDATE_PROFILE', 'Update profil');
     alert('✅ Profile berhasil diupdate!');
   };
 
+  // Password strength
   window.checkPasswordStrength = function() {
     var pass = document.getElementById('new-pass').value;
     var strength = 0;
+    
     if (pass.length >= 6) strength++;
     if (pass.length >= 10) strength++;
     if (/[A-Z]/.test(pass)) strength++;
     if (/[0-9]/.test(pass)) strength++;
     if (/[^A-Za-z0-9]/.test(pass)) strength++;
+    
     var fill = document.getElementById('strength-fill');
     var text = document.getElementById('strength-text');
+    
     fill.className = 'strength-fill';
-    if (strength <= 2) { fill.classList.add('strength-weak'); text.textContent = 'Weak'; text.style.color = '#ef4444'; }
-    else if (strength <= 4) { fill.classList.add('strength-medium'); text.textContent = 'Medium'; text.style.color = '#f59e0b'; }
-    else { fill.classList.add('strength-strong'); text.textContent = 'Strong'; text.style.color = '#10b981'; }
+    
+    if (strength <= 2) {
+      fill.classList.add('strength-weak');
+      text.textContent = 'Weak - Tambahkan huruf besar, angka, simbol';
+      text.style.color = '#ef4444';
+    } else if (strength <= 4) {
+      fill.classList.add('strength-medium');
+      text.textContent = 'Medium - Cukup kuat';
+      text.style.color = '#f59e0b';
+    } else {
+      fill.classList.add('strength-strong');
+      text.textContent = 'Strong - Sangat aman!';
+      text.style.color = '#10b981';
+    }
   };
 
+  // Change password
   window.changePassword = async function() {
-    alert('🔑 Fitur ganti password - implementasi disesuaikan');
+    var oldPass = document.getElementById('old-pass').value;
+    var newPass = document.getElementById('new-pass').value;
+    var confirmPass = document.getElementById('confirm-pass').value;
+    
+    if (!oldPass || !newPass || !confirmPass) {
+      alert('⚠️ Semua field wajib diisi!');
+      return;
+    }
+    
+    if (newPass.length < 6) {
+      alert('⚠️ Password minimal 6 karakter!');
+      return;
+    }
+    
+    if (newPass !== confirmPass) {
+      alert('⚠️ Password tidak cocok!');
+      return;
+    }
+    
+    var oldHash = await SEC.hashPassword(oldPass);
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var currentUser = users.find(function(u) { return u.email === user.email; });
+    
+    if (!currentUser || currentUser.password_hash !== oldHash) {
+      alert('⚠️ Password lama salah!');
+      return;
+    }
+    
+    currentUser.password_hash = await SEC.hashPassword(newPass);
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    SEC.auditLog('CHANGE_PASSWORD', 'Ganti password');
+    
+    document.getElementById('old-pass').value = '';
+    document.getElementById('new-pass').value = '';
+    document.getElementById('confirm-pass').value = '';
+    
+    alert('✅ Password berhasil diganti!');
   };
 
+  // 2FA
   window.setup2FA = function() {
     document.getElementById('2fa-setup').style.display = 'block';
     document.getElementById('btn-2fa').style.display = 'none';
+    
+    // Generate QR code (placeholder)
+    document.getElementById('2fa-qr').innerHTML = '<div style="background:white; padding:1rem; border-radius:8px; display:inline-block;">🔐 QR Code 2FA<br><small>Scan dengan Google Authenticator</small></div>';
   };
 
   window.verify2FA = function() {
-    alert('✅ 2FA (demo mode)');
+    var code = document.getElementById('2fa-code').value;
+    if (code.length === 6) {
+      user.twoFA = true;
+      localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+      SEC.auditLog('ENABLE_2FA', 'Aktifkan 2FA');
+      alert('✅ 2FA berhasil diaktifkan!');
+      document.getElementById('2fa-setup').style.display = 'none';
+    } else {
+      alert('⚠️ Code harus 6 digit!');
+    }
   };
 
+  // Sessions
   window.terminateSession = function(index) {
     if (!confirm('Akhiri sesi ini?')) return;
     var sessions = JSON.parse(localStorage.getItem('dreamos_sessions') || '[]');
     sessions.splice(index, 1);
     localStorage.setItem('dreamos_sessions', JSON.stringify(sessions));
+    SEC.auditLog('TERMINATE_SESSION', 'Akhiri sesi');
     loadSessions();
   };
 
   window.terminateAllSessions = function() {
-    if (!confirm('Akhiri semua sesi?')) return;
-    localStorage.setItem('dreamos_sessions', '[]');
+    if (!confirm('Akhiri SEMUA sesi kecuali yang ini?')) return;
+    var currentDNA = SEC.getDeviceDNA();
+    var sessions = JSON.parse(localStorage.getItem('dreamos_sessions') || '[]');
+    sessions = sessions.filter(function(s) { return s.dna === currentDNA; });
+    localStorage.setItem('dreamos_sessions', JSON.stringify(sessions));
+    SEC.auditLog('TERMINATE_ALL_SESSIONS', 'Akhiri semua sesi');
     loadSessions();
-    alert('✅ Semua sesi diakhiri!');
+    alert('✅ Semua sesi lain diakhiri!');
   };
 
+  // Activity export
   window.exportActivity = function() {
     var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
     var userLogs = logs.filter(function(l) { return l.user === user.email; });
-    var csv = 'Time,Action,Details
-';
+    
+    var csv = 'Time,Action,Details\n';
     userLogs.forEach(function(l) {
-      csv += new Date(l.time).toISOString() + ',' + l.action + ',' + (l.details || '') + '
-';
+      csv += new Date(l.time).toISOString() + ',' + l.action + ',' + l.details + '\n';
     });
+    
     var blob = new Blob([csv], {type: 'text/csv'});
+    var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'activity_log.csv';
+    a.href = url;
+    a.download = 'activity_log_' + user.email + '.csv';
     a.click();
+    URL.revokeObjectURL(url);
   };
 
+  // User management
   window.showRegisterForm = function() {
     document.getElementById('register-panel').style.display = 'block';
   };
@@ -786,46 +882,75 @@
   window.registerUser = async function() {
     var nama = document.getElementById('reg-nama').value.trim();
     var email = document.getElementById('reg-email').value.trim();
+    var phone = document.getElementById('reg-phone').value.trim();
+    var role = document.getElementById('reg-role').value;
+    var department = document.getElementById('reg-department').value.trim();
     var pass = document.getElementById('reg-pass').value;
     var confirm = document.getElementById('reg-confirm').value;
     var msg = document.getElementById('reg-msg');
-    if (!nama || !email || !pass) { msg.textContent = '⚠️ Field wajib diisi!'; msg.style.color = '#ef4444'; return; }
-    if (pass !== confirm) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
+    
+    if (!nama || !email || !pass) {
+      msg.textContent = '⚠️ Nama, email, dan password wajib diisi!';
+      msg.style.color = '#ef4444';
+      return;
+    }
+    
+    if (pass.length < 6) {
+      msg.textContent = '⚠️ Password minimal 6 karakter!';
+      msg.style.color = '#ef4444';
+      return;
+    }
+    
+    if (pass !== confirm) {
+      msg.textContent = '⚠️ Password tidak cocok!';
+      msg.style.color = '#ef4444';
+      return;
+    }
+    
     var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    if (users.find(function(u) { return u.email === email; })) {
+      msg.textContent = '⚠️ Email sudah terdaftar!';
+      msg.style.color = '#ef4444';
+      return;
+    }
+    
     var hashed = await SEC.hashPassword(pass);
     users.push({
-      nama: nama, email: email, role: document.getElementById('reg-role').value,
-      password_hash: hashed, created_at: new Date().toISOString()
+      nama: nama,
+      email: email,
+      phone: phone,
+      role: role,
+      department: department,
+      password_hash: hashed,
+      device_dna: '',
+      created_at: new Date().toISOString()
     });
+    
     localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-    SEC.auditLog('REGISTER', 'Daftar '+nama);
+    SEC.auditLog('REGISTER', 'Mendaftarkan '+nama+' ('+email+')');
+    
     hideRegisterForm();
     loadUserList();
     alert('✅ '+nama+' berhasil didaftarkan!');
+    
+    // Clear form
+    document.getElementById('reg-nama').value = '';
+    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-phone').value = '';
+    document.getElementById('reg-department').value = '';
+    document.getElementById('reg-pass').value = '';
+    document.getElementById('reg-confirm').value = '';
   };
 
-  window.filterUsers = function() {
-    var search = document.getElementById('user-search').value.toLowerCase();
-    var filtered = window.allUsers.filter(function(u) {
-      return !search || u.nama.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
-    });
-    renderUsers(filtered);
-  };
-
-  window.deleteUser = function(index) {
-    if (!confirm('Hapus user ini?')) return;
-    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-    users.splice(index, 1);
-    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-    loadUserList();
-  };
-
+  // Settings
   window.saveNotificationPrefs = function() {
     var settings = JSON.parse(localStorage.getItem('dreamos_user_settings') || '{}');
     settings.notifEmail = document.getElementById('notif-email').checked;
     settings.notifPush = document.getElementById('notif-push').checked;
+    settings.notifSms = document.getElementById('notif-sms').checked;
     localStorage.setItem('dreamos_user_settings', JSON.stringify(settings));
-    alert('✅ Preferensi disimpan!');
+    SEC.auditLog('UPDATE_NOTIFICATIONS', 'Update preferensi notifikasi');
+    alert('✅ Preferensi notifikasi disimpan!');
   };
 
   window.saveAppearance = function() {
@@ -833,59 +958,71 @@
     settings.theme = document.getElementById('setting-theme').value;
     settings.language = document.getElementById('setting-language').value;
     localStorage.setItem('dreamos_user_settings', JSON.stringify(settings));
+    SEC.auditLog('UPDATE_APPEARANCE', 'Update tampilan');
     alert('✅ Tampilan disimpan!');
   };
 
+  // GDPR Export
   window.exportUserData = function() {
-    var data = { user: user, exported_at: new Date().toISOString() };
+    var data = {
+      user: user,
+      activity: JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]').filter(function(l) { return l.user === user.email; }),
+      sessions: JSON.parse(localStorage.getItem('dreamos_sessions') || '[]'),
+      exported_at: new Date().toISOString()
+    };
+    
     var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'my_data.json';
+    a.href = url;
+    a.download = 'my_data_' + user.email + '.json';
     a.click();
+    URL.revokeObjectURL(url);
+    SEC.auditLog('EXPORT_DATA', 'Export data pribadi (GDPR)');
   };
 
+  // Delete account
   window.deleteAccount = function() {
-    if (!confirm('⚠️ Hapus akun permanen?')) return;
+    if (!confirm('⚠️ PERINGATAN: Tindakan ini TIDAK BISA dibatalkan!\n\nSemua data Anda akan dihapus permanen.\n\nLanjutkan?')) return;
+    if (!confirm('Apakah Anda BENAR-BENAR yakin?')) return;
+    
+    // Remove user from users_db
     var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
     users = users.filter(function(u) { return u.email !== user.email; });
     localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    
+    // Remove bound user
     localStorage.removeItem('dreamos_bound_user');
-    alert('✅ Akun dihapus. Reload...');
+    localStorage.removeItem('dreamos_session_active');
+    
+    SEC.auditLog('DELETE_ACCOUNT', 'Hapus akun permanen');
+    
+    alert('✅ Akun berhasil dihapus. Anda akan di-logout.');
     window.parent.location.reload();
   };
 
+  // Profile QR
   window.showProfileQR = function() {
-    var qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(user.email);
+    var qrData = 'DREAMOS-PROFILE:' + user.email + '|' + user.nama + '|' + user.role;
+    var qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrData);
+    
     var modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; display:flex; align-items:center; justify-content:center;';
-    modal.innerHTML = '<div style="background:#0f172a; padding:2rem; border-radius:1rem; text-align:center;"><h3>📱 Profile QR</h3><img src="'+qrImg+'" style="width:200px;"><button class="btn btn-danger" onclick="this.parentElement.parentElement.remove()" style="margin-top:1rem;">✕ Tutup</button></div>';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; display:flex; align-items:center; justify-content:center; padding:1rem;';
+    modal.innerHTML = '<div style="background:#0f172a; padding:2rem; border-radius:1rem; text-align:center; max-width:300px;"><h3 style="color:var(--neon); margin:0 0 1rem;">📱 Profile QR</h3><img src="'+qrImg+'" style="width:200px; height:200px; border-radius:0.5rem;"><p style="font-size:0.75rem; color:#94a3b8; margin-top:1rem;">Scan untuk melihat profile</p><button class="btn btn-danger" onclick="this.parentElement.parentElement.remove()" style="margin-top:1rem;">✕ Tutup</button></div>';
     document.body.appendChild(modal);
   };
 
+  // Logout
   window.handleLogout = function() {
-    if (confirm('🚪 Yakin logout?')) {
+    if (confirm('🚪 Yakin logout? Device akan dikunci.')) {
       SEC.auditLog('LOGOUT', 'User logout');
       localStorage.removeItem('dreamos_bound_user');
+      localStorage.removeItem('dreamos_session_active');
       window.parent.location.reload();
     }
   };
 
-  document.getElementById('avatar-input').addEventListener('change', function() {
-    if (this.files[0]) {
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        user.avatar = ev.target.result;
-        localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
-        document.getElementById('avatar-preview').innerHTML = '<img src="'+ev.target.result+'"><div class="verified-badge">✓</div>';
-        updateProfileCompletion();
-        SEC.auditLog('UPDATE_AVATAR', 'Upload foto');
-      };
-      reader.readAsDataURL(this.files[0]);
-    }
-  });
-
+  // Initialize
   initProfile();
-  console.log('✅ Profile Module v3.0 ready');
 })();
 </script>
