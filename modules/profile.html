@@ -519,3 +519,373 @@
 </div>
 
 
+
+
+<script>
+// ========== MAIN PROFILE MODULE v3.0 ==========
+(function() {
+  'use strict';
+  
+  console.log('🔧 Loading Profile Module...');
+  
+  const SEC = window.DreamSec;
+  if (!SEC) {
+    console.error('❌ DreamSec not loaded!');
+    return;
+  }
+  
+  const user = SEC.getCurrentUser();
+  console.log('Current user:', user);
+  
+  if (!user) {
+    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login terlebih dahulu.</h2></div>';
+    return;
+  }
+
+  function initProfile() {
+    console.log('📝 Initializing profile for:', user.email || user.nama);
+    
+    document.getElementById('display-name').textContent = user.nama || 'User';
+    document.getElementById('display-role').textContent = (user.role || 'staff').toUpperCase();
+    
+    if (user.avatar) {
+      document.getElementById('avatar-preview').innerHTML = '<img src="'+user.avatar+'"><div class="verified-badge">✓</div>';
+      document.getElementById('verified-badge').style.display = 'flex';
+    }
+    
+    document.getElementById('edit-nama').value = user.nama || '';
+    document.getElementById('edit-email').value = user.email || '';
+    document.getElementById('edit-phone').value = user.phone || '';
+    document.getElementById('edit-department').value = user.department || '';
+    document.getElementById('edit-bio').value = user.bio || '';
+    
+    updateProfileCompletion();
+    loadStatistics();
+    loadAchievements();
+    
+    SEC.getDeviceDNA().then(function(dna) {
+      document.getElementById('dna-hash').textContent = dna;
+    });
+    
+    loadLoginHistory();
+    loadSessions();
+    loadActivity();
+    loadUserList();
+    loadSettings();
+    
+    console.log('✅ Profile initialized successfully');
+  }
+
+  function updateProfileCompletion() {
+    var fields = ['nama', 'email', 'phone', 'department', 'bio', 'avatar'];
+    var filled = 0;
+    fields.forEach(function(field) {
+      if (user[field]) filled++;
+    });
+    var pct = Math.round((filled / fields.length) * 100);
+    document.getElementById('profile-progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = pct + '% Complete';
+  }
+
+  function loadStatistics() {
+    var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+    var userLogs = logs.filter(function(l) { return l.user === user.email; });
+    document.getElementById('stat-logins').textContent = userLogs.filter(function(l) { return l.action === 'LOGIN'; }).length;
+    var firstLogin = userLogs[0];
+    if (firstLogin) {
+      var days = Math.floor((Date.now() - new Date(firstLogin.time).getTime()) / 86400000);
+      document.getElementById('stat-days').textContent = days;
+    }
+    document.getElementById('stat-tasks').textContent = userLogs.filter(function(l) { return l.action.includes('COMPLETE'); }).length;
+    document.getElementById('stat-score').textContent = Math.min(100, userLogs.length * 2);
+  }
+
+  function loadAchievements() {
+    var achievements = [];
+    var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+    var userLogs = logs.filter(function(l) { return l.user === user.email; });
+    if (userLogs.length >= 10) achievements.push({icon: '🌟', title: 'Active User', desc: '10+ activities'});
+    if (userLogs.length >= 50) achievements.push({icon: '🏆', title: 'Power User', desc: '50+ activities'});
+    if (userLogs.length >= 100) achievements.push({icon: '👑', title: 'Elite User', desc: '100+ activities'});
+    var container = document.getElementById('achievements-list');
+    if (!achievements.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada achievement.</p>';
+      return;
+    }
+    container.innerHTML = achievements.map(function(a) {
+      return '<div class="list-item"><div><span style="font-size:1.5rem;">'+a.icon+'</span> <strong>'+a.title+'</strong><br><span style="font-size:0.7rem; color:#94a3b8;">'+a.desc+'</span></div></div>';
+    }).join('');
+  }
+
+  function loadLoginHistory() {
+    var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+    var loginLogs = logs.filter(function(l) { return l.user === user.email && l.action === 'LOGIN'; }).slice(0, 20);
+    var container = document.getElementById('login-history');
+    if (!loginLogs.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada riwayat login.</p>';
+      return;
+    }
+    container.innerHTML = loginLogs.map(function(l) {
+      return '<div class="list-item"><div><strong>Login</strong><br><span style="font-size:0.65rem; color:#94a3b8;">'+new Date(l.time).toLocaleString('id-ID')+'</span></div><span class="badge badge-success">Success</span></div>';
+    }).join('');
+  }
+
+  function loadSessions() {
+    var sessions = JSON.parse(localStorage.getItem('dreamos_sessions') || '[]');
+    var container = document.getElementById('sessions-list');
+    if (!sessions.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Tidak ada sesi aktif.</p>';
+      return;
+    }
+    container.innerHTML = sessions.map(function(s, i) {
+      return '<div class="list-item"><div><strong>'+(s.device || 'Unknown Device')+'</strong></div><button class="btn btn-danger" onclick="window.terminateSession('+i+')" style="font-size:0.65rem;">🚫</button></div>';
+    }).join('');
+    var devices = JSON.parse(localStorage.getItem('dreamos_devices') || '[]');
+    var deviceContainer = document.getElementById('devices-list');
+    if (!devices.length) {
+      deviceContainer.innerHTML = '<p style="color:#94a3b8; text-align:center;">Tidak ada device terdaftar.</p>';
+      return;
+    }
+    deviceContainer.innerHTML = devices.map(function(d) {
+      return '<div class="list-item"><div><strong>'+d.name+'</strong></div><span class="badge badge-info">'+(d.trusted ? 'Trusted' : 'Untrusted')+'</span></div>';
+    }).join('');
+  }
+
+  function loadActivity() {
+    var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+    var userLogs = logs.filter(function(l) { return l.user === user.email; }).slice(0, 50);
+    var container = document.getElementById('activity-log');
+    if (!userLogs.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada aktivitas.</p>';
+      return;
+    }
+    container.innerHTML = userLogs.map(function(l) {
+      var icon = l.action.includes('LOGIN') ? '🔐' : '⚡';
+      return '<div class="list-item"><div>'+icon+' <strong>'+l.action+'</strong><br><span style="font-size:0.65rem; color:#64748b;">'+new Date(l.time).toLocaleString('id-ID')+'</span></div></div>';
+    }).join('');
+  }
+
+  function loadUserList() {
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var container = document.getElementById('user-list');
+    if (!users.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada pengguna terdaftar.</p>';
+      return;
+    }
+    window.allUsers = users;
+    renderUsers(users);
+  }
+
+  function renderUsers(users) {
+    var container = document.getElementById('user-list');
+    if (!users.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Tidak ada user yang cocok.</p>';
+      return;
+    }
+    container.innerHTML = users.map(function(u, i) {
+      return '<div class="list-item"><div><b>'+SEC.sanitize(u.nama)+'</b><br><span style="font-size:0.65rem; color:#94a3b8;">'+SEC.sanitize(u.role)+' • '+SEC.sanitize(u.email)+'</span></div>'+(u.role !== 'dev' ? '<button class="btn btn-danger" onclick="window.deleteUser('+i+')" style="font-size:0.6rem;">🗑️</button>' : '')+'</div>';
+    }).join('');
+  }
+
+  function loadSettings() {
+    var settings = JSON.parse(localStorage.getItem('dreamos_user_settings') || '{}');
+    document.getElementById('notif-email').checked = settings.notifEmail !== false;
+    document.getElementById('notif-push').checked = settings.notifPush !== false;
+    document.getElementById('setting-theme').value = settings.theme || 'dark';
+    document.getElementById('setting-language').value = settings.language || 'id';
+  }
+
+  window.showTab = function(tab) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+    event.target.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  };
+
+  window.saveProfile = function() {
+    user.nama = document.getElementById('edit-nama').value;
+    user.email = document.getElementById('edit-email').value;
+    user.phone = document.getElementById('edit-phone').value;
+    user.department = document.getElementById('edit-department').value;
+    user.bio = document.getElementById('edit-bio').value;
+    localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+    document.getElementById('display-name').textContent = user.nama;
+    updateProfileCompletion();
+    SEC.auditLog('UPDATE_PROFILE', 'Update profil');
+    alert('✅ Profile berhasil diupdate!');
+  };
+
+  window.checkPasswordStrength = function() {
+    var pass = document.getElementById('new-pass').value;
+    var strength = 0;
+    if (pass.length >= 6) strength++;
+    if (pass.length >= 10) strength++;
+    if (/[A-Z]/.test(pass)) strength++;
+    if (/[0-9]/.test(pass)) strength++;
+    if (/[^A-Za-z0-9]/.test(pass)) strength++;
+    var fill = document.getElementById('strength-fill');
+    var text = document.getElementById('strength-text');
+    fill.className = 'strength-fill';
+    if (strength <= 2) { fill.classList.add('strength-weak'); text.textContent = 'Weak'; text.style.color = '#ef4444'; }
+    else if (strength <= 4) { fill.classList.add('strength-medium'); text.textContent = 'Medium'; text.style.color = '#f59e0b'; }
+    else { fill.classList.add('strength-strong'); text.textContent = 'Strong'; text.style.color = '#10b981'; }
+  };
+
+  window.changePassword = async function() {
+    alert('🔑 Fitur ganti password - implementasi disesuaikan');
+  };
+
+  window.setup2FA = function() {
+    document.getElementById('2fa-setup').style.display = 'block';
+    document.getElementById('btn-2fa').style.display = 'none';
+  };
+
+  window.verify2FA = function() {
+    alert('✅ 2FA (demo mode)');
+  };
+
+  window.terminateSession = function(index) {
+    if (!confirm('Akhiri sesi ini?')) return;
+    var sessions = JSON.parse(localStorage.getItem('dreamos_sessions') || '[]');
+    sessions.splice(index, 1);
+    localStorage.setItem('dreamos_sessions', JSON.stringify(sessions));
+    loadSessions();
+  };
+
+  window.terminateAllSessions = function() {
+    if (!confirm('Akhiri semua sesi?')) return;
+    localStorage.setItem('dreamos_sessions', '[]');
+    loadSessions();
+    alert('✅ Semua sesi diakhiri!');
+  };
+
+  window.exportActivity = function() {
+    var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+    var userLogs = logs.filter(function(l) { return l.user === user.email; });
+    var csv = 'Time,Action,Details
+';
+    userLogs.forEach(function(l) {
+      csv += new Date(l.time).toISOString() + ',' + l.action + ',' + (l.details || '') + '
+';
+    });
+    var blob = new Blob([csv], {type: 'text/csv'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'activity_log.csv';
+    a.click();
+  };
+
+  window.showRegisterForm = function() {
+    document.getElementById('register-panel').style.display = 'block';
+  };
+
+  window.hideRegisterForm = function() {
+    document.getElementById('register-panel').style.display = 'none';
+  };
+
+  window.registerUser = async function() {
+    var nama = document.getElementById('reg-nama').value.trim();
+    var email = document.getElementById('reg-email').value.trim();
+    var pass = document.getElementById('reg-pass').value;
+    var confirm = document.getElementById('reg-confirm').value;
+    var msg = document.getElementById('reg-msg');
+    if (!nama || !email || !pass) { msg.textContent = '⚠️ Field wajib diisi!'; msg.style.color = '#ef4444'; return; }
+    if (pass !== confirm) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var hashed = await SEC.hashPassword(pass);
+    users.push({
+      nama: nama, email: email, role: document.getElementById('reg-role').value,
+      password_hash: hashed, created_at: new Date().toISOString()
+    });
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    SEC.auditLog('REGISTER', 'Daftar '+nama);
+    hideRegisterForm();
+    loadUserList();
+    alert('✅ '+nama+' berhasil didaftarkan!');
+  };
+
+  window.filterUsers = function() {
+    var search = document.getElementById('user-search').value.toLowerCase();
+    var filtered = window.allUsers.filter(function(u) {
+      return !search || u.nama.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
+    });
+    renderUsers(filtered);
+  };
+
+  window.deleteUser = function(index) {
+    if (!confirm('Hapus user ini?')) return;
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    users.splice(index, 1);
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    loadUserList();
+  };
+
+  window.saveNotificationPrefs = function() {
+    var settings = JSON.parse(localStorage.getItem('dreamos_user_settings') || '{}');
+    settings.notifEmail = document.getElementById('notif-email').checked;
+    settings.notifPush = document.getElementById('notif-push').checked;
+    localStorage.setItem('dreamos_user_settings', JSON.stringify(settings));
+    alert('✅ Preferensi disimpan!');
+  };
+
+  window.saveAppearance = function() {
+    var settings = JSON.parse(localStorage.getItem('dreamos_user_settings') || '{}');
+    settings.theme = document.getElementById('setting-theme').value;
+    settings.language = document.getElementById('setting-language').value;
+    localStorage.setItem('dreamos_user_settings', JSON.stringify(settings));
+    alert('✅ Tampilan disimpan!');
+  };
+
+  window.exportUserData = function() {
+    var data = { user: user, exported_at: new Date().toISOString() };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my_data.json';
+    a.click();
+  };
+
+  window.deleteAccount = function() {
+    if (!confirm('⚠️ Hapus akun permanen?')) return;
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    users = users.filter(function(u) { return u.email !== user.email; });
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    localStorage.removeItem('dreamos_bound_user');
+    alert('✅ Akun dihapus. Reload...');
+    window.parent.location.reload();
+  };
+
+  window.showProfileQR = function() {
+    var qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(user.email);
+    var modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; display:flex; align-items:center; justify-content:center;';
+    modal.innerHTML = '<div style="background:#0f172a; padding:2rem; border-radius:1rem; text-align:center;"><h3>📱 Profile QR</h3><img src="'+qrImg+'" style="width:200px;"><button class="btn btn-danger" onclick="this.parentElement.parentElement.remove()" style="margin-top:1rem;">✕ Tutup</button></div>';
+    document.body.appendChild(modal);
+  };
+
+  window.handleLogout = function() {
+    if (confirm('🚪 Yakin logout?')) {
+      SEC.auditLog('LOGOUT', 'User logout');
+      localStorage.removeItem('dreamos_bound_user');
+      window.parent.location.reload();
+    }
+  };
+
+  document.getElementById('avatar-input').addEventListener('change', function() {
+    if (this.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        user.avatar = ev.target.result;
+        localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+        document.getElementById('avatar-preview').innerHTML = '<img src="'+ev.target.result+'"><div class="verified-badge">✓</div>';
+        updateProfileCompletion();
+        SEC.auditLog('UPDATE_AVATAR', 'Upload foto');
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+
+  initProfile();
+  console.log('✅ Profile Module v3.0 ready');
+})();
+</script>
