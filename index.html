@@ -755,8 +755,8 @@
                 const now = new Date();
                 const diff = nextPrayer - now;
                 
-                if (diff <= 0) {
-                    showNotification('Prayer Time!', `Waktu ${nextPrayerInfo.name} telah tiba!`);
+                if (diff <= 0) { console.log("Prayer time: " + nextPrayerInfo.name); //
+                    // Notification disabled - prayer time shown in header;
                     setTimeout(() => fetchPrayerTimes(), 60000);
                     return;
                 }
@@ -942,3 +942,51 @@
     </script>
 </body>
 </html>
+
+<script>
+// ========== RBAC CHECK ==========
+window.ROLE_PERMISSIONS = {
+    dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+    kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+    koord: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+    security: ['sec','qr','profile','about','setting'],
+    janitor: ['in','out','profile','qr','about','setting'],
+    maintenance: ['maint','profile','qr','about','setting'],
+    staff: ['book','stok','asset','profile','qr','about','setting']
+};
+
+window.canAccess = function(modId) {
+    var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    var role = user.role || 'staff';
+    var permissions = window.ROLE_PERMISSIONS[role] || window.ROLE_PERMISSIONS['staff'];
+    return permissions.includes(modId);
+};
+
+// Override openMod dengan RBAC check
+var originalOpenMod = window.openMod;
+window.openMod = function(id) {
+    if (!window.canAccess(id)) {
+        showNotification('⛔ Akses Ditolak', 'Role Anda tidak memiliki izin ke modul ini.');
+        return;
+    }
+    originalOpenMod(id);
+};
+
+// Session timeout (10 menit idle)
+var idleTimer;
+function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function() {
+        localStorage.removeItem('dreamos_bound_user');
+        localStorage.removeItem('dreamos_session_active');
+        location.reload();
+    }, 600000); // 10 menit
+}
+
+document.addEventListener('click', resetIdleTimer);
+document.addEventListener('keydown', resetIdleTimer);
+document.addEventListener('scroll', resetIdleTimer);
+resetIdleTimer();
+
+console.log('🛡️ RBAC + Session Timeout Active');
+</script>
