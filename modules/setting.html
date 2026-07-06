@@ -1,500 +1,328 @@
-<script src="../js/security-helper.js"></script>
-
-<!-- HEADER WITH BACK BUTTON -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:0 0.5rem;">
-    <button onclick="window.parent.goHome()" style="background:rgba(15,23,42,0.6);border:2px solid rgba(0,255,157,0.3);color:#00ff9d;padding:0.6rem 1.2rem;border-radius:12px;cursor:pointer;font-weight:700;font-size:0.8rem;backdrop-filter:blur(10px);transition:all 0.3s;">← Home</button>
-    <div style="text-align:right;">
-        <div style="color:#00ff9d;font-weight:800;font-size:1.1rem;text-shadow:0 0 15px rgba(0,255,157,0.5);">⚙️ Enterprise Settings</div>
-        <div style="color:#94a3b8;font-size:0.65rem;">ISO 9241-171 • v1.0 Final</div>
-    </div>
-</div>
-
-<!-- TABS -->
-<div style="display:flex;gap:8px;margin-bottom:1.5rem;overflow-x:auto;padding-bottom:0.5rem;">
-    <button class="set-tab active" data-tab="tampilan">🎨 Display</button>
-    <button class="set-tab" data-tab="aksesibilitas">♿ Access</button>
-    <button class="set-tab" data-tab="bahasa">🌍 Language</button>
-    <button class="set-tab" data-tab="advanced">🔬 Advanced</button>
-</div>
-
-<!-- CONTENT -->
-<div id="set-content"></div>
-
-<!-- RESET BUTTON -->
-<div style="margin-top:2rem;text-align:center;">
-    <button onclick="resetSettings()" style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:0.8rem 1.5rem;border-radius:12px;cursor:pointer;font-weight:700;font-size:0.8rem;transition:all 0.3s;">
-        🔄 Reset to Defaults
-    </button>
-</div>
-
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Settings • Dream OS Enterprise</title>
 <style>
-    .set-tab {
-        padding: 0.7rem 1.2rem;
-        border: 2px solid rgba(0, 255, 157, 0.2);
-        border-radius: 12px;
-        cursor: pointer;
-        font-weight: 700;
-        font-size: 0.75rem;
-        white-space: nowrap;
-        background: rgba(15, 23, 42, 0.6);
-        color: #94a3b8;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }
-    .set-tab:hover {
-        border-color: rgba(0, 255, 157, 0.4);
-        color: #00ff9d;
-        transform: translateY(-2px);
-    }
-    .set-tab.active {
-        background: rgba(0, 255, 157, 0.15);
-        color: #00ff9d;
-        border-color: #00ff9d;
-        box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
-        transform: translateY(-2px);
-    }
-    
-    .set-panel {
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(0, 255, 157, 0.2);
-        border-radius: 20px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    }
-    .set-panel h4 {
-        color: #00ff9d;
-        margin: 0 0 1rem;
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
-        border-bottom: 1px solid rgba(0, 255, 157, 0.2);
-        padding-bottom: 0.75rem;
-    }
-    
-    .set-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.2s ease;
-    }
-    .set-row:last-child { border-bottom: none; }
-    .set-row:hover {
-        background: rgba(0, 255, 157, 0.03);
-        padding-left: 8px;
-        padding-right: 8px;
-        margin: 0 -8px;
-        border-radius: 8px;
-    }
-    .set-label {
-        font-size: 0.9rem;
-        color: #e2e8f0;
-        font-weight: 600;
-    }
-    .set-desc {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        margin-top: 0.25rem;
-    }
-    
-    .toggle {
-        width: 52px;
-        height: 28px;
-        background: #334155;
-        border-radius: 14px;
-        position: relative;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        flex-shrink: 0;
-    }
-    .toggle.active {
-        background: #00ff9d;
-        border-color: #00ff9d;
-        box-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
-    }
-    .toggle::after {
-        content: '';
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 20px;
-        height: 20px;
-        background: white;
-        border-radius: 50%;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    }
-    .toggle.active::after {
-        left: 27px;
-    }
-    
-    .set-input {
-        background: rgba(0, 0, 0, 0.4);
-        border: 2px solid rgba(0, 255, 157, 0.2);
-        color: #e2e8f0;
-        padding: 0.6rem 1rem;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        outline: none;
-        transition: all 0.3s ease;
-        font-weight: 600;
-        min-width: 140px;
-    }
-    .set-input:focus {
-        border-color: #00ff9d;
-        box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
-    }
-    
-    .set-range {
-        width: 120px;
-        height: 6px;
-        background: rgba(0, 255, 157, 0.2);
-        border-radius: 3px;
-        outline: none;
-        -webkit-appearance: none;
-        appearance: none;
-    }
-    .set-range::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 20px;
-        height: 20px;
-        background: #00ff9d;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 255, 157, 0.6);
-    }
-    .set-range::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        background: #00ff9d;
-        border-radius: 50%;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 0 10px rgba(0, 255, 157, 0.6);
-    }
-    
-    .range-value {
-        display: inline-block;
-        min-width: 50px;
-        text-align: center;
-        color: #00ff9d;
-        font-weight: 700;
-        margin-left: 8px;
-    }
-    
-    .preview-box {
-        margin-top: 1rem;
-        padding: 1rem;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 12px;
-        border: 1px solid rgba(0, 255, 157, 0.2);
-        text-align: center;
-    }
-    .preview-box .preview-title {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    /* HIDDEN JSON PREVIEW - Toggle with button */
-    .json-preview {
-        display: none;
-        margin-top: 1rem;
-        padding: 1rem;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 12px;
-        border: 1px solid rgba(0, 255, 157, 0.2);
-    }
-    .json-preview.show {
-        display: block;
-        animation: fadeIn 0.3s ease;
-    }
-    .json-toggle-btn {
-        background: rgba(0, 255, 157, 0.1);
-        border: 1px solid rgba(0, 255, 157, 0.3);
-        color: #00ff9d;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: 1rem;
-        transition: all 0.3s;
-    }
-    .json-toggle-btn:hover {
-        background: rgba(0, 255, 157, 0.2);
-        box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .set-panel {
-        animation: fadeIn 0.4s ease;
-    }
+  :root {
+    --glass-bg: rgba(15, 23, 42, 0.5);
+    --glass-border: rgba(0, 255, 157, 0.12);
+    --neon: #00ff9d;
+    --accent: #0ea5e9;
+    --warning: #e11d48;
+    --gold: #f59e0b;
+    --purple: #8b5cf6;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',sans-serif; min-height:100vh; }
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .back-btn {
+    position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000;
+    background: rgba(30,41,59,0.9); border: 1px solid var(--neon);
+    color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px;
+    cursor: pointer; font-weight: 700; font-size: 0.7rem;
+  }
+  .btn {
+    padding: 0.5rem 0.9rem; border: none; border-radius: 10px;
+    font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: all 0.2s ease;
+  }
+  .btn-danger { background: var(--warning); color: #fff; }
+  .btn:hover { transform: translateY(-1px); opacity: 0.95; }
+
+  /* TABS */
+  .tab-nav {
+    display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600;
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(30,41,59,0.7); color: #94a3b8;
+    transition: all 0.2s ease; white-space: nowrap;
+  }
+  .tab-btn:hover { background: rgba(30,41,59,0.9); border-color: var(--neon); color: #e2e8f0; }
+  .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.4); }
+
+  .set-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .set-row:last-child { border-bottom: none; }
+  .set-label { font-size: 0.8rem; color: #e2e8f0; font-weight: 600; }
+  .set-desc { font-size: 0.65rem; color: #94a3b8; margin-top: 0.15rem; }
+
+  /* TOGGLE SWITCH */
+  .toggle {
+    width: 48px; height: 26px; background: #334155;
+    border-radius: 13px; position: relative; cursor: pointer;
+    transition: all 0.3s ease; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--neon); box-shadow: 0 0 12px rgba(0,255,157,0.4); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; background: white; border-radius: 50%;
+    transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .toggle.on::after { left: 25px; }
+
+  /* RANGE SLIDER */
+  input[type=range] {
+    width: 100px; height: 6px; -webkit-appearance: none; appearance: none;
+    background: rgba(0,255,157,0.2); border-radius: 3px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    background: var(--neon); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,255,157,0.5);
+  }
+  .range-val { display: inline-block; min-width: 45px; text-align: center; color: var(--neon); font-weight: 700; font-size: 0.75rem; }
+
+  /* SELECT */
+  select {
+    padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    color: #e2e8f0; font-size: 0.75rem; outline: none;
+  }
+  select:focus { border-color: var(--neon); }
+
+  .section-title {
+    font-size: 0.85rem; font-weight: 700; margin: 0 0 0.8rem;
+    display: flex; align-items: center; gap: 0.4rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;
+  }
 </style>
+</head>
+<body>
+
+<button class="back-btn" onclick="window.parent.goHome()">← HOME</button>
+
+<div style="max-width:700px; margin:0 auto; padding:3.5rem 1rem 5rem;">
+
+  <!-- HEADER -->
+  <div class="glass" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h2 style="color:var(--neon); margin:0; font-size:1rem;">⚙️ Enterprise Settings</h2>
+      <p style="color:#94a3b8; font-size:0.6rem; margin:0;">ISO 9241-171 • WCAG 2.2 • v1.0 Final</p>
+    </div>
+    <button class="btn btn-danger" onclick="resetSettings()">🔄 Reset</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="display" onclick="switchTab('display', this)">🎨 Display</button>
+    <button class="tab-btn" data-tab="access" onclick="switchTab('access', this)">♿ Access</button>
+    <button class="tab-btn" data-tab="language" onclick="switchTab('language', this)">🌍 Language</button>
+    <button class="tab-btn" data-tab="advanced" onclick="switchTab('advanced', this)">🔬 Advanced</button>
+  </div>
+
+  <!-- TAB CONTENTS -->
+  <div id="tab-display" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color:var(--accent);">🎨 Visual</div>
+      <div class="set-row">
+        <div><div class="set-label">Dark Mode</div><div class="set-desc">Enterprise dark theme</div></div>
+        <div class="toggle on" id="toggle-theme" onclick="toggleKey('theme')"></div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Font Size</div><div class="set-desc">Global text scaling</div></div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <input type="range" min="80" max="140" value="100" id="range-font" oninput="updateRange('fontSize', this.value)">
+          <span class="range-val" id="val-font">100%</span>
+        </div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Starfield</div><div class="set-desc">Animated background</div></div>
+        <div class="toggle on" id="toggle-starfield" onclick="toggleKey('starfield')"></div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Glass Intensity</div><div class="set-desc">Blur opacity level</div></div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <input type="range" min="30" max="90" value="70" id="range-glass" oninput="updateRange('glassIntensity', this.value)">
+          <span class="range-val" id="val-glass">70%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-access" class="tab-content" style="display:none;">
+    <div class="glass">
+      <div class="section-title" style="color:var(--gold);">♿ Accessibility</div>
+      <div class="set-row">
+        <div><div class="set-label">High Contrast</div><div class="set-desc">WCAG 2.2 AA compliant</div></div>
+        <div class="toggle" id="toggle-highContrast" onclick="toggleKey('highContrast')"></div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Reduced Motion</div><div class="set-desc">No animations</div></div>
+        <div class="toggle" id="toggle-reduceMotion" onclick="toggleKey('reduceMotion')"></div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Screen Reader</div><div class="set-desc">ARIA labels</div></div>
+        <div class="toggle" id="toggle-screenReader" onclick="toggleKey('screenReader')"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-language" class="tab-content" style="display:none;">
+    <div class="glass">
+      <div class="section-title" style="color:var(--purple);">🌍 Language</div>
+      <div class="set-row">
+        <div><div class="set-label">System Language</div><div class="set-desc">Interface language</div></div>
+        <select id="select-lang" onchange="updateSelect('lang', this.value)">
+          <option value="id">🇮🇩 Indonesia</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="ar">🇸🇦 العربية</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Auto-Detect</div><div class="set-desc">Browser language</div></div>
+        <div class="toggle" id="toggle-autoDetect" onclick="toggleKey('autoDetect')"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-advanced" class="tab-content" style="display:none;">
+    <div class="glass">
+      <div class="section-title" style="color:var(--warning);">🔬 Advanced</div>
+      <div class="set-row">
+        <div><div class="set-label">Developer Mode</div><div class="set-desc">Debug info</div></div>
+        <div class="toggle" id="toggle-devMode" onclick="toggleKey('devMode')"></div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Auto-Save</div><div class="set-desc">Save every 30s</div></div>
+        <div class="toggle on" id="toggle-autoSave" onclick="toggleKey('autoSave')"></div>
+      </div>
+    </div>
+    <div class="glass">
+      <div class="section-title" style="color:#94a3b8;">📊 Current Config</div>
+      <pre id="json-preview" style="font-size:0.65rem; color:var(--neon); max-height:200px; overflow-y:auto; margin:0;"></pre>
+    </div>
+  </div>
+
+</div>
 
 <script>
-(function(){
-    var defaults = {
-        theme: 'dark',
-        fontSize: 100,
-        highContrast: false,
-        reduceMotion: false,
-        screenReader: false,
-        starfield: true,
-        glassIntensity: 70,
-        lang: 'id',
-        autoDetect: false,
-        devMode: false,
-        autoSave: true,
-        cacheBust: false
-    };
-    
-    var state = JSON.parse(localStorage.getItem('dreamos_settings') || JSON.stringify(defaults));
-    var currentTab = 'tampilan';
+// ========== STANDALONE SETTINGS ENGINE ==========
+(function() {
+  var defaults = {
+    theme: 'dark', fontSize: 100, highContrast: false,
+    reduceMotion: false, screenReader: false,
+    starfield: true, glassIntensity: 70,
+    lang: 'id', autoDetect: false,
+    devMode: false, autoSave: true
+  };
+  
+  var state = JSON.parse(localStorage.getItem('dreamos_settings') || JSON.stringify(defaults));
 
-    function showNotification(title, text) {
-        if (window.parent.showNotification) {
-            window.parent.showNotification(title, text);
+  function save() {
+    localStorage.setItem('dreamos_settings', JSON.stringify(state));
+    localStorage.setItem('dreamos_lang', state.lang);
+    applyToParent();
+    renderJSON();
+  }
+
+  function applyToParent() {
+    try {
+      var p = window.parent.document.documentElement;
+      p.style.setProperty('--font-scale', state.fontSize + '%');
+      p.setAttribute('data-theme', state.theme);
+      
+      var canvas = window.parent.document.getElementById('star-field');
+      if (canvas) canvas.style.display = state.starfield ? 'block' : 'none';
+      
+      var glassBg = state.theme === 'light' 
+        ? 'rgba(240,245,255,' + (state.glassIntensity/100).toFixed(2) + ')'
+        : 'rgba(15,23,42,' + (state.glassIntensity/100).toFixed(2) + ')';
+      p.style.setProperty('--glass-bg', glassBg);
+      
+      if (state.highContrast) {
+        p.style.setProperty('--text-main', '#ffffff');
+        p.style.setProperty('--glass-border', 'rgba(0,255,157,0.5)');
+      }
+    } catch(e) {}
+  }
+
+  function renderJSON() {
+    var el = document.getElementById('json-preview');
+    if (el) el.textContent = JSON.stringify(state, null, 2);
+  }
+
+  // Tab switching
+  window.switchTab = function(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.tab-content').forEach(function(c){c.style.display='none';});
+    if(btn) btn.classList.add('active');
+    var t = document.getElementById('tab-'+name);
+    if(t) t.style.display='block';
+  };
+
+  // Toggle
+  window.toggleKey = function(key) {
+    state[key] = !state[key];
+    if (key === 'theme') state.theme = state.theme ? 'dark' : 'light';
+    updateUI();
+    save();
+  };
+
+  // Range
+  window.updateRange = function(key, val) {
+    state[key] = parseInt(val);
+    document.getElementById('val-' + (key==='fontSize'?'font':key==='glassIntensity'?'glass':key)).textContent = val + '%';
+    save();
+  };
+
+  // Select
+  window.updateSelect = function(key, val) {
+    state[key] = val;
+    save();
+  };
+
+  // Reset
+  window.resetSettings = function() {
+    if (confirm('🔄 Reset semua ke default?')) {
+      state = JSON.parse(JSON.stringify(defaults));
+      updateUI();
+      save();
+    }
+  };
+
+  // Update semua UI
+  function updateUI() {
+    // Toggles
+    ['theme','starfield','highContrast','reduceMotion','screenReader','autoDetect','devMode','autoSave'].forEach(function(k){
+      var el = document.getElementById('toggle-'+k);
+      if (el) {
+        if (k === 'theme') {
+          el.classList.toggle('on', state.theme === 'dark');
         } else {
-            alert(title + ': ' + text);
+          el.classList.toggle('on', state[k] === true);
         }
-    }
-
-    function applySettings() {
-        var r = document.documentElement;
-        r.style.setProperty('--font-scale', state.fontSize + '%');
-        r.setAttribute('data-theme', state.theme);
-        localStorage.setItem('dreamos_settings', JSON.stringify(state));
-        localStorage.setItem('dreamos_lang', state.lang);
-        
-        // Apply to parent window (index.html)
-        if (window.parent && window.parent.document) {
-            var pr = window.parent.document.documentElement;
-            pr.style.setProperty('--font-scale', state.fontSize + '%');
-            pr.setAttribute('data-theme', state.theme);
-            
-            // Toggle starfield
-            var canvas = window.parent.document.getElementById('star-field');
-            if (canvas) {
-                canvas.style.display = state.starfield ? 'block' : 'none';
-            }
-            
-            // Apply glass intensity
-            var glassBg = `rgba(15, 23, 42, ${(state.glassIntensity / 100).toFixed(2)})`;
-            pr.style.setProperty('--glass-bg', glassBg);
-            
-            // Apply theme colors
-            if (state.theme === 'light') {
-                pr.style.setProperty('--glass-bg', `rgba(240, 245, 255, ${(state.glassIntensity / 100).toFixed(2)})`);
-                pr.style.setProperty('--neon', '#0ea5e9');
-                window.parent.document.body.style.background = '#f1f5f9';
-            } else {
-                pr.style.setProperty('--neon', '#00ff9d');
-                window.parent.document.body.style.background = '#0a0e27';
-            }
-            
-            // High contrast
-            if (state.highContrast) {
-                pr.style.setProperty('--text-main', '#ffffff');
-                pr.style.setProperty('--glass-border', 'rgba(0, 255, 157, 0.5)');
-            }
-            
-            // Reduced motion
-            if (state.reduceMotion) {
-                pr.style.setProperty('--animation-duration', '0s');
-            }
-        }
-        
-        window.dispatchEvent(new CustomEvent('langChanged', { detail: state.lang }));
-    }
-
-    function render() {
-        var h = '';
-        
-        if (currentTab === 'tampilan') {
-            h += '<div class="set-panel"><h4>🎨 Visual Preferences</h4>';
-            h += row('Dark Mode', 'Enterprise dark theme', toggle('theme', state.theme === 'dark'));
-            h += row('Font Scale', 'Global text size', 
-                '<input type="range" class="set-range" min="80" max="140" value="' + state.fontSize + '" data-act="font-size">' +
-                '<span class="range-value">' + state.fontSize + '%</span>');
-            h += row('Starfield Animation', 'NVIDIA animated background', toggle('starfield', state.starfield));
-            h += row('Glass Intensity', 'Glass morphism opacity (' + state.glassIntensity + '%)', 
-                '<input type="range" class="set-range" min="30" max="90" value="' + state.glassIntensity + '" data-act="glass-intensity">' +
-                '<span class="range-value">' + state.glassIntensity + '%</span>');
-            h += '</div>';
-            
-        } else if (currentTab === 'aksesibilitas') {
-            h += '<div class="set-panel"><h4>♿ Accessibility Suite</h4>';
-            h += row('High Contrast', 'WCAG 2.2 AA compliant', toggle('highContrast', state.highContrast));
-            h += row('Reduced Motion', 'Performance mode (no animations)', toggle('reduceMotion', state.reduceMotion));
-            h += row('Screen Reader', 'ARIA labels for accessibility', toggle('screenReader', state.screenReader));
-            h += '</div>';
-            
-        } else if (currentTab === 'bahasa') {
-            h += '<div class="set-panel"><h4>🌍 Global Language Engine</h4>';
-            h += row('System Language', 'Select operational language', 
-                select('lang', {
-                    id: '🇮🇩 Indonesia',
-                    en: '🇬🇧 English',
-                    ar: '🇸 العربية',
-                    zh: '🇨 中文'
-                }, state.lang));
-            h += row('Auto-Detect', 'Automatically detect browser language', toggle('autoDetect', state.autoDetect));
-            h += '<div class="preview-box">';
-            h += '<div class="preview-title">📝 Preview</div>';
-            h += '<div style="font-size:1rem;color:#00ff9d;font-weight:700;">' + getGreeting() + '</div>';
-            h += '<div style="font-size:0.75rem;color:#94a3b8;margin-top:0.3rem;">' + getSubtitle() + '</div>';
-            h += '</div>';
-            h += '</div>';
-            
-        } else if (currentTab === 'advanced') {
-            h += '<div class="set-panel"><h4>🔬 Advanced Options</h4>';
-            h += row('Developer Mode', 'Show debug information', toggle('devMode', state.devMode));
-            h += row('Auto-Save', 'Save data every 30 seconds', toggle('autoSave', state.autoSave !== false));
-            h += row('Cache Busting', 'Force reload on startup', toggle('cacheBust', state.cacheBust));
-            
-            // Hidden JSON preview with toggle button
-            h += '<button class="json-toggle-btn" onclick="toggleJsonPreview()">📊 ' + (document.querySelector('.json-preview.show') ? 'Hide' : 'Show') + ' Current Settings</button>';
-            h += '<div class="json-preview" id="json-preview">';
-            h += '<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">📊 Current Settings (JSON)</div>';
-            h += '<pre style="font-size:0.65rem;color:#00ff9d;overflow-x:auto;margin:0;white-space:pre-wrap;word-wrap:break-word;">' + JSON.stringify(state, null, 2) + '</pre>';
-            h += '</div>';
-            h += '</div>';
-        }
-        
-        document.getElementById('set-content').innerHTML = h;
-    }
-    
-    // Toggle JSON preview visibility
-    window.toggleJsonPreview = function() {
-        var preview = document.getElementById('json-preview');
-        if (preview) {
-            preview.classList.toggle('show');
-            var btn = document.querySelector('.json-toggle-btn');
-            if (btn) {
-                btn.innerHTML = preview.classList.contains('show') ? '📊 Hide Current Settings' : '📊 Show Current Settings';
-            }
-        }
-    };
-    
-    function getGreeting() {
-        var greetings = {
-            id: '🕌 Assalamualaikum!',
-            en: '🕌 Peace be upon you!',
-            ar: '🕌 السلام عليكم',
-            zh: '🕌 你好!'
-        };
-        return greetings[state.lang] || greetings.id;
-    }
-    
-    function getSubtitle() {
-        var subtitles = {
-            id: 'The Power Soul Of Shalawat',
-            en: 'The Power Soul Of Shalawat',
-            ar: 'قوة روح الصلاة',
-            zh: '祈祷的力量'
-        };
-        return subtitles[state.lang] || subtitles.id;
-    }
-    
-    function row(l, d, c) {
-        return '<div class="set-row"><div><div class="set-label">' + l + '</div><div class="set-desc">' + d + '</div></div><div style="display:flex;align-items:center;">' + c + '</div></div>';
-    }
-    
-    function toggle(k, a) {
-        return '<div class="toggle ' + (a ? 'active' : '') + '" data-act="toggle" data-key="' + k + '"></div>';
-    }
-    
-    function select(k, opts, val) {
-        var h = '<select class="set-input" data-act="select" data-key="' + k + '">';
-        for (var o in opts) {
-            h += '<option value="' + o + '" ' + (val === o ? 'selected' : '') + '>' + opts[o] + '</option>';
-        }
-        return h + '</select>';
-    }
-
-    window.resetSettings = function() {
-        if (confirm('🔄 Reset semua setting ke default?')) {
-            state = JSON.parse(JSON.stringify(defaults));
-            applySettings();
-            render();
-            showNotification('Settings Reset', 'All settings restored to defaults ✅');
-        }
-    };
-
-    // Event handlers
-    document.addEventListener('click', function(e) {
-        var t = e.target.closest('[data-tab]');
-        if (t) {
-            currentTab = t.dataset.tab;
-            document.querySelectorAll('.set-tab').forEach(function(b) { b.classList.remove('active'); });
-            t.classList.add('active');
-            render();
-            return;
-        }
-        
-        var a = e.target.closest('[data-act="toggle"]');
-        if (a) {
-            state[a.dataset.key] = !state[a.dataset.key];
-            if (a.dataset.key === 'theme') {
-                state.theme = state.theme === 'dark' ? 'light' : 'dark';
-                showNotification('Theme Changed', state.theme === 'dark' ? 'Dark Mode 🌙' : 'Light Mode ☀️');
-            }
-            applySettings();
-            render();
-            return;
-        }
+      }
     });
     
-    document.addEventListener('input', function(e) {
-        var a = e.target.closest('[data-act="font-size"]');
-        if (a) {
-            state.fontSize = parseInt(a.value);
-            var rv = a.parentElement.querySelector('.range-value');
-            if (rv) rv.textContent = state.fontSize + '%';
-            applySettings();
-            return;
-        }
-        
-        a = e.target.closest('[data-act="glass-intensity"]');
-        if (a) {
-            state.glassIntensity = parseInt(a.value);
-            var rv = a.parentElement.querySelector('.range-value');
-            if (rv) rv.textContent = state.glassIntensity + '%';
-            applySettings();
-            return;
-        }
-    });
+    // Ranges
+    var r1 = document.getElementById('range-font');
+    if (r1) { r1.value = state.fontSize; document.getElementById('val-font').textContent = state.fontSize + '%'; }
     
-    document.addEventListener('change', function(e) {
-        var a = e.target.closest('[data-act="select"]');
-        if (a) {
-            state[a.dataset.key] = a.value;
-            applySettings();
-            render();
-            showNotification('Language Changed', 'Updated to ' + a.options[a.selectedIndex].text);
-            return;
-        }
-    });
+    var r2 = document.getElementById('range-glass');
+    if (r2) { r2.value = state.glassIntensity; document.getElementById('val-glass').textContent = state.glassIntensity + '%'; }
+    
+    // Select
+    var s = document.getElementById('select-lang');
+    if (s) s.value = state.lang;
+    
+    renderJSON();
+  }
 
-    // Init
-    render();
-    applySettings();
-    
-    window.addEventListener('langChanged', function(e) {
-        console.log('🌍 Language changed to:', e.detail);
-    });
+  // Init
+  updateUI();
+  save();
 })();
 </script>
+</body>
+</html>
