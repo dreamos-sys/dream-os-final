@@ -533,9 +533,34 @@
     </nav>
 
     <script>
+
+        // ========== SUPER USER AUTO-LOGIN ==========
+        (function() {
+            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+            var session = localStorage.getItem('dreamos_session_active');
+            
+            // Kalau user dev dan session aktif → langsung masuk
+            if (user.role === 'dev' && session === 'true') {
+                console.log('👑 Super User detected - Auto login...');
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('bottom-nav').style.display = 'block';
+                setTimeout(function() { renderDashboard(); }, 100);
+            }
+        })();
+
         let slideInterval, prayerInterval;
         window.slideIdx = 0;
         const PIN_HASH = btoa('b15m1ll4h_012443410');
+
+        // Auto-fill PIN untuk developer
+        (function() {
+            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+            if (user.role === 'dev') {
+                document.getElementById('pin-input').value = 'b15m1ll4h_012443410';
+            }
+        })();
+
 
         function showNotification(title, text, duration = 5000) {
             const container = document.getElementById('notification-container');
@@ -598,6 +623,24 @@
             }
         }
         
+        
+        // Auto-set role dev untuk super user
+        (function() {
+            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+            if (user.email === 'dreamos.sch.id@gmail.com' && user.role !== 'dev') {
+                user.role = 'dev';
+                localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
+                
+                var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+                var admin = users.find(function(u) { return u.email === 'dreamos.sch.id@gmail.com'; });
+                if (admin) {
+                    admin.role = 'dev';
+                    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+                }
+                console.log('👑 Role auto-upgraded to dev!');
+            }
+        })();
+
         document.getElementById('pin-input')?.addEventListener('keypress', e => {
             if (e.key === 'Enter') authenticate();
         });
