@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Profile • Dream OS v3.0</title>
-    <script src="../js/security-helper.js"></script>
+    <title>Profile • Dream OS</title>
     <style>
         :root {
             --glass-bg: rgba(15, 23, 42, 0.5);
@@ -38,13 +37,14 @@
         .btn-success { background: #10b981; color: #fff; }
         .btn-danger { background: var(--warning); color: #fff; }
         .btn-warning { background: var(--gold); color: #000; }
+        .btn-purple { background: var(--purple); color: #fff; }
         .btn:hover { transform: translateY(-1px); opacity: 0.95; }
-        .input-field {
+        .input-field, select {
             width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
             color: #e2e8f0; font-size: 0.78rem; outline: none;
         }
-        .input-field:focus { border-color: var(--neon); }
+        .input-field:focus, select:focus { border-color: var(--neon); }
         
         .tab-nav {
             display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap;
@@ -55,18 +55,12 @@
             cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
             background: rgba(30,41,59,0.7); color: #94a3b8;
             transition: all 0.2s ease; white-space: nowrap;
-            pointer-events: auto; position: relative; z-index: 101;
+            pointer-events: auto;
         }
-        .tab-btn:hover {
-            background: rgba(30,41,59,0.9); border-color: var(--neon); color: #e2e8f0;
-        }
-        .tab-btn.active {
-            background: var(--neon); color: #000; border-color: var(--neon);
-            box-shadow: 0 0 15px rgba(0,255,157,0.4);
-        }
+        .tab-btn:hover { background: rgba(30,41,59,0.9); border-color: var(--neon); color: #e2e8f0; }
+        .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.4); }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .avatar-preview {
@@ -85,13 +79,16 @@
         table { width:100%; border-collapse:collapse; font-size:0.7rem; }
         th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; }
         td { padding: 0.35rem 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .badge {
+            padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.6rem; font-weight: 600;
+        }
+        .badge-success { background: rgba(16,185,129,0.2); color: #10b981; }
+        .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; }
         .section-title {
             font-size: 0.85rem; font-weight: 700; margin: 0 0 0.8rem;
             display: flex; align-items: center; gap: 0.4rem;
             border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;
         }
-        .loading { text-align:center; padding:2rem; color:#94a3b8; }
-        .empty-state { text-align:center; padding:2rem; color:#94a3b8; }
     </style>
 </head>
 <body>
@@ -112,13 +109,13 @@
         </div>
     </div>
 
-    <!-- TABS - FIXED WITH EVENT DELEGATION -->
+    <!-- TABS -->
     <div class="tab-nav" id="tab-nav">
-        <button class="tab-btn active" data-tab="overview">📊 Overview</button>
-        <button class="tab-btn" data-tab="edit">✏️ Edit</button>
-        <button class="tab-btn" data-tab="security">🔒 Security</button>
-        <button class="tab-btn" data-tab="users">👥 Users</button>
-        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+        <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">📊 Overview</button>
+        <button class="tab-btn" data-tab="edit" onclick="switchTab('edit', this)">✏️ Edit</button>
+        <button class="tab-btn" data-tab="security" onclick="switchTab('security', this)">🔒 Security</button>
+        <button class="tab-btn" data-tab="users" onclick="switchTab('users', this)">👥 Users</button>
+        <button class="tab-btn" data-tab="settings" onclick="switchTab('settings', this)">⚙️ Settings</button>
     </div>
 
     <!-- TAB: Overview -->
@@ -132,10 +129,6 @@
                 <div class="stat-card"><div class="stat-value" id="stat-score">0</div><div class="stat-label">Score</div></div>
             </div>
         </div>
-        <div class="glass">
-            <div class="section-title" style="color:var(--gold);">🏆 Achievements</div>
-            <div id="achievements-list"><p style="color:#94a3b8; text-align:center;">Belum ada achievement.</p></div>
-        </div>
     </div>
 
     <!-- TAB: Edit -->
@@ -143,10 +136,10 @@
         <div class="glass">
             <div class="section-title" style="color:var(--neon);">✏️ Edit Profile</div>
             <div style="margin-bottom:0.6rem;"><label style="font-size:0.65rem; color:#94a3b8;">Nama</label><input class="input-field" id="edit-nama"></div>
-            <div style="margin-bottom:0.6rem;"><label style="font-size:0.65rem; color:#94a3b8;">Email</label><input class="input-field" id="edit-email" type="email"></div>
+            <div style="margin-bottom:0.6rem;"><label style="font-size:0.65rem; color:#94a3b8;">Email</label><input class="input-field" id="edit-email" type="email" readonly style="opacity:0.5;"></div>
             <div style="margin-bottom:0.6rem;"><label style="font-size:0.65rem; color:#94a3b8;">No. Telepon</label><input class="input-field" id="edit-phone" type="tel"></div>
             <div style="margin-bottom:0.6rem;"><label style="font-size:0.65rem; color:#94a3b8;">Department</label><input class="input-field" id="edit-department"></div>
-            <button class="btn btn-success" onclick="window.saveProfile()" style="width:100%;">💾 Simpan</button>
+            <button class="btn btn-success" onclick="saveProfile()" style="width:100%;">💾 Simpan</button>
         </div>
     </div>
 
@@ -155,13 +148,14 @@
         <div class="glass">
             <div class="section-title" style="color:var(--warning);">🔐 Ganti Password</div>
             <input class="input-field" id="old-pass" type="password" placeholder="Password lama" style="margin-bottom:0.5rem;">
-            <input class="input-field" id="new-pass" type="password" placeholder="Password baru" style="margin-bottom:0.5rem;">
-            <input class="input-field" id="confirm-pass" type="password" placeholder="Konfirmasi" style="margin-bottom:0.5rem;">
-            <button class="btn btn-warning" onclick="window.changePassword()" style="width:100%;">🔑 Ganti Password</button>
+            <input class="input-field" id="new-pass" type="password" placeholder="Password baru (min 6 karakter)" style="margin-bottom:0.5rem;">
+            <input class="input-field" id="confirm-pass" type="password" placeholder="Konfirmasi password baru" style="margin-bottom:0.5rem;">
+            <button class="btn btn-warning" onclick="changePassword()" style="width:100%;">🔑 Ganti Password</button>
         </div>
         <div class="glass">
             <div class="section-title" style="color:var(--gold);">🛡️ Device DNA</div>
             <p style="font-size:0.75rem;"><strong>DNA:</strong> <span id="dna-hash" style="font-family:monospace; color:#f59e0b;">Menghitung...</span></p>
+            <p style="font-size:0.65rem; color:#64748b;">*Device DNA mencegah login dari HP lain.</p>
         </div>
     </div>
 
@@ -170,7 +164,7 @@
         <div class="glass">
             <div class="section-title" style="color:var(--purple);">👥 Daftar Pengguna</div>
             <div id="user-list" style="max-height:350px; overflow-y:auto;"></div>
-            <button class="btn btn-success" onclick="window.showRegisterForm()" style="width:100%; margin-top:0.8rem;">➕ Tambah Pengguna Baru</button>
+            <button class="btn btn-success" onclick="showRegisterForm()" style="width:100%; margin-top:0.8rem;">➕ Daftar Pengguna Baru</button>
         </div>
         <div id="register-panel" class="glass" style="display:none; border-color: var(--neon);">
             <div class="section-title" style="color:var(--neon);">📝 Pendaftaran</div>
@@ -184,8 +178,8 @@
             <input class="input-field" type="password" id="reg-pass" placeholder="Password" style="margin-bottom:0.4rem;">
             <input class="input-field" type="password" id="reg-confirm" placeholder="Konfirmasi Password">
             <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
-                <button class="btn btn-primary" onclick="window.registerUser()">✅ Daftar</button>
-                <button class="btn btn-danger" onclick="window.hideRegisterForm()">❌ Batal</button>
+                <button class="btn btn-primary" onclick="registerUser()">✅ Daftar</button>
+                <button class="btn btn-danger" onclick="hideRegisterForm()">❌ Batal</button>
             </div>
             <p id="reg-msg" style="font-size:0.7rem; margin-top:0.5rem;"></p>
         </div>
@@ -201,53 +195,86 @@
             <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; font-size:0.75rem;">
                 <input type="checkbox" id="notif-push" checked style="accent-color:var(--neon);"> Push
             </label>
-            <button class="btn btn-primary" onclick="window.saveNotifications()" style="width:100%; margin-top:0.5rem;">💾 Simpan</button>
+            <button class="btn btn-primary" onclick="saveNotifications()" style="width:100%; margin-top:0.5rem;">💾 Simpan</button>
         </div>
         <div class="glass">
             <div class="section-title" style="color:var(--gold);">🎨 Tampilan</div>
             <select class="input-field" id="setting-theme" style="margin-bottom:0.5rem;">
                 <option value="dark">🌙 Dark</option><option value="light">☀️ Light</option>
             </select>
-            <button class="btn btn-warning" onclick="window.saveAppearance()" style="width:100%;">💾 Simpan</button>
+            <button class="btn btn-warning" onclick="saveAppearance()" style="width:100%;">💾 Simpan</button>
         </div>
     </div>
 
     <!-- Logout -->
-    <button class="btn btn-danger" onclick="window.handleLogout()" style="width:100%; margin-top:1rem;">🚪 Logout</button>
+    <button class="btn btn-danger" onclick="handleLogout()" style="width:100%; margin-top:1rem;">🚪 Logout</button>
     <p style="text-align:center; font-size:0.6rem; color:#ef4444; margin-top:0.4rem;">⚠️ Logout menghapus sesi.</p>
 
 </div>
 
 <script>
+// ========== FULL STANDALONE - NO EXTERNAL DEPENDENCIES ==========
 (function() {
   'use strict';
-  
-  var SEC = window.DreamSec;
-  if (!SEC) {
-    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>⚠️ Error</h2><p>Security module not loaded.</p></div>';
-    return;
+
+  // ========== BUILT-IN HELPERS ==========
+  function sanitize(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
-  
-  var user = SEC.getCurrentUser();
+
+  function getCurrentUser() {
+    try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null'); }
+    catch(e) { return null; }
+  }
+
+  async function getDeviceDNA() {
+    try {
+      var c = document.createElement('canvas');
+      var ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = '#069';
+      ctx.fillText('DreamOS', 2, 15);
+      var metrics = [navigator.hardwareConcurrency || 0, screen.colorDepth, c.toDataURL()].join('|');
+      var hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metrics));
+      return Array.from(new Uint8Array(hashBuffer)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('').substring(0, 32);
+    } catch(e) { return 'UNKNOWN'; }
+  }
+
+  async function hashPassword(password) {
+    var encoder = new TextEncoder();
+    var data = encoder.encode(password + 'dreamos_salt_2026');
+    var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+
+  function auditLog(action, details) {
+    var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+    logs.unshift({ time: new Date().toISOString(), user: user.email || 'system', role: user.role || 'staff', action: action, details: details || '' });
+    if (logs.length > 100) logs.pop();
+    localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
+  }
+
+  // ========== USER DATA ==========
+  var user = getCurrentUser();
   if (!user) {
-    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Login Required</h2></div>';
+    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login terlebih dahulu.</h2></div>';
     return;
   }
 
-  // ========== TAB SWITCHING WITH EVENT DELEGATION ==========
-  window.switchProfileTab = function(tabName, btn) {
-    console.log('📑 Switching to tab:', tabName);
-    
+  // ========== TAB SWITCHING ==========
+  window.switchTab = function(tabName, btn) {
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
     document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-    
     if (btn) btn.classList.add('active');
-    
     var content = document.getElementById('tab-' + tabName);
     if (content) {
       content.classList.add('active');
-      
-      // Load tab-specific data
       if (tabName === 'users') renderUserList();
       if (tabName === 'overview') loadStats();
       if (tabName === 'edit') loadEditForm();
@@ -256,24 +283,14 @@
     }
   };
 
-  // Event delegation for tab buttons
-  document.getElementById('tab-nav').addEventListener('click', function(e) {
-    var btn = e.target.closest('.tab-btn');
-    if (btn) {
-      switchProfileTab(btn.dataset.tab, btn);
-    }
-  });
-
   // ========== INIT ==========
   function init() {
     document.getElementById('display-name').textContent = user.nama || 'User';
     document.getElementById('display-role').textContent = (user.role || 'staff').toUpperCase();
     document.getElementById('display-email').textContent = user.email || '-';
-    
     if (user.avatar) {
       document.getElementById('avatar-preview').innerHTML = '<img src="'+user.avatar+'" style="width:100%;height:100%;object-fit:cover;">';
     }
-    
     loadStats();
     loadDNA();
     loadSettings();
@@ -284,19 +301,17 @@
     var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
     var userLogs = logs.filter(function(l) { return l.user === user.email || l.user === user.nama; });
     document.getElementById('stat-logins').textContent = userLogs.filter(function(l) { return l.action === 'LOGIN' || l.action === 'ACCESS'; }).length;
-    document.getElementById('stat-days').textContent = Math.floor((Date.now() - new Date(user.created_at || Date.now())) / 86400000);
+    document.getElementById('stat-days').textContent = userLogs.length ? Math.floor((Date.now() - new Date(userLogs[userLogs.length-1].time)) / 86400000) : 0;
     document.getElementById('stat-tasks').textContent = userLogs.length;
     document.getElementById('stat-score').textContent = Math.min(100, userLogs.length * 3);
   }
 
   function loadDNA() {
-    if (SEC.getDeviceDNA) {
-      SEC.getDeviceDNA().then(function(dna) {
-        document.getElementById('dna-hash').textContent = dna;
-      }).catch(function() {
-        document.getElementById('dna-hash').textContent = 'Error';
-      });
-    }
+    getDeviceDNA().then(function(dna) {
+      document.getElementById('dna-hash').textContent = dna;
+    }).catch(function() {
+      document.getElementById('dna-hash').textContent = 'Error';
+    });
   }
 
   function loadSettings() {
@@ -314,23 +329,16 @@
   }
 
   function renderUserList() {
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
     var container = document.getElementById('user-list');
     if (!container) return;
-    
-    container.innerHTML = '<div class="loading">Loading...</div>';
-    
-    setTimeout(function() {
-      var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-      
-      if (!users.length) {
-        container.innerHTML = '<div class="empty-state"><p>📭 Belum ada pengguna terdaftar</p><p style="font-size:0.7rem;margin-top:0.5rem;">Klik tombol di bawah untuk menambah pengguna baru</p></div>';
-        return;
-      }
-      
-      container.innerHTML = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th></th></tr>' + users.map(function(u, i) {
-        return '<tr><td>'+SEC.sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+SEC.sanitize(u.email)+'</td><td>'+SEC.sanitize(u.role)+'</td><td>'+(u.role !== 'dev' ? '<button class="btn btn-danger" onclick="window.deleteUser('+i+')" style="font-size:0.5rem;padding:0.15rem 0.3rem;">🗑️</button>' : '')+'</td></tr>';
-      }).join('') + '</table>';
-    }, 300);
+    if (!users.length) {
+      container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Belum ada pengguna.</p>';
+      return;
+    }
+    container.innerHTML = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th></th></tr>' + users.map(function(u, i) {
+      return '<tr><td>'+sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+sanitize(u.email)+'</td><td>'+sanitize(u.role)+'</td><td>'+(u.role !== 'dev' ? '<button class="btn btn-danger" onclick="deleteUser('+i+')" style="font-size:0.5rem;padding:0.15rem 0.3rem;">🗑️</button>' : '')+'</td></tr>';
+    }).join('') + '</table>';
   }
 
   // ========== ACTIONS ==========
@@ -350,37 +358,32 @@
     }
     
     document.getElementById('display-name').textContent = user.nama;
-    SEC.auditLog('UPDATE_PROFILE', 'Updated');
+    auditLog('UPDATE_PROFILE', 'Updated');
     alert('✅ Profile diupdate!');
   };
 
   window.changePassword = async function() {
-    try {
-      var oldPass = document.getElementById('old-pass').value;
-      var newPass = document.getElementById('new-pass').value;
-      var confirmPass = document.getElementById('confirm-pass').value;
-      
-      if (!oldPass || !newPass || !confirmPass) return alert('⚠️ Semua field wajib diisi!');
-      if (newPass.length < 6) return alert('⚠️ Password minimal 6 karakter!');
-      if (newPass !== confirmPass) return alert('⚠️ Password tidak cocok!');
-      
-      var oldHash = await SEC.hashPassword(oldPass);
-      var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-      var currentUser = users.find(function(u) { return u.email === user.email; });
-      
-      if (!currentUser || currentUser.password_hash !== oldHash) return alert('⚠️ Password lama salah!');
-      
-      currentUser.password_hash = await SEC.hashPassword(newPass);
-      localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-      SEC.auditLog('CHANGE_PASSWORD', 'Changed');
-      document.getElementById('old-pass').value = '';
-      document.getElementById('new-pass').value = '';
-      document.getElementById('confirm-pass').value = '';
-      alert('✅ Password diganti!');
-    } catch (error) {
-      console.error('Change password error:', error);
-      alert('⚠️ Error: ' + error.message);
-    }
+    var oldPass = document.getElementById('old-pass').value;
+    var newPass = document.getElementById('new-pass').value;
+    var confirmPass = document.getElementById('confirm-pass').value;
+    
+    if (!oldPass || !newPass || !confirmPass) return alert('⚠️ Semua field wajib diisi!');
+    if (newPass.length < 6) return alert('⚠️ Password minimal 6 karakter!');
+    if (newPass !== confirmPass) return alert('⚠️ Password tidak cocok!');
+    
+    var oldHash = await hashPassword(oldPass);
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var currentUser = users.find(function(u) { return u.email === user.email; });
+    
+    if (!currentUser || currentUser.password_hash !== oldHash) return alert('⚠️ Password lama salah!');
+    
+    currentUser.password_hash = await hashPassword(newPass);
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    auditLog('CHANGE_PASSWORD', 'Changed');
+    document.getElementById('old-pass').value = '';
+    document.getElementById('new-pass').value = '';
+    document.getElementById('confirm-pass').value = '';
+    alert('✅ Password diganti!');
   };
 
   window.showRegisterForm = function() {
@@ -392,42 +395,37 @@
   };
 
   window.registerUser = async function() {
-    try {
-      var nama = document.getElementById('reg-nama').value.trim();
-      var email = document.getElementById('reg-email').value.trim();
-      var role = document.getElementById('reg-role').value;
-      var pass = document.getElementById('reg-pass').value;
-      var confirm = document.getElementById('reg-confirm').value;
-      var msg = document.getElementById('reg-msg');
-      
-      if (!nama || !email || !pass) { msg.textContent = '⚠️ Nama, email, password wajib!'; msg.style.color = '#ef4444'; return; }
-      if (pass.length < 6) { msg.textContent = '⚠️ Password min 6 karakter!'; msg.style.color = '#ef4444'; return; }
-      if (pass !== confirm) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
-      
-      var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-      if (users.find(function(u) { return u.email === email; })) {
-        msg.textContent = '⚠️ Email sudah terdaftar!'; msg.style.color = '#ef4444'; return;
-      }
-      
-      var hashed = await SEC.hashPassword(pass);
-      users.push({ nama: nama, email: email, role: role, password_hash: hashed, device_dna: '', created_at: new Date().toISOString() });
-      localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-      SEC.auditLog('REGISTER', nama + ' (' + email + ')');
-      hideRegisterForm();
-      renderUserList();
-      alert('✅ ' + nama + ' berhasil didaftarkan!');
-    } catch (error) {
-      console.error('Register user error:', error);
-      alert('⚠️ Error: ' + error.message);
+    var nama = document.getElementById('reg-nama').value.trim();
+    var email = document.getElementById('reg-email').value.trim();
+    var role = document.getElementById('reg-role').value;
+    var pass = document.getElementById('reg-pass').value;
+    var confirm = document.getElementById('reg-confirm').value;
+    var msg = document.getElementById('reg-msg');
+    
+    if (!nama || !email || !pass) { msg.textContent = '⚠️ Nama, email, password wajib!'; msg.style.color = '#ef4444'; return; }
+    if (pass.length < 6) { msg.textContent = '⚠️ Password min 6 karakter!'; msg.style.color = '#ef4444'; return; }
+    if (pass !== confirm) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
+    
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    if (users.find(function(u) { return u.email === email; })) {
+      msg.textContent = '⚠️ Email sudah terdaftar!'; msg.style.color = '#ef4444'; return;
     }
+    
+    var hashed = await hashPassword(pass);
+    users.push({ nama: nama, email: email, role: role, password_hash: hashed, device_dna: '', created_at: new Date().toISOString() });
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    auditLog('REGISTER', nama + ' (' + email + ')');
+    hideRegisterForm();
+    renderUserList();
+    alert('✅ ' + nama + ' berhasil didaftarkan!');
   };
 
   window.deleteUser = function(index) {
-    if (!confirm('Hapus pengguna ini?')) return;
+    if (!confirm('Hapus?')) return;
     var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-    users.splice(index, 1);
+    var deleted = users.splice(index, 1)[0];
     localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-    SEC.auditLog('DELETE_USER', 'Deleted');
+    auditLog('DELETE_USER', deleted.nama);
     renderUserList();
   };
 
@@ -446,7 +444,7 @@
     alert('✅ Disimpan!');
   };
 
-  // Avatar
+  // Avatar upload
   document.getElementById('avatar-input').addEventListener('change', function() {
     if (this.files[0]) {
       var reader = new FileReader();
@@ -467,7 +465,6 @@
     }
   };
 
-  // Init
   init();
 })();
 </script>
