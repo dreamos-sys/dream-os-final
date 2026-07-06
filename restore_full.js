@@ -90,7 +90,7 @@ const fs = require('fs');
         </nav>
         <script>
         let attempts=0,lockoutUntil=localStorage.getItem('dream_lockout')||0,taps=0,tapTimer,slideInterval;window.slideIdx=0;
-        window.tapLogo=function(e){if(e)e.stopPropagation();clearTimeout(tapTimer);taps++;if(taps>=7){taps=0;var pin=prompt('🔐 4S DevOps PIN:');if(pin==='4s_ghost_2026'||pin==='b15m1ll4h_012443410'){document.getElementById('login-screen').style.display='none';window.openMod('4s-ghost');}else{alert('❌ PIN salah.');}return;}tapTimer=setTimeout(function(){taps=0;},2000);};
+        window.tapLogo=function(e){if(e)e.stopPropagation();clearTimeout(tapTimer);taps++;if(taps>=7){taps=0;var pin=prompt('🔐 4S DevOps PIN:');if(pin==='4s_ghost_2026'||pin==='PIN_VERIFIED_BY_HASH'){document.getElementById('login-screen').style.display='none';window.openMod('4s-ghost');}else{alert('❌ PIN salah.');}return;}tapTimer=setTimeout(function(){taps=0;},2000);};
         window.ROLE_MAPPING={"5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5":"kabag","9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288":"koord","e35496525e4ad7a1bf63d1afbf55a809fe41813a489c65d398524f78bc279553":"operator"};
         async function hashPin(pin){const e=new TextEncoder();const d=e.encode(pin+'dreamos_salt_2026');const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
         function checkLockout(){if(Date.now()<lockoutUntil){let r=Math.ceil((lockoutUntil-Date.now())/60000);document.getElementById('lock-msg').innerText='SYSTEM LOCKED. RETRY IN '+r+' MINS.';document.getElementById('lock-msg').style.display='block';return true;}document.getElementById('lock-msg').style.display='none';return false;}
