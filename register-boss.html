@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Kabag & Koordinator • Dream OS</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;
+        }
+        .container {
+            text-align: center; max-width: 500px; width: 100%;
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 255, 157, 0.3); border-radius: 24px;
+            padding: 2rem; box-shadow: 0 0 50px rgba(0, 255, 157, 0.2);
+        }
+        .arabic { font-family: 'Amiri', serif; font-size: 1.8rem; color: #00ff9d; margin-bottom: 1rem; }
+        .shalawat { font-family: 'Amiri', serif; font-size: 0.9rem; color: #0ea5e9; margin-bottom: 2rem; }
+        h1 { color: #00ff9d; margin-bottom: 0.5rem; font-size: 1.3rem; }
+        button {
+            width: 100%; padding: 1rem; margin: 0.5rem 0;
+            border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
+        }
+        .btn-kabag { background: #f59e0b; color: black; font-size: 1.1rem; }
+        .btn-koord { background: #0ea5e9; color: white; font-size: 1.1rem; }
+        .btn-staff { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-purple { background: #8b5cf6; color: white; margin-top: 1rem; }
+        #log {
+            margin-top: 1rem; padding: 1rem;
+            background: rgba(0,0,0,0.3); border-radius: 12px;
+            max-height: 300px; overflow-y: auto; font-size: 0.7rem;
+            text-align: left; font-family: monospace;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+        <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+        
+        <h1>👑 REGISTER PIMPINAN</h1>
+        <p style="color:#94a3b8; margin-bottom:1.5rem;">Kabag & Koordinator - Full Access</p>
+        
+        <button class="btn-kabag" onclick="registerKabag()">👑 DAFTAR KABAG (Pak Hanung)</button>
+        <button class="btn-koord" onclick="registerKoord()">🧑‍💼 DAFTAR KOORDINATOR (Pak Erwinsyah)</button>
+        <button class="btn-staff" onclick="registerBoth()">✅ DAFTAR KEDUANYA</button>
+        <button class="btn-purple" onclick="gotoCreateUsers()">👥 LANJUT BUAT 100 USER →</button>
+        <button class="btn-danger" onclick="clearAll()">🗑️ RESET SEMUA</button>
+        
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // Password hash yang sudah diketahui
+        const KABAG_HASH = '5801493feae83f710df042ff0df63758e03b27a4212725dbe07d0227b85d6de5';
+        const KOORD_HASH = '9961bf59f61d19e50c2032a05de3a5db1a375494e4c098dbaf49a071bca0e288';
+        const DEV_HASH = 'ec363f85aa74ef12cb507cbaaf199eeb13723b121780f0cfc257d1abb1796ece';
+        
+        function log(msg, type) {
+            const logEl = document.getElementById('log');
+            logEl.innerHTML += `<div class="${type}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function registerKabag() {
+            let users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            
+            // Cek apakah sudah ada
+            const existing = users.find(u => u.email === 'vespaexcelhijaucedar@gmail.com');
+            if (existing) {
+                log('⚠️  Pak Hanung SUDAH terdaftar!', 'info');
+                return;
+            }
+            
+            users.push({
+                nama: 'Bpk. Hanung Budianto S. E',
+                email: 'vespaexcelhijaucedar@gmail.com',
+                role: 'kabag',
+                password_hash: KABAG_HASH,
+                device_dna: '',
+                device_dna_list: [],
+                phone: '',
+                department: 'Kabag Umum',
+                created_at: new Date().toISOString()
+            });
+            
+            localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+            log('✅ KABAG terdaftar!', 'success');
+            log('   Nama: Bpk. Hanung Budianto S. E', 'info');
+            log('   Email: vespaexcelhijaucedar@gmail.com', 'info');
+            log('   Role: kabag (FULL ACCESS)', 'info');
+            log('   Password: (PIN khusus Kabag)', 'info');
+        }
+        
+        function registerKoord() {
+            let users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            
+            const existing = users.find(u => u.email === 'erwinsyah1679@gmail.com');
+            if (existing) {
+                // Update role ke koord kalau belum
+                if (existing.role !== 'koord') {
+                    existing.role = 'koord';
+                    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+                    log('✅ Role Pak Erwinsyah diupdate ke KOORDINATOR!', 'success');
+                } else {
+                    log('⚠️  Pak Erwinsyah SUDAH terdaftar!', 'info');
+                }
+                return;
+            }
+            
+            users.push({
+                nama: 'Bpk. Erwinsyah',
+                email: 'erwinsyah1679@gmail.com',
+                role: 'koord',
+                password_hash: KOORD_HASH,
+                device_dna: '',
+                device_dna_list: [],
+                phone: '',
+                department: 'Koordinator',
+                created_at: new Date().toISOString()
+            });
+            
+            localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+            log('✅ KOORDINATOR terdaftar!', 'success');
+            log('   Nama: Bpk. Erwinsyah', 'info');
+            log('   Email: erwinsyah1679@gmail.com', 'info');
+            log('   Role: koord (FULL ACCESS)', 'info');
+            log('   Password: (PIN khusus Koordinator)', 'info');
+        }
+        
+        function registerBoth() {
+            document.getElementById('log').innerHTML = '';
+            log('🚀 Mendaftarkan kedua pimpinan...', 'info');
+            registerKabag();
+            registerKoord();
+            
+            // Juga pastikan Developer terdaftar
+            let users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            const dev = users.find(u => u.email === 'dreamos.sch.id@gmail.com');
+            if (!dev) {
+                users.push({
+                    nama: 'Developer',
+                    email: 'dreamos.sch.id@gmail.com',
+                    role: 'dev',
+                    password_hash: DEV_HASH,
+                    device_dna: '',
+                    device_dna_list: [],
+                    phone: '',
+                    department: 'IT Development',
+                    created_at: new Date().toISOString()
+                });
+                localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+                log('✅ Developer juga terdaftar!', 'success');
+            }
+            
+            const total = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]').length;
+            log('📊 Total user sekarang: ' + total, 'info');
+        }
+        
+        function gotoCreateUsers() {
+            window.location.href = 'create-100-users.html';
+        }
+        
+        function clearAll() {
+            if (!confirm('⚠️ HAPUS SEMUA USER? Pastikan pimpinan sudah terdaftar dulu!')) return;
+            localStorage.removeItem('dreamos_users_db');
+            document.getElementById('log').innerHTML = '<div class="error">✅ Semua user dihapus!</div>';
+        }
+        
+        // Auto-run saat halaman dibuka
+        window.onload = function() {
+            log('📋 Cek database user...', 'info');
+            const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            log('   Total user: ' + users.length, 'info');
+            
+            const kabag = users.find(u => u.role === 'kabag');
+            const koord = users.find(u => u.role === 'koord');
+            const dev = users.find(u => u.role === 'dev');
+            
+            if (kabag) log('   ✅ Kabag: ' + kabag.nama, 'success');
+            else log('   ❌ Kabag: BELUM TERDAFTAR', 'error');
+            
+            if (koord) log('   ✅ Koordinator: ' + koord.nama, 'success');
+            else log('   ❌ Koordinator: BELUM TERDAFTAR', 'error');
+            
+            if (dev) log('   ✅ Developer: ' + dev.nama, 'success');
+            else log('   ❌ Developer: BELUM TERDAFTAR', 'error');
+        };
+    </script>
+</body>
+</html>
