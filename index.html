@@ -67,22 +67,6 @@
     .system-info-box { text-align: center; font-size: 0.65rem; color: #94a3b8; margin: 1.5rem; padding: 1.5rem; border-radius: 24px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config-worker.js"></script>
-
-<script>
-// ========== ERROR REPORTER ==========
-window.addEventListener('error', function(e) {
-    var msg = '❌ ERROR: ' + e.message + '\n📄 File: ' + (e.filename || 'unknown') + '\n📍 Baris: ' + (e.lineno || '?');
-    alert(msg);
-    console.error(e);
-});
-window.addEventListener('unhandledrejection', function(e) {
-    var msg = '⚠️ UNHANDLED PROMISE: ' + (e.reason?.message || e.reason);
-    alert(msg);
-    console.error(e);
-});
-</script>
-
 </head>
 <body>
 <canvas id="star-field"></canvas>
@@ -124,7 +108,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let slideInterval, prayerInterval;
+let slideInterval;
 window.slideIdx = 0;
 
 // ========== AUTH ==========
@@ -231,56 +215,31 @@ function startBatteryMonitor() { if ('getBattery' in navigator) { navigator.getB
 async function checkConnection() { const el = document.getElementById('connection-status'); if (!el) return; if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; } try { const start = Date.now(); const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } }); if (res.ok) { el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)'; el.className = 'badge online'; } else throw new Error('Status ' + res.status); } catch (e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } }
 async function fetchPrayerTimes() { const el = document.getElementById('prayer-times-dash'); if (!el) return; try { const d = new Date(); const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`); const data = await res.json(); if (data.code === 200) { const t = data.data.timings; el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`; } } catch(e) { el.textContent = '🕌 Gagal memuat.'; } }
 
-// ========== 7 SLIDES ==========
+// ========== 7 SLIDES (SAFE VERSION) ==========
 async function showSlides() {
     const track = document.getElementById('dream-slide-track');
     const dotsContainer = document.getElementById('slide-dots');
     if (!track || !dotsContainer) return;
-    let slide1 = '🕌 Assalamualaikum, selamat datang.';
-    try {
-        const { data: sec } = await window.supabase.from('users').select('nama').eq('role', 'security').limit(1);
-        slide1 += sec && sec.length > 0 ? '
-🛡️ Petugas piket: ' + sec[0].nama : '
-🛡️ Petugas piket: Belum terdaftar';
-    } catch(e) { slide1 += '
-🛡️ Petugas piket: (offline)'; }
-    let slide2 = '📅 Booking Hari Ini: Tidak ada.';
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-        const { data: bookings } = await window.supabase.from('bookings').select('ruangan, jam_mulai, jam_selesai, tgl').in('tgl', [today, tomorrow]).order('tgl').limit(3);
-        if (bookings && bookings.length > 0) slide2 = '📅 Booking: ' + bookings.map(b => `${b.ruangan} (${b.tgl===today?'Hari ini':'Besok'} ${b.jam_mulai}-${b.jam_selesai})`).join(', ');
-    } catch(e) { slide2 = '📅 Booking: (offline)'; }
-    let slide3 = '⚠️ K3 & Progres: Aman.';
-    try {
-        const [{ count: k3 }, { count: maint }] = await Promise.all([
-            window.supabase.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-            window.supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
-        ]);
-        slide3 = `⚠️ K3 Pending: ${k3 || 0} | 🔧 Maintenance Aktif: ${maint || 0}`;
-    } catch(e) { slide3 = '⚠️ K3 & Progres: (offline)'; }
-    let slide4 = '☁️ Cuaca: Memuat...';
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`);
-                const w = await res.json();
-                slide4 = `☁️ Cuaca: ${w.current_weather.temperature}°C | Angin: ${w.current_weather.windspeed} km/jam`;
-            } catch(e) { slide4 = '☁️ Cuaca: Gagal memuat.'; }
-        }, () => { slide4 = '☁️ Cuaca: Izinkan akses lokasi.'; });
-    }
-    const slide5 = localStorage.getItem('dreamos_slide_5') || '📢 Pengumuman Manajemen: Belum ada.';
-    const slide6 = localStorage.getItem('dreamos_slide_6') || '🏢 Info Bagian Umum: Belum ada.';
-    const slide7 = localStorage.getItem('dreamos_slide_7') || '💚 Terima kasih untuk seluruh tim!';
-    const slides = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
-    track.innerHTML = slides.map(s => '<div class="dream-slide">' + s.replace(/
-/g, '<br>') + '</div>').join('');
+
+    const slides = [
+        '🕌 Assalamualaikum, selamat datang.',
+        '📅 Booking: Memuat data...',
+        '⚠️ K3 & Progres: Memuat data...',
+        '☁️ Cuaca: Memuat...',
+        localStorage.getItem('dreamos_slide_5') || '📢 Pengumuman Manajemen: Belum ada.',
+        localStorage.getItem('dreamos_slide_6') || '🏢 Info Bagian Umum: Belum ada.',
+        localStorage.getItem('dreamos_slide_7') || '💚 Terima kasih untuk seluruh tim!'
+    ];
+
+    track.innerHTML = slides.map(s => '<div class="dream-slide">' + s.replace(/\n/g, '<br>') + '</div>').join('');
     dotsContainer.innerHTML = slides.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}" onclick="goToSlide(${i})"></span>`).join('');
+
     window.goToSlide = function(idx) {
         window.slideIdx = idx;
         track.style.transform = `translateX(-${idx * 100}%)`;
         document.querySelectorAll('#slide-dots .dot').forEach((d, i) => d.classList.toggle('active', i === idx));
     };
+
     if (slideInterval) clearInterval(slideInterval);
     slideInterval = setInterval(() => { window.slideIdx = (window.slideIdx + 1) % slides.length; window.goToSlide(window.slideIdx); }, 7000);
 }
@@ -307,21 +266,6 @@ window.openMod = function(id) {
         .then(html => { container.innerHTML = html; container.querySelectorAll('script').forEach(s => { const ns = document.createElement('script'); ns.textContent = s.textContent; document.body.appendChild(ns); }); })
         .catch(err => { container.innerHTML = `<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Failed</h3><p>${err}</p><button onclick="goHome()">Back</button></div>`; });
 };
-
-// ========== REALTIME & i18n ==========
-window.initRealtime = function() {
-    if (!window.supabase) return;
-    window.supabase.channel('db-changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, p => alert('📅 Booking Baru: ' + p.new.ruangan))
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'k3_reports' }, p => alert('⚠️ K3 Baru: ' + p.new.lokasi))
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maintenance_tasks' }, p => alert('🔧 Maint Baru: ' + p.new.judul))
-        .subscribe();
-};
-setTimeout(window.initRealtime, 2000);
-
-// i18n
-window.i18n = { currentLang: localStorage.getItem('dreamos_lang') || 'id', translations: {}, async init() { try { this.translations = await (await fetch(`locales/${this.currentLang}.json`)).json(); } catch(e) { this.translations = await (await fetch('locales/id.json')).json(); } this.applyToPage(); }, t(k) { return this.translations[k] || k; }, applyToPage() { document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if (this.translations[k]) el.textContent = this.translations[k]; }); }, async setLang(l) { this.currentLang = l; localStorage.setItem('dreamos_lang', l); await this.init(); } };
-document.addEventListener('DOMContentLoaded', () => window.i18n.init());
 
 // Starfield
 (function() {
