@@ -303,7 +303,7 @@
             <div class="kpi-card"><div class="kpi-value" style="color:#ef4444;">${k3.filter(k=>k.status==='pending').length}</div><div class="kpi-label">K3 Urg.</div></div>
         `;
     }
-}).join('');
+}
   }
 
   function renderCharts() {
@@ -494,11 +494,15 @@
     }
   };
 
-  window.deleteUser = function(i) {
-    if(!confirm('Hapus?'))return;
-    var users=safeGet('dreamos_users_db',[]); users.splice(i,1);
-    localStorage.setItem('dreamos_users_db',JSON.stringify(users));
-    renderAll();
+  window.deleteUser = async function(id) {
+    if(!confirm('Hapus user ini?'))return;
+    try {
+        await window.parent.supabase.from('users').delete().eq('id', id);
+        alert('✅ User dihapus dari cloud.');
+        renderUserTable();
+    } catch(e) {
+        alert('⚠️ Gagal menghapus: ' + e.message);
+    }
   };
 
   window.printUserList = function() {
