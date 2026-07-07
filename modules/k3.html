@@ -20,6 +20,54 @@ async function laporK3() {
     }
 }
 
+
+async function tampilkanLaporan() {
+    const container = document.getElementById('k3-list');
+    if (!container) return;
+    container.innerHTML = '<p>Memuat laporan dari cloud...</p>';
+    
+    try {
+        const { data, error } = await window.parent.supabase
+            .from('k3_reports')
+            .select('*, users!inner(nama)')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>Belum ada laporan.</p>';
+            return;
+        }
+        
+        container.innerHTML = data.map(item => `
+            <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
+                <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
+                <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
+                ${item.deskripsi || '-'}<br>
+                <span class="badge badge-${item.status === 'pending' ? 'pending' : 'approved'}">${item.status || 'pending'}</span>
+            </div>
+        `).join('');
+        
+        // Tetap simpan di localStorage sebagai cache offline
+        localStorage.setItem('dreamos_k3_reports', JSON.stringify(data));
+    } catch(e) {
+        // Fallback ke localStorage jika offline
+        const cached = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+        if (cached.length > 0) {
+            container.innerHTML = cached.map(item => `
+                <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
+                    <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
+                    <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
+                    ${item.deskripsi || '-'}<br>
+                    <span class="badge badge-${item.status === 'pending' ? 'pending' : 'approved'}">${item.status || 'pending'}</span>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p>Gagal memuat laporan. Periksa koneksi.</p>';
+        }
+    }
+}
+
 </script>
 <!-- K3 MODULE - HYBRID SOUL EDITION -->
 <button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;">← Kembali</button>
@@ -160,6 +208,54 @@ async function laporK3() {
         if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
     } catch(e) {
         alert('⚠️ Gagal mengirim laporan: ' + e.message);
+    }
+}
+
+
+async function tampilkanLaporan() {
+    const container = document.getElementById('k3-list');
+    if (!container) return;
+    container.innerHTML = '<p>Memuat laporan dari cloud...</p>';
+    
+    try {
+        const { data, error } = await window.parent.supabase
+            .from('k3_reports')
+            .select('*, users!inner(nama)')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>Belum ada laporan.</p>';
+            return;
+        }
+        
+        container.innerHTML = data.map(item => `
+            <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
+                <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
+                <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
+                ${item.deskripsi || '-'}<br>
+                <span class="badge badge-${item.status === 'pending' ? 'pending' : 'approved'}">${item.status || 'pending'}</span>
+            </div>
+        `).join('');
+        
+        // Tetap simpan di localStorage sebagai cache offline
+        localStorage.setItem('dreamos_k3_reports', JSON.stringify(data));
+    } catch(e) {
+        // Fallback ke localStorage jika offline
+        const cached = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+        if (cached.length > 0) {
+            container.innerHTML = cached.map(item => `
+                <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
+                    <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
+                    <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
+                    ${item.deskripsi || '-'}<br>
+                    <span class="badge badge-${item.status === 'pending' ? 'pending' : 'approved'}">${item.status || 'pending'}</span>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p>Gagal memuat laporan. Periksa koneksi.</p>';
+        }
     }
 }
 
