@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com https://api.open-meteo.com;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dream OS • v1.0 Final</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <style>
+        :root { 
+            --glass-bg: rgba(10, 15, 30, 0.6);
+            --glass-border: rgba(0, 255, 157, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --neon: #00ff9d;
+            --accent: #0ea5e9;
+            --warning: #e11d48;
+            --gold: #d4af37;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: #0a0e27;
+            color: #e2e8f0; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        canvas#star-field {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 157, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+            animation: gradientFlow 15s ease-in-out infinite;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0,255,157,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,157,0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        @keyframes gradientFlow {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+            50% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.7) !important;
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 14, 39, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+        
+        .login-container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            padding: 2rem;
+            z-index: 10001;
+        }
+        
+        .login-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 24px;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 40px rgba(212,175,55,0.4);
+        }
+        
+        .arabic {
+            font-family: 'Amiri', serif;
+            font-size: 2.2rem;
+            color: var(--neon);
+            text-shadow: 0 0 30px rgba(0,255,157,0.6);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .shalawat {
+            font-family: 'Amiri', serif;
+            font-size: 1rem;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(14,165,233,0.6);
+            margin-bottom: 3rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .pin-input {
+            width: 100%;
+            padding: 1.2rem 4rem 1.2rem 1.5rem;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid rgba(0,255,157,0.3);
+            border-radius: 16px;
+            color: var(--neon);
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            text-align: center;
+            outline: none;
+        }
+        
+        .toggle-pin {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--neon);
+        }
+        
+        .access-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 25px rgba(16,185,129,0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .access-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 35px rgba(16,185,129,0.6);
+        }
+        
+        .error-msg {
+            color: var(--warning);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        #main-app {
+            display: none;
+            position: relative;
+            z-index: 10;
+            padding-bottom: 6rem;
+            min-height: 100vh;
+        }
+        
+        #dashboard-container {
+            position: relative;
+            z-index: 11;
+        }
+        
+        .header-main {
+            padding: 2rem 1.5rem 1rem;
+            text-align: center;
+            margin: 1.5rem;
+            border-radius: 24px;
+        }
+        
+        .info-badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 0.5rem 1.2rem;
+            border-radius: 24px;
+            font-size: 0.7rem;
+            color: var(--neon);
+            font-weight: 700;
+            background: rgba(0,255,157,0.1);
+            border: 1px solid rgba(0,255,157,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .badge.online { background: rgba(16,185,129,0.2); color: #10b981; }
+        .badge.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
+        
+        #prayer-times-dash {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 1rem;
+            padding: 0.6rem 1.2rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #dream-slideshow {
+            height: 220px;
+            margin: 1.5rem;
+            overflow: hidden;
+            position: relative;
+            border-radius: 24px;
+        }
+        
+        #dream-slide-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.7s ease;
+        }
+        
+        .dream-slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: var(--neon);
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #slide-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: -30px;
+            position: relative;
+            z-index: 2;
+            padding-bottom: 10px;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .dot.active {
+            background: var(--neon);
+            box-shadow: 0 0 10px var(--neon);
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .mod-card {
+            text-align: center;
+            cursor: pointer;
+            padding: 1.5rem 0.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border-radius: 24px;
+        }
+        
+        .mod-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon);
+            box-shadow: 0 12px 40px rgba(0,255,157,0.4);
+        }
+        
+        .mod-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+        
+        .mod-title {
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--neon);
+        }
+
+        #bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 12px 8px;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 2px solid rgba(0, 255, 157, 0.3);
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+        }
+        
+        .nav-container {
+            display: flex;
+            gap: 8px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 8px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(0, 255, 157, 0.2);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 157, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .nav-item:hover::before {
+            opacity: 1;
+        }
+        
+        .nav-item.active {
+            background: rgba(0, 255, 157, 0.15);
+            border-color: #00ff9d;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: translateY(-4px);
+        }
+        
+        .nav-icon-wrapper {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0, 255, 157, 0.2), rgba(14, 165, 233, 0.2));
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 157, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav-item.active .nav-icon-wrapper {
+            background: linear-gradient(135deg, rgba(0, 255, 157, 0.4), rgba(14, 165, 233, 0.4));
+            border-color: #00ff9d;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.5);
+        }
+        
+        .nav-icon {
+            font-size: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav-item.active .nav-label {
+            color: var(--neon);
+            text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--neon);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            z-index: 99999;
+            box-shadow: 0 8px 32px rgba(0,255,157,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification.show { display: block; }
+        
+        .notification-title {
+            font-weight: 700;
+            color: var(--neon);
+            margin-bottom: 0.3rem;
+        }
+        
+        .notification-text {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .system-info-box {
+            text-align: center;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 24px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="star-field"></canvas>
+    <div id="notification-container"></div>
+
+    <div id="login-screen">
+        <div class="login-container">
+            <img src="assets/logo-sultan.png" alt="Dream OS" class="login-logo">
+            <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+            <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <div class="input-wrapper">
+                <input type="password" id="pin-input" class="pin-input" placeholder="🔐 ENTER PIN">
+                <span class="toggle-pin" onclick="togglePin()">👁️</span>
+            </div>
+            <button class="access-btn" onclick="authenticate()">⚡ ACCESS CORE</button>
+            <div class="error-msg" id="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div id="dashboard-container"></div>
+    </div>
+    
+    <nav id="bottom-nav">
+        <div class="nav-container">
+            <button class="nav-item active" onclick="goHome()">
+                <div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="openMod('profile')">
+                <div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div>
+                <span class="nav-label">Profile</span>
+            </button>
+            <button class="nav-item" onclick="openMod('qr')">
+                <div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div>
+                <span class="nav-label">QR</span>
+            </button>
+            <button class="nav-item" onclick="openMod('about')">
+                <div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div>
+                <span class="nav-label">About</span>
+            </button>
+            <button class="nav-item" onclick="openMod('setting')">
+                <div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div>
+                <span class="nav-label">System</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // ========== SUPER USER AUTO-LOGIN ==========
+        (function() {
+            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+            var session = localStorage.getItem('dreamos_session_active');
+            
+            if (user.role === 'dev' && session === 'true') {
+                console.log('👑 Super User detected - Auto login...');
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('bottom-nav').style.display = 'block';
+                setTimeout(function() { renderDashboard(); }, 100);
+            }
+        })();
+
+        let slideInterval, prayerInterval;
+        window.slideIdx = 0;
+        const PIN_HASH = btoa('b15m1ll4h_012443410');
+
+        function showNotification(title, text, duration = 5000) {
+            const container = document.getElementById('notification-container');
+            const notif = document.createElement('div');
+            notif.className = 'notification show';
+            notif.innerHTML = `<div class="notification-title">${title}</div><div class="notification-text">${text}</div>`;
+            container.appendChild(notif);
+            setTimeout(() => {
+                notif.classList.remove('show');
+                setTimeout(() => notif.remove(), 300);
+            }, duration);
+        }
+
+        function togglePin() {
+            const input = document.getElementById('pin-input');
+            const icon = event.target;
+            input.type = input.type === 'password' ? 'text' : 'password';
+            icon.innerHTML = input.type === 'password' ? '👁️' : '🙈';
+        }
+
+        async function authenticate() {
+            const input = document.getElementById('pin-input').value;
+            const error = document.getElementById('error-msg');
+            
+            if (btoa(input) === PIN_HASH) {
+                // Set sebagai Developer
+                var devUser = {
+                    nama: 'Developer',
+                    email: 'dreamos.sch.id@gmail.com',
+                    role: 'dev',
+                    device_dna: ''
+                };
+                localStorage.setItem('dreamos_bound_user', JSON.stringify(devUser));
+                localStorage.setItem('dreamos_session_active', 'true');
+                
+                document.getElementById('login-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'block';
+                    document.getElementById('bottom-nav').style.display = 'block';
+                    renderDashboard();
+                }, 500);
+            } else {
+                error.textContent = '⛔ ACCESS DENIED';
+                error.style.display = 'block';
+                setTimeout(() => error.style.display = 'none', 2000);
+            }
+        }
+
+        document.getElementById('pin-input')?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') authenticate();
+        });
+
+        // ========== RBAC CONFIG ==========
+        window.ROLE_PERMISSIONS = {
+            dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+            kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+            koord: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+            guru: ['book','k3','profile','qr','about','setting'],
+            security: ['sec','profile','qr','about','setting'],
+            janitor: ['in','out','stok','profile','qr','about','setting'],
+            maintenance: ['maint','profile','qr','about','setting'],
+            staff: ['profile','qr','about','setting']
+        };
+
+        window.canAccess = function(modId) {
+            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+            var role = user.role || 'staff';
+            var permissions = window.ROLE_PERMISSIONS[role] || window.ROLE_PERMISSIONS['staff'];
+            return permissions.includes(modId);
+        };
+
+        window.renderDashboard = function() {
+            const container = document.getElementById('dashboard-container');
+            container.innerHTML = `
+                <div class="header-main glass">
+                    <img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;margin-bottom:1rem;">
+                    <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+                    <div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+                    <div class="info-badges">
+                        <span class="badge" id="live-clock">⏱️ --:--:--</span>
+                        <span class="badge" id="battery-status">🔋 --%</span>
+                        <span class="badge" id="connection-status">📡 Checking...</span>
+                    </div>
+                    <div id="prayer-times-dash">🕌 Loading prayer times...</div>
+                </div>
+                <div id="dream-slideshow" class="glass">
+                    <div id="dream-slide-track"></div>
+                </div>
+                <div id="slide-dots"></div>
+                <div class="module-grid" id="module-grid"></div>
+                <div class="system-info-box glass">
+                    <strong>Dream OS v1.0 Final</strong><br>
+                    Engineered by Family Dream Team<br>
+                    <span style="color:#0ea5e9;">"The Power Soul Of Shalawat"</span><br>
+                    ISO 27001 • ISO 9001 • ISO 55001
+                </div>
+            `;
+
+            const modules = [
+                { i:'🌍', n:'CMD Center', id:'cmd' },
+                { i:'🛡️', n:'Security', id:'sec' },
+                { i:'⚠️', n:'K3 Safety', id:'k3' },
+                { i:'🏠', n:'Jan Indoor', id:'in' },
+                { i:'🌳', n:'Jan Outdoor', id:'out' },
+                { i:'📅', n:'Booking', id:'book' },
+                { i:'🏢', n:'Asset', id:'asset' },
+                { i:'📦', n:'Stok', id:'stok' },
+                { i:'🔧', n:'Maintenance', id:'maint' }
+            ];
+            
+            const grid = document.getElementById('module-grid');
+            modules.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'mod-card glass';
+                card.innerHTML = `<div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
+                card.onclick = () => openMod(m.id);
+                grid.appendChild(card);
+            });
+
+            startLiveClock();
+            startBatteryMonitor();
+            checkConnection();
+            fetchPrayerTimes();
+            showSlides();
+        };
+
+        // ... (semua fungsi render lainnya tetap sama) ...
+
+        window.openMod = function(id) {
+            if (!window.canAccess(id)) {
+                showNotification('⛔ Akses Ditolak', 'Role Anda tidak memiliki izin ke modul ini.');
+                return;
+            }
+            
+            const map = {
+                cmd: ['Command Center', 'commandcenter.html'],
+                sec: ['Security', 'security.html'],
+                k3: ['K3 Safety', 'k3.html'],
+                in: ['Janitor Indoor', 'janitor-indoor.html'],
+                out: ['Janitor Outdoor', 'janitor-outdoor.html'],
+                maint: ['Maintenance', 'maintenance.html'],
+                book: ['Booking', 'booking.html'],
+                stok: ['Stok', 'stok.html'],
+                asset: ['Asset', 'asset.html'],
+                profile: ['Profile', 'profile.html'],
+                qr: ['QR', 'qr.html'],
+                about: ['About', 'about.html'],
+                setting: ['Setting', 'setting.html']
+            };
+            const m = map[id];
+            if (!m) { alert('Unknown module'); return; }
+            
+            let container = document.getElementById('mod-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'mod-container';
+                container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);backdrop-filter:blur(20px);padding-bottom:5rem;';
+                document.body.appendChild(container);
+            }
+            
+            container.style.display = 'block';
+            container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Loading...</div>';
+            
+            fetch(`modules/${m[1]}?v=${Date.now()}`)
+                .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+                .then(html => {
+                    container.innerHTML = html;
+                    container.querySelectorAll('script').forEach(old => {
+                        const ns = document.createElement('script');
+                        ns.textContent = old.textContent;
+                        document.body.appendChild(ns);
+                    });
+                })
+                .catch(err => {
+                    container.innerHTML = `<div style="color:#ef4444;padding:4rem 2rem;text-align:center;"><h3>⚠️ Failed</h3><p>${err.message}</p><button onclick="goHome()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10b981;border:none;border-radius:8px;color:white;">Back</button></div>`;
+                });
+        };
+
+        // Session timeout (10 menit idle)
+        var idleTimer;
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(function() {
+                localStorage.setItem('dreamos_session_active', 'false');
+                alert('⏰ Sesi idle 10 menit. Silakan login ulang.');
+                location.reload();
+            }, 600000);
+        }
+
+        document.addEventListener('click', resetIdleTimer);
+        document.addEventListener('keydown', resetIdleTimer);
+        document.addEventListener('scroll', resetIdleTimer);
+        resetIdleTimer();
+
+        // ... (starfield, slides, clock, battery, prayer, dll. tetap sama) ...
+    </script>
+</body>
+</html>
