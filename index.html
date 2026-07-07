@@ -1029,6 +1029,50 @@
                 });
             }
         });
+
+    // ========== i18n ENGINE ==========
+    window.i18n = {
+      currentLang: localStorage.getItem('dreamos_lang') || 'id',
+      translations: {},
+      
+      async init() {
+        try {
+          const res = await fetch(`locales/${this.currentLang}.json?v=${Date.now()}`);
+          this.translations = await res.json();
+          this.applyToPage();
+        } catch(e) {
+          console.warn('⚠️ Gagal memuat terjemahan, pakai default ID.');
+          const res = await fetch('locales/id.json');
+          this.translations = await res.json();
+          this.applyToPage();
+        }
+      },
+      
+      t(key) {
+        return this.translations[key] || key;
+      },
+      
+      applyToPage() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (this.translations[key]) {
+            el.textContent = this.translations[key];
+          }
+        });
+      },
+      
+      async setLang(lang) {
+        this.currentLang = lang;
+        localStorage.setItem('dreamos_lang', lang);
+        await this.init();
+      }
+    };
+    
+    // Init i18n setelah DOM siap
+    document.addEventListener('DOMContentLoaded', () => {
+      window.i18n.init();
+    });
+
 </script>
 </body>
 </html>
