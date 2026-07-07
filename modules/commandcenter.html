@@ -506,3 +506,88 @@
 </script>
 </body>
 </html>
+<script>
+// Perbaiki addUserWithForm dengan penanganan error kuota
+window.addUserWithForm = async function() {
+  var nama = document.getElementById('new-nama').value.trim();
+  var email = document.getElementById('new-email').value.trim();
+  var role = document.getElementById('new-role').value;
+  var password = document.getElementById('new-password').value;
+  var msg = document.getElementById('form-msg');
+
+  if (!nama || !email || !password) {
+    msg.textContent = '⚠️ Semua field wajib diisi!';
+    msg.style.color = '#ef4444';
+    return;
+  }
+
+  try {
+    var hashed = await SEC.hashPassword(password);
+    var newUser = {
+      nama: nama, email: email, role: role,
+      password_hash: hashed, device_dna: '',
+      created_at: new Date().toISOString()
+    };
+
+    // Coba simpan ke localStorage dulu
+    var users = safeGet('dreamos_users_db', []);
+    if (users.find(function(u) { return u.email === email; })) {
+      msg.textContent = '⚠️ Email sudah terdaftar!';
+      msg.style.color = '#ef4444';
+      return;
+    }
+
+    users.push(newUser);
+    
+    try {
+      localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+      msg.textContent = '✅ ' + nama + ' berhasil ditambahkan (lokal)';
+      msg.style.color = '#10b981';
+    } catch(e) {
+      // localStorage penuh!
+      msg.textContent = '⚠️ Penyimpanan lokal penuh! User hanya disimpan di cloud.';
+      msg.style.color = '#f59e0b';
+      // Hapus user dari array karena tidak bisa disimpan lokal
+      users.pop();
+    }
+
+    // Selalu sync ke Supabase (cloud)
+    await syncUserToCloud(newUser);
+    
+    // Reset form
+    document.getElementById('new-nama').value = '';
+    document.getElementById('new-email').value = '';
+    document.getElementById('new-password').value = '';
+    
+    renderUserTable();
+    SEC.auditLog('ADD_USER', nama + ' (' + email + ')');
+  } catch(e) {
+    msg.textContent = '❌ Error: ' + e.message + '. Coba bersihkan cache di Pengaturan.';
+    msg.style.color = '#ef4444';
+  }
+};
+
+// Perbaiki syncUserToCloud
+async function syncUserToCloud(user) {
+  if (!window.DREAMOS_CONFIG) return false;
+  var SUPABASE_URL = window.DREAMOS_CONFIG.supabaseUrl;
+  var SUPABASE_KEY = window.DREAMOS_CONFIG.supabaseKey;
+  
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/users', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(user)
+    });
+    return res.ok;
+  } catch(e) {
+    console.error('Sync error:', e);
+    return false;
+  }
+}
+</script>

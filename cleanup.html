@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><title>Cleanup localStorage</title></head><body>
+<h2>🧹 Membersihkan localStorage...</h2>
+<div id="log"></div>
+<script>
+const log = (msg) => document.getElementById('log').innerHTML += msg + '<br>';
+
+// Hapus data dummy & lama
+const keysToKeep = ['dreamos_users_db', 'dreamos_bound_user', 'dreamos_session_active'];
+let cleaned = 0;
+for (let i = localStorage.length - 1; i >= 0; i--) {
+  const key = localStorage.key(i);
+  if (!keysToKeep.includes(key) && key.startsWith('dreamos_')) {
+    localStorage.removeItem(key);
+    cleaned++;
+  }
+}
+
+// Hapus audit log yang lebih dari 50
+try {
+  let logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+  if (logs.length > 50) {
+    logs = logs.slice(0, 50);
+    localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
+  }
+} catch(e) {}
+
+log('✅ Dibersihkan: ' + cleaned + ' item');
+log('📊 Sisa ruang: ' + (JSON.stringify(localStorage).length / 1024).toFixed(1) + ' KB');
+log('<br><a href="index.html">← Kembali ke Dream OS</a>');
+</script>
+</body></html>
