@@ -267,20 +267,43 @@
     renderAuditFull(); renderSystemInfo();
   }
 
-  function renderKPIs() {
-    var users = safeGet('dreamos_users_db',[]);
-    var dana = safeGet('dreamos_dana',[]);
-    var k3 = safeGet('dreamos_k3_reports',[]);
-    var maint = safeGet('dreamos_maintenance_tasks',[]);
-    var kpis = [
-      { label:'Users', value: users.length, color:'#8b5cf6', tab:'users' },
-      { label:'Dana Pending', value: dana.filter(function(d){return d.status==='pending';}).length, color:'#f59e0b', tab:'dana' },
-      { label:'K3 Urgent', value: k3.filter(function(k){return k.status==='pending';}).length, color:'#ef4444', tab:'k3' },
-      { label:'Maint Aktif', value: maint.filter(function(m){return m.status!=='Selesai';}).length, color:'#0ea5e9', tab:'maint' }
-    ];
-    document.getElementById('kpi-cards').innerHTML = kpis.map(function(k) {
-      return '<div class="kpi-card" onclick="switchTab(\''+k.tab+'\')"><div class="kpi-value" style="color:'+k.color+'">'+k.value+'</div><div class="kpi-label">'+k.label+'</div></div>';
-    }).join('');
+  async function renderKPIs() {
+    try {
+        const [usersRes, k3Res, maintRes] = await Promise.all([
+            window.parent.supabase.from('users').select('*', { count: 'exact', head: true }),
+            window.parent.supabase.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            window.parent.supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
+        ]);
+        const totalUsers = usersRes.count || 0;
+        const pendingK3 = k3Res.count || 0;
+        const activeMaint = maintRes.count || 0;
+        document.getElementById('kpi-cards').innerHTML = `
+            <div class="kpi-card" onclick="switchTab('users')">
+                <div class="kpi-value" style="color:#8b5cf6;">${totalUsers}</div>
+                <div class="kpi-label">Users Cloud</div>
+            </div>
+            <div class="kpi-card" onclick="switchTab('k3')">
+                <div class="kpi-value" style="color:#ef4444;">${pendingK3}</div>
+                <div class="kpi-label">K3 Pending</div>
+            </div>
+            <div class="kpi-card" onclick="switchTab('maint')">
+                <div class="kpi-value" style="color:#0ea5e9;">${activeMaint}</div>
+                <div class="kpi-label">Maint Aktif</div>
+            </div>
+        `;
+    } catch(e) {
+        // Fallback localStorage
+        const users = safeGet('dreamos_users_db', []);
+        const dana = safeGet('dreamos_dana', []);
+        const k3 = safeGet('dreamos_k3_reports', []);
+        const maint = safeGet('dreamos_maintenance_tasks', []);
+        document.getElementById('kpi-cards').innerHTML = `
+            <div class="kpi-card"><div class="kpi-value" style="color:#8b5cf6;">${users.length}</div><div class="kpi-label">Users Lokal</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#f59e0b;">${dana.filter(d=>d.status==='pending').length}</div><div class="kpi-label">Dana P.</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#ef4444;">${k3.filter(k=>k.status==='pending').length}</div><div class="kpi-label">K3 Urg.</div></div>
+        `;
+    }
+}).join('');
   }
 
   function renderCharts() {
@@ -311,11 +334,26 @@
     el.innerHTML = all.length ? '<table><tr><th>Tgl</th><th>Judul</th><th>Nominal</th><th>Status</th></tr>'+all.map(function(d){ return '<tr><td>'+SEC.sanitize(d.tanggal)+'</td><td>'+SEC.sanitize(d.judul)+'</td><td>Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'</td><td><span class="badge badge-'+(d.status==='approved'?'approved':d.status==='rejected'?'rejected':'pending')+'">'+d.status+'</span></td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
 
-  function renderUserTable() {
-    var users = safeGet('dreamos_users_db',[]);
-    var el = document.getElementById('user-table'); if (!el) return;
-    el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>'+users.map(function(u,i){ return '<tr><td>'+SEC.sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+SEC.sanitize(u.email)+'</td><td>'+SEC.sanitize(u.role)+'</td><td><button class="btn btn-danger" onclick="deleteUser('+i+')" style="font-size:0.45rem;">🗑️</button></td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
-  }
+  async function renderUserTable() {
+    const el = document.getElementById('user-table');
+    if (!el) return;
+    el.innerHTML = '<p>Memuat dari cloud...</p>';
+    try {
+        const { data, error } = await window.parent.supabase.from('users').select('*');
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            el.innerHTML = '<p>Belum ada pengguna.</p>';
+            return;
+        }
+        el.innerHTML = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>' +
+            data.map((u, i) => `<tr><td>${SEC.sanitize(u.nama)}</td><td>${SEC.sanitize(u.email)}</td><td>${SEC.sanitize(u.role)}</td><td><button class="btn btn-danger" onclick="deleteUser('${u.id}')" style="font-size:0.45rem;">🗑️</button></td></tr>`).join('') +
+            '</table>';
+    } catch(e) {
+        // Fallback
+        const users = safeGet('dreamos_users_db', []);
+        el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th></tr>' + users.map(u => `<tr><td>${SEC.sanitize(u.nama)}</td><td>${SEC.sanitize(u.email)}</td><td>${SEC.sanitize(u.role)}</td></tr>`).join('') + '</table>' : '<p>Belum ada pengguna.</p>';
+    }
+}
 
   function renderMaintenanceActive() {
     var active = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status!=='Selesai';});
