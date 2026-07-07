@@ -35,6 +35,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h3 style="color:#10b981;margin:0;font-size:1rem;">📦 Inventaris Gudang</h3>
       <button class="ast-btn btn-success" style="width:auto;" onclick="document.getElementById('form-gudang').style.display='block'">+ Tambah Barang</button>
+      <button class="ast-btn" style="width:auto;background:#6366f1;color:white;" onclick="syncGudangToCloud()">☁️ Sync ke Cloud</button>
     </div>
     
     <!-- Form Input Gudang -->
@@ -457,4 +458,31 @@
   // Init
   renderAsset(); renderGudang();
 })();
+
+  window.syncGudangToCloud = async function() {
+    var data = safeGet('dreamos_gudang', []);
+    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
+    
+    var count = 0;
+    for (var item of data) {
+      try {
+        var { error } = await window.parent.supabase.from('stok').upsert({
+          id: item.id,
+          nama_barang: item.nama,
+          kategori: item.kategori,
+          jumlah: parseInt(item.jumlah) || 0,
+          satuan: item.satuan || 'pcs',
+          lokasi: item.lokasi || '',
+          ambang_batas: parseInt(item.minimal) || 5,
+          dibuat_oleh: JSON.parse(localStorage.getItem('dreamos_bound_user'))?.id
+        });
+        if (error) throw error;
+        count++;
+      } catch(e) {
+        console.warn('Sync error:', e);
+      }
+    }
+    alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
+  };
+
 </script>
