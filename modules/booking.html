@@ -1,4 +1,57 @@
-<script src="../js/security-helper.js"></script>
+<script src="../js/security-helper.js">
+async function simpanBooking() {
+    const ruangan = document.getElementById('booking-ruangan')?.value || '';
+    const tgl = document.getElementById('booking-tgl')?.value || '';
+    const jamMulai = document.getElementById('booking-jam-mulai')?.value || '';
+    const jamSelesai = document.getElementById('booking-jam-selesai')?.value || '';
+    const keperluan = document.getElementById('booking-keperluan')?.value || '';
+    if (!ruangan || !tgl || !jamMulai || !jamSelesai) return alert('⚠️ Ruangan, tanggal, dan jam wajib diisi!');
+    
+    try {
+        const user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
+        const { error } = await window.parent.supabase.from('bookings').insert({
+            peminjam_id: user?.id,
+            ruangan, tgl, jam_mulai: jamMulai, jam_selesai: jamSelesai, keperluan,
+            status: 'pending'
+        });
+        if (error) throw error;
+        alert('✅ Booking berhasil dikirim ke cloud!');
+        if (typeof tampilkanBooking === 'function') tampilkanBooking();
+    } catch(e) {
+        alert('⚠️ Gagal: ' + e.message);
+    }
+}
+
+
+async function tampilkanBooking() {
+    const container = document.getElementById('booking-list');
+    if (!container) return;
+    container.innerHTML = '<p>Memuat dari cloud...</p>';
+    try {
+        const { data, error } = await window.parent.supabase
+            .from('bookings')
+            .select('*, users!inner(nama)')
+            .order('tgl', { ascending: false });
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>Belum ada booking.</p>';
+            return;
+        }
+        container.innerHTML = data.map(b => `
+            <div style="background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:8px; margin-bottom:0.3rem;">
+                <b>${b.ruangan}</b> - ${b.tgl} (${b.jam_mulai}-${b.jam_selesai})<br>
+                <small>${b.users?.nama || 'Unknown'} | ${b.keperluan || '-'}</small>
+                <span class="badge badge-${b.status==='approved'?'approved':'pending'}">${b.status}</span>
+            </div>
+        `).join('');
+        localStorage.setItem('dreamos_bookings', JSON.stringify(data));
+    } catch(e) {
+        const cache = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]');
+        container.innerHTML = cache.length ? cache.map(b => `<div>${b.ruangan} - ${b.tgl}</div>`).join('') : '<p>Offline - tidak ada data.</p>';
+    }
+}
+
+</script>
 <!-- 
 =========================================================================
 🏛️ DREAM OS BOOKING MODULE - PRO GLOBAL EDITION (FINAL V2)
@@ -33,7 +86,60 @@
 .tracking-fill {height:100%; border-radius:3px; transition: width 0.3s;}
 .rule-alert {background:rgba(239,68,68,0.1); border:1px solid #ef4444; color:#ef4444; padding:0.5rem; border-radius:0.5rem; margin-bottom:0.5rem; font-size:0.7rem;}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
+async function simpanBooking() {
+    const ruangan = document.getElementById('booking-ruangan')?.value || '';
+    const tgl = document.getElementById('booking-tgl')?.value || '';
+    const jamMulai = document.getElementById('booking-jam-mulai')?.value || '';
+    const jamSelesai = document.getElementById('booking-jam-selesai')?.value || '';
+    const keperluan = document.getElementById('booking-keperluan')?.value || '';
+    if (!ruangan || !tgl || !jamMulai || !jamSelesai) return alert('⚠️ Ruangan, tanggal, dan jam wajib diisi!');
+    
+    try {
+        const user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
+        const { error } = await window.parent.supabase.from('bookings').insert({
+            peminjam_id: user?.id,
+            ruangan, tgl, jam_mulai: jamMulai, jam_selesai: jamSelesai, keperluan,
+            status: 'pending'
+        });
+        if (error) throw error;
+        alert('✅ Booking berhasil dikirim ke cloud!');
+        if (typeof tampilkanBooking === 'function') tampilkanBooking();
+    } catch(e) {
+        alert('⚠️ Gagal: ' + e.message);
+    }
+}
+
+
+async function tampilkanBooking() {
+    const container = document.getElementById('booking-list');
+    if (!container) return;
+    container.innerHTML = '<p>Memuat dari cloud...</p>';
+    try {
+        const { data, error } = await window.parent.supabase
+            .from('bookings')
+            .select('*, users!inner(nama)')
+            .order('tgl', { ascending: false });
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>Belum ada booking.</p>';
+            return;
+        }
+        container.innerHTML = data.map(b => `
+            <div style="background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:8px; margin-bottom:0.3rem;">
+                <b>${b.ruangan}</b> - ${b.tgl} (${b.jam_mulai}-${b.jam_selesai})<br>
+                <small>${b.users?.nama || 'Unknown'} | ${b.keperluan || '-'}</small>
+                <span class="badge badge-${b.status==='approved'?'approved':'pending'}">${b.status}</span>
+            </div>
+        `).join('');
+        localStorage.setItem('dreamos_bookings', JSON.stringify(data));
+    } catch(e) {
+        const cache = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]');
+        container.innerHTML = cache.length ? cache.map(b => `<div>${b.ruangan} - ${b.tgl}</div>`).join('') : '<p>Offline - tidak ada data.</p>';
+    }
+}
+
+</script>
 <script>
 (function(){
   var lang = localStorage.getItem('dreamos_lang') || 'id';
@@ -279,4 +385,57 @@
     console.log('✅ Booking Pro Final V2 siap');
   }, 150);
 })();
+
+async function simpanBooking() {
+    const ruangan = document.getElementById('booking-ruangan')?.value || '';
+    const tgl = document.getElementById('booking-tgl')?.value || '';
+    const jamMulai = document.getElementById('booking-jam-mulai')?.value || '';
+    const jamSelesai = document.getElementById('booking-jam-selesai')?.value || '';
+    const keperluan = document.getElementById('booking-keperluan')?.value || '';
+    if (!ruangan || !tgl || !jamMulai || !jamSelesai) return alert('⚠️ Ruangan, tanggal, dan jam wajib diisi!');
+    
+    try {
+        const user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
+        const { error } = await window.parent.supabase.from('bookings').insert({
+            peminjam_id: user?.id,
+            ruangan, tgl, jam_mulai: jamMulai, jam_selesai: jamSelesai, keperluan,
+            status: 'pending'
+        });
+        if (error) throw error;
+        alert('✅ Booking berhasil dikirim ke cloud!');
+        if (typeof tampilkanBooking === 'function') tampilkanBooking();
+    } catch(e) {
+        alert('⚠️ Gagal: ' + e.message);
+    }
+}
+
+
+async function tampilkanBooking() {
+    const container = document.getElementById('booking-list');
+    if (!container) return;
+    container.innerHTML = '<p>Memuat dari cloud...</p>';
+    try {
+        const { data, error } = await window.parent.supabase
+            .from('bookings')
+            .select('*, users!inner(nama)')
+            .order('tgl', { ascending: false });
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>Belum ada booking.</p>';
+            return;
+        }
+        container.innerHTML = data.map(b => `
+            <div style="background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:8px; margin-bottom:0.3rem;">
+                <b>${b.ruangan}</b> - ${b.tgl} (${b.jam_mulai}-${b.jam_selesai})<br>
+                <small>${b.users?.nama || 'Unknown'} | ${b.keperluan || '-'}</small>
+                <span class="badge badge-${b.status==='approved'?'approved':'pending'}">${b.status}</span>
+            </div>
+        `).join('');
+        localStorage.setItem('dreamos_bookings', JSON.stringify(data));
+    } catch(e) {
+        const cache = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]');
+        container.innerHTML = cache.length ? cache.map(b => `<div>${b.ruangan} - ${b.tgl}</div>`).join('') : '<p>Offline - tidak ada data.</p>';
+    }
+}
+
 </script>
