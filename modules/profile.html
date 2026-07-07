@@ -46,9 +46,7 @@
         }
         .input-field:focus, select:focus { border-color: var(--neon); }
         
-        .tab-nav {
-            display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap;
-        }
+        .tab-nav { display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .tab-btn {
             padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600;
             cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
@@ -145,21 +143,24 @@
     <div id="tab-users" class="tab-content">
         <div class="glass">
             <div class="section-title" style="color:var(--purple);">👥 Daftar Pengguna</div>
-            <div id="user-list" style="max-height:350px; overflow-y:auto;"></div>
+            <div id="user-list" style="max-height:300px; overflow-y:auto;"></div>
             <button class="btn btn-success" onclick="showRegisterForm()" style="width:100%; margin-top:0.8rem;">➕ Daftar Pengguna Baru</button>
         </div>
         <div id="register-panel" class="glass" style="display:none; border-color: var(--neon);">
-            <div class="section-title" style="color:var(--neon);">📝 Pendaftaran</div>
+            <div class="section-title" style="color:var(--neon);">📝 Pendaftaran Pengguna Baru</div>
             <input class="input-field" id="reg-nama" placeholder="Nama Lengkap" style="margin-bottom:0.4rem;">
             <input class="input-field" id="reg-email" placeholder="Email" type="email" style="margin-bottom:0.4rem;">
             <select class="input-field" id="reg-role" style="margin-bottom:0.4rem;">
-                <option value="staff">Staff</option><option value="security">Security</option>
-                <option value="janitor">Janitor</option><option value="maintenance">Maintenance</option>
+                <option value="guru">Guru</option>
+                <option value="security">Security</option>
+                <option value="janitor">Janitor</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="staff">Staff</option>
             </select>
-            <input class="input-field" type="password" id="reg-pass" placeholder="Password" style="margin-bottom:0.4rem;">
+            <input class="input-field" type="password" id="reg-pass" placeholder="Password (min 6 karakter)" style="margin-bottom:0.4rem;">
             <input class="input-field" type="password" id="reg-confirm" placeholder="Konfirmasi Password">
             <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
-                <button class="btn btn-primary" onclick="registerUser()">✅ Daftar</button>
+                <button class="btn btn-primary" onclick="registerUser()">✅ Daftarkan</button>
                 <button class="btn btn-danger" onclick="hideRegisterForm()">❌ Batal</button>
             </div>
             <p id="reg-msg" style="font-size:0.7rem; margin-top:0.5rem;"></p>
@@ -182,11 +183,11 @@
 </div>
 
 <script>
-// ========== FULL STANDALONE + PARENT INJECTION ==========
+// ========== STANDALONE + RBAC INTEGRATION ==========
 (function() {
   'use strict';
 
-  // Helpers
+  // Helper functions
   function sanitize(str) { if(!str) return ''; var d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
   function getUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user')||'null'); } catch(e) { return null; } }
   async function getDNA() { try { var c=document.createElement('canvas'); var x=c.getContext('2d'); x.fillStyle='#f60'; x.fillRect(125,1,62,20); var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode([navigator.hardwareConcurrency||0,screen.colorDepth,c.toDataURL()].join('|'))); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join('').substring(0,32); } catch(e) { return 'UNKNOWN'; } }
@@ -208,7 +209,6 @@
   document.getElementById('edit-department').value = user.department || '';
   if (user.avatar) document.getElementById('avatar-preview').innerHTML = '<img src="'+user.avatar+'" style="width:100%;height:100%;object-fit:cover;">';
 
-  // Info tab
   document.getElementById('info-nama').textContent = user.nama || '-';
   document.getElementById('info-email').textContent = user.email || '-';
   document.getElementById('info-role').textContent = (user.role||'staff').toUpperCase();
@@ -216,23 +216,18 @@
 
   renderUserList();
 
-  // ✅ PARENT INJECTION - Update dashboard setelah profile berubah
   function notifyParent(action, detail) {
     try {
-      // Audit log
       var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs')||'[]');
       logs.unshift({ time: new Date().toISOString(), user: user.email, role: user.role, action: action, details: detail });
       if (logs.length > 100) logs.pop();
       localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-
-      // Reload parent dashboard setelah 500ms
       if (window.parent && window.parent.renderDashboard) {
         setTimeout(function() { window.parent.renderDashboard(); }, 500);
       }
     } catch(e) {}
   }
 
-  // Tab switching
   window.switchTab = function(name, btn) {
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
     document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
@@ -249,14 +244,12 @@
     el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+users.map(function(u){ return '<tr><td>'+sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+sanitize(u.email)+'</td><td>'+sanitize(u.role)+'</td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;text-align:center;">Belum ada pengguna.</p>';
   }
 
-  // ✅ SAVE PROFILE + INJECT TO PARENT
   window.saveProfile = function() {
     user.nama = document.getElementById('edit-nama').value;
     user.phone = document.getElementById('edit-phone').value;
     user.department = document.getElementById('edit-department').value;
     localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
 
-    // Update users_db
     var users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
     var idx = users.findIndex(function(u){return u.email===user.email;});
     if (idx >= 0) {
@@ -300,18 +293,26 @@
     var r=document.getElementById('reg-role').value;
     var p=document.getElementById('reg-pass').value;
     var c=document.getElementById('reg-confirm').value;
-    if (!n||!e||!p) return alert('⚠️ Isi semua!');
-    if (p.length<6) return alert('⚠️ Min 6 karakter!');
-    if (p!==c) return alert('⚠️ Tidak cocok!');
+    var msg = document.getElementById('reg-msg');
+    
+    if (!n||!e||!p) { msg.textContent = '⚠️ Semua field wajib diisi!'; msg.style.color = '#ef4444'; return; }
+    if (p.length<6) { msg.textContent = '⚠️ Password minimal 6 karakter!'; msg.style.color = '#ef4444'; return; }
+    if (p!==c) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
 
     var users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
-    if (users.find(function(u){return u.email===e;})) return alert('⚠️ Email sudah ada!');
+    if (users.find(function(u){return u.email===e;})) { msg.textContent = '⚠️ Email sudah terdaftar!'; msg.style.color = '#ef4444'; return; }
 
-    users.push({ nama:n, email:e, role:r, password_hash:await hashPW(p), device_dna:'', created_at:new Date().toISOString() });
-    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    try {
+      users.push({ nama:n, email:e, role:r, password_hash:await hashPW(p), device_dna:'', created_at:new Date().toISOString() });
+      localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    } catch(ex) {
+      msg.textContent = '⚠️ Penyimpanan penuh! Minta Admin membersihkan cache.'; msg.style.color = '#ef4444'; return;
+    }
+    
     hideRegisterForm();
     renderUserList();
     notifyParent('REGISTER_USER', n+' ('+e+')');
+    msg.textContent = ''; 
     alert('✅ '+n+' berhasil didaftarkan!');
   };
 
@@ -330,9 +331,8 @@
     }
   });
 
-  // ✅ LOGOUT + REDIRECT PARENT
   window.handleLogout = function() {
-    if (confirm('🚪 Yakin logout?')) {
+    if (confirm('🚪 Yakin logout? Session akan dihapus dan harus login ulang.')) {
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
       if (window.parent) window.parent.location.reload();
