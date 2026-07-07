@@ -4,7 +4,7 @@
  */
 window.DREAMOS_WORKER = {
   // Ganti dengan URL worker setelah deploy
-  url: 'https://dreamos-api-gateway.REPLACE-ME.workers.dev',
+  url: 'https://dreamos-api-gateway.afumum234.workers.dev',
   endpoints: {
     sync: '/sync',
     broadcast: '/broadcast',
