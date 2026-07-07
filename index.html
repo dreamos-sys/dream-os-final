@@ -3,1111 +3,336 @@
 <head>
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com https://api.open-meteo.com;">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dream OS • v1.0 Final</title>
-    <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <style>
-        :root { 
-            --glass-bg: rgba(10, 15, 30, 0.6);
-            --glass-border: rgba(0, 255, 157, 0.2);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            --neon: #00ff9d;
-            --accent: #0ea5e9;
-            --warning: #e11d48;
-            --gold: #d4af37;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background: #0a0e27;
-            color: #e2e8f0; 
-            font-family: 'Inter', sans-serif; 
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        canvas#star-field {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-            pointer-events: none;
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(0, 255, 157, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 1;
-            animation: gradientFlow 15s ease-in-out infinite;
-        }
-        
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(0,255,157,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,255,157,0.02) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: 2;
-        }
-        
-        @keyframes gradientFlow {
-            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
-            50% { transform: scale(1.1) rotate(5deg); opacity: 1; }
-        }
-
-        .glass {
-            background: rgba(15, 23, 42, 0.7) !important;
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
-        }
-
-        #login-screen {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(10, 14, 39, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 10000;
-            transition: opacity 0.5s ease;
-        }
-        
-        .login-container {
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            padding: 2rem;
-            z-index: 10001;
-        }
-        
-        .login-logo {
-            width: 100px;
-            height: 100px;
-            border-radius: 24px;
-            margin-bottom: 2rem;
-            box-shadow: 0 0 40px rgba(212,175,55,0.4);
-        }
-        
-        .arabic {
-            font-family: 'Amiri', serif;
-            font-size: 2.2rem;
-            color: var(--neon);
-            text-shadow: 0 0 30px rgba(0,255,157,0.6);
-            margin-bottom: 0.5rem;
-            line-height: 1.4;
-        }
-        
-        .shalawat {
-            font-family: 'Amiri', serif;
-            font-size: 1rem;
-            color: var(--accent);
-            text-shadow: 0 0 20px rgba(14,165,233,0.6);
-            margin-bottom: 3rem;
-        }
-        
-        .input-wrapper {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        
-        .pin-input {
-            width: 100%;
-            padding: 1.2rem 4rem 1.2rem 1.5rem;
-            background: rgba(0,0,0,0.6);
-            border: 2px solid rgba(0,255,157,0.3);
-            border-radius: 16px;
-            color: var(--neon);
-            font-family: 'Orbitron', monospace;
-            font-size: 1.2rem;
-            letter-spacing: 4px;
-            text-align: center;
-            outline: none;
-        }
-        
-        .toggle-pin {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            font-size: 1.5rem;
-            color: var(--neon);
-        }
-        
-        .access-btn {
-            width: 100%;
-            padding: 1.2rem;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 16px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 25px rgba(16,185,129,0.4);
-            transition: all 0.3s ease;
-        }
-        
-        .access-btn:hover {
-            background: #059669;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(16,185,129,0.6);
-        }
-        
-        .error-msg {
-            color: var(--warning);
-            font-size: 0.9rem;
-            margin-top: 1rem;
-            display: none;
-        }
-
-        #main-app {
-            display: none;
-            position: relative;
-            z-index: 10;
-            padding-bottom: 6rem;
-            min-height: 100vh;
-        }
-        
-        #dashboard-container {
-            position: relative;
-            z-index: 11;
-        }
-        
-        .header-main {
-            padding: 2rem 1.5rem 1rem;
-            text-align: center;
-            margin: 1.5rem;
-            border-radius: 24px;
-        }
-        
-        .info-badges {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
-            flex-wrap: wrap;
-        }
-        
-        .badge {
-            padding: 0.5rem 1.2rem;
-            border-radius: 24px;
-            font-size: 0.7rem;
-            color: var(--neon);
-            font-weight: 700;
-            background: rgba(0,255,157,0.1);
-            border: 1px solid rgba(0,255,157,0.3);
-            backdrop-filter: blur(10px);
-        }
-        
-        .badge.online { background: rgba(16,185,129,0.2); color: #10b981; }
-        .badge.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
-        
-        #prayer-times-dash {
-            font-size: 0.65rem;
-            color: #94a3b8;
-            margin-top: 1rem;
-            padding: 0.6rem 1.2rem;
-            background: rgba(0,0,0,0.3);
-            border-radius: 20px;
-            display: inline-block;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        #dream-slideshow {
-            height: 220px;
-            margin: 1.5rem;
-            overflow: hidden;
-            position: relative;
-            border-radius: 24px;
-        }
-        
-        #dream-slide-track {
-            display: flex;
-            height: 100%;
-            transition: transform 0.7s ease;
-        }
-        
-        .dream-slide {
-            min-width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem;
-            color: var(--neon);
-            text-align: center;
-            padding: 20px;
-        }
-        
-        #slide-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: -30px;
-            position: relative;
-            z-index: 2;
-            padding-bottom: 10px;
-        }
-        
-        .dot {
-            width: 8px;
-            height: 8px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-        
-        .dot.active {
-            background: var(--neon);
-            box-shadow: 0 0 10px var(--neon);
-            width: 24px;
-            border-radius: 4px;
-        }
-
-        .module-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-            padding: 0 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .mod-card {
-            text-align: center;
-            cursor: pointer;
-            padding: 1.5rem 0.5rem;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border-radius: 24px;
-        }
-        
-        .mod-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--neon);
-            box-shadow: 0 12px 40px rgba(0,255,157,0.4);
-        }
-        
-        .mod-icon {
-            font-size: 2.2rem;
-            margin-bottom: 0.5rem;
-            display: inline-block;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-        }
-        
-        .mod-title {
-            font-size: 0.6rem;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: var(--neon);
-        }
-
-        #bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            padding: 12px 8px;
-            background: rgba(10, 14, 39, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 2px solid rgba(0, 255, 157, 0.3);
-            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
-        }
-        
-        .nav-container {
-            display: flex;
-            gap: 8px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 12px 8px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(0, 255, 157, 0.2);
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .nav-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(0, 255, 157, 0.1) 0%, transparent 50%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .nav-item:hover::before {
-            opacity: 1;
-        }
-        
-        .nav-item.active {
-            background: rgba(0, 255, 157, 0.15);
-            border-color: #00ff9d;
-            box-shadow: 0 0 20px rgba(0, 255, 157, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            transform: translateY(-4px);
-        }
-        
-        .nav-icon-wrapper {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(0, 255, 157, 0.2), rgba(14, 165, 233, 0.2));
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 157, 0.3);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            position: relative;
-            z-index: 1;
-        }
-        
-        .nav-item.active .nav-icon-wrapper {
-            background: linear-gradient(135deg, rgba(0, 255, 157, 0.4), rgba(14, 165, 233, 0.4));
-            border-color: #00ff9d;
-            box-shadow: 0 0 20px rgba(0, 255, 157, 0.5);
-        }
-        
-        .nav-icon {
-            font-size: 1.5rem;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-            position: relative;
-            z-index: 1;
-        }
-        
-        .nav-label {
-            font-size: 0.6rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .nav-item.active .nav-label {
-            color: var(--neon);
-            text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid var(--neon);
-            border-radius: 16px;
-            padding: 1rem 1.5rem;
-            z-index: 99999;
-            box-shadow: 0 8px 32px rgba(0,255,157,0.3);
-            display: none;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .notification.show { display: block; }
-        
-        .notification-title {
-            font-weight: 700;
-            color: var(--neon);
-            margin-bottom: 0.3rem;
-        }
-        
-        .notification-text {
-            font-size: 0.85rem;
-            color: #94a3b8;
-        }
-
-        .system-info-box {
-            text-align: center;
-            font-size: 0.65rem;
-            color: #94a3b8;
-            margin: 1.5rem;
-            padding: 1.5rem;
-            border-radius: 24px;
-        }
-    </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config-worker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dream OS • v1.0 Final</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<style>
+    :root { --glass-bg: rgba(10, 15, 30, 0.6); --glass-border: rgba(0, 255, 157, 0.2); --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(circle at 20% 50%, rgba(0, 255, 157, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.1) 0%, transparent 50%); pointer-events: none; z-index: 1; animation: gradientFlow 15s ease-in-out infinite; }
+    body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,255,157,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,157,0.02) 1px, transparent 1px); background-size: 50px 50px; pointer-events: none; z-index: 2; }
+    @keyframes gradientFlow { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; } 50% { transform: scale(1.1) rotate(5deg); opacity: 1; } }
+    .glass { background: rgba(15, 23, 42, 0.7) !important; backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); }
+    #login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10000; transition: opacity 0.5s ease; }
+    .login-container { text-align: center; max-width: 400px; width: 100%; padding: 2rem; z-index: 10001; }
+    .login-logo { width: 100px; height: 100px; border-radius: 24px; margin-bottom: 2rem; box-shadow: 0 0 40px rgba(212,175,55,0.4); }
+    .arabic { font-family: 'Amiri', serif; font-size: 2.2rem; color: var(--neon); text-shadow: 0 0 30px rgba(0,255,157,0.6); margin-bottom: 0.5rem; line-height: 1.4; }
+    .shalawat { font-family: 'Amiri', serif; font-size: 1rem; color: var(--accent); text-shadow: 0 0 20px rgba(14,165,233,0.6); margin-bottom: 3rem; }
+    .input-wrapper { position: relative; margin-bottom: 1.5rem; }
+    .pin-input { width: 100%; padding: 1.2rem 4rem 1.2rem 1.5rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(0,255,157,0.3); border-radius: 16px; color: var(--neon); font-family: 'Orbitron', monospace; font-size: 1.2rem; letter-spacing: 4px; text-align: center; outline: none; }
+    .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.5rem; color: var(--neon); }
+    .access-btn { width: 100%; padding: 1.2rem; background: #10b981; color: white; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 25px rgba(16,185,129,0.4); transition: all 0.3s ease; }
+    .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 35px rgba(16,185,129,0.6); }
+    .error-msg { color: var(--warning); font-size: 0.9rem; margin-top: 1rem; display: none; }
+    #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
+    #dashboard-container { position: relative; z-index: 11; }
+    .header-main { padding: 2rem 1.5rem 1rem; text-align: center; margin: 1.5rem; border-radius: 24px; }
+    .info-badges { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+    .badge { padding: 0.5rem 1.2rem; border-radius: 24px; font-size: 0.7rem; color: var(--neon); font-weight: 700; background: rgba(0,255,157,0.1); border: 1px solid rgba(0,255,157,0.3); backdrop-filter: blur(10px); }
+    .badge.online { background: rgba(16,185,129,0.2); color: #10b981; }
+    .badge.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
+    #prayer-times-dash { font-size: 0.65rem; color: #94a3b8; margin-top: 1rem; padding: 0.6rem 1.2rem; background: rgba(0,0,0,0.3); border-radius: 20px; display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+    #dream-slideshow { height: 220px; margin: 1.5rem; overflow: hidden; position: relative; border-radius: 24px; }
+    #dream-slide-track { display: flex; height: 100%; transition: transform 0.7s ease; }
+    .dream-slide { min-width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--neon); text-align: center; padding: 20px; }
+    #slide-dots { display: flex; justify-content: center; gap: 8px; margin-top: -30px; position: relative; z-index: 2; padding-bottom: 10px; }
+    .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: all 0.3s ease; }
+    .dot.active { background: var(--neon); box-shadow: 0 0 10px var(--neon); width: 24px; border-radius: 4px; }
+    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 1.5rem; margin-bottom: 2rem; }
+    .mod-card { text-align: center; cursor: pointer; padding: 1.5rem 0.5rem; position: relative; overflow: hidden; transition: all 0.3s ease; border-radius: 24px; }
+    .mod-card:hover { transform: translateY(-5px); border-color: var(--neon); box-shadow: 0 12px 40px rgba(0,255,157,0.4); }
+    .mod-icon { font-size: 2.2rem; margin-bottom: 0.5rem; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+    .mod-title { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--neon); }
+    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding: 12px 8px; background: rgba(10, 14, 39, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 2px solid rgba(0, 255, 157, 0.3); box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5); }
+    .nav-container { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px 8px; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(0, 255, 157, 0.2); border-radius: 16px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+    .nav-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(0, 255, 157, 0.1) 0%, transparent 50%); opacity: 0; transition: opacity 0.3s ease; }
+    .nav-item:hover::before { opacity: 1; }
+    .nav-item.active { background: rgba(0, 255, 157, 0.15); border-color: #00ff9d; box-shadow: 0 0 20px rgba(0, 255, 157, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1); transform: translateY(-4px); }
+    .nav-icon-wrapper { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(0, 255, 157, 0.2), rgba(14, 165, 233, 0.2)); border-radius: 12px; border: 1px solid rgba(0, 255, 157, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); position: relative; z-index: 1; }
+    .nav-item.active .nav-icon-wrapper { background: linear-gradient(135deg, rgba(0, 255, 157, 0.4), rgba(14, 165, 233, 0.4)); border-color: #00ff9d; box-shadow: 0 0 20px rgba(0, 255, 157, 0.5); }
+    .nav-icon { font-size: 1.5rem; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); position: relative; z-index: 1; }
+    .nav-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; position: relative; z-index: 1; }
+    .nav-item.active .nav-label { color: var(--neon); text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); }
+    .notification { position: fixed; top: 20px; right: 20px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--neon); border-radius: 16px; padding: 1rem 1.5rem; z-index: 99999; box-shadow: 0 8px 32px rgba(0,255,157,0.3); display: none; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .notification.show { display: block; }
+    .notification-title { font-weight: 700; color: var(--neon); margin-bottom: 0.3rem; }
+    .notification-text { font-size: 0.85rem; color: #94a3b8; }
+    .system-info-box { text-align: center; font-size: 0.65rem; color: #94a3b8; margin: 1.5rem; padding: 1.5rem; border-radius: 24px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config-worker.js"></script>
 </head>
 <body>
-    <canvas id="star-field"></canvas>
-    <div id="notification-container"></div>
+<canvas id="star-field"></canvas>
+<div id="notification-container"></div>
 
-    <div id="login-screen">
-        <div class="login-container">
-            <img src="assets/logo-sultan.png" alt="Dream OS" class="login-logo">
+<div id="login-screen">
+    <div class="login-container">
+        <img src="assets/logo-sultan.png" alt="Dream OS" class="login-logo">
+        <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+        <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+        <div class="input-wrapper">
+            <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
+        </div>
+        <div class="input-wrapper">
+            <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD">
+            <span class="toggle-pin" onclick="togglePassword()">👁️</span>
+        </div>
+        <button class="access-btn" onclick="authenticate()">⚡ ACCESS CORE</button>
+        <div class="error-msg" id="error-msg"></div>
+    </div>
+</div>
+
+<div id="main-app"><div id="dashboard-container"></div></div>
+
+<nav id="bottom-nav">
+    <div class="nav-container">
+        <button class="nav-item active" onclick="goHome()"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label">Home</span></button>
+        <button class="nav-item" onclick="openMod('profile')"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label">Profile</span></button>
+        <button class="nav-item" onclick="openMod('qr')"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label">QR</span></button>
+        <button class="nav-item" onclick="openMod('about')"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label">About</span></button>
+        <button class="nav-item" onclick="openMod('setting')"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label">System</span></button>
+    </div>
+</nav>
+
+<script>
+// ========== INIT ==========
+const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+const { createClient } = supabase;
+window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let slideInterval, prayerInterval;
+window.slideIdx = 0;
+
+// ========== AUTH ==========
+function togglePassword() {
+    const pw = document.getElementById('password-input');
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+    document.querySelector('.toggle-pin').textContent = pw.type === 'password' ? '👁️' : '🙈';
+}
+
+async function authenticate() {
+    const email = document.getElementById('email-input').value.trim();
+    const password = document.getElementById('password-input').value;
+    const error = document.getElementById('error-msg');
+    if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; error.style.display = 'block'; setTimeout(() => error.style.display = 'none', 3000); return; }
+    try {
+        const { data, error: authError } = await window.supabase.auth.signInWithPassword({ email, password });
+        if (authError) { error.textContent = '⛔ ' + authError.message; error.style.display = 'block'; setTimeout(() => error.style.display = 'none', 3000); return; }
+        const user = data.user;
+        localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: user.id, email: user.email, nama: user.user_metadata?.nama || email.split('@')[0], role: user.user_metadata?.role || 'staff', device_dna: '' }));
+        localStorage.setItem('dreamos_session_active', 'true');
+        document.getElementById('login-screen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('bottom-nav').style.display = 'block';
+            renderDashboard();
+        }, 500);
+    } catch (e) {
+        error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
+        error.style.display = 'block';
+        setTimeout(() => error.style.display = 'none', 3000);
+    }
+}
+
+// ========== AUTO LOGIN ==========
+(function() {
+    var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    if (user.role === 'dev' && localStorage.getItem('dreamos_session_active') === 'true') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('bottom-nav').style.display = 'block';
+        setTimeout(renderDashboard, 100);
+    }
+})();
+
+// ========== RBAC ==========
+window.ROLE_PERMISSIONS = {
+    dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+    kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+    koord: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
+    guru: ['book','k3','profile','qr','about','setting'],
+    security: ['sec','profile','qr','about','setting'],
+    janitor: ['in','out','stok','profile','qr','about','setting'],
+    maintenance: ['maint','profile','qr','about','setting'],
+    staff: ['profile','qr','about','setting']
+};
+window.canAccess = function(modId) {
+    var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    return (window.ROLE_PERMISSIONS[user.role || 'staff'] || []).includes(modId);
+};
+
+// ========== RENDER DASHBOARD ==========
+window.renderDashboard = function() {
+    document.getElementById('dashboard-container').innerHTML = `
+        <div class="header-main glass">
+            <img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;margin-bottom:1rem;">
             <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
-            <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
-            
-                        <div class="input-wrapper">
-                <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
+            <div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <div class="info-badges">
+                <span class="badge" id="live-clock">⏱️ --:--:--</span>
+                <span class="badge" id="battery-status">🔋 --%</span>
+                <span class="badge" id="connection-status">📡 Checking...</span>
             </div>
-            <div class="input-wrapper">
-                <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD">
-                <span class="toggle-pin" onclick="togglePassword()">👁️</span>
-            </div>
-
-            <button class="access-btn" onclick="authenticate()">⚡ ACCESS CORE</button>
-            <div class="error-msg" id="error-msg"></div>
+            <div id="prayer-times-dash">🕌 Loading prayer times...</div>
         </div>
-    </div>
+        <div id="dream-slideshow" class="glass"><div id="dream-slide-track"></div></div>
+        <div id="slide-dots"></div>
+        <div class="module-grid" id="module-grid"></div>
+        <div class="system-info-box glass">
+            <strong>Dream OS v1.0 Final</strong><br>
+            Engineered by Family Dream Team<br>
+            <span style="color:#0ea5e9;">"The Power Soul Of Shalawat"</span><br>
+            ISO 27001 • ISO 9001 • ISO 55001
+        </div>`;
+    const modules = [
+        { i:'🌍', n:'CMD Center', id:'cmd' }, { i:'🛡️', n:'Security', id:'sec' }, { i:'⚠️', n:'K3 Safety', id:'k3' },
+        { i:'🏠', n:'Jan Indoor', id:'in' }, { i:'🌳', n:'Jan Outdoor', id:'out' }, { i:'📅', n:'Booking', id:'book' },
+        { i:'🏢', n:'Asset', id:'asset' }, { i:'📦', n:'Stok', id:'stok' }, { i:'🔧', n:'Maintenance', id:'maint' }
+    ];
+    const grid = document.getElementById('module-grid');
+    modules.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'mod-card glass';
+        card.innerHTML = `<div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
+        card.onclick = () => openMod(m.id);
+        grid.appendChild(card);
+    });
+    startLiveClock(); startBatteryMonitor(); checkConnection(); fetchPrayerTimes(); showSlides();
+};
 
-    <div id="main-app">
-        <div id="dashboard-container"></div>
-    </div>
-    
-    <nav id="bottom-nav">
-        <div class="nav-container">
-            <button class="nav-item active" onclick="goHome()">
-                <div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div>
-                <span class="nav-label">Home</span>
-            </button>
-            <button class="nav-item" onclick="openMod('profile')">
-                <div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div>
-                <span class="nav-label">Profile</span>
-            </button>
-            <button class="nav-item" onclick="openMod('qr')">
-                <div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div>
-                <span class="nav-label">QR</span>
-            </button>
-            <button class="nav-item" onclick="openMod('about')">
-                <div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div>
-                <span class="nav-label">About</span>
-            </button>
-            <button class="nav-item" onclick="openMod('setting')">
-                <div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div>
-                <span class="nav-label">System</span>
-            </button>
-        </div>
-    </nav>
+// ========== FUNCTIONS ==========
+function startLiveClock() { setInterval(() => { const el = document.getElementById('live-clock'); if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID'); }, 1000); }
+function startBatteryMonitor() { if ('getBattery' in navigator) { navigator.getBattery().then(b => { const el = document.getElementById('battery-status'); const update = () => { if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%'; }; update(); b.addEventListener('levelchange', update); b.addEventListener('chargingchange', update); }).catch(() => { const el = document.getElementById('battery-status'); if (el) el.textContent = '🔋 --%'; }); } }
+async function checkConnection() { const el = document.getElementById('connection-status'); if (!el) return; if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; } try { const start = Date.now(); const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } }); if (res.ok) { el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)'; el.className = 'badge online'; } else throw new Error('Status ' + res.status); } catch (e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } }
+async function fetchPrayerTimes() { const el = document.getElementById('prayer-times-dash'); if (!el) return; try { const d = new Date(); const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`); const data = await res.json(); if (data.code === 200) { const t = data.data.timings; el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`; } } catch(e) { el.textContent = '🕌 Gagal memuat.'; } }
 
-    <script>
-        // ========== SUPER USER AUTO-LOGIN ==========
-        (function() {
-            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-            var session = localStorage.getItem('dreamos_session_active');
-            
-            if (user.role === 'dev' && session === 'true') {
-                console.log('👑 Super User detected - Auto login...');
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                document.getElementById('bottom-nav').style.display = 'block';
-                setTimeout(function() { renderDashboard(); }, 100);
-            }
-        })();
-
-        let slideInterval, prayerInterval;
-        window.slideIdx = 0;
-
-        function showNotification(title, text, duration = 5000) {
-            const container = document.getElementById('notification-container');
-            const notif = document.createElement('div');
-            notif.className = 'notification show';
-            notif.innerHTML = `<div class="notification-title">${title}</div><div class="notification-text">${text}</div>`;
-            container.appendChild(notif);
-            setTimeout(() => {
-                notif.classList.remove('show');
-                setTimeout(() => notif.remove(), 300);
-            }, duration);
-        }
-
-        // ========== RBAC CONFIG ==========
-        window.ROLE_PERMISSIONS = {
-            dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
-            kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
-            koord: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
-            guru: ['book','k3','profile','qr','about','setting'],
-            security: ['sec','profile','qr','about','setting'],
-            janitor: ['in','out','stok','profile','qr','about','setting'],
-            maintenance: ['maint','profile','qr','about','setting'],
-            staff: ['profile','qr','about','setting']
-        };
-
-        window.canAccess = function(modId) {
-            var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-            var role = user.role || 'staff';
-            var permissions = window.ROLE_PERMISSIONS[role] || window.ROLE_PERMISSIONS['staff'];
-            return permissions.includes(modId);
-        };
-
-        window.renderDashboard = function() {
-            const container = document.getElementById('dashboard-container');
-            container.innerHTML = `
-                <div class="header-main glass">
-                    <img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;margin-bottom:1rem;">
-                    <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
-                    <div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
-                    <div class="info-badges">
-                        <span class="badge" id="live-clock">⏱️ --:--:--</span>
-                        <span class="badge" id="battery-status">🔋 --%</span>
-                        <span class="badge" id="connection-status">📡 Checking...</span>
-                    </div>
-                    <div id="prayer-times-dash">🕌 Loading prayer times...</div>
-                </div>
-                <div id="dream-slideshow" class="glass">
-                    <div id="dream-slide-track"></div>
-                </div>
-                <div id="slide-dots"></div>
-                <div class="module-grid" id="module-grid"></div>
-                <div class="system-info-box glass">
-                    <strong>Dream OS v1.0 Final</strong><br>
-                    Engineered by Family Dream Team<br>
-                    <span style="color:#0ea5e9;">"The Power Soul Of Shalawat"</span><br>
-                    ISO 27001 • ISO 9001 • ISO 55001
-                </div>
-            `;
-
-            const modules = [
-                { i:'🌍', n:'CMD Center', id:'cmd' },
-                { i:'🛡️', n:'Security', id:'sec' },
-                { i:'⚠️', n:'K3 Safety', id:'k3' },
-                { i:'🏠', n:'Jan Indoor', id:'in' },
-                { i:'🌳', n:'Jan Outdoor', id:'out' },
-                { i:'📅', n:'Booking', id:'book' },
-                { i:'🏢', n:'Asset', id:'asset' },
-                { i:'📦', n:'Stok', id:'stok' },
-                { i:'🔧', n:'Maintenance', id:'maint' }
-            ];
-            
-            const grid = document.getElementById('module-grid');
-            modules.forEach(m => {
-                const card = document.createElement('div');
-                card.className = 'mod-card glass';
-                card.innerHTML = `<div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
-                card.onclick = () => openMod(m.id);
-                grid.appendChild(card);
-            });
-
-            startLiveClock();
-            startBatteryMonitor();
-            checkConnection();
-            fetchPrayerTimes();
-            showSlides();
-        };
-
-        // ========== FUNGSI LENGKAP DASHBOARD ==========
-        function startLiveClock() {
-            setInterval(() => {
-                const el = document.getElementById('live-clock');
-                if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
-            }, 1000);
-        }
-
-        function startBatteryMonitor() {
-            if ('getBattery' in navigator) {
-                navigator.getBattery().then(b => {
-                    const el = document.getElementById('battery-status');
-                    const update = () => {
-                        const level = Math.round(b.level * 100);
-                        const charging = b.charging ? '⚡' : '🔋';
-                        if (el) el.textContent = charging + ' ' + level + '%';
-                    };
-                    update();
-                    b.addEventListener('levelchange', update);
-                    b.addEventListener('chargingchange', update);
-                }).catch(() => {
-                    const el = document.getElementById('battery-status');
-                    if (el) el.textContent = '🔋 --%';
-                });
-            }
-        }
-
-        async function checkConnection() {
-            const el = document.getElementById('connection-status');
-            if (!el) return;
-            if (!navigator.onLine) {
-                el.textContent = '📡 Offline';
-                el.className = 'badge offline';
-                return;
-            }
-            try {
-                const start = Date.now();
-                const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', {
-                    method: 'HEAD',
-                    headers: { 'apikey': window.DREAMOS_CONFIG?.supabaseKey || '' }
-                });
-                const latency = Date.now() - start;
-                if (res.ok) {
-                    el.textContent = '📡 Online (' + latency + 'ms)';
-                    el.className = 'badge online';
-                } else {
-                    throw new Error('Status ' + res.status);
-                }
-            } catch (e) {
-                el.textContent = '📡 Offline';
-                el.className = 'badge offline';
-            }
-            setInterval(checkConnection, 30000);
-        }
-
-        async function fetchPrayerTimes() {
-            const el = document.getElementById('prayer-times-dash');
-            if (!el) return;
-            try {
-                const date = new Date();
-                const year = date.getFullYear();
-                const month = date.getMonth() + 1;
-                const day = date.getDate();
-                // Koordinat Jakarta default
-                const lat = -6.2088;
-                const lon = 106.8456;
-                const res = await fetch('https://api.aladhan.com/v1/timings/' + year + '-' + month + '-' + day + '?latitude=' + lat + '&longitude=' + lon + '&method=20');
-                const data = await res.json();
-                if (data.code === 200) {
-                    const t = data.data.timings;
-                    el.innerHTML = '🕌 Subuh ' + t.Fajr + ' | Dzuhur ' + t.Dhuhr + ' | Ashar ' + t.Asr + ' | Maghrib ' + t.Maghrib + ' | Isya ' + t.Isha;
-                } else {
-                    el.textContent = '🕌 Gagal memuat waktu shalat.';
-                }
-            } catch (e) {
-                el.textContent = '🕌 Gagal memuat waktu shalat.';
-            }
-        }
-
-        async function showSlides() {
+// ========== 7 SLIDES ==========
+async function showSlides() {
     const track = document.getElementById('dream-slide-track');
     const dotsContainer = document.getElementById('slide-dots');
     if (!track || !dotsContainer) return;
-
-    // --- Slide 1: Salam & Petugas Sekuriti (dari Supabase) ---
     let slide1 = '🕌 Assalamualaikum, selamat datang.';
     try {
-        const { data: securityData } = await window.supabase
-            .from('users')
-            .select('nama')
-            .eq('role', 'security')
-            .limit(1);
-        if (securityData && securityData.length > 0) {
-            slide1 += '
-🛡️ Petugas piket: ' + securityData[0].nama;
-        } else {
-            slide1 += '
-🛡️ Petugas piket: Belum terdaftar';
-        }
-    } catch(e) { slide1 += '
-🛡️ Petugas piket: (offline)'; }
-
-    // --- Slide 2: Booking Hari Ini & Besok (dari Supabase) ---
+        const { data: sec } = await window.supabase.from('users').select('nama').eq('role', 'security').limit(1);
+        slide1 += sec && sec.length > 0 ? '\n🛡️ Petugas piket: ' + sec[0].nama : '\n🛡️ Petugas piket: Belum terdaftar';
+    } catch(e) { slide1 += '\n🛡️ Petugas piket: (offline)'; }
     let slide2 = '📅 Booking Hari Ini: Tidak ada.';
     try {
         const today = new Date().toISOString().split('T')[0];
         const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-        const { data: bookings } = await window.supabase
-            .from('bookings')
-            .select('ruangan, jam_mulai, jam_selesai, tgl')
-            .in('tgl', [today, tomorrow])
-            .order('tgl')
-            .limit(3);
-        if (bookings && bookings.length > 0) {
-            slide2 = '📅 Booking: ' + bookings.map(b => `${b.ruangan} (${b.tgl===today?'Hari ini':'Besok'} ${b.jam_mulai}-${b.jam_selesai})`).join(', ');
-        }
+        const { data: bookings } = await window.supabase.from('bookings').select('ruangan, jam_mulai, jam_selesai, tgl').in('tgl', [today, tomorrow]).order('tgl').limit(3);
+        if (bookings && bookings.length > 0) slide2 = '📅 Booking: ' + bookings.map(b => `${b.ruangan} (${b.tgl===today?'Hari ini':'Besok'} ${b.jam_mulai}-${b.jam_selesai})`).join(', ');
     } catch(e) { slide2 = '📅 Booking: (offline)'; }
-
-    // --- Slide 3: K3 & Progress (dari Supabase) ---
     let slide3 = '⚠️ K3 & Progres: Aman.';
     try {
-        const { count: k3Count } = await window.supabase
-            .from('k3_reports')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'pending');
-        const { count: maintCount } = await window.supabase
-            .from('maintenance_tasks')
-            .select('*', { count: 'exact', head: true })
-            .neq('status', 'Selesai');
-        slide3 = `⚠️ K3 Pending: ${k3Count || 0} | 🔧 Maintenance Aktif: ${maintCount || 0}`;
+        const [{ count: k3 }, { count: maint }] = await Promise.all([
+            window.supabase.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            window.supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
+        ]);
+        slide3 = `⚠️ K3 Pending: ${k3 || 0} | 🔧 Maintenance Aktif: ${maint || 0}`;
     } catch(e) { slide3 = '⚠️ K3 & Progres: (offline)'; }
-
-    // --- Slide 4: Cuaca Real-Time (geolokasi HP user) ---
     let slide4 = '☁️ Cuaca: Memuat...';
-    try {
-        // Coba dapatkan lokasi dari browser
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                try {
-                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                    const weatherData = await weatherRes.json();
-                    slide4 = `☁️ Cuaca: ${weatherData.current_weather.temperature}°C | Angin: ${weatherData.current_weather.windspeed} km/jam`;
-                } catch(e) { slide4 = '☁️ Cuaca: Gagal memuat.'; }
-            }, () => {
-                // Fallback ke Jakarta jika user menolak geolokasi
-                slide4 = '☁️ Cuaca: Izinkan akses lokasi.';
-            });
-        } else {
-            slide4 = '☁️ Cuaca: Geolokasi tidak didukung.';
-        }
-    } catch(e) { slide4 = '☁️ Cuaca: (offline)'; }
-
-    // --- Slide 5,6,7: Input Admin (dari localStorage) ---
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`);
+                const w = await res.json();
+                slide4 = `☁️ Cuaca: ${w.current_weather.temperature}°C | Angin: ${w.current_weather.windspeed} km/jam`;
+            } catch(e) { slide4 = '☁️ Cuaca: Gagal memuat.'; }
+        }, () => { slide4 = '☁️ Cuaca: Izinkan akses lokasi.'; });
+    }
     const slide5 = localStorage.getItem('dreamos_slide_5') || '📢 Pengumuman Manajemen: Belum ada.';
     const slide6 = localStorage.getItem('dreamos_slide_6') || '🏢 Info Bagian Umum: Belum ada.';
     const slide7 = localStorage.getItem('dreamos_slide_7') || '💚 Terima kasih untuk seluruh tim!';
-
     const slides = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
-
-    track.innerHTML = slides.map(s => '<div class="dream-slide">' + s.replace(/
-/g, '<br>') + '</div>').join('');
-    dotsContainer.innerHTML = slides.map((_, i) => '<span class="dot' + (i === 0 ? ' active' : '') + '" onclick="goToSlide(' + i + ')"></span>').join('');
-
-    function goToSlide(idx) {
+    track.innerHTML = slides.map(s => '<div class="dream-slide">' + s.replace(/\n/g, '<br>') + '</div>').join('');
+    dotsContainer.innerHTML = slides.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}" onclick="goToSlide(${i})"></span>`).join('');
+    window.goToSlide = function(idx) {
         window.slideIdx = idx;
-        track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+        track.style.transform = `translateX(-${idx * 100}%)`;
         document.querySelectorAll('#slide-dots .dot').forEach((d, i) => d.classList.toggle('active', i === idx));
-    }
-    window.goToSlide = goToSlide;
-
-    // Ganti slide setiap 7 detik
+    };
     if (slideInterval) clearInterval(slideInterval);
-    slideInterval = setInterval(() => {
-        window.slideIdx = (window.slideIdx + 1) % slides.length;
-        goToSlide(window.slideIdx);
-    }, 7000);
+    slideInterval = setInterval(() => { window.slideIdx = (window.slideIdx + 1) % slides.length; window.goToSlide(window.slideIdx); }, 7000);
 }
 
-            
-        }
+// ========== MODULE LOADER ==========
+window.goHome = function() {
+    const mc = document.getElementById('mod-container');
+    if (mc) { mc.style.display = 'none'; mc.innerHTML = ''; }
+    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('bottom-nav').style.display = 'block';
+    renderDashboard();
+};
+window.openMod = function(id) {
+    if (!window.canAccess(id)) return alert('⛔ Akses Ditolak.');
+    const map = { cmd: 'commandcenter.html', sec: 'security.html', k3: 'k3.html', in: 'janitor-indoor.html', out: 'janitor-outdoor.html', maint: 'maintenance.html', book: 'booking.html', stok: 'stok.html', asset: 'asset.html', profile: 'profile.html', qr: 'qr.html', about: 'about.html', setting: 'setting.html' };
+    const m = map[id];
+    if (!m) return alert('Unknown module');
+    let container = document.getElementById('mod-container');
+    if (!container) { container = document.createElement('div'); container.id = 'mod-container'; container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);backdrop-filter:blur(20px);padding-bottom:5rem;'; document.body.appendChild(container); }
+    container.style.display = 'block';
+    container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Loading...</div>';
+    fetch(`modules/${m}?v=${Date.now()}`)
+        .then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status))
+        .then(html => { container.innerHTML = html; container.querySelectorAll('script').forEach(s => { const ns = document.createElement('script'); ns.textContent = s.textContent; document.body.appendChild(ns); }); })
+        .catch(err => { container.innerHTML = `<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Failed</h3><p>${err}</p><button onclick="goHome()">Back</button></div>`; });
+};
 
-        // Starfield canvas animation
-        (function() {
-            const canvas = document.getElementById('star-field');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let stars = [];
-            let animationId;
+// ========== REALTIME & i18n ==========
+window.initRealtime = function() {
+    if (!window.supabase) return;
+    window.supabase.channel('db-changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, p => alert('📅 Booking Baru: ' + p.new.ruangan))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'k3_reports' }, p => alert('⚠️ K3 Baru: ' + p.new.lokasi))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maintenance_tasks' }, p => alert('🔧 Maint Baru: ' + p.new.judul))
+        .subscribe();
+};
+setTimeout(window.initRealtime, 2000);
 
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            resize();
-            window.addEventListener('resize', resize);
+// i18n
+window.i18n = { currentLang: localStorage.getItem('dreamos_lang') || 'id', translations: {}, async init() { try { this.translations = await (await fetch(`locales/${this.currentLang}.json`)).json(); } catch(e) { this.translations = await (await fetch('locales/id.json')).json(); } this.applyToPage(); }, t(k) { return this.translations[k] || k; }, applyToPage() { document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if (this.translations[k]) el.textContent = this.translations[k]; }); }, async setLang(l) { this.currentLang = l; localStorage.setItem('dreamos_lang', l); await this.init(); } };
+document.addEventListener('DOMContentLoaded', () => window.i18n.init());
 
-            function createStars() {
-                const count = Math.floor((canvas.width * canvas.height) / 2000);
-                stars = [];
-                for (let i = 0; i < count; i++) {
-                    stars.push({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height,
-                        r: Math.random() * 1.5,
-                        speed: 0.02 + Math.random() * 0.05
-                    });
-                }
-            }
-            createStars();
-            window.addEventListener('resize', createStars);
+// Starfield
+(function() {
+    const canvas = document.getElementById('star-field');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [], anim;
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize(); window.addEventListener('resize', resize);
+    function createStars() { stars = []; for (let i = 0; i < (canvas.width * canvas.height) / 2000; i++) stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 }); }
+    createStars(); window.addEventListener('resize', createStars);
+    function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#e2e8f0'; for (let s of stars) { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); s.y += s.speed; if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; } } anim = requestAnimationFrame(animate); }
+    animate(); window.addEventListener('beforeunload', () => cancelAnimationFrame(anim));
+})();
 
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#e2e8f0';
-                for (let s of stars) {
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fill();
-                    s.y += s.speed;
-                    if (s.y > canvas.height) {
-                        s.y = 0;
-                        s.x = Math.random() * canvas.width;
-                    }
-                }
-                animationId = requestAnimationFrame(animate);
-            }
-            animate();
+// Session timeout
+var idleTimer;
+function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(() => { localStorage.setItem('dreamos_session_active', 'false'); alert('⏰ Sesi idle 10 menit.'); location.reload(); }, 600000); }
+document.addEventListener('click', resetIdleTimer);
+document.addEventListener('keydown', resetIdleTimer);
+document.addEventListener('scroll', resetIdleTimer);
+resetIdleTimer();
 
-            window.addEventListener('beforeunload', () => cancelAnimationFrame(animationId));
-        })();
-
-        // Fungsi goHome
-        window.goHome = function() {
-            const modContainer = document.getElementById('mod-container');
-            if (modContainer) {
-                modContainer.style.display = 'none';
-                modContainer.innerHTML = '';
-            }
-            document.getElementById('main-app').style.display = 'block';
-            document.getElementById('bottom-nav').style.display = 'block';
-            renderDashboard();
-        };
-
-        window.openMod = function(id) {
-            if (!window.canAccess(id)) {
-                showNotification('⛔ Akses Ditolak', 'Role Anda tidak memiliki izin ke modul ini.');
-                return;
-            }
-            
-            const map = {
-                cmd: ['Command Center', 'commandcenter.html'],
-                sec: ['Security', 'security.html'],
-                k3: ['K3 Safety', 'k3.html'],
-                in: ['Janitor Indoor', 'janitor-indoor.html'],
-                out: ['Janitor Outdoor', 'janitor-outdoor.html'],
-                maint: ['Maintenance', 'maintenance.html'],
-                book: ['Booking', 'booking.html'],
-                stok: ['Stok', 'stok.html'],
-                asset: ['Asset', 'asset.html'],
-                profile: ['Profile', 'profile.html'],
-                qr: ['QR', 'qr.html'],
-                about: ['About', 'about.html'],
-                setting: ['Setting', 'setting.html']
-            };
-            const m = map[id];
-            if (!m) { alert('Unknown module'); return; }
-            
-            let container = document.getElementById('mod-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'mod-container';
-                container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);backdrop-filter:blur(20px);padding-bottom:5rem;';
-                document.body.appendChild(container);
-            }
-            
-            container.style.display = 'block';
-            container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Loading...</div>';
-            
-            fetch(`modules/${m[1]}?v=${Date.now()}`)
-                .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
-                .then(html => {
-                    container.innerHTML = html;
-                    container.querySelectorAll('script').forEach(old => {
-                        const ns = document.createElement('script');
-                        ns.textContent = old.textContent;
-                        document.body.appendChild(ns);
-                    });
-                })
-                .catch(err => {
-                    container.innerHTML = `<div style="color:#ef4444;padding:4rem 2rem;text-align:center;"><h3>⚠️ Failed</h3><p>${err.message}</p><button onclick="goHome()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10b981;border:none;border-radius:8px;color:white;">Back</button></div>`;
-                });
-        };
-
-        // Session timeout (10 menit idle)
-        var idleTimer;
-        function resetIdleTimer() {
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(function() {
-                localStorage.setItem('dreamos_session_active', 'false');
-                alert('⏰ Sesi idle 10 menit. Silakan login ulang.');
-                location.reload();
-            }, 600000);
-        }
-
-        document.addEventListener('click', resetIdleTimer);
-        document.addEventListener('keydown', resetIdleTimer);
-        document.addEventListener('scroll', resetIdleTimer);
-        resetIdleTimer();
-    
-// === SUPABASE AUTH INTEGRATION ===
-        const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-        
-        // Inisialisasi Supabase client global
-        const { createClient } = supabase;
-        window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Fungsi toggle password
-        function togglePassword() {
-            const pw = document.getElementById('password-input');
-            const icon = event.target;
-            pw.type = pw.type === 'password' ? 'text' : 'password';
-            icon.textContent = pw.type === 'password' ? '👁️' : '🙈';
-        }
-
-        // Fungsi authenticate baru: email & password via Supabase
-        async function authenticate() {
-            const email = document.getElementById('email-input').value.trim();
-            const password = document.getElementById('password-input').value;
-            const error = document.getElementById('error-msg');
-            
-            if (!email || !password) {
-                error.textContent = '⛔ Email dan password harus diisi.';
-                error.style.display = 'block';
-                setTimeout(() => error.style.display = 'none', 3000);
-                return;
-            }
-
-            try {
-                const { data, error: authError } = await window.supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (authError) {
-                    error.textContent = '⛔ ' + (authError.message || 'Login gagal');
-                    error.style.display = 'block';
-                    setTimeout(() => error.style.display = 'none', 3000);
-                    return;
-                }
-
-                // Login sukses, simpan data user ke localStorage
-                const user = data.user;
-                const userData = {
-                    id: user.id,
-                    email: user.email,
-                    nama: user.user_metadata?.nama || email.split('@')[0],
-                    role: user.user_metadata?.role || 'staff',
-                    device_dna: ''
-                };
-                localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
-                localStorage.setItem('dreamos_session_active', 'true');
-
-                // Masuk ke dashboard
-                document.getElementById('login-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('main-app').style.display = 'block';
-                    document.getElementById('bottom-nav').style.display = 'block';
-                    renderDashboard();
-                }, 500);
-            } catch (e) {
-                error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
-                error.style.display = 'block';
-                setTimeout(() => error.style.display = 'none', 3000);
-            }
-        }
-
-        // Event listener untuk enter pada password
-        document.addEventListener('DOMContentLoaded', () => {
-            const pwInput = document.getElementById('password-input');
-            if (pwInput) {
-                pwInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') authenticate();
-                });
-            }
-            const emailInput = document.getElementById('email-input');
-            if (emailInput) {
-                emailInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        document.getElementById('password-input').focus();
-                    }
-                });
-            }
-        });
-
-    // ========== i18n ENGINE ==========
-    window.i18n = {
-      currentLang: localStorage.getItem('dreamos_lang') || 'id',
-      translations: {},
-      
-      async init() {
-        try {
-          const res = await fetch(`locales/${this.currentLang}.json?v=${Date.now()}`);
-          this.translations = await res.json();
-          this.applyToPage();
-        } catch(e) {
-          console.warn('⚠️ Gagal memuat terjemahan, pakai default ID.');
-          const res = await fetch('locales/id.json');
-          this.translations = await res.json();
-          this.applyToPage();
-        }
-      },
-      
-      t(key) {
-        return this.translations[key] || key;
-      },
-      
-      applyToPage() {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-          const key = el.getAttribute('data-i18n');
-          if (this.translations[key]) {
-            el.textContent = this.translations[key];
-          }
-        });
-      },
-      
-      async setLang(lang) {
-        this.currentLang = lang;
-        localStorage.setItem('dreamos_lang', lang);
-        await this.init();
-      }
-    };
-    
-    // Init i18n setelah DOM siap
-    document.addEventListener('DOMContentLoaded', () => {
-      window.i18n.init();
-    });
-
-    // ========== SUPABASE REALTIME ==========
-    function initRealtime() {
-        if (!window.supabase) return;
-        
-        const channel = window.supabase
-            .channel('db-changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, payload => {
-                showNotification('📅 Booking Baru', payload.new.ruangan + ' - ' + payload.new.tgl);
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'k3_reports' }, payload => {
-                showNotification('⚠️ Laporan K3 Baru', payload.new.lokasi + ' - ' + payload.new.kategori);
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maintenance_tasks' }, payload => {
-                showNotification('🔧 Maintenance Baru', payload.new.judul + ' di ' + payload.new.lokasi);
-            })
-            .subscribe((status) => {
-                console.log('Realtime status:', status);
-            });
-    }
-
-    // ========== SUPABASE REALTIME ==========
-    window.initRealtime = function() {
-        if (!window.supabase) return;
-        
-        window.supabase
-            .channel('db-changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, payload => {
-                showNotification('📅 Booking Baru', payload.new.ruangan + ' - ' + payload.new.tgl);
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'k3_reports' }, payload => {
-                showNotification('⚠️ Laporan K3 Baru', payload.new.lokasi + ' - ' + payload.new.kategori);
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maintenance_tasks' }, payload => {
-                showNotification('🔧 Maintenance Baru', payload.new.judul + ' di ' + payload.new.lokasi);
-            })
-            .subscribe();
-    };
-    
-    setTimeout(window.initRealtime, 2000);
-
+// Enter key
+document.addEventListener('DOMContentLoaded', () => {
+    const pw = document.getElementById('password-input');
+    if (pw) pw.addEventListener('keypress', e => { if (e.key === 'Enter') authenticate(); });
+    const em = document.getElementById('email-input');
+    if (em) em.addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('password-input').focus(); });
+});
 </script>
 </body>
 </html>
