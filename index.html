@@ -478,10 +478,15 @@
             <img src="assets/logo-sultan.png" alt="Dream OS" class="login-logo">
             <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
             <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
-            <div class="input-wrapper">
-                <input type="password" id="pin-input" class="pin-input" placeholder="🔐 ENTER PIN">
-                <span class="toggle-pin" onclick="togglePin()">👁️</span>
+            
+                        <div class="input-wrapper">
+                <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
             </div>
+            <div class="input-wrapper">
+                <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD">
+                <span class="toggle-pin" onclick="togglePassword()">👁️</span>
+            </div>
+
             <button class="access-btn" onclick="authenticate()">⚡ ACCESS CORE</button>
             <div class="error-msg" id="error-msg"></div>
         </div>
@@ -533,7 +538,6 @@
 
         let slideInterval, prayerInterval;
         window.slideIdx = 0;
-        const PIN_HASH = btoa('b15m1ll4h_012443410');
 
         function showNotification(title, text, duration = 5000) {
             const container = document.getElementById('notification-container');
@@ -554,34 +558,6 @@
             icon.innerHTML = input.type === 'password' ? '👁️' : '🙈';
         }
 
-        async function authenticate() {
-            const input = document.getElementById('pin-input').value;
-            const error = document.getElementById('error-msg');
-            
-            if (btoa(input) === PIN_HASH) {
-                // Set sebagai Developer
-                var devUser = {
-                    nama: 'Developer',
-                    email: 'dreamos.sch.id@gmail.com',
-                    role: 'dev',
-                    device_dna: ''
-                };
-                localStorage.setItem('dreamos_bound_user', JSON.stringify(devUser));
-                localStorage.setItem('dreamos_session_active', 'true');
-                
-                document.getElementById('login-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('main-app').style.display = 'block';
-                    document.getElementById('bottom-nav').style.display = 'block';
-                    renderDashboard();
-                }, 500);
-            } else {
-                error.textContent = '⛔ ACCESS DENIED';
-                error.style.display = 'block';
-                setTimeout(() => error.style.display = 'none', 2000);
-            }
-        }
 
         document.getElementById('pin-input')?.addEventListener('keypress', e => {
             if (e.key === 'Enter') authenticate();
@@ -899,5 +875,91 @@
 
         // ... (starfield, slides, clock, battery, prayer, dll. tetap sama) ...
     </script>
+        // === SUPABASE AUTH INTEGRATION ===
+        const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+        
+        // Inisialisasi Supabase client global
+        const { createClient } = supabase;
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Fungsi toggle password
+        function togglePassword() {
+            const pw = document.getElementById('password-input');
+            const icon = event.target;
+            pw.type = pw.type === 'password' ? 'text' : 'password';
+            icon.textContent = pw.type === 'password' ? '👁️' : '🙈';
+        }
+
+        // Fungsi authenticate baru: email & password via Supabase
+        async function authenticate() {
+            const email = document.getElementById('email-input').value.trim();
+            const password = document.getElementById('password-input').value;
+            const error = document.getElementById('error-msg');
+            
+            if (!email || !password) {
+                error.textContent = '⛔ Email dan password harus diisi.';
+                error.style.display = 'block';
+                setTimeout(() => error.style.display = 'none', 3000);
+                return;
+            }
+
+            try {
+                const { data, error: authError } = await window.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (authError) {
+                    error.textContent = '⛔ ' + (authError.message || 'Login gagal');
+                    error.style.display = 'block';
+                    setTimeout(() => error.style.display = 'none', 3000);
+                    return;
+                }
+
+                // Login sukses, simpan data user ke localStorage
+                const user = data.user;
+                const userData = {
+                    id: user.id,
+                    email: user.email,
+                    nama: user.user_metadata?.nama || email.split('@')[0],
+                    role: user.user_metadata?.role || 'staff',
+                    device_dna: ''
+                };
+                localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
+                localStorage.setItem('dreamos_session_active', 'true');
+
+                // Masuk ke dashboard
+                document.getElementById('login-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'block';
+                    document.getElementById('bottom-nav').style.display = 'block';
+                    renderDashboard();
+                }, 500);
+            } catch (e) {
+                error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
+                error.style.display = 'block';
+                setTimeout(() => error.style.display = 'none', 3000);
+            }
+        }
+
+        // Event listener untuk enter pada password
+        document.addEventListener('DOMContentLoaded', () => {
+            const pwInput = document.getElementById('password-input');
+            if (pwInput) {
+                pwInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') authenticate();
+                });
+            }
+            const emailInput = document.getElementById('email-input');
+            if (emailInput) {
+                emailInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        document.getElementById('password-input').focus();
+                    }
+                });
+            }
+        });
 </body>
 </html>
