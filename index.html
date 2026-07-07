@@ -1073,6 +1073,30 @@
       window.i18n.init();
     });
 
+
+    // ========== SUPABASE REALTIME ==========
+    function initRealtime() {
+        if (!window.supabase) return;
+        
+        const channel = window.supabase
+            .channel('db-changes')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, payload => {
+                showNotification('📅 Booking Baru', payload.new.ruangan + ' - ' + payload.new.tgl);
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'k3_reports' }, payload => {
+                showNotification('⚠️ Laporan K3 Baru', payload.new.lokasi + ' - ' + payload.new.kategori);
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maintenance_tasks' }, payload => {
+                showNotification('🔧 Maintenance Baru', payload.new.judul + ' di ' + payload.new.lokasi);
+            })
+            .subscribe((status) => {
+                console.log('Realtime status:', status);
+            });
+    }
+    
+    // Panggil setelah dashboard siap
+    setTimeout(initRealtime, 2000);
+
 </script>
 </body>
 </html>
