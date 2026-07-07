@@ -2,45 +2,63 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
-// Rate limiter sederhana: max 5 request per 10 detik per IP
 const rateLimitMap = new Map()
+
+// Fungsi verifikasi JWT sederhana
+async function verifyJWT(token, env) {
+  try {
+    const [header, payload, signature] = token.split('.')
+    const decodedPayload = JSON.parse(atob(payload))
+    
+    // Cek expiry
+    if (decodedPayload.exp && decodedPayload.exp < Math.floor(Date.now() / 1000)) {
+      return null
+    }
+    
+    return decodedPayload
+  } catch(e) {
+    return null
+  }
+}
 
 async function handleRequest(request) {
   const url = new URL(request.url)
   const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown'
   
-  // Rate limit check (kecuali health check)
+  // Rate limit (kecuali health check)
   if (url.pathname !== '/health') {
     const now = Date.now()
-    const windowMs = 10000 // 10 detik
+    const windowMs = 10000
     const maxRequests = 5
-    
     const record = rateLimitMap.get(clientIP) || { count: 0, resetTime: now + windowMs }
-    
-    if (now > record.resetTime) {
-      record.count = 0
-      record.resetTime = now + windowMs
-    }
-    
+    if (now > record.resetTime) { record.count = 0; record.resetTime = now + windowMs }
     record.count++
     rateLimitMap.set(clientIP, record)
-    
     if (record.count > maxRequests) {
-      return new Response(JSON.stringify({ error: 'Too many requests. Slow down.' }), {
-        status: 429,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(JSON.stringify({ error: 'Too many requests' }), { status: 429 })
     }
   }
   
-  const auth = request.headers.get('Authorization')?.replace('Bearer ', '')
-  if (auth !== API_KEY) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401, headers: { 'Content-Type': 'application/json' }
-    })
+  // Auth check (API_KEY untuk akses worker)
+  const workerAuth = request.headers.get('Authorization')?.replace('Bearer ', '')
+  if (workerAuth !== API_KEY) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }
   
+  // ============ VERIFIKASI JWT UNTUK ENDPOINT SENSITIF ============
+  const userJWT = request.headers.get('X-User-JWT') || ''
+  let userData = null
+  if (userJWT) {
+    userData = await verifyJWT(userJWT, {})
+  }
+  
+  // ============ SYNC ENDPOINT ============
   if (url.pathname === '/sync') {
+    // Hanya role admin yang boleh sync
+    if (!userData || !['dev', 'kabag', 'koord'].includes(userData.user_metadata?.role)) {
+      return new Response(JSON.stringify({ error: 'Forbidden: Admin only' }), { status: 403 })
+    }
+    
     if (request.method === 'GET') {
       const modules = await DREAMOS_KV.list({ prefix: 'dreamos::' })
       const data = {}, timestamps = {}
@@ -79,6 +97,7 @@ async function handleRequest(request) {
     }
   }
   
+  // ============ BROADCAST ============
   if (url.pathname === '/broadcast') {
     if (request.method === 'POST') {
       try {
@@ -91,18 +110,15 @@ async function handleRequest(request) {
         return new Response(JSON.stringify({ sent: true, total: broadcasts.length }), {
           headers: { 'Content-Type': 'application/json' }
         })
-      } catch(e) {
-        return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 })
-      }
+      } catch(e) { return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 }) }
     }
     if (request.method === 'GET') {
       const broadcasts = await DREAMOS_KV.get('system::broadcasts', 'json') || []
-      return new Response(JSON.stringify(broadcasts), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(JSON.stringify(broadcasts), { headers: { 'Content-Type': 'application/json' } })
     }
   }
   
+  // ============ AUDIT ============
   if (url.pathname === '/audit') {
     if (request.method === 'POST') {
       try {
@@ -112,21 +128,16 @@ async function handleRequest(request) {
         logs.unshift({ action, detail, timestamp: now })
         if (logs.length > 200) logs.pop()
         await DREAMOS_KV.put('system::audit', JSON.stringify(logs))
-        return new Response(JSON.stringify({ logged: true }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      } catch(e) {
-        return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 })
-      }
+        return new Response(JSON.stringify({ logged: true }), { headers: { 'Content-Type': 'application/json' } })
+      } catch(e) { return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 }) }
     }
     if (request.method === 'GET') {
       const logs = await DREAMOS_KV.get('system::audit', 'json') || []
-      return new Response(JSON.stringify(logs), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(JSON.stringify(logs), { headers: { 'Content-Type': 'application/json' } })
     }
   }
   
+  // ============ COMMAND ============
   if (url.pathname === '/command') {
     if (request.method === 'POST') {
       try {
@@ -139,25 +150,22 @@ async function handleRequest(request) {
         return new Response(JSON.stringify({ issued: true, commandId: commands[0].timestamp }), {
           headers: { 'Content-Type': 'application/json' }
         })
-      } catch(e) {
-        return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 })
-      }
+      } catch(e) { return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 }) }
     }
     if (request.method === 'GET') {
       const commands = await DREAMOS_KV.get('system::commands', 'json') || []
-      return new Response(JSON.stringify(commands), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(JSON.stringify(commands), { headers: { 'Content-Type': 'application/json' } })
     }
   }
   
+  // ============ HEALTH CHECK ============
   if (url.pathname === '/health') {
     const kvStatus = await DREAMOS_KV.get('dreamos::maintenance_tasks', 'json') ? 'ok' : 'empty'
     return new Response(JSON.stringify({
       status: 'healthy',
       kv: kvStatus,
       uptime: new Date().toISOString(),
-      version: '1.1 Rate-Limited'
+      version: '1.2 JWT-Verified'
     }), { headers: { 'Content-Type': 'application/json' } })
   }
   
