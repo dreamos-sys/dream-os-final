@@ -270,6 +270,8 @@
   // ========== RENDER FUNCTIONS ==========
   function renderKPIs() {
     var kpiDiv = document.getElementById('kpi-cards');
+    if (!kpiDiv) { console.warn('kpi-cards not found'); return; }
+    var kpiDiv = document.getElementById('kpi-cards');
     if (!kpiDiv) return;
     kpiDiv.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;">🔄 Memuat data...</div>';
     
@@ -363,12 +365,42 @@
 
   // ========== ACTIONS ==========
   window.switchTab = function(name) { var t = document.querySelector('.tab[data-tab="'+name+'"]'); if (t) t.click(); };
-  window.approveDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAll();} };
-  window.rejectDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='rejected'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAll();} };
-  window.quickAddDana = function() { var j=prompt('Judul:'), n=prompt('Nominal:'); if(!j||!n)return; var d=safeGet('dreamos_dana',[]); d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAll(); };
-  window.quickAddK3 = function() { var l=prompt('Lokasi:'), k=prompt('Kategori:'); if(!l)return; var d=safeGet('dreamos_k3_reports',[]); d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending'}); localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); renderAll(); };
-  window.quickAddMaint = function() { var j=prompt('Judul:'), l=prompt('Lokasi:'); if(!j)return; var d=safeGet('dreamos_maintenance_tasks',[]); d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending'}); localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); renderAll(); };
-  window.setBudgetCap = function() { var c=prompt('Pagu:', localStorage.getItem('dreamos_budget_cap')||'50000000'); if(c){localStorage.setItem('dreamos_budget_cap',c); renderAll();} };
+  window.approveDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  }} };
+  window.rejectDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='rejected'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  }} };
+  window.quickAddDana = function() { var j=prompt('Judul:'), n=prompt('Nominal:'); if(!j||!n)return; var d=safeGet('dreamos_dana',[]); d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_dana',JSON.stringify(d)); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  } };
+  window.quickAddK3 = function() { var l=prompt('Lokasi:'), k=prompt('Kategori:'); if(!l)return; var d=safeGet('dreamos_k3_reports',[]); d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending'}); localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  } };
+  window.quickAddMaint = function() { var j=prompt('Judul:'), l=prompt('Lokasi:'); if(!j)return; var d=safeGet('dreamos_maintenance_tasks',[]); d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending'}); localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  } };
+  window.setBudgetCap = function() { var c=prompt('Pagu:', localStorage.getItem('dreamos_budget_cap')||'50000000'); if(c){localStorage.setItem('dreamos_budget_cap',c); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  }} };
   window.saveSlides = function() {
     localStorage.setItem('dreamos_slide_5',document.getElementById('slide5-input').value);
     localStorage.setItem('dreamos_slide_6',document.getElementById('slide6-input').value);
@@ -398,10 +430,20 @@
     try { await window.parent.supabase.from('users').delete().eq('id', id); renderUserTable(); } catch(e) { alert('⚠️ Gagal: '+e.message); }
   };
   window.doLogout = function() { localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); window.parent.location.reload(); };
-  window.clearLocalCache = function() { if(confirm('Bersihkan cache?')) { var keep = ['dreamos_users_db','dreamos_bound_user','dreamos_session_active']; for(var i=localStorage.length-1;i>=0;i--) { var k=localStorage.key(i); if(!keep.includes(k) && k.startsWith('dreamos_')) localStorage.removeItem(k); } alert('✅ Dibersihkan!'); renderAll(); } };
+  window.clearLocalCache = function() { if(confirm('Bersihkan cache?')) { var keep = ['dreamos_users_db','dreamos_bound_user','dreamos_session_active']; for(var i=localStorage.length-1;i>=0;i--) { var k=localStorage.key(i); if(!keep.includes(k) && k.startsWith('dreamos_')) localStorage.removeItem(k); } alert('✅ Dibersihkan!'); try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  } } };
 
   // Init
-  renderAll();
+  try {
+    renderAll();
+  } catch(e) {
+    console.error('Command Center init error:', e);
+    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
+  }
 })();
 </script>
 
