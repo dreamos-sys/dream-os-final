@@ -343,20 +343,37 @@
 
   window.saveNotifications = function() { alert('✅ Disimpan!'); };
 
-  document.getElementById('avatar-input').addEventListener('change', function(){
+  
+document.getElementById('avatar-input').addEventListener('change', async function(){
     if (this.files[0]) {
-      var r = new FileReader();
-      r.onload = function(ev) {
-        user.avatar = ev.target.result;
+      var file = this.files[0];
+      var user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
+      if (!user) return alert('❌ Sesi tidak valid.');
+      
+      var filePath = user.id + '/' + Date.now() + '_' + file.name;
+      var { data, error } = await window.parent.supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+        
+      if (error) {
+        alert('⚠️ Gagal upload: ' + error.message);
+        return;
+      }
+      
+      // Dapatkan URL publik
+      var { data: publicData } = window.parent.supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+        
+      if (publicData && publicData.publicUrl) {
+        user.avatar = publicData.publicUrl;
         localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
-        document.getElementById('avatar-preview').innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;">';
+        document.getElementById('avatar-preview').innerHTML = '<img src="'+publicData.publicUrl+'" style="width:100%;height:100%;object-fit:cover;">';
         notifyParent('UPDATE_AVATAR', 'Avatar updated');
-      };
-      r.readAsDataURL(this.files[0]);
+      }
     }
   });
-
-  window.handleLogout = function() {
+window.handleLogout = function() {
     if (confirm('🚪 Yakin logout? Session akan dihapus dan harus login ulang.')) {
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
@@ -406,15 +423,14 @@
 
 
   window.saveProfile = async function() {
-    const nama = document.getElementById('edit-nama').value;
-    const phone = document.getElementById('edit-phone').value;
-    const department = document.getElementById('edit-department').value;
-    
-    const user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
+    var nama = document.getElementById('edit-nama').value;
+    var phone = document.getElementById('edit-phone').value;
+    var department = document.getElementById('edit-department').value;
+    var user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
     if (!user) return alert('❌ Sesi tidak valid.');
     
     try {
-        const { error } = await window.parent.supabase
+        var { error } = await window.parent.supabase
             .from('users')
             .upsert({
                 id: user.id,
@@ -422,28 +438,25 @@
                 nama: nama,
                 role: user.role,
                 phone: phone,
-                department: department
+                department: department,
+                avatar_url: user.avatar || null
             });
-            
         if (error) throw error;
         
         user.nama = nama;
         user.phone = phone;
         user.department = department;
         localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
-        
         document.getElementById('display-name').textContent = nama;
         document.getElementById('info-nama').textContent = nama;
-        
         alert('✅ Profile disimpan ke Cloud & Lokal!');
         
         window.parent.supabase.from('audit_logs').insert({
             user_id: user.id,
             action: 'UPDATE_PROFILE',
             details: 'Profile updated'
-        }).then(() => {});
-        
-    } catch (e) {
+        }).then(function(){});
+    } catch(e) {
         alert('⚠️ Gagal simpan ke cloud: ' + e.message);
     }
   };
