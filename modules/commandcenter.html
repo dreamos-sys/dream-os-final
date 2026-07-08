@@ -268,39 +268,64 @@
   }
 
   async function renderKPIs() {
+    var kpiDiv = document.getElementById('kpi-cards');
+    if (!kpiDiv) return;
+    
+    // Tampilkan loading dulu
+    kpiDiv.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;">🔄 Memuat data cloud...</div>';
+    
     try {
         const [usersRes, k3Res, maintRes] = await Promise.all([
             window.parent.supabase.from('users').select('*', { count: 'exact', head: true }),
             window.parent.supabase.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
             window.parent.supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
         ]);
-        const totalUsers = usersRes.count || 0;
-        const pendingK3 = k3Res.count || 0;
-        const activeMaint = maintRes.count || 0;
-        document.getElementById('kpi-cards').innerHTML = `
+        
+        var totalUsers = usersRes.count || 0;
+        var pendingK3 = k3Res.count || 0;
+        var activeMaint = maintRes.count || 0;
+        
+        kpiDiv.innerHTML = `
             <div class="kpi-card" onclick="switchTab('users')">
                 <div class="kpi-value" style="color:#8b5cf6;">${totalUsers}</div>
-                <div class="kpi-label">Users Cloud</div>
+                <div class="kpi-label">Users Cloud 🟢</div>
             </div>
             <div class="kpi-card" onclick="switchTab('k3')">
                 <div class="kpi-value" style="color:#ef4444;">${pendingK3}</div>
-                <div class="kpi-label">K3 Pending</div>
+                <div class="kpi-label">K3 Pending 🟢</div>
             </div>
             <div class="kpi-card" onclick="switchTab('maint')">
                 <div class="kpi-value" style="color:#0ea5e9;">${activeMaint}</div>
-                <div class="kpi-label">Maint Aktif</div>
+                <div class="kpi-label">Maint Aktif 🟢</div>
             </div>
         `;
+        
+        // Update cache
+        localStorage.setItem('dreamos_cc_cache', JSON.stringify({totalUsers, pendingK3, activeMaint, time: Date.now()}));
     } catch(e) {
-        // Fallback localStorage
-        const users = safeGet('dreamos_users_db', []);
-        const dana = safeGet('dreamos_dana', []);
-        const k3 = safeGet('dreamos_k3_reports', []);
-        const maint = safeGet('dreamos_maintenance_tasks', []);
-        document.getElementById('kpi-cards').innerHTML = `
-            <div class="kpi-card"><div class="kpi-value" style="color:#8b5cf6;">${users.length}</div><div class="kpi-label">Users Lokal</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#f59e0b;">${dana.filter(d=>d.status==='pending').length}</div><div class="kpi-label">Dana P.</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#ef4444;">${k3.filter(k=>k.status==='pending').length}</div><div class="kpi-label">K3 Urg.</div></div>
+        // Fallback ke cache atau localStorage
+        var cache = JSON.parse(localStorage.getItem('dreamos_cc_cache') || '{}');
+        var users = safeGet('dreamos_users_db', []);
+        var k3 = safeGet('dreamos_k3_reports', []);
+        var maint = safeGet('dreamos_maintenance_tasks', []);
+        
+        var totalUsers = cache.totalUsers || users.length || 0;
+        var pendingK3 = cache.pendingK3 || k3.filter(function(k){return k.status==='pending';}).length || 0;
+        var activeMaint = cache.activeMaint || maint.filter(function(m){return m.status!=='Selesai';}).length || 0;
+        
+        kpiDiv.innerHTML = `
+            <div class="kpi-card" onclick="switchTab('users')">
+                <div class="kpi-value" style="color:#8b5cf6;">${totalUsers}</div>
+                <div class="kpi-label">Users 🟡 Cache</div>
+            </div>
+            <div class="kpi-card" onclick="switchTab('k3')">
+                <div class="kpi-value" style="color:#ef4444;">${pendingK3}</div>
+                <div class="kpi-label">K3 🟡 Cache</div>
+            </div>
+            <div class="kpi-card" onclick="switchTab('maint')">
+                <div class="kpi-value" style="color:#0ea5e9;">${activeMaint}</div>
+                <div class="kpi-label">Maint 🟡 Cache</div>
+            </div>
         `;
     }
 }
@@ -335,24 +360,40 @@
   }
 
   async function renderUserTable() {
-    const el = document.getElementById('user-table');
+    var el = document.getElementById('user-table');
     if (!el) return;
-    el.innerHTML = '<p>Memuat dari cloud...</p>';
+    el.innerHTML = '<p>🔄 Memuat dari cloud...</p>';
+    
     try {
-        const { data, error } = await window.parent.supabase.from('users').select('*');
+        var { data, error } = await window.parent.supabase.from('users').select('*');
         if (error) throw error;
         if (!data || data.length === 0) {
-            el.innerHTML = '<p>Belum ada pengguna.</p>';
+            el.innerHTML = '<p style="color:#94a3b8;">Belum ada pengguna terdaftar.</p>';
             return;
         }
-        el.innerHTML = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>' +
-            data.map((u, i) => `<tr><td>${SEC.sanitize(u.nama)}</td><td>${SEC.sanitize(u.email)}</td><td>${SEC.sanitize(u.role)}</td><td><button class="btn btn-danger" onclick="deleteUser('${u.id}')" style="font-size:0.45rem;">🗑️</button></td></tr>`).join('') +
-            '</table>';
+        
+        var html = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>';
+        data.forEach(function(u) {
+            html += '<tr><td>' + SEC.sanitize(u.nama) + '</td><td style="font-size:0.65rem;">' + SEC.sanitize(u.email) + '</td><td>' + SEC.sanitize(u.role) + '</td><td><button class="btn btn-danger" onclick="deleteUser(\'' + u.id + '\')" style="font-size:0.45rem;">🗑️</button></td></tr>';
+        });
+        html += '</table>';
+        el.innerHTML = html;
+        localStorage.setItem('dreamos_users_cache', JSON.stringify(data));
     } catch(e) {
-        // Fallback
-        const users = safeGet('dreamos_users_db', []);
-        el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th></tr>' + users.map(u => `<tr><td>${SEC.sanitize(u.nama)}</td><td>${SEC.sanitize(u.email)}</td><td>${SEC.sanitize(u.role)}</td></tr>`).join('') + '</table>' : '<p>Belum ada pengguna.</p>';
+        var cached = JSON.parse(localStorage.getItem('dreamos_users_cache') || 'null');
+        var users = cached || safeGet('dreamos_users_db', []);
+        if (users.length === 0) {
+            el.innerHTML = '<p style="color:#f59e0b;">⚠️ Gagal memuat data. Periksa koneksi.</p>';
+            return;
+        }
+        var html = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>';
+        users.forEach(function(u) {
+            html += '<tr><td>' + SEC.sanitize(u.nama) + '</td><td>' + SEC.sanitize(u.email) + '</td><td>' + SEC.sanitize(u.role) + '</td><td>🟡</td></tr>';
+        });
+        html += '</table>';
+        el.innerHTML = html;
     }
+}
 }
 
   function renderMaintenanceActive() {
