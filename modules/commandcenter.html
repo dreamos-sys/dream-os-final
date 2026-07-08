@@ -232,21 +232,60 @@
   var user = SEC.getCurrentUser();
   if (!user) { document.body.innerHTML = '<h2 style="color:#ef4444;text-align:center;padding:4rem;">🔒 Silakan login.</h2>'; return; }
 
+  var role = user.role || 'staff';
   var ud = document.getElementById('user-display'); if (ud) ud.textContent = user.nama || 'User';
-  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + (user.role || 'staff').toUpperCase() + ' • v5.2';
+  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.2';
   setInterval(function() { var lc = document.getElementById('live-clock'); if (lc) lc.textContent = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
+  function renderAllNow() { try { renderAll(); } catch(e) { console.error(e); } }
+
+  // ========== RBAC: TAB YANG DIIZINKAN PER ROLE ==========
+  function getAllowedTabs() {
+    var tabs = {
+      dev: ['users','dana','k3','maint','booking','audit','system'],
+      kabag: ['users','dana','k3','maint','booking','audit','system'],
+      koord: ['users','dana','k3','maint','booking','audit','system'],
+      guru: ['k3','booking'],
+      security: [],
+      janitor: [],
+      maintenance: ['maint'],
+      staff: []
+    };
+    return tabs[role] || [];
+  }
+
+  // Sembunyikan tab yang tidak diizinkan
+  var allowed = getAllowedTabs();
+  document.querySelectorAll('#workspace-tabs .tab').forEach(function(tab) {
+    var tabName = tab.dataset.tab;
+    if (!allowed.includes(tabName)) {
+      tab.style.display = 'none';
+    }
+  });
+  // Jika tidak ada tab yang diizinkan, sembunyikan seluruh tabs
+  if (allowed.length === 0) {
+    document.getElementById('workspace-tabs').style.display = 'none';
+  }
+
+  // ========== RBAC HELPER ==========
+  function isAdmin() { return ['dev','kabag','koord'].includes(role); }
+  function isKabag() { return role === 'kabag'; }
+  function isKoord() { return role === 'koord'; }
+  function isDev() { return role === 'dev'; }
+  function canAccess(tabName) { return allowed.includes(tabName); }
 
   // ========== TAB SWITCHING ==========
   document.getElementById('workspace-tabs').addEventListener('click', function(e) {
     var tab = e.target.closest('.tab');
     if (!tab) return;
+    var tabName = tab.dataset.tab;
+    if (!canAccess(tabName)) return alert('⛔ Role Anda tidak memiliki akses ke tab ini.');
     document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelectorAll('[id^="tab-"]').forEach(function(c) { c.style.display = 'none'; });
     tab.classList.add('active');
-    var target = document.getElementById('tab-' + tab.dataset.tab);
-    if (target) { target.style.display = 'block'; refreshTab(tab.dataset.tab); }
+    var target = document.getElementById('tab-' + tabName);
+    if (target) { target.style.display = 'block'; refreshTab(tabName); }
   });
 
   function refreshTab(name) {
@@ -260,21 +299,22 @@
   }
 
   function renderAll() {
-    renderKPIs(); renderCharts(); renderBudgetSummary();
-    renderDanaPending(); renderDanaHistory(); renderUserTable();
-    renderMaintenanceActive(); renderMaintenanceDone();
-    renderK3Active(); renderBookingList();
-    renderAuditFull(); renderSystemInfo();
+    renderKPIs();
+    if (canAccess('users')) renderUserTable();
+    if (canAccess('dana')) { renderDanaPending(); renderBudgetSummary(); renderDanaHistory(); }
+    if (canAccess('k3')) { renderK3Active(); renderK3Chart(); }
+    if (canAccess('maint')) { renderMaintenanceActive(); renderMaintenanceDone(); }
+    if (canAccess('booking')) renderBookingList();
+    if (canAccess('audit')) renderAuditFull();
+    if (canAccess('system')) renderSystemInfo();
+    renderCharts();
   }
 
   // ========== RENDER FUNCTIONS ==========
   function renderKPIs() {
     var kpiDiv = document.getElementById('kpi-cards');
-    if (!kpiDiv) { console.warn('kpi-cards not found'); return; }
-    var kpiDiv = document.getElementById('kpi-cards');
     if (!kpiDiv) return;
     kpiDiv.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;">🔄 Memuat data...</div>';
-    
     Promise.all([
       window.parent.supabase.from('users').select('*', { count: 'exact', head: true }),
       window.parent.supabase.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -283,9 +323,9 @@
       var total = results[0].count || 0;
       var k3 = results[1].count || 0;
       var maint = results[2].count || 0;
-      kpiDiv.innerHTML = '<div class="kpi-card" onclick="switchTab('users')"><div class="kpi-value" style="color:#8b5cf6;">' + total + '</div><div class="kpi-label">Users 🟢</div></div>' +
-        '<div class="kpi-card" onclick="switchTab('k3')"><div class="kpi-value" style="color:#ef4444;">' + k3 + '</div><div class="kpi-label">K3 Pending 🟢</div></div>' +
-        '<div class="kpi-card" onclick="switchTab('maint')"><div class="kpi-value" style="color:#0ea5e9;">' + maint + '</div><div class="kpi-label">Maint Aktif 🟢</div></div>';
+      kpiDiv.innerHTML = '<div class="kpi-card" onclick="switchTab(\'users\')"><div class="kpi-value" style="color:#8b5cf6;">' + total + '</div><div class="kpi-label">Users 🟢</div></div>' +
+        '<div class="kpi-card" onclick="switchTab(\'k3\')"><div class="kpi-value" style="color:#ef4444;">' + k3 + '</div><div class="kpi-label">K3 Pending 🟢</div></div>' +
+        '<div class="kpi-card" onclick="switchTab(\'maint\')"><div class="kpi-value" style="color:#0ea5e9;">' + maint + '</div><div class="kpi-label">Maint Aktif 🟢</div></div>';
     }).catch(function() {
       var u = safeGet('dreamos_users_db', []), k = safeGet('dreamos_k3_reports', []), m = safeGet('dreamos_maintenance_tasks', []);
       kpiDiv.innerHTML = '<div class="kpi-card"><div class="kpi-value" style="color:#8b5cf6;">' + u.length + '</div><div class="kpi-label">Users 🟡</div></div>' +
@@ -295,6 +335,7 @@
   }
 
   function renderUserTable() {
+    if (!canAccess('users')) return;
     var el = document.getElementById('user-table');
     if (!el) return;
     el.innerHTML = '<p>🔄 Memuat dari cloud...</p>';
@@ -302,7 +343,7 @@
       if (res.error) throw res.error;
       var html = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>';
       res.data.forEach(function(u) {
-        html += '<tr><td>' + SEC.sanitize(u.nama) + '</td><td>' + SEC.sanitize(u.email) + '</td><td>' + SEC.sanitize(u.role) + '</td><td><button class="btn btn-danger" onclick="deleteUser('' + u.id + '')" style="font-size:0.45rem;">🗑️</button></td></tr>';
+        html += '<tr><td>' + SEC.sanitize(u.nama) + '</td><td>' + SEC.sanitize(u.email) + '</td><td>' + SEC.sanitize(u.role) + '</td><td><button class="btn btn-danger" onclick="deleteUser(\'' + u.id + '\')" style="font-size:0.45rem;">🗑️</button></td></tr>';
       });
       html += '</table>';
       el.innerHTML = html;
@@ -311,49 +352,59 @@
     });
   }
 
-  // ========== SIMPLE RENDERS (localStorage) ==========
   function renderDanaPending() {
+    if (!canAccess('dana')) return;
     var pending = safeGet('dreamos_dana',[]).filter(function(d){return d.status==='pending';});
     var el = document.getElementById('dana-pending-list'); if (!el) return;
-    el.innerHTML = pending.length ? pending.map(function(d){ return '<div style="background:rgba(0,0,0,0.2);padding:0.4rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+SEC.sanitize(d.judul)+'</b> • Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'<br><button class="btn btn-success" onclick="approveDana(''+d.id+'')" style="font-size:0.5rem;">✅</button> <button class="btn btn-danger" onclick="rejectDana(''+d.id+'')" style="font-size:0.5rem;">❌</button></div>'; }).join('') : '<p style="color:#94a3b8;">✅ Tidak ada.</p>';
+    el.innerHTML = pending.length ? pending.map(function(d){ return '<div style="background:rgba(0,0,0,0.2);padding:0.4rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+SEC.sanitize(d.judul)+'</b> • Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'<br><button class="btn btn-success" onclick="approveDana(\''+d.id+'\')" style="font-size:0.5rem;">✅</button> <button class="btn btn-danger" onclick="rejectDana(\''+d.id+'\')" style="font-size:0.5rem;">❌</button></div>'; }).join('') : '<p style="color:#94a3b8;">✅ Tidak ada.</p>';
   }
   function renderDanaHistory() {
+    if (!canAccess('dana')) return;
     var all = safeGet('dreamos_dana',[]).slice(-20).reverse();
     var el = document.getElementById('dana-history'); if (!el) return;
     el.innerHTML = all.length ? '<table><tr><th>Tgl</th><th>Judul</th><th>Nominal</th><th>Status</th></tr>'+all.map(function(d){ return '<tr><td>'+SEC.sanitize(d.tanggal)+'</td><td>'+SEC.sanitize(d.judul)+'</td><td>Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'</td><td><span class="badge badge-'+(d.status==='approved'?'approved':d.status==='rejected'?'rejected':'pending')+'">'+d.status+'</span></td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
   function renderBudgetSummary() {
+    if (!canAccess('dana')) return;
     var d = safeGet('dreamos_dana',[]), cap = parseInt(localStorage.getItem('dreamos_budget_cap') || 50000000), spent = d.filter(function(x){return x.status==='approved';}).reduce(function(s,x){return s+(parseInt(x.nominal)||0);},0);
     var el = document.getElementById('budget-summary'); if (!el) return;
     el.innerHTML = 'Realisasi: Rp '+spent.toLocaleString('id-ID')+'<br>Pagu: Rp '+cap.toLocaleString('id-ID');
   }
   function renderMaintenanceActive() {
+    if (!canAccess('maint')) return;
     var active = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status!=='Selesai';});
     var el = document.getElementById('maint-active-list'); if (!el) return;
     el.innerHTML = active.length ? active.map(function(m){ return '<div><b>'+SEC.sanitize(m.judul)+'</b> • '+SEC.sanitize(m.status)+'</div>'; }).join('') : '<p>✅ Semua selesai.</p>';
   }
   function renderMaintenanceDone() {
+    if (!canAccess('maint')) return;
     var done = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status==='Selesai';}).slice(-10);
     var el = document.getElementById('maint-done-list'); if (!el) return;
     el.innerHTML = done.length ? done.map(function(m){ return '<div>✅ '+SEC.sanitize(m.judul)+'</div>'; }).join('') : '<p>Belum ada.</p>';
   }
   function renderK3Active() {
+    if (!canAccess('k3')) return;
     var k3 = safeGet('dreamos_k3_reports',[]);
     var el = document.getElementById('k3-active-list'); if (!el) return;
     el.innerHTML = k3.length ? k3.map(function(k){ return '<div><b>'+SEC.sanitize(k.lokasi)+'</b> • '+SEC.sanitize(k.status)+'</div>'; }).join('') : '<p>Tidak ada.</p>';
   }
-  function renderK3Chart() {}
+  function renderK3Chart() {
+    if (!canAccess('k3')) return;
+  }
   function renderBookingList() {
+    if (!canAccess('booking')) return;
     var b = safeGet('dreamos_bookings',[]);
     var el = document.getElementById('booking-list'); if (!el) return;
     el.innerHTML = b.length ? '<table>'+b.map(function(x){ return '<tr><td>'+x.tgl+'</td><td>'+x.ruang+'</td><td>'+x.nama_peminjam+'</td></tr>'; }).join('')+'</table>' : '<p>Belum ada.</p>';
   }
   function renderAuditFull() {
+    if (!canAccess('audit')) return;
     var logs = safeGet('dreamos_audit_logs',[]);
     var el = document.getElementById('audit-log-full'); if (!el) return;
     el.innerHTML = logs.length ? logs.map(function(l){ return '<div>['+new Date(l.time).toLocaleTimeString('id-ID')+'] '+SEC.sanitize(l.user)+': '+SEC.sanitize(l.action)+'</div>'; }).join('') : '<p>Belum ada.</p>';
   }
   function renderSystemInfo() {
+    if (!canAccess('system')) return;
     var el = document.getElementById('system-info'); if (!el) return;
     var keys = ['dreamos_users_db','dreamos_dana','dreamos_k3_reports','dreamos_maintenance_tasks','dreamos_bookings','dreamos_audit_logs'];
     var html = '<table>';
@@ -364,96 +415,151 @@
   function renderCharts() {}
 
   // ========== ACTIONS ==========
-  window.switchTab = function(name) { var t = document.querySelector('.tab[data-tab="'+name+'"]'); if (t) t.click(); };
-  window.approveDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  }} };
-  window.rejectDana = function(id) { var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;}); if(i){i.status='rejected'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  }} };
-  window.quickAddDana = function() { var j=prompt('Judul:'), n=prompt('Nominal:'); if(!j||!n)return; var d=safeGet('dreamos_dana',[]); d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')}); localStorage.setItem('dreamos_dana',JSON.stringify(d)); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  } };
-  window.quickAddK3 = function() { var l=prompt('Lokasi:'), k=prompt('Kategori:'); if(!l)return; var d=safeGet('dreamos_k3_reports',[]); d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending'}); localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  } };
-  window.quickAddMaint = function() { var j=prompt('Judul:'), l=prompt('Lokasi:'); if(!j)return; var d=safeGet('dreamos_maintenance_tasks',[]); d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending'}); localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  } };
-  window.setBudgetCap = function() { var c=prompt('Pagu:', localStorage.getItem('dreamos_budget_cap')||'50000000'); if(c){localStorage.setItem('dreamos_budget_cap',c); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  }} };
+  window.switchTab = function(name) {
+    if (!canAccess(name)) return alert('⛔ Role Anda tidak memiliki akses ke tab ini.');
+    var t = document.querySelector('.tab[data-tab="'+name+'"]'); if (t) t.click();
+  };
+  
+  window.approveDana = function(id) {
+    if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
+    if (!isAdmin()) return alert('⛔ Hanya admin/kabag/koord yang bisa approve.');
+    var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;});
+    if(i){i.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAllNow();}
+  };
+  
+  window.rejectDana = function(id) {
+    if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
+    if (!isAdmin()) return alert('⛔ Hanya admin/kabag/koord yang bisa reject.');
+    var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;});
+    if(i){i.status='rejected'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAllNow();}
+  };
+  
+  window.setBudgetCap = function() {
+    if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
+    if (!isKabag() && !isDev()) return alert('⛔ Hanya Kabag yang bisa mengatur pagu anggaran.');
+    var c=prompt('Pagu (Rp):', localStorage.getItem('dreamos_budget_cap')||'50000000');
+    if(c){localStorage.setItem('dreamos_budget_cap',c); renderAllNow();}
+  };
+  
+  window.quickAddDana = function() {
+    if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menambah dana.');
+    var j=prompt('Judul:'), n=prompt('Nominal (Rp):');
+    if(!j||!n)return;
+    var d=safeGet('dreamos_dana',[]);
+    d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')});
+    localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAllNow();
+  };
+  
+  window.quickAddK3 = function() {
+    if (!canAccess('k3')) return alert('⛔ Akses ditolak.');
+    var l=prompt('Lokasi:'), k=prompt('Kategori:');
+    if(!l)return;
+    var d=safeGet('dreamos_k3_reports',[]);
+    d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending'});
+    localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); renderAllNow();
+  };
+  
+  window.quickAddMaint = function() {
+    if (!canAccess('maint')) return alert('⛔ Akses ditolak.');
+    var j=prompt('Judul:'), l=prompt('Lokasi:');
+    if(!j)return;
+    var d=safeGet('dreamos_maintenance_tasks',[]);
+    d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending'});
+    localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); renderAllNow();
+  };
+  
   window.saveSlides = function() {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa mengatur slide.');
     localStorage.setItem('dreamos_slide_5',document.getElementById('slide5-input').value);
     localStorage.setItem('dreamos_slide_6',document.getElementById('slide6-input').value);
     localStorage.setItem('dreamos_slide_7',document.getElementById('slide7-input').value);
     alert('✅ Slide disimpan!');
   };
-  window.openSlideManager = function() { document.getElementById('slide-manager-panel').style.display='block'; };
+  
+  window.openSlideManager = function() {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa mengakses Slide Manager.');
+    document.getElementById('slide-manager-panel').style.display='block';
+  };
+  
   window.openExecutiveNote = function() { document.getElementById('executive-note-panel').style.display='block'; };
   window.saveExecutiveNote = function() { localStorage.setItem('dreamos_executive_note',document.getElementById('executive-note-input').value); alert('✅ Disimpan!'); };
+  
   window.addUserWithForm = async function() {
+    if (!canAccess('users')) return alert('⛔ Akses ditolak.');
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menambah user.');
     var nama = document.getElementById('new-nama').value.trim();
     var email = document.getElementById('new-email').value.trim();
-    var role = document.getElementById('new-role').value;
+    var newRole = document.getElementById('new-role').value;
     var password = document.getElementById('new-password').value;
     if (!nama || !email || !password) return alert('⚠️ Semua field wajib diisi!');
     if (password.length < 6) return alert('⚠️ Password minimal 6 karakter!');
     var users = safeGet('dreamos_users_db', []);
     if (users.find(function(u) { return u.email === email; })) return alert('⚠️ Email sudah terdaftar!');
     var hashed = await SEC.hashPassword(password);
-    users.push({ nama: nama, email: email, role: role, password_hash: hashed, created_at: new Date().toISOString() });
+    users.push({ nama: nama, email: email, role: newRole, password_hash: hashed, created_at: new Date().toISOString() });
     localStorage.setItem('dreamos_users_db', JSON.stringify(users));
     renderUserTable();
     alert('✅ ' + nama + ' berhasil ditambahkan!');
   };
+  
   window.deleteUser = async function(id) {
+    if (!canAccess('users')) return alert('⛔ Akses ditolak.');
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menghapus user.');
     if(!confirm('Hapus user ini?'))return;
     try { await window.parent.supabase.from('users').delete().eq('id', id); renderUserTable(); } catch(e) { alert('⚠️ Gagal: '+e.message); }
   };
+  
   window.doLogout = function() { localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); window.parent.location.reload(); };
-  window.clearLocalCache = function() { if(confirm('Bersihkan cache?')) { var keep = ['dreamos_users_db','dreamos_bound_user','dreamos_session_active']; for(var i=localStorage.length-1;i>=0;i--) { var k=localStorage.key(i); if(!keep.includes(k) && k.startsWith('dreamos_')) localStorage.removeItem(k); } alert('✅ Dibersihkan!'); document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  } } };
+  
+  window.clearLocalCache = function() {
+    if (!isDev()) return alert('⛔ Hanya Developer yang bisa membersihkan cache.');
+    if(confirm('Bersihkan cache?')) {
+      var keep = ['dreamos_users_db','dreamos_bound_user','dreamos_session_active'];
+      for(var i=localStorage.length-1;i>=0;i--) {
+        var k=localStorage.key(i);
+        if(!keep.includes(k) && k.startsWith('dreamos_')) localStorage.removeItem(k);
+      }
+      alert('✅ Dibersihkan!'); renderAllNow();
+    }
+  };
+
+  window.printUserList = function() {
+    if (!canAccess('users')) return alert('⛔ Akses ditolak.');
+    var users=safeGet('dreamos_users_db',[]);
+    var w=window.open('','_blank');
+    w.document.write('<table border="1"><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+users.map(function(u){return '<tr><td>'+u.nama+'</td><td>'+u.email+'</td><td>'+u.role+'</td></tr>';}).join('')+'</table>');
+    w.document.close(); setTimeout(function(){w.print();},500);
+  };
+
+  window.syncUsersToSupabase = function() {
+    if (!canAccess('users')) return alert('⛔ Akses ditolak.');
+    var users = safeGet('dreamos_users_db', []);
+    var count = 0;
+    users.forEach(function(u) {
+      window.parent.supabase.from('users').upsert({
+        id: u.id, email: u.email, nama: u.nama, role: u.role, password_hash: u.password_hash
+      }).then(function(res) { if (!res.error) count++; });
+    });
+    alert('✅ ' + count + ' user disync ke cloud!');
+  };
+
+  // Export functions
+  window.exportDana = function() { var d=safeGet('dreamos_dana',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Tgl,Judul,Nominal,Status\n'+d.map(function(x){return x.tanggal+','+x.judul+','+x.nominal+','+x.status;}).join('\n')); a.download='dana.csv'; a.click(); };
+  window.exportK3 = function() { var d=safeGet('dreamos_k3_reports',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Lokasi,Kategori,Status,Tanggal\n'+d.map(function(x){return x.lokasi+','+x.kategori+','+x.status+','+x.tanggal;}).join('\n')); a.download='k3.csv'; a.click(); };
+  window.exportBooking = function() { var d=safeGet('dreamos_bookings',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Tgl,Ruangan,Peminjam,Jam\n'+d.map(function(x){return x.tgl+','+x.ruang+','+x.nama_peminjam+','+x.jam_mulai+'-'+x.jam_selesai;}).join('\n')); a.download='booking.csv'; a.click(); };
+  window.exportAllData = function() { var data={}; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i); try{data[k]=JSON.parse(localStorage.getItem(k));}catch(e){data[k]=localStorage.getItem(k);}} var a=document.createElement('a'); a.href='data:text/json;charset=utf-8,'+encodeURI(JSON.stringify(data)); a.download='backup.json'; a.click(); };
+  window.exportAuditLog = function() { var logs=safeGet('dreamos_audit_logs',[]); var a=document.createElement('a'); a.href='data:text/json;charset=utf-8,'+encodeURI(JSON.stringify(logs)); a.download='audit.json'; a.click(); };
+  window.importData = function() { var input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=function(e){ var file=e.target.files[0]; if(!file)return; var reader=new FileReader(); reader.onload=function(ev){ try{ var data=JSON.parse(ev.target.result); if(!confirm('⚠️ Timpa semua?'))return; Object.keys(data).forEach(function(k){localStorage.setItem(k,JSON.stringify(data[k]));}); alert('✅ Direstore!'); location.reload(); }catch(err){alert('❌ Gagal!');} }; reader.readAsText(file); }; input.click(); };
+  window.resetSystem = function() { if(confirm('Reset?')){localStorage.removeItem('dreamos_settings'); location.reload();} };
+  window.clearAllData = function() { if(confirm('HAPUS SEMUA?')){localStorage.clear(); location.reload();} };
 
   // Init
-  document.addEventListener('DOMContentLoaded', function() {
-  try {
-    renderAll();
-  } catch(e) {
-    console.error('Command Center init error:', e);
-    document.body.innerHTML += '<div style="position:fixed;bottom:1rem;right:1rem;background:rgba(239,68,68,0.9);color:white;padding:0.5rem 1rem;border-radius:8px;z-index:9999;font-size:0.7rem;">❌ Error: ' + e.message + '</div>';
-  }
+  renderAll();
+  SEC.auditLog('ACCESS', 'v5.2');
 })();
 </script>
+
 
 </body>
 </html>
