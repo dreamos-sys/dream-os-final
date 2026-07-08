@@ -21,7 +21,22 @@ async function laporK3() {
 }
 
 
-async function tampilkanLaporan() {
+async 
+function tampilkanLaporan() {
+  var cache = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+  if (cache.length) renderList(cache); // tampilkan cache dulu
+  setSyncStatus('cached');
+  
+  try {
+    window.parent.supabase.from('k3_reports').select('*').then(function(res) {
+      if (!res.error && res.data) {
+        localStorage.setItem('dreamos_k3_reports', JSON.stringify(res.data));
+        renderList(res.data);
+        setSyncStatus('synced');
+      }
+    });
+  } catch(e) { setSyncStatus('error'); }
+
     const container = document.getElementById('k3-list');
     if (!container) return;
     container.innerHTML = '<p>Memuat laporan dari cloud...</p>';
@@ -68,12 +83,18 @@ async function tampilkanLaporan() {
     }
 }
 
+
+function setSyncStatus(s) {
+  var b = document.getElementById('sync-badge');
+  if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : s === 'cached' ? '🟡 Cached' : '🔴 Error';
+}
 </script>
 <!-- K3 MODULE - HYBRID SOUL EDITION -->
 <button onclick="window.parent.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;">← Kembali</button>
 
 <div style="padding:1rem;" id="k3-app">
-  <h2 style="color:#ef4444;">⚠️ Laporan K3 • Hybrid Cloud</h2>
+  <span id="sync-badge" style="font-size:0.65rem;color:#94a3b8;">🟡 Cached</span>
+<h2 style="color:#ef4444;">⚠️ Laporan K3 • Hybrid Cloud</h2>
   <p style="color:#64748b;font-size:0.75rem;">LocalStorage + Supabase Sync • Offline-First</p>
   
   <form id="k3-form" style="background:#0f172a;padding:1rem;border-radius:0.75rem;margin:1rem 0;">
@@ -212,7 +233,22 @@ async function laporK3() {
 }
 
 
-async function tampilkanLaporan() {
+async 
+function tampilkanLaporan() {
+  var cache = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+  if (cache.length) renderList(cache); // tampilkan cache dulu
+  setSyncStatus('cached');
+  
+  try {
+    window.parent.supabase.from('k3_reports').select('*').then(function(res) {
+      if (!res.error && res.data) {
+        localStorage.setItem('dreamos_k3_reports', JSON.stringify(res.data));
+        renderList(res.data);
+        setSyncStatus('synced');
+      }
+    });
+  } catch(e) { setSyncStatus('error'); }
+
     const container = document.getElementById('k3-list');
     if (!container) return;
     container.innerHTML = '<p>Memuat laporan dari cloud...</p>';
@@ -259,4 +295,9 @@ async function tampilkanLaporan() {
     }
 }
 
+
+function setSyncStatus(s) {
+  var b = document.getElementById('sync-badge');
+  if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : s === 'cached' ? '🟡 Cached' : '🔴 Error';
+}
 </script>
