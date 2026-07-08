@@ -380,6 +380,42 @@ window.optimisticSave = function(key, data, supabaseFn, label) {
   });
 };
 
+
+// ========== AUDIT LOGGER TERPUSAT ==========
+window.auditLog = async function(action, details) {
+  var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+  var entry = {
+    user_id: user.id || 'unknown',
+    email: user.email || 'unknown',
+    action: action,
+    details: details || '',
+    timestamp: new Date().toISOString()
+  };
+  
+  // 1. Simpan ke localStorage (offline-first)
+  var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
+  logs.unshift(entry);
+  if (logs.length > 100) logs.pop();
+  localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
+  
+  // 2. Kirim ke Supabase (background)
+  try {
+    await window.supabase.from('audit_logs').insert({
+      user_id: entry.user_id,
+      action: entry.action,
+      details: entry.details
+    });
+  } catch(e) {
+    // Gagal kirim ke cloud, tetap tersimpan di localStorage
+    console.warn('Audit cloud sync failed, saved locally.');
+  }
+};
+
+// Log otomatis: halaman dibuka
+setTimeout(function() {
+  window.auditLog('PAGE_VIEW', document.title);
+}, 1000);
+
 </script>
 </body>
 </html>

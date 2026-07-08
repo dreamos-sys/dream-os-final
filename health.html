@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Dream OS Health</title></head>
+<body style="background:#0a0e27;color:#e2e8f0;font-family:monospace;padding:2rem;">
+  <h1 style="color:#00ff9d;">🏥 Dream OS Health Status</h1>
+  <div id="status">Checking...</div>
+  <script>
+    async function checkHealth() {
+      var results = [];
+      
+      // 1. Cek Supabase
+      try {
+        var start = Date.now();
+        var res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD' });
+        results.push('🟢 Supabase: OK (' + (Date.now() - start) + 'ms)');
+      } catch(e) { results.push('🔴 Supabase: DOWN'); }
+      
+      // 2. Cek Cloudflare Worker
+      try {
+        var start = Date.now();
+        var res = await fetch('https://dreamos-api-gateway.afumum234.workers.dev/health');
+        results.push('🟢 Worker: OK (' + (Date.now() - start) + 'ms)');
+      } catch(e) { results.push('🔴 Worker: DOWN'); }
+      
+      // 3. Cek localStorage
+      var keys = Object.keys(localStorage).filter(function(k) { return k.startsWith('dreamos_'); });
+      results.push('📦 localStorage: ' + keys.length + ' keys');
+      
+      document.getElementById('status').innerHTML = results.join('<br>');
+    }
+    checkHealth();
+    setInterval(checkHealth, 30000);
+  </script>
+</body>
+</html>
