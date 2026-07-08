@@ -213,6 +213,146 @@
     console.log("✅ Stok module fully bound & ready");
   }, 150);
 
-})();
 
-</script>
+
+  // ========== ENTERPRISE FEATURES ==========
+  
+  // Indikator status stok (real-time badge)
+  function updateStockBadges() {
+    var all = g("dreamos_stok");
+    var critical = all.filter(function(i) { return i.jumlah === 0; }).length;
+    var low = all.filter(function(i) { return i.jumlah > 0 && i.jumlah <= i.minimal; }).length;
+    var healthy = all.filter(function(i) { return i.jumlah > i.minimal; }).length;
+    
+    var alertEl = document.getElementById("stok-alert");
+    if (critical > 0) {
+      alertEl.style.display = "block";
+      alertEl.style.background = "rgba(239,68,68,0.2)";
+      alertEl.style.borderColor = "#ef4444";
+      alertEl.innerHTML = '🚨 <b>' + critical + ' barang HABIS!</b> Segera restock.';
+    } else if (low > 0) {
+      alertEl.style.display = "block";
+      alertEl.style.background = "rgba(245,158,11,0.2)";
+      alertEl.style.borderColor = "#f59e0b";
+      alertEl.innerHTML = '⚠️ <b>' + low + ' barang MENIPIS.</b> Siapkan pengadaan.';
+    } else {
+      alertEl.style.display = "none";
+    }
+  }
+
+  // Quick restock (tambah stok langsung dari list)
+  window.quickRestock = function(id, nama) {
+    var qty = prompt("Tambah stok untuk " + nama + ":", "10");
+    if (!qty || isNaN(qty) || parseInt(qty) <= 0) return;
+    var delta = parseInt(qty);
+    var it = g("dreamos_stok");
+    var i = it.find(function(x) { return x.id === id; });
+    if (i) {
+      i.jumlah = (i.jumlah || 0) + delta;
+      s("dreamos_stok", it);
+      logMovement(id, i.nama, delta, "Restock Cepat", "Admin");
+      loadItems();
+      updateStockBadges();
+    }
+  };
+
+  // Ekspor CSV detail (dengan tanggal expired placeholder)
+  window.exportCSVDetail = function() {
+    var it = g("dreamos_stok");
+    var csv = "Nama,Kategori,Jumlah,Satuan,Minimal,Lokasi,Harga,Status,Nilai Total
+";
+    it.forEach(function(i) {
+      var status = i.jumlah === 0 ? "HABIS" : (i.jumlah <= i.minimal ? "MENIPIS" : "AMAN");
+      var total = (i.harga || 0) * (i.jumlah || 0);
+      csv += '"' + (i.nama||"") + '","' + (i.kategori||"") + '",' + i.jumlah + ',' + (i.satuan||"pcs") + ',' + i.minimal + ',"' + (i.lokasi||"") + '",' + (i.harga||0) + ',' + status + ',' + total + '\n';
+    });
+    var blob = new Blob([csv], {type: "text/csv"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "stok_detail_" + new Date().toISOString().split("T")[0] + ".csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ========== SYNC TO CLOUD ==========
+  window.syncStokToCloud = async function() {
+    var data = g("dreamos_stok");
+    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
+    var count = 0;
+    for (var item of data) {
+      try {
+        var { error } = await window.parent.supabase.from('stok').upsert({
+          id: item.id,
+          nama_barang: item.nama,
+          kategori: item.kategori,
+          jumlah: parseInt(item.jumlah) || 0,
+          satuan: item.satuan || 'pcs',
+          ambang_batas: parseInt(item.minimal) || 5,
+          lokasi: item.lokasi || '',
+          harga: parseInt(item.harga) || 0
+        });
+        if (!error) count++;
+      } catch(e) { console.warn('Sync error:', e); }
+    }
+    alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
+  };
+
+  // ========== INIT BINDING ==========
+  setTimeout(function(){
+    try { loadItems(); updateStockBadges(); } catch(e) { console.error("❌ Stok Init:", e); }
+    
+    // Bind tombol utama
+    var map = {
+      "btn-tambah": window.toggleForm,
+      "btn-procurement": window.toggleProcurement,
+      "btn-opname": window.toggleOpname,
+      "btn-scan": window.toggleScanner,
+      "btn-cetak": window.cetakLaporan,
+      "btn-csv": window.exportCSVDetail,
+      "btn-ajukan-dana": window.ajukanKeDana,
+      "btn-save-opname": window.saveOpname,
+      "btn-cetak-opname": window.cetakOpname,
+      "btn-save-item": window.saveItem,
+      "btn-manual-scan": window.handleManualScan,
+      "btn-close-scan": window.stopScanner,
+      "btn-sync-stok": window.syncStokToCloud
+    };
+    
+    for (var id in map) {
+      var b = document.getElementById(id);
+      if (b) { 
+        b.onclick = map[id]; 
+        console.log("✅ Bound:", id); 
+      } else { 
+        console.warn("⚠️ Missing:", id); 
+      }
+    }
+    
+    // Bind search & filter
+    var searchEl = document.getElementById("stok-search");
+    if (searchEl) searchEl.oninput = function() { window.state.search = this.value; loadItems(); };
+    
+    var filterEl = document.getElementById("stok-filter");
+    if (filterEl) filterEl.onchange = function() { window.state.filterCategory = this.value; loadItems(); };
+    
+    // Bind list actions
+    var listEl = document.getElementById("stok-list");
+    if (listEl) {
+      listEl.addEventListener("click", function(e) {
+        var btn = e.target.closest(".stk-btn");
+        if (!btn) return;
+        var act = btn.dataset.act, id = btn.dataset.id;
+        if (act === "dec") window.updateJumlah(id, -1);
+        else if (act === "inc") window.updateJumlah(id, 1);
+        else if (act === "log") window.toggleHistory(id);
+        else if (act === "del") window.deleteItem(id);
+        else if (act === "restock") window.quickRestock(id, btn.dataset.nama);
+      });
+    }
+    
+    console.log("✅ Stok Enterprise module ready");
+  }, 150);
+
+
+})();
