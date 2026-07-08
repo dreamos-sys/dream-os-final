@@ -104,7 +104,8 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 <script>
 const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-const { createClient } = supabase;
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window.supabase = supabaseClient;
 window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let slideInterval;
@@ -122,7 +123,7 @@ async function authenticate() {
     const error = document.getElementById('error-msg');
     if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; error.style.display = 'block'; setTimeout(() => error.style.display = 'none', 3000); return; }
     try {
-        const { data, error: authError } = await window.supabase.auth.signInWithPassword({ email, password });
+        const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
         if (authError) { error.textContent = '⛔ ' + authError.message; error.style.display = 'block'; setTimeout(() => error.style.display = 'none', 3000); return; }
         const user = data.user;
         localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: user.id, email: user.email, nama: user.user_metadata?.nama || email.split('@')[0], role: user.user_metadata?.role || 'staff', device_dna: '' }));
@@ -287,6 +288,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const em = document.getElementById('email-input');
     if (em) em.addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('password-input').focus(); });
 });
+</script>
+
+<script>
+  // Fallback jika Supabase gagal inisialisasi
+  setTimeout(() => {
+    if (!window.supabase || !window.supabase.auth) {
+      document.getElementById('login-screen').innerHTML += '<p style="color:red; margin-top:1rem;">⚠️ Gagal menghubungi server. Periksa koneksi.</p>';
+    }
+  }, 5000);
 </script>
 </body>
 </html>
