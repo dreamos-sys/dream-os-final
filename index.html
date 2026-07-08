@@ -147,7 +147,7 @@ async function authenticate() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
-        localStorage.removeItem('dreamos_session_active'); setTimeout(renderDashboard, 100);
+        setTimeout(renderDashboard, 100);
     }
 })();
 
@@ -162,6 +162,12 @@ window.ROLE_PERMISSIONS = {
     staff: ['profile','qr','about','setting']
 };
 
+window.getUserRole = function() {
+    var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    return user.role || 'staff';
+};
+window.isAdmin = function() { return ['dev','kabag','koord'].includes(window.getUserRole()); };
+window.isDev = function() { return window.getUserRole() === 'dev'; };
 window.canAccess = function(modId) {
     var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
     return (window.ROLE_PERMISSIONS[user.role || 'staff'] || []).includes(modId);
@@ -196,7 +202,14 @@ window.renderDashboard = function() {
         { i:'🏢', n:'Asset', id:'asset' }, { i:'📦', n:'Stok', id:'stok' }, { i:'🔧', n:'Maintenance', id:'maint' }
     ];
     const grid = document.getElementById('module-grid');
+    const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    const userRole = user.role || 'staff';
+    const permissions = window.ROLE_PERMISSIONS[userRole] || [];
+    
     modules.forEach(m => {
+        // Hanya tampilkan modul yang bisa diakses user
+        if (!permissions.includes(m.id)) return;
+        
         const card = document.createElement('div');
         card.className = 'mod-card glass';
         card.innerHTML = `<div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
