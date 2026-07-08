@@ -147,7 +147,7 @@ async function authenticate() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
-        setTimeout(renderDashboard, 100);
+        localStorage.removeItem('dreamos_session_active'); setTimeout(renderDashboard, 100);
     }
 })();
 
@@ -168,6 +168,7 @@ window.canAccess = function(modId) {
 };
 
 window.renderDashboard = function() {
+  try {
     document.getElementById('dashboard-container').innerHTML = `
         <div class="header-main glass">
             <img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;margin-bottom:1rem;">
@@ -203,6 +204,10 @@ window.renderDashboard = function() {
         grid.appendChild(card);
     });
     startLiveClock(); startBatteryMonitor(); checkConnection(); fetchPrayerTimes(); showSlides();
+  } catch(e) {
+    console.error('Render error:', e);
+    document.getElementById('dashboard-container').innerHTML = '<div style="text-align:center;padding:2rem;color:#f59e0b;">⚠️ Gagal memuat dashboard. <button onclick="localStorage.clear();location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#0ea5e9;color:white;border:none;border-radius:8px;">Reset & Muat Ulang</button></div>';
+  }
 };
 
 function startLiveClock() { setInterval(() => { const el = document.getElementById('live-clock'); if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID'); }, 1000); }
