@@ -480,6 +480,30 @@
     alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
   };
 
+
+  window.syncGudangToCloud = async function() {
+    var data = safeGet('dreamos_gudang', []);
+    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
+    var count = 0;
+    for (var item of data) {
+      try {
+        var { error } = await window.parent.supabase.from('stok').upsert({
+          id: item.id,
+          nama_barang: item.nama,
+          kategori: item.kategori,
+          jumlah: parseInt(item.jumlah) || 0,
+          satuan: item.satuan || 'pcs',
+          lokasi: item.lokasi || '',
+          ambang_batas: parseInt(item.minimal) || 5,
+          dibuat_oleh: JSON.parse(localStorage.getItem('dreamos_bound_user'))?.id
+        });
+        if (error) throw error;
+        count++;
+      } catch(e) { console.warn('Sync error:', e); }
+    }
+    alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
+  };
+
 })();
 
   window.syncGudangToCloud = async function() {
