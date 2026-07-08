@@ -268,6 +268,22 @@
     document.getElementById('workspace-tabs').style.display = 'none';
   }
 
+  // Sembunyikan quick action buttons yang tidak sesuai role
+  var quickActions = {
+    'quickAddDana': ['dana'],
+    'quickAddK3': ['k3'],
+    'quickAddMaint': ['maint'],
+    'openSlideManager': ['users'] // hanya admin yang bisa slide
+  };
+  for (var btnId in quickActions) {
+    var requiredTabs = quickActions[btnId];
+    var hasAccess = requiredTabs.some(function(tab) { return canAccess(tab); });
+    if (!hasAccess) {
+      var btn = document.querySelector('[onclick*="' + btnId + '"]');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+
   // ========== RBAC HELPER ==========
   function isAdmin() { return ['dev','kabag','koord'].includes(role); }
   function isKabag() { return role === 'kabag'; }
