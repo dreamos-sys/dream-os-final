@@ -301,6 +301,85 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('login-screen').innerHTML += '<p style="color:red; margin-top:1rem;">⚠️ Gagal menghubungi server. Periksa koneksi.</p>';
     }
   }, 5000);
+
+// ========== RETRY QUEUE ENGINE (Exponential Backoff) ==========
+window.retryQueue = [];
+window.isProcessingQueue = false;
+
+window.addToRetryQueue = function(action) {
+  window.retryQueue.push({ ...action, retries: 0, nextRetry: Date.now() + 1000 });
+  if (!window.isProcessingQueue) processRetryQueue();
+};
+
+async function processRetryQueue() {
+  if (window.retryQueue.length === 0) {
+    window.isProcessingQueue = false;
+    return;
+  }
+  window.isProcessingQueue = true;
+  
+  const now = Date.now();
+  const action = window.retryQueue.find(a => a.nextRetry <= now);
+  
+  if (!action) {
+    setTimeout(processRetryQueue, 500); // cek lagi nanti
+    return;
+  }
+  
+  try {
+    const result = await action.fn();
+    if (result && result.error) throw result.error;
+    // Sukses, hapus dari queue
+    window.retryQueue = window.retryQueue.filter(a => a !== action);
+    console.log('✅ Retry sukses:', action.label);
+    if (action.onSuccess) action.onSuccess();
+  } catch(e) {
+    action.retries++;
+    if (action.retries > 5) {
+      console.warn('❌ Retry gagal setelah 5x:', action.label);
+      window.retryQueue = window.retryQueue.filter(a => a !== action);
+      if (action.onFail) action.onFail();
+    } else {
+      // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+      action.nextRetry = now + Math.pow(2, action.retries) * 1000;
+      console.log('🔄 Retry #' + action.retries + ' untuk ' + action.label + ' dalam ' + Math.pow(2, action.retries) + 's');
+    }
+  }
+  
+  setTimeout(processRetryQueue, 500);
+}
+
+// ========== OPTIMISTIC UI HELPER ==========
+window.optimisticSave = function(key, data, supabaseFn, label) {
+  // 1. Simpan ke localStorage dulu (instan)
+  var existing = JSON.parse(localStorage.getItem(key) || '[]');
+  existing.push(data);
+  localStorage.setItem(key, JSON.stringify(existing));
+  
+  // 2. Update UI langsung (tanpa nunggu server)
+  if (typeof refreshUI === 'function') refreshUI();
+  
+  // 3. Coba kirim ke Supabase
+  supabaseFn().then(function(res) {
+    if (res.error) {
+      // Gagal, masukkan ke retry queue
+      window.addToRetryQueue({
+        label: label,
+        fn: supabaseFn,
+        onSuccess: function() { console.log('✅ ' + label + ' tersimpan'); },
+        onFail: function() { console.warn('⚠️ ' + label + ' gagal tersimpan'); }
+      });
+    }
+  }).catch(function() {
+    window.addToRetryQueue({
+      label: label,
+      fn: supabaseFn,
+      onSuccess: function() { console.log('✅ ' + label + ' tersimpan'); },
+      onFail: function() { console.warn('⚠️ ' + label + ' gagal tersimpan'); }
+    });
+  });
+};
+
 </script>
 </body>
 </html>
