@@ -67,9 +67,7 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 .system-info-box { text-align: center; font-size: 0.65rem; color: #94a3b8; margin: 1.5rem; padding: 1.5rem; border-radius: 24px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <canvas id="star-field"></canvas>
@@ -88,7 +86,7 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
             <span class="toggle-pin" onclick="togglePassword()">👁️</span>
         </div>
         <div class="cf-turnstile" data-sitekey="0x4AAAAAAAXvP1JL5JkX0y8b" style="margin-bottom:1rem;"></div>
-            <button class="access-btn" id="login-button" onclick="authenticate()">⚡ ACCESS CORE</button>
+        <button class="access-btn" id="login-button" onclick="authenticate()">⚡ ACCESS CORE</button>
         <div class="error-msg" id="error-msg"></div>
     </div>
 </div>
@@ -106,17 +104,17 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 </nav>
 
 <script>
+// ==================== DREAM OS CORE ====================
 const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-// Inisialisasi Supabase langsung
+
+// Inisialisasi Supabase
 try {
   window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   console.log('✅ Supabase terinisialisasi');
 } catch(e) {
   console.error('❌ Gagal inisialisasi Supabase:', e);
 }
-
-
 
 let slideInterval;
 window.slideIdx = 0;
@@ -127,54 +125,59 @@ function togglePassword() {
     document.querySelector('.toggle-pin').textContent = pw.type === 'password' ? '👁️' : '🙈';
 }
 
+// Rate limiting
 var loginAttempts = 0;
 var loginLocked = false;
 
 async function authenticate() {
     var btn = document.getElementById('login-button');
-    if (btn) {
-      btn.textContent = '⏳ Connecting...';
-      btn.disabled = true;
-    }
+    if (btn) { btn.textContent = '⏳ Connecting...'; btn.disabled = true; }
+    
     if (loginLocked) {
         var error = document.getElementById('error-msg');
         error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
-        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         error.style.display = 'block';
-        loginAttempts++;
-        if (loginAttempts >= 5) {
-            loginLocked = true;
-            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
-            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
-        }
+        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         return;
     }
+    
     const email = document.getElementById('email-input').value.trim();
     const password = document.getElementById('password-input').value;
     const error = document.getElementById('error-msg');
-    if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+    
+    if (!email || !password) {
+        error.textContent = '⛔ Email dan password harus diisi.';
         error.style.display = 'block';
-        loginAttempts++;
-        if (loginAttempts >= 5) {
-            loginLocked = true;
-            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
-            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
-        } setTimeout(() => error.style.display = 'none', 3000); return; }
+        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+        setTimeout(() => error.style.display = 'none', 3000);
+        return;
+    }
+    
     try {
-        const { data, error: authError } = await window.supabase.auth.signInWithPassword({ email: email, password: password });
-        if (authError) { error.textContent = '⛔ ' + authError.message; if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
-        error.style.display = 'block';
-        loginAttempts++;
-        if (loginAttempts >= 5) {
-            loginLocked = true;
-            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
-            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
-        } setTimeout(() => error.style.display = 'none', 3000); return; }
+        const { data, error: authError } = await window.supabase.auth.signInWithPassword({ email, password });
+        if (authError) {
+            error.textContent = '⛔ ' + authError.message;
+            error.style.display = 'block';
+            if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+            loginAttempts++;
+            if (loginAttempts >= 5) {
+                loginLocked = true;
+                setTimeout(() => { loginLocked = false; loginAttempts = 0; }, 60000);
+            }
+            setTimeout(() => error.style.display = 'none', 3000);
+            return;
+        }
+        
         const user = data.user;
-        localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: user.id, email: user.email, nama: user.user_metadata?.nama || email.split('@')[0], role: user.user_metadata?.role || 'staff', device_dna: '' }));
+        localStorage.setItem('dreamos_bound_user', JSON.stringify({
+            id: user.id, email: user.email,
+            nama: user.user_metadata?.nama || email.split('@')[0],
+            role: user.user_metadata?.role || 'staff', device_dna: ''
+        }));
         localStorage.setItem('dreamos_session_active', 'true');
+        
         if (btn) { btn.textContent = '✅ Success!'; }
-    document.getElementById('login-screen').style.opacity = '0';
+        document.getElementById('login-screen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
@@ -183,18 +186,13 @@ async function authenticate() {
         }, 500);
     } catch (e) {
         error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
-        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         error.style.display = 'block';
-        loginAttempts++;
-        if (loginAttempts >= 5) {
-            loginLocked = true;
-            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
-            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
-        }
+        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         setTimeout(() => error.style.display = 'none', 3000);
     }
 }
 
+// Auto-login
 (function() {
     var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
     if (user.role === 'dev' && localStorage.getItem('dreamos_session_active') === 'true') {
@@ -205,6 +203,7 @@ async function authenticate() {
     }
 })();
 
+// RBAC
 window.ROLE_PERMISSIONS = {
     dev: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
     kabag: ['cmd','sec','k3','in','out','book','asset','stok','maint','dana','profile','qr','about','setting'],
@@ -220,13 +219,12 @@ window.getUserRole = function() {
     var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
     return user.role || 'staff';
 };
-window.isAdmin = function() { return ['dev','kabag','koord'].includes(window.getUserRole()); };
-window.isDev = function() { return window.getUserRole() === 'dev'; };
 window.canAccess = function(modId) {
     var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
     return (window.ROLE_PERMISSIONS[user.role || 'staff'] || []).includes(modId);
 };
 
+// Dashboard
 window.renderDashboard = function() {
   try {
     document.getElementById('dashboard-container').innerHTML = `
@@ -266,7 +264,6 @@ window.renderDashboard = function() {
     });
     startLiveClock(); startBatteryMonitor(); checkConnection(); fetchPrayerTimes(); showSlides();
   } catch(e) {
-    console.error('Render error:', e);
     document.getElementById('dashboard-container').innerHTML = '<div style="text-align:center;padding:2rem;color:#f59e0b;">⚠️ Gagal memuat dashboard. <button onclick="localStorage.clear();location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#0ea5e9;color:white;border:none;border-radius:8px;">Reset & Muat Ulang</button></div>';
   }
 };
@@ -274,36 +271,30 @@ window.renderDashboard = function() {
 function startLiveClock() { setInterval(() => { const el = document.getElementById('live-clock'); if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID'); }, 1000); }
 function startBatteryMonitor() { if ('getBattery' in navigator) { navigator.getBattery().then(b => { const el = document.getElementById('battery-status'); const update = () => { if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%'; }; update(); b.addEventListener('levelchange', update); b.addEventListener('chargingchange', update); }).catch(() => { const el = document.getElementById('battery-status'); if (el) el.textContent = '🔋 --%'; }); } }
 async function checkConnection() { const el = document.getElementById('connection-status'); if (!el) return;
-    el.textContent = '📡 Checking...';
-    el.className = 'badge'; if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; } try { const start = Date.now(); const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } }); if (res.ok) { el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)'; el.className = 'badge online'; } else throw new Error('Status ' + res.status); } catch (e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } }
+    el.textContent = '📡 Checking...'; el.className = 'badge';
+    if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; }
+    try { const start = Date.now(); const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } }); if (res.ok) { el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)'; el.className = 'badge online'; } else throw new Error('Status ' + res.status); } catch (e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } }
 async function fetchPrayerTimes() { const el = document.getElementById('prayer-times-dash'); if (!el) return;
-    el.textContent = '📡 Checking...';
-    el.className = 'badge'; try { const d = new Date(); const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`); const data = await res.json(); if (data.code === 200) { const t = data.data.timings; el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`; } } catch(e) { el.textContent = '🕌 Gagal memuat.'; } }
+    try { const d = new Date(); const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`); const data = await res.json(); if (data.code === 200) { const t = data.data.timings; el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`; } } catch(e) { el.textContent = '🕌 Gagal memuat.'; } }
 
 async function showSlides() {
     const track = document.getElementById('dream-slide-track');
     const dotsContainer = document.getElementById('slide-dots');
     if (!track || !dotsContainer) return;
-
     const slides = [
         '🕌 Assalamualaikum, selamat datang.',
-        '📅 Booking: Memuat data...',
-        '⚠️ K3 & Progres: Memuat data...',
-        '☁️ Cuaca: Memuat...',
+        '📅 Booking: Memuat data...', '⚠️ K3 & Progres: Memuat data...', '☁️ Cuaca: Memuat...',
         localStorage.getItem('dreamos_slide_5') || '📢 Pengumuman Manajemen: Belum ada.',
         localStorage.getItem('dreamos_slide_6') || '🏢 Info Bagian Umum: Belum ada.',
         localStorage.getItem('dreamos_slide_7') || '💚 Terima kasih untuk seluruh tim!'
     ];
-
     track.innerHTML = slides.map(s => '<div class="dream-slide">' + s.replace(/\n/g, '<br>') + '</div>').join('');
     dotsContainer.innerHTML = slides.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}" onclick="goToSlide(${i})"></span>`).join('');
-
     window.goToSlide = function(idx) {
         window.slideIdx = idx;
         track.style.transform = `translateX(-${idx * 100}%)`;
         document.querySelectorAll('#slide-dots .dot').forEach((d, i) => d.classList.toggle('active', i === idx));
     };
-
     if (slideInterval) clearInterval(slideInterval);
     slideInterval = setInterval(() => { window.slideIdx = (window.slideIdx + 1) % slides.length; window.goToSlide(window.slideIdx); }, 7000);
 }
@@ -319,23 +310,20 @@ window.goHome = function() {
 window.openMod = function(id) {
     if (!window.canAccess(id)) return alert('⛔ Akses Ditolak.');
     const map = { cmd: 'commandcenter.html', sec: 'security.html', k3: 'k3.html', in: 'janitor-indoor.html', out: 'janitor-outdoor.html', maint: 'maintenance.html', book: 'booking.html', stok: 'stok.html', asset: 'asset.html', profile: 'profile.html', qr: 'qr.html', about: 'about.html', setting: 'setting.html' };
-    const m = map[id];
-    if (!m) return alert('Unknown module');
+    const m = map[id]; if (!m) return alert('Unknown module');
     let container = document.getElementById('mod-container');
     if (!container) { container = document.createElement('div'); container.id = 'mod-container'; container.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);backdrop-filter:blur(20px);padding-bottom:5rem;'; document.body.appendChild(container); }
     container.style.display = 'block';
     container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Loading...</div>';
-    fetch(`modules/${m}?v=${Date.now()}`)
-        .then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status))
+    fetch(`modules/${m}?v=${Date.now()}`).then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status))
         .then(html => { container.innerHTML = html; container.querySelectorAll('script').forEach(s => { const ns = document.createElement('script'); ns.textContent = s.textContent; document.body.appendChild(ns); }); })
         .catch(err => { container.innerHTML = `<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Failed</h3><p>${err}</p><button onclick="goHome()">Back</button></div>`; });
 };
 
+// Starfield
 (function() {
-    const canvas = document.getElementById('star-field');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let stars = [], anim;
+    const canvas = document.getElementById('star-field'); if (!canvas) return;
+    const ctx = canvas.getContext('2d'); let stars = [], anim;
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     resize(); window.addEventListener('resize', resize);
     function createStars() { stars = []; for (let i = 0; i < (canvas.width * canvas.height) / 2000; i++) stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 }); }
@@ -344,6 +332,7 @@ window.openMod = function(id) {
     animate(); window.addEventListener('beforeunload', () => cancelAnimationFrame(anim));
 })();
 
+// Session timeout
 var idleTimer;
 function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(() => { localStorage.setItem('dreamos_session_active', 'false'); alert('⏰ Sesi idle 10 menit.'); location.reload(); }, 600000); }
 document.addEventListener('click', resetIdleTimer);
@@ -351,155 +340,52 @@ document.addEventListener('keydown', resetIdleTimer);
 document.addEventListener('scroll', resetIdleTimer);
 resetIdleTimer();
 
+// Enter key
 document.addEventListener('DOMContentLoaded', () => {
-    const pw = document.getElementById('password-input');
-    if (pw) pw.addEventListener('keypress', e => { if (e.key === 'Enter') authenticate(); });
-    const em = document.getElementById('email-input');
-    if (em) em.addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('password-input').focus(); });
+    const pw = document.getElementById('password-input'); if (pw) pw.addEventListener('keypress', e => { if (e.key === 'Enter') authenticate(); });
+    const em = document.getElementById('email-input'); if (em) em.addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('password-input').focus(); });
 });
-</script>
 
-
-
-// ========== RETRY QUEUE ENGINE (Exponential Backoff) ==========
-window.retryQueue = [];
-window.isProcessingQueue = false;
-
-window.addToRetryQueue = function(action) {
-  window.retryQueue.push({ ...action, retries: 0, nextRetry: Date.now() + 1000 });
-  if (!window.isProcessingQueue) processRetryQueue();
-};
-
+// ========== RETRY QUEUE ENGINE ==========
+window.retryQueue = []; window.isProcessingQueue = false;
+window.addToRetryQueue = function(action) { window.retryQueue.push({ ...action, retries: 0, nextRetry: Date.now() + 1000 }); if (!window.isProcessingQueue) processRetryQueue(); };
 async function processRetryQueue() {
-  if (window.retryQueue.length === 0) {
-    window.isProcessingQueue = false;
-    return;
-  }
+  if (window.retryQueue.length === 0) { window.isProcessingQueue = false; return; }
   window.isProcessingQueue = true;
-  
-  const now = Date.now();
-  const action = window.retryQueue.find(a => a.nextRetry <= now);
-  
-  if (!action) {
-    setTimeout(processRetryQueue, 500); // cek lagi nanti
-    return;
-  }
-  
-  try {
-    const result = await action.fn();
-    if (result && result.error) throw result.error;
-    // Sukses, hapus dari queue
-    window.retryQueue = window.retryQueue.filter(a => a !== action);
-    console.log('✅ Retry sukses:', action.label);
-    if (action.onSuccess) action.onSuccess();
-  } catch(e) {
-    action.retries++;
-    if (action.retries > 5) {
-      console.warn('❌ Retry gagal setelah 5x:', action.label);
-      window.retryQueue = window.retryQueue.filter(a => a !== action);
-      if (action.onFail) action.onFail();
-    } else {
-      // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-      action.nextRetry = now + Math.pow(2, action.retries) * 1000;
-      console.log('🔄 Retry #' + action.retries + ' untuk ' + action.label + ' dalam ' + Math.pow(2, action.retries) + 's');
-    }
-  }
-  
+  const now = Date.now(); const action = window.retryQueue.find(a => a.nextRetry <= now);
+  if (!action) { setTimeout(processRetryQueue, 500); return; }
+  try { const result = await action.fn(); if (result && result.error) throw result.error; window.retryQueue = window.retryQueue.filter(a => a !== action); if (action.onSuccess) action.onSuccess(); }
+  catch(e) { action.retries++; if (action.retries > 5) { window.retryQueue = window.retryQueue.filter(a => a !== action); if (action.onFail) action.onFail(); } else { action.nextRetry = now + Math.pow(2, action.retries) * 1000; } }
   setTimeout(processRetryQueue, 500);
 }
 
 // ========== OPTIMISTIC UI HELPER ==========
 window.optimisticSave = function(key, data, supabaseFn, label) {
-  // 1. Simpan ke localStorage dulu (instan)
-  var existing = JSON.parse(localStorage.getItem(key) || '[]');
-  existing.push(data);
-  localStorage.setItem(key, JSON.stringify(existing));
-  
-  // 2. Update UI langsung (tanpa nunggu server)
+  var existing = JSON.parse(localStorage.getItem(key) || '[]'); existing.push(data); localStorage.setItem(key, JSON.stringify(existing));
   if (typeof refreshUI === 'function') refreshUI();
-  
-  // 3. Coba kirim ke Supabase
-  supabaseFn().then(function(res) {
-    if (res.error) {
-      // Gagal, masukkan ke retry queue
-      window.addToRetryQueue({
-        label: label,
-        fn: supabaseFn,
-        onSuccess: function() { console.log('✅ ' + label + ' tersimpan'); },
-        onFail: function() { console.warn('⚠️ ' + label + ' gagal tersimpan'); }
-      });
-    }
-  }).catch(function() {
-    window.addToRetryQueue({
-      label: label,
-      fn: supabaseFn,
-      onSuccess: function() { console.log('✅ ' + label + ' tersimpan'); },
-      onFail: function() { console.warn('⚠️ ' + label + ' gagal tersimpan'); }
-    });
-  });
+  supabaseFn().then(function(res) { if (res.error) { window.addToRetryQueue({ label: label, fn: supabaseFn }); } }).catch(function() { window.addToRetryQueue({ label: label, fn: supabaseFn }); });
 };
-
 
 // ========== AUDIT LOGGER TERPUSAT ==========
 window.auditLog = async function(action, details) {
   var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-  var entry = {
-    user_id: user.id || 'unknown',
-    email: user.email || 'unknown',
-    action: action,
-    details: details || '',
-    timestamp: new Date().toISOString()
-  };
-  
-  // 1. Simpan ke localStorage (offline-first)
-  var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]');
-  logs.unshift(entry);
-  if (logs.length > 100) logs.pop();
-  localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-  
-  // 2. Kirim ke Supabase (background)
-  try {
-    await window.supabase.from('audit_logs').insert({
-      user_id: entry.user_id,
-      action: entry.action,
-      details: entry.details
-    });
-  } catch(e) {
-    // Gagal kirim ke cloud, tetap tersimpan di localStorage
-    console.warn('Audit cloud sync failed, saved locally.');
-  }
+  var entry = { user_id: user.id || 'unknown', email: user.email || 'unknown', action: action, details: details || '', timestamp: new Date().toISOString() };
+  var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs') || '[]'); logs.unshift(entry); if (logs.length > 100) logs.pop(); localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
+  try { await window.supabase.from('audit_logs').insert({ user_id: entry.user_id, action: entry.action, details: entry.details }); } catch(e) {}
 };
+setTimeout(function() { window.auditLog('PAGE_VIEW', document.title); }, 1000);
 
-// Log otomatis: halaman dibuka
-setTimeout(function() {
-  window.auditLog('PAGE_VIEW', document.title);
-}, 1000);
+// Online/Offline
+window.addEventListener('online', function() { var el = document.getElementById('connection-status'); if (el) { el.textContent = '📡 Online'; el.className = 'badge online'; } checkConnection(); });
+window.addEventListener('offline', function() { var el = document.getElementById('connection-status'); if (el) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } });
 
-
-window.addEventListener('online', function() {
-    var el = document.getElementById('connection-status');
-    if (el) { el.textContent = '📡 Online'; el.className = 'badge online'; }
-    checkConnection();
-});
-window.addEventListener('offline', function() {
-    var el = document.getElementById('connection-status');
-    if (el) { el.textContent = '📡 Offline'; el.className = 'badge offline'; }
-});
-
-</script>
-
-<script>
-// Daftarkan Service Worker untuk PWA
+// PWA Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/dream-os-final/sw.js')
-      .then(function(reg) {
-        console.log('✅ Service Worker terdaftar:', reg.scope);
-      })
-      .catch(function(err) {
-        console.warn('⚠️ Service Worker gagal:', err);
-      });
+    navigator.serviceWorker.register('/dream-os-final/sw.js').then(function(reg) { console.log('✅ SW:', reg.scope); }).catch(function(err) { console.warn('⚠️ SW:', err); });
   });
 }
-</script></body>
+</script>
+
+</body>
 </html>
