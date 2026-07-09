@@ -108,31 +108,30 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 <script>
 const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-
-// Inisialisasi Supabase dengan pengecekan eksplisit
+// Inisialisasi Supabase (robust)
 function initSupabase() {
-  if (typeof supabase === 'undefined') {
-    console.warn('⚠️ Supabase SDK tidak dimuat. Mencoba lagi...');
-    return false;
-  }
-  try {
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
     window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log('✅ Supabase client terinisialisasi.');
+    console.log('✅ Supabase terinisialisasi');
     return true;
-  } catch(e) {
-    console.error('❌ Gagal inisialisasi Supabase:', e);
-    return false;
   }
+  console.warn('⏳ Menunggu Supabase SDK...');
+  return false;
 }
 
-// Coba inisialisasi, kalau gagal ulangi setelah 1 detik
-if (!initSupabase()) {
-  setTimeout(function() {
-    if (!initSupabase()) {
-      document.getElementById('login-screen').innerHTML += '<p style="color:red;margin-top:1rem;">⚠️ Gagal menghubungi server. Periksa koneksi.</p>';
-    }
-  }, 1000);
-}
+// Coba inisialisasi, ulangi hingga 10 kali
+var initAttempts = 0;
+var initInterval = setInterval(function() {
+  initAttempts++;
+  if (initSupabase()) {
+    clearInterval(initInterval);
+  } else if (initAttempts >= 10) {
+    clearInterval(initInterval);
+    console.error('❌ Supabase gagal dimuat setelah 10 detik');
+  }
+}, 1000); 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+
+
 
 let slideInterval;
 window.slideIdx = 0;
@@ -375,13 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>
-  // Fallback jika Supabase gagal inisialisasi
-  setTimeout(() => {
-    if (!window.supabase || !window.supabase.auth) {
-      document.getElementById('login-screen').innerHTML += '<p style="color:red; margin-top:1rem;">⚠️ Gagal menghubungi server. Periksa koneksi.</p>';
-    }
-  }, 5000);
+
 
 // ========== RETRY QUEUE ENGINE (Exponential Backoff) ==========
 window.retryQueue = [];
