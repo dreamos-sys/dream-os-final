@@ -189,7 +189,7 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <script>
-    // ==================== DREAM OS RBAC FINAL ====================
+    // ==================== DREAM OS RBAC FINAL LENGKAP ====================
     const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
     
@@ -202,7 +202,6 @@
     // ---------- MULTI-BAHASA ----------
     const translations = {
       id: {
-        dashboard: 'Dasbor',
         welcome: 'Assalamualaikum, selamat datang.',
         prayer_loading: '🕌 Memuat waktu shalat...',
         prayer_fail: '🕌 Gagal memuat jadwal.',
@@ -213,8 +212,6 @@
         online: '📡 Online',
         offline: '📡 Offline',
         login_btn: '⚡ AKSES INTI',
-        email_placeholder: '📧 EMAIL',
-        pass_placeholder: '🔐 PASSWORD',
         verify_needed: 'Selesaikan verifikasi keamanan.',
         wrong_creds: '⛔ Email atau password salah.',
         too_many_attempts: '⛔ Terlalu banyak percobaan. Tunggu 60 detik.',
@@ -225,7 +222,6 @@
         back_dashboard: '🏠 Kembali ke Dashboard'
       },
       en: {
-        dashboard: 'Dashboard',
         welcome: 'Welcome, peace be upon you.',
         prayer_loading: '🕌 Loading prayer times...',
         prayer_fail: '🕌 Failed to load schedule.',
@@ -236,8 +232,6 @@
         online: '📡 Online',
         offline: '📡 Offline',
         login_btn: '⚡ ACCESS CORE',
-        email_placeholder: '📧 EMAIL',
-        pass_placeholder: '🔐 PASSWORD',
         verify_needed: 'Please complete security verification.',
         wrong_creds: '⛔ Invalid email or password.',
         too_many_attempts: '⛔ Too many attempts. Wait 60 seconds.',
@@ -255,7 +249,7 @@
     // ---------- PENGATURAN LOKASI SHALAT ----------
     let prayerLocation = JSON.parse(localStorage.getItem('dreamos_prayer_loc') || '{"lat":-6.2088,"lng":106.8456,"city":"Jakarta"}');
 
-    // ---------- RBAC PERMISSIONS (SESUAI JABATAN) ----------
+    // ---------- RBAC PERMISSIONS ----------
     const ROLE_PERMISSIONS = {
       guru: ['booking', 'k3'],
       janitor_indoor: ['janitor-indoor'],
@@ -263,7 +257,7 @@
       security: ['security'],
       komandan_regu: ['security', 'security_edit_jadwal'],
       maintenance: ['maintenance'],
-      kabag_umum: ['cmd','sec','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting','admin_users'], // tidak termasuk security_edit_jadwal
+      kabag_umum: ['cmd','sec','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting','admin_users'],
       koordinator_umum: ['dana'],
       dev: ['admin_users','cmd','sec','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting']
     };
@@ -292,7 +286,6 @@
       return (ROLE_PERMISSIONS[role] || []).includes(moduleId);
     }
 
-    // ---------- KEAMANAN DATA LOCALSTORAGE ----------
     function secureSetItem(key, value) {
       try { localStorage.setItem(key, btoa(unescape(encodeURIComponent(JSON.stringify(value))))); } catch(e) { localStorage.setItem(key, JSON.stringify(value)); }
     }
@@ -334,13 +327,8 @@
         setTimeout(()=>errEl.style.display='none',3000); return;
       }
 
-      // DEV BYPASS: jika email mengandung 'dev@dream.os' dan password 'devbypass', langsung masuk tanpa Turnstile
       if (email === 'dev@dream.os' && password === 'devbypass') {
-        const devProfile = {
-          id: 'dev-bypass', email: email,
-          nama: 'Developer',
-          role: 'dev'
-        };
+        const devProfile = { id: 'dev-bypass', email: email, nama: 'Developer', role: 'dev' };
         secureSetItem('dreamos_bound_user', devProfile);
         localStorage.setItem('dreamos_session_active', 'true');
         btn.textContent = '✅ Dev Mode';
@@ -350,7 +338,7 @@
           document.getElementById('main-app').style.display = 'block';
           document.getElementById('bottom-nav').style.display = 'block';
           renderDashboard(); resetIdleTimer();
-          auditLog('DEV_LOGIN_BYPASS', 'Developer bypass login');
+          auditLog('DEV_LOGIN_BYPASS');
         }, 500);
         return;
       }
@@ -386,7 +374,7 @@
           document.getElementById('main-app').style.display = 'block';
           document.getElementById('bottom-nav').style.display = 'block';
           renderDashboard(); resetIdleTimer();
-          auditLog('LOGIN_SUCCESS', 'User logged in');
+          auditLog('LOGIN_SUCCESS');
         }, 500);
       } catch(e) {
         errEl.textContent = '⚠️ '+e.message; errEl.style.display='block';
@@ -460,8 +448,21 @@
       renderDashboard();
     }
 
-    function startLiveClock() { setInterval(()=>{ const el=document.getElementById('live-clock'); if(el) el.textContent='⏱️ '+new Date().toLocaleTimeString(currentLang==='id'?'id-ID':'en-US'); },1000); }
-    function startBatteryMonitor() { /* sama seperti sebelumnya, diabaikan untuk ringkas */ }
+    function startLiveClock() {
+      setInterval(()=>{ const el=document.getElementById('live-clock'); if(el) el.textContent='⏱️ '+new Date().toLocaleTimeString(currentLang==='id'?'id-ID':'en-US'); },1000);
+    }
+
+    function startBatteryMonitor() {
+      if (!('getBattery' in navigator)) return;
+      navigator.getBattery().then(battery => {
+        const el = document.getElementById('battery-status');
+        const update = () => { if(el) el.textContent = (battery.charging ? '⚡' : '🔋') + ' ' + Math.round(battery.level * 100) + '%'; };
+        update();
+        battery.addEventListener('levelchange', update);
+        battery.addEventListener('chargingchange', update);
+      });
+    }
+
     async function checkConnection() {
       const el=document.getElementById('connection-status'); if(!el) return;
       el.textContent='📡 '+t('connection_checking'); el.className='badge';
@@ -473,6 +474,7 @@
         else throw new Error('Status '+res.status);
       } catch(e) { el.textContent='📡 '+t('offline'); el.className='badge offline'; }
     }
+
     async function fetchPrayerTimes() {
       const el=document.getElementById('prayer-times-dash'); if(!el) return;
       try {
@@ -485,6 +487,7 @@
         } else el.textContent=t('prayer_fail');
       } catch(e) { el.textContent=t('prayer_fail'); }
     }
+
     function initializeSlides() {
       const track=document.getElementById('dream-slide-track'), dots=document.getElementById('slide-dots');
       if(!track||!dots) return;
@@ -503,6 +506,7 @@
       if(window.slideInterval) clearInterval(window.slideInterval);
       window.slideInterval = setInterval(()=>{ window.slideIndex=(window.slideIndex+1)%slides.length; goToSlide(window.slideIndex); },7000);
     }
+
     window.goToSlide = function(idx) {
       const track=document.getElementById('dream-slide-track'), dots=document.querySelectorAll('#slide-dots .dot');
       if(!track) return;
@@ -539,17 +543,99 @@
       const h=document.querySelector('.nav-item[onclick="goHome()"]'); if(h) h.classList.add('active');
     }
 
-    function resetIdleTimer() { /* 25 menit */ }
-    async function auditLog(action,details='') { /* kirim ke Supabase */ }
+    // ----- SESSION TIMEOUT -----
+    let idleTimer;
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (confirm(t('session_expired'))) resetIdleTimer();
+        else logout();
+      }, 1500000); // 25 menit
+    }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
-      document.getElementById('email-input')?.addEventListener('keypress', e=>{ if(e.key==='Enter') document.getElementById('password-input').focus(); });
-      document.getElementById('password-input')?.addEventListener('keypress', e=>{ if(e.key==='Enter') authenticate(); });
-      checkAutoLogin();
-      if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+    // ----- AUDIT LOG -----
+    async function auditLog(action, details='') {
+      const user = secureGetItem('dreamos_bound_user') || {};
+      const entry = {
+        user_id: user.id || 'unknown', email: user.email || '', action, details,
+        timestamp: new Date().toISOString()
+      };
+      // Simpan lokal
+      const logs = secureGetItem('dreamos_audit_logs') || [];
+      logs.unshift(entry); if (logs.length > 100) logs.pop();
+      secureSetItem('dreamos_audit_logs', logs);
+      // Kirim ke Supabase
+      try { await supabase.from('audit_logs').insert(entry); } catch(e) {}
+    }
+
+    // ----- STARFIELD CANVAS -----
+    (function() {
+      const canvas = document.getElementById('star-field');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+      function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; createStars(); }
+      function createStars() {
+        const density = Math.floor((canvas.width * canvas.height) / 2000);
+        stars = [];
+        for (let i = 0; i < density; i++) stars.push({
+          x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+          r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05
+        });
+      }
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e2e8f0';
+        stars.forEach(s => {
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+          s.y += s.speed;
+          if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+        });
+        requestAnimationFrame(animate);
+      }
+      resize(); window.addEventListener('resize', resize); animate();
+    })();
+
+    // ----- RETRY QUEUE -----
+    let retryQueue = [], isProcessingQueue = false;
+    function addToRetryQueue(action) {
+      retryQueue.push({...action, retries: 0, nextRetry: Date.now() + 1000});
+      if (!isProcessingQueue) processRetryQueue();
+    }
+    async function processRetryQueue() {
+      if (retryQueue.length === 0) { isProcessingQueue = false; return; }
+      isProcessingQueue = true;
+      const now = Date.now();
+      const pending = retryQueue.find(a => a.nextRetry <= now);
+      if (!pending) { setTimeout(processRetryQueue, 500); return; }
+      try {
+        const res = await pending.fn();
+        if (res && res.error) throw res.error;
+        retryQueue = retryQueue.filter(a => a !== pending);
+      } catch(e) {
+        pending.retries++;
+        if (pending.retries > 5) retryQueue = retryQueue.filter(a => a !== pending);
+        else pending.nextRetry = now + Math.pow(2, pending.retries) * 1000;
+      }
+      setTimeout(processRetryQueue, 500);
+    }
+
+    // ----- EVENT LISTENERS -----
+    document.addEventListener('click', resetIdleTimer);
+    document.addEventListener('keydown', resetIdleTimer);
+    document.addEventListener('scroll', resetIdleTimer);
+    window.addEventListener('online', checkConnection);
+    window.addEventListener('offline', () => {
+      const el = document.getElementById('connection-status');
+      if (el) { el.textContent = '📡 ' + t('offline'); el.className = 'badge offline'; }
     });
 
-    // ... starfield, retry queue disertakan secara singkat di bawah
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('email-input')?.addEventListener('keypress', e => { if(e.key==='Enter') document.getElementById('password-input').focus(); });
+      document.getElementById('password-input')?.addEventListener('keypress', e => { if(e.key==='Enter') authenticate(); });
+      checkAutoLogin();
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+    });
   </script>
 </body>
 </html>
