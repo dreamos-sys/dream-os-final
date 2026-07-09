@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com https://api.open-meteo.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com https://api.open-meteo.com;">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dream OS • v1.0 Final</title>
@@ -88,7 +88,7 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
             <span class="toggle-pin" onclick="togglePassword()">👁️</span>
         </div>
         <div class="cf-turnstile" data-sitekey="0x4AAAAAAAXvP1JL5JkX0y8b" style="margin-bottom:1rem;"></div>
-            <button class="access-btn" onclick="authenticate()">⚡ ACCESS CORE</button>
+            <button class="access-btn" id="login-button" onclick="authenticate()">⚡ ACCESS CORE</button>
         <div class="error-msg" id="error-msg"></div>
     </div>
 </div>
@@ -108,8 +108,31 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 <script>
 const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-window.supabase = supabaseClient;
+
+// Inisialisasi Supabase dengan pengecekan eksplisit
+function initSupabase() {
+  if (typeof supabase === 'undefined') {
+    console.warn('⚠️ Supabase SDK tidak dimuat. Mencoba lagi...');
+    return false;
+  }
+  try {
+    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('✅ Supabase client terinisialisasi.');
+    return true;
+  } catch(e) {
+    console.error('❌ Gagal inisialisasi Supabase:', e);
+    return false;
+  }
+}
+
+// Coba inisialisasi, kalau gagal ulangi setelah 1 detik
+if (!initSupabase()) {
+  setTimeout(function() {
+    if (!initSupabase()) {
+      document.getElementById('login-screen').innerHTML += '<p style="color:red;margin-top:1rem;">⚠️ Gagal menghubungi server. Periksa koneksi.</p>';
+    }
+  }, 1000);
+}
 
 let slideInterval;
 window.slideIdx = 0;
@@ -124,9 +147,15 @@ var loginAttempts = 0;
 var loginLocked = false;
 
 async function authenticate() {
+    var btn = document.getElementById('login-button');
+    if (btn) {
+      btn.textContent = '⏳ Connecting...';
+      btn.disabled = true;
+    }
     if (loginLocked) {
         var error = document.getElementById('error-msg');
         error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
+        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         error.style.display = 'block';
         loginAttempts++;
         if (loginAttempts >= 5) {
@@ -139,7 +168,8 @@ async function authenticate() {
     const email = document.getElementById('email-input').value.trim();
     const password = document.getElementById('password-input').value;
     const error = document.getElementById('error-msg');
-    if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; error.style.display = 'block';
+    if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+        error.style.display = 'block';
         loginAttempts++;
         if (loginAttempts >= 5) {
             loginLocked = true;
@@ -148,7 +178,8 @@ async function authenticate() {
         } setTimeout(() => error.style.display = 'none', 3000); return; }
     try {
         const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
-        if (authError) { error.textContent = '⛔ ' + authError.message; error.style.display = 'block';
+        if (authError) { error.textContent = '⛔ ' + authError.message; if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+        error.style.display = 'block';
         loginAttempts++;
         if (loginAttempts >= 5) {
             loginLocked = true;
@@ -158,7 +189,8 @@ async function authenticate() {
         const user = data.user;
         localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: user.id, email: user.email, nama: user.user_metadata?.nama || email.split('@')[0], role: user.user_metadata?.role || 'staff', device_dna: '' }));
         localStorage.setItem('dreamos_session_active', 'true');
-        document.getElementById('login-screen').style.opacity = '0';
+        if (btn) { btn.textContent = '✅ Success!'; }
+    document.getElementById('login-screen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
@@ -167,6 +199,7 @@ async function authenticate() {
         }, 500);
     } catch (e) {
         error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
+        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         error.style.display = 'block';
         loginAttempts++;
         if (loginAttempts >= 5) {
