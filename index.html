@@ -116,14 +116,41 @@ function togglePassword() {
     document.querySelector('.toggle-pin').textContent = pw.type === 'password' ? '👁️' : '🙈';
 }
 
+var loginAttempts = 0;
+var loginLocked = false;
+
 async function authenticate() {
+    if (loginLocked) {
+        var error = document.getElementById('error-msg');
+        error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
+        error.style.display = 'block';
+        loginAttempts++;
+        if (loginAttempts >= 5) {
+            loginLocked = true;
+            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
+            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
+        }
+        return;
+    }
     const email = document.getElementById('email-input').value.trim();
     const password = document.getElementById('password-input').value;
     const error = document.getElementById('error-msg');
-    if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; error.style.display = 'block'; setTimeout(() => error.style.display = 'none', 3000); return; }
+    if (!email || !password) { error.textContent = '⛔ Email dan password harus diisi.'; error.style.display = 'block';
+        loginAttempts++;
+        if (loginAttempts >= 5) {
+            loginLocked = true;
+            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
+            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
+        } setTimeout(() => error.style.display = 'none', 3000); return; }
     try {
         const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
-        if (authError) { error.textContent = '⛔ ' + authError.message; error.style.display = 'block'; setTimeout(() => error.style.display = 'none', 3000); return; }
+        if (authError) { error.textContent = '⛔ ' + authError.message; error.style.display = 'block';
+        loginAttempts++;
+        if (loginAttempts >= 5) {
+            loginLocked = true;
+            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
+            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
+        } setTimeout(() => error.style.display = 'none', 3000); return; }
         const user = data.user;
         localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: user.id, email: user.email, nama: user.user_metadata?.nama || email.split('@')[0], role: user.user_metadata?.role || 'staff', device_dna: '' }));
         localStorage.setItem('dreamos_session_active', 'true');
@@ -137,6 +164,12 @@ async function authenticate() {
     } catch (e) {
         error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
         error.style.display = 'block';
+        loginAttempts++;
+        if (loginAttempts >= 5) {
+            loginLocked = true;
+            error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
+            setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
+        }
         setTimeout(() => error.style.display = 'none', 3000);
     }
 }
