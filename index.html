@@ -131,20 +131,23 @@ var loginLocked = false;
 
 async function authenticate() {
     var btn = document.getElementById('login-button');
-    if (btn) { btn.textContent = '⏳ Connecting...'; btn.disabled = true; }
+    var error = document.getElementById('error-msg');
     
+    // Cek rate limiting
     if (loginLocked) {
-        var error = document.getElementById('error-msg');
         error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
         error.style.display = 'block';
-        if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+        setTimeout(() => error.style.display = 'none', 3000);
         return;
     }
     
+    // Set tombol loading
+    if (btn) { btn.textContent = '⏳ Connecting...'; btn.disabled = true; }
+    
     const email = document.getElementById('email-input').value.trim();
     const password = document.getElementById('password-input').value;
-    const error = document.getElementById('error-msg');
     
+    // Validasi input
     if (!email || !password) {
         error.textContent = '⛔ Email dan password harus diisi.';
         error.style.display = 'block';
@@ -155,19 +158,25 @@ async function authenticate() {
     
     try {
         const { data, error: authError } = await window.supabase.auth.signInWithPassword({ email, password });
+        
         if (authError) {
+            // Login gagal
             error.textContent = '⛔ ' + authError.message;
             error.style.display = 'block';
             if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
+            
+            // Rate limiting
             loginAttempts++;
             if (loginAttempts >= 5) {
                 loginLocked = true;
+                error.textContent = '⛔ Terlalu banyak percobaan. Tunggu 60 detik.';
                 setTimeout(() => { loginLocked = false; loginAttempts = 0; }, 60000);
             }
             setTimeout(() => error.style.display = 'none', 3000);
             return;
         }
         
+        // Login sukses
         const user = data.user;
         localStorage.setItem('dreamos_bound_user', JSON.stringify({
             id: user.id, email: user.email,
@@ -184,7 +193,9 @@ async function authenticate() {
             document.getElementById('bottom-nav').style.display = 'block';
             renderDashboard();
         }, 500);
+        
     } catch (e) {
+        // Koneksi gagal
         error.textContent = '⚠️ Koneksi gagal. Periksa jaringan.';
         error.style.display = 'block';
         if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
