@@ -166,7 +166,6 @@
         <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
         <span class="toggle-pin" onclick="togglePassword()">👁️</span>
       </div>
-      <!-- SITEKEY TEST: Selalu memberikan token valid -->
       <div class="cf-turnstile" data-sitekey="1x00000000000000000000" style="margin-bottom:1rem;" id="turnstile-widget"></div>
       <button class="access-btn" id="login-button" onclick="authenticate()">⚡ ACCESS CORE</button>
       <div class="error-msg" id="error-msg"></div>
@@ -191,7 +190,6 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <script>
-    // ==================== DREAM OS RBAC FINAL (NO ERROR) ====================
     const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
     
@@ -203,7 +201,7 @@
         console.log('✅ Supabase siap');
         return true;
       }
-      console.error('❌ Supabase library belum termuat');
+      console.warn('⏳ Menunggu Supabase...');
       return false;
     }
 
@@ -313,6 +311,7 @@
     function togglePassword() {
       const pw = document.getElementById('password-input');
       const icon = document.querySelector('.toggle-pin');
+      if (!pw || !icon) return;
       pw.type = pw.type === 'password' ? 'text' : 'password';
       icon.textContent = pw.type === 'password' ? '👁️' : '🙈';
     }
@@ -320,12 +319,12 @@
     let loginAttempts = 0, loginLocked = false;
 
     async function authenticate() {
-      if (!supabase) initSupabase();
       if (!supabase) {
-        alert('Server belum siap. Coba lagi sebentar.');
-        return;
+        if (!initSupabase()) {
+          alert('Server belum siap. Coba lagi dalam beberapa detik.');
+          return;
+        }
       }
-
       const btn = document.getElementById('login-button');
       const errEl = document.getElementById('error-msg');
       if (loginLocked) {
@@ -341,7 +340,7 @@
         setTimeout(()=>errEl.style.display='none',3000); return;
       }
 
-      // --- DEV BYPASS ---
+      // DEV BYPASS
       if (email === 'dev@dream.os' && password === 'devbypass') {
         const devProfile = { id: 'dev-bypass', email: email, nama: 'Developer', role: 'dev' };
         secureSetItem('dreamos_bound_user', devProfile);
@@ -358,7 +357,7 @@
         return;
       }
 
-      // --- TURNSTILE TOKEN (dengan fallback) ---
+      // TURNSTILE TOKEN
       let token = '';
       if (typeof turnstile !== 'undefined' && turnstile.getResponse) {
         token = turnstile.getResponse();
