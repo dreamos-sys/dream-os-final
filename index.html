@@ -201,11 +201,9 @@
         console.log('✅ Supabase siap');
         return true;
       }
-      console.warn('⏳ Menunggu Supabase...');
       return false;
     }
 
-    // ---------- MULTI-BAHASA ----------
     const translations = {
       id: {
         welcome: 'Assalamualaikum, selamat datang.',
@@ -252,9 +250,12 @@
     let currentLang = localStorage.getItem('dreamos_lang') || 'id';
     function t(key) { return translations[currentLang]?.[key] || key; }
 
-    let prayerLocation = JSON.parse(localStorage.getItem('dreamos_prayer_loc') || '{"lat":-6.2088,"lng":106.8456,"city":"Jakarta"}');
+    let prayerLocation = { lat: -6.2088, lng: 106.8456, city: 'Jakarta' };
+    try {
+      const savedLoc = JSON.parse(localStorage.getItem('dreamos_prayer_loc'));
+      if (savedLoc) prayerLocation = savedLoc;
+    } catch(e) {}
 
-    // ---------- RBAC PERMISSIONS ----------
     const ROLE_PERMISSIONS = {
       guru: ['booking', 'k3'],
       janitor_indoor: ['janitor-indoor'],
@@ -268,7 +269,7 @@
     };
 
     function getUserRole() {
-      const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+      const user = getStoredUser();
       return user.role || 'staff';
     }
 
@@ -278,7 +279,7 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const role = user.user_metadata?.role || 'staff';
-          const stored = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+          const stored = getStoredUser();
           stored.role = role;
           localStorage.setItem('dreamos_bound_user', JSON.stringify(stored));
           return role;
@@ -292,13 +293,12 @@
       return (ROLE_PERMISSIONS[role] || []).includes(moduleId);
     }
 
-    function secureSetItem(key, value) {
-      try { localStorage.setItem(key, btoa(unescape(encodeURIComponent(JSON.stringify(value))))); } catch(e) { localStorage.setItem(key, JSON.stringify(value)); }
-    }
-    function secureGetItem(key) {
-      const val = localStorage.getItem(key);
-      if (!val) return null;
-      try { return JSON.parse(decodeURIComponent(escape(atob(val)))); } catch(e) { return JSON.parse(val); }
+    function getStoredUser() {
+      try {
+        return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+      } catch(e) {
+        return {};
+      }
     }
 
     async function logout() {
@@ -319,11 +319,10 @@
     let loginAttempts = 0, loginLocked = false;
 
     async function authenticate() {
+      if (!supabase) initSupabase();
       if (!supabase) {
-        if (!initSupabase()) {
-          alert('Server belum siap. Coba lagi dalam beberapa detik.');
-          return;
-        }
+        alert('Server belum siap. Coba lagi sebentar.');
+        return;
       }
       const btn = document.getElementById('login-button');
       const errEl = document.getElementById('error-msg');
@@ -340,10 +339,9 @@
         setTimeout(()=>errEl.style.display='none',3000); return;
       }
 
-      // DEV BYPASS
       if (email === 'dev@dream.os' && password === 'devbypass') {
         const devProfile = { id: 'dev-bypass', email: email, nama: 'Developer', role: 'dev' };
-        secureSetItem('dreamos_bound_user', devProfile);
+        localStorage.setItem('dreamos_bound_user', JSON.stringify(devProfile));
         localStorage.setItem('dreamos_session_active', 'true');
         btn.textContent = '✅ Dev Mode';
         document.getElementById('login-screen').style.opacity = '0';
@@ -357,15 +355,11 @@
         return;
       }
 
-      // TURNSTILE TOKEN
       let token = '';
       if (typeof turnstile !== 'undefined' && turnstile.getResponse) {
         token = turnstile.getResponse();
       }
-      if (!token) {
-        console.warn('Turnstile fallback token digunakan');
-        token = 'dev-token-fallback';
-      }
+      if (!token) token = 'dev-token-fallback';
 
       try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -381,7 +375,7 @@
           nama: user.user_metadata?.nama || email.split('@')[0],
           role: user.user_metadata?.role || 'staff'
         };
-        secureSetItem('dreamos_bound_user', profile);
+        localStorage.setItem('dreamos_bound_user', JSON.stringify(profile));
         localStorage.setItem('dreamos_session_active', 'true');
         btn.textContent = '✅ Success!';
         document.getElementById('login-screen').style.opacity = '0';
@@ -401,6 +395,7 @@
     async function checkAutoLogin() {
       if (localStorage.getItem('dreamos_session_active') !== 'true') return;
       if (!supabase) initSupabase();
+      if (!supabase) return;
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) { logout(); return; }
@@ -412,7 +407,7 @@
     }
 
     function renderDashboard() {
-      const user = secureGetItem('dreamos_bound_user') || {};
+      const user = getStoredUser();
       document.getElementById('dashboard-container').innerHTML = 
         '<div class="header-main glass">'+
           '<img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;margin-bottom:1rem;" onerror="this.style.display=\'none\'">'+
@@ -560,7 +555,6 @@
       const h=document.querySelector('.nav-item[onclick="goHome()"]'); if(h) h.classList.add('active');
     }
 
-    // ----- SESSION TIMEOUT -----
     let idleTimer;
     function resetIdleTimer() {
       clearTimeout(idleTimer);
@@ -570,18 +564,17 @@
       }, 1500000);
     }
 
-    // ----- AUDIT LOG -----
     async function auditLog(action, details='') {
       if (!supabase) return;
-      const user = secureGetItem('dreamos_bound_user') || {};
-      const entry = {
-        user_id: user.id || 'unknown', email: user.email || '', action, details,
-        timestamp: new Date().toISOString()
-      };
-      try { await supabase.from('audit_logs').insert(entry); } catch(e) {}
-      const logs = secureGetItem('dreamos_audit_logs') || [];
-      logs.unshift(entry); if (logs.length > 100) logs.pop();
-      secureSetItem('dreamos_audit_logs', logs);
+      try {
+        const user = getStoredUser();
+        await supabase.from('audit_logs').insert({
+          user_id: user.id || 'unknown',
+          email: user.email || '',
+          action, details,
+          created_at: new Date().toISOString()
+        });
+      } catch(e) {}
     }
 
     // ----- STARFIELD CANVAS -----
@@ -612,30 +605,6 @@
       resize(); window.addEventListener('resize', resize); animate();
     })();
 
-    // ----- RETRY QUEUE -----
-    let retryQueue = [], isProcessingQueue = false;
-    function addToRetryQueue(action) {
-      retryQueue.push({...action, retries: 0, nextRetry: Date.now() + 1000});
-      if (!isProcessingQueue) processRetryQueue();
-    }
-    async function processRetryQueue() {
-      if (retryQueue.length === 0) { isProcessingQueue = false; return; }
-      isProcessingQueue = true;
-      const now = Date.now();
-      const pending = retryQueue.find(a => a.nextRetry <= now);
-      if (!pending) { setTimeout(processRetryQueue, 500); return; }
-      try {
-        const res = await pending.fn();
-        if (res && res.error) throw res.error;
-        retryQueue = retryQueue.filter(a => a !== pending);
-      } catch(e) {
-        pending.retries++;
-        if (pending.retries > 5) retryQueue = retryQueue.filter(a => a !== pending);
-        else pending.nextRetry = now + Math.pow(2, pending.retries) * 1000;
-      }
-      setTimeout(processRetryQueue, 500);
-    }
-
     // ----- EVENT LISTENERS -----
     document.addEventListener('click', resetIdleTimer);
     document.addEventListener('keydown', resetIdleTimer);
@@ -648,9 +617,13 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initSupabase();
-      document.getElementById('email-input')?.addEventListener('keypress', e => { if(e.key==='Enter') document.getElementById('password-input').focus(); });
-      document.getElementById('password-input')?.addEventListener('keypress', e => { if(e.key==='Enter') authenticate(); });
-      checkAutoLogin();
+      try {
+        document.getElementById('email-input')?.addEventListener('keypress', e => { if(e.key==='Enter') document.getElementById('password-input').focus(); });
+        document.getElementById('password-input')?.addEventListener('keypress', e => { if(e.key==='Enter') authenticate(); });
+        checkAutoLogin();
+      } catch(e) {
+        console.error('Error saat inisialisasi:', e);
+      }
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
     });
   </script>
