@@ -1,17 +1,15 @@
 /**
  * Dream OS API Gateway Configuration
- * Digunakan untuk mengarahkan frontend ke Cloudflare Worker
+ * Menggunakan Cloudflare Pages Functions
  */
 window.DREAMOS_WORKER = {
-  // Ganti dengan URL worker setelah deploy
-  url: '/functions/health',
+  url: 'https://dream-os-final.pages.dev',
   endpoints: {
+    health: '/health',
     sync: '/sync',
     broadcast: '/broadcast',
     audit: '/audit',
-    command: '/command',
-    health: '/health'
+    command: '/command'
   },
-  // API Key untuk otentikasi ke worker (di-set manual setelah deploy)
   apiKey: 'dreamos-worker-key-production'
 };
