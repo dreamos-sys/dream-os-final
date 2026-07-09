@@ -194,7 +194,7 @@ window.renderDashboard = function() {
             <strong>Dream OS v1.0 Final</strong><br>
             Engineered by Family Dream Team<br>
             <span style="color:#0ea5e9;">"The Power Soul Of Shalawat"</span><br>
-            ISO 27001 • ISO 9001 • ISO 55001
+            ISO 27001 • ISO 9001 • ISO 55001<br><span style='color:#10b981;'>✅ Multi-User Ready (Beta)</span>
         </div>`;
     const modules = [
         { i:'🌍', n:'CMD Center', id:'cmd' }, { i:'🛡️', n:'Security', id:'sec' }, { i:'⚠️', n:'K3 Safety', id:'k3' },
@@ -207,6 +207,7 @@ window.renderDashboard = function() {
         card.className = 'mod-card glass';
         card.innerHTML = `<div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
         card.onclick = () => openMod(m.id);
+        card.title = 'Klik untuk membuka ' + m.n;
         grid.appendChild(card);
     });
     startLiveClock(); startBatteryMonitor(); checkConnection(); fetchPrayerTimes(); showSlides();
@@ -218,8 +219,12 @@ window.renderDashboard = function() {
 
 function startLiveClock() { setInterval(() => { const el = document.getElementById('live-clock'); if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID'); }, 1000); }
 function startBatteryMonitor() { if ('getBattery' in navigator) { navigator.getBattery().then(b => { const el = document.getElementById('battery-status'); const update = () => { if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%'; }; update(); b.addEventListener('levelchange', update); b.addEventListener('chargingchange', update); }).catch(() => { const el = document.getElementById('battery-status'); if (el) el.textContent = '🔋 --%'; }); } }
-async function checkConnection() { const el = document.getElementById('connection-status'); if (!el) return; if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; } try { const start = Date.now(); const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } }); if (res.ok) { el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)'; el.className = 'badge online'; } else throw new Error('Status ' + res.status); } catch (e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } }
-async function fetchPrayerTimes() { const el = document.getElementById('prayer-times-dash'); if (!el) return; try { const d = new Date(); const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`); const data = await res.json(); if (data.code === 200) { const t = data.data.timings; el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`; } } catch(e) { el.textContent = '🕌 Gagal memuat.'; } }
+async function checkConnection() { const el = document.getElementById('connection-status'); if (!el) return;
+    el.textContent = '📡 Checking...';
+    el.className = 'badge'; if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; } try { const start = Date.now(); const res = await fetch('https://gbigjdhifispatrrskgh.supabase.co/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } }); if (res.ok) { el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)'; el.className = 'badge online'; } else throw new Error('Status ' + res.status); } catch (e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; } }
+async function fetchPrayerTimes() { const el = document.getElementById('prayer-times-dash'); if (!el) return;
+    el.textContent = '📡 Checking...';
+    el.className = 'badge'; try { const d = new Date(); const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`); const data = await res.json(); if (data.code === 200) { const t = data.data.timings; el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`; } } catch(e) { el.textContent = '🕌 Gagal memuat.'; } }
 
 async function showSlides() {
     const track = document.getElementById('dream-slide-track');
