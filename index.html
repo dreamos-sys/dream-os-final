@@ -108,28 +108,13 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 <script>
 const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-// Inisialisasi Supabase (robust)
-function initSupabase() {
-  if (typeof supabase !== 'undefined' && supabase.createClient) {
-    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log('✅ Supabase terinisialisasi');
-    return true;
-  }
-  console.warn('⏳ Menunggu Supabase SDK...');
-  return false;
+// Inisialisasi Supabase langsung
+try {
+  window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log('✅ Supabase terinisialisasi');
+} catch(e) {
+  console.error('❌ Gagal inisialisasi Supabase:', e);
 }
-
-// Coba inisialisasi, ulangi hingga 10 kali
-var initAttempts = 0;
-var initInterval = setInterval(function() {
-  initAttempts++;
-  if (initSupabase()) {
-    clearInterval(initInterval);
-  } else if (initAttempts >= 10) {
-    clearInterval(initInterval);
-    console.error('❌ Supabase gagal dimuat setelah 10 detik');
-  }
-}, 1000); 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
 
 
 
@@ -176,7 +161,7 @@ async function authenticate() {
             setTimeout(function() { loginLocked = false; loginAttempts = 0; }, 60000);
         } setTimeout(() => error.style.display = 'none', 3000); return; }
     try {
-        const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+        const { data, error: authError } = await window.supabase.auth.signInWithPassword({ email: email, password: password });
         if (authError) { error.textContent = '⛔ ' + authError.message; if (btn) { btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false; }
         error.style.display = 'block';
         loginAttempts++;
@@ -516,7 +501,5 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-</script>
-
-</body>
+</script></body>
 </html>
