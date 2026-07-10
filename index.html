@@ -82,10 +82,10 @@
   <nav id="bottom-nav">
     <div class="nav-container">
       <button class="nav-item active" data-nav="home"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label">Home</span></button>
-      <button class="nav-item" data-nav="profile" onclick="openMod('profile')"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label">Profile</span></button>
-      <button class="nav-item" data-nav="qr" onclick="openMod('qr')"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label">QR</span></button>
-      <button class="nav-item" data-nav="about" onclick="openMod('about')"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label">About</span></button>
-      <button class="nav-item" data-nav="setting" onclick="openMod('setting')"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label">System</span></button>
+      <button class="nav-item" data-mod="profile"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label">Profile</span></button>
+      <button class="nav-item" data-mod="qr"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label">QR</span></button>
+      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label">About</span></button>
+      <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label">System</span></button>
     </div>
   </nav>
 
@@ -285,21 +285,25 @@
         setActiveNav('home');
       }
 
-      // ===== NAVIGATION =====
-      document.querySelectorAll('#bottom-nav .nav-item[data-nav]').forEach(item => {
-        item.addEventListener('click', function() {
-          if (this.dataset.nav === 'home') goHome();
-          setActiveNav(this.dataset.nav);
-        });
+      // ===== NAVIGATION (EVENT DELEGATION) =====
+      document.getElementById('bottom-nav').addEventListener('click', function(e) {
+        const navItem = e.target.closest('.nav-item');
+        if (!navItem) return;
+        const mod = navItem.dataset.mod;
+        const nav = navItem.dataset.nav;
+        if (mod) window.openMod(mod);
+        if (nav === 'home') window.goHome();
+        setActiveNav(mod || nav || 'home');
       });
 
       function setActiveNav(nav) {
         document.querySelectorAll('#bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
-        const active = document.querySelector(`#bottom-nav .nav-item[data-nav="${nav}"]`);
+        let active = document.querySelector(`#bottom-nav .nav-item[data-nav="${nav}"]`);
+        if (!active) active = document.querySelector(`#bottom-nav .nav-item[data-mod="${nav}"]`);
         if (active) active.classList.add('active');
       }
 
-      window.goHome = function() {
+      window.goHome = window.goHome || function() {
         const c = document.getElementById('mod-container');
         if (c) { c.style.display = 'none'; c.innerHTML = ''; }
         document.getElementById('main-app').style.display = 'block';
@@ -307,8 +311,8 @@
         renderDashboard();
       };
 
-      // ===== OPEN MODULE =====
-      function openMod(moduleId) {
+      // ===== OPEN MODULE (GLOBAL) =====
+      window.openMod = function(moduleId) {
         if (!canAccess(moduleId)) {
           alert('⛔ Akses Ditolak! Anda tidak memiliki izin untuk modul ini.');
           return;
