@@ -84,380 +84,418 @@
     </div>
   </nav>
 
+  <!-- Supabase harus dimuat SEBELUM script kita -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    // ===== GLOBAL ERROR HANDLER (BIAR NGGAK CRASH) =====
-    window.onerror = function(msg, url, line) {
-      console.error('🚨 ERROR:', msg, 'at line', line);
-      return true; // Stop error propagation
-    };
+    // =============================================
+    // SEMUA FUNGSI DIJALANKAN SETELAH HALAMAN SIAP
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+      
+      // ===== CONFIG =====
+      const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+      
+      let supabase = null;
 
-    // ===== CONFIG =====
-    const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-    
-    let supabase = null;
-
-    // ===== INIT SUPABASE (AMAN) =====
-    function initSupabase() {
-      try {
-        if (window.supabase && window.supabase.createClient) {
-          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          console.log('✅ Supabase ready');
-          return true;
+      // ===== INIT SUPABASE (DENGAN RETRY) =====
+      function initSupabase() {
+        if (supabase) return true;
+        try {
+          if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('✅ Supabase ready');
+            return true;
+          }
+        } catch(e) {
+          console.warn('Supabase init retry...', e.message);
         }
-      } catch(e) {
-        console.error('Supabase init error:', e);
-      }
-      return false;
-    }
-
-    // ===== ROLE PERMISSIONS =====
-    const ROLE_PERMISSIONS = {
-      dev: ['admin_users','cmd','sec','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting'],
-      kabag_umum: ['cmd','sec','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting','admin_users'],
-      guru: ['booking', 'k3'],
-      janitor_indoor: ['janitor-indoor'],
-      janitor_outdoor: ['janitor-outdoor'],
-      security: ['security'],
-      maintenance: ['maintenance'],
-      staff: ['profile','qr','about','setting']
-    };
-
-    // ===== USER STORAGE =====
-    function getStoredUser() {
-      try {
-        return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-      } catch(e) {
-        return {};
-      }
-    }
-
-    function getUserRole() {
-      return getStoredUser().role || 'staff';
-    }
-
-    function canAccess(moduleId) {
-      const role = getUserRole();
-      return (ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.staff || []).includes(moduleId);
-    }
-
-    // ===== TOGGLE PASSWORD (PAKE EVENT LISTENER) =====
-    document.getElementById('toggle-pin').addEventListener('click', function() {
-      const pw = document.getElementById('password-input');
-      if (!pw) return;
-      if (pw.type === 'password') {
-        pw.type = 'text';
-        this.textContent = '🙈';
-      } else {
-        pw.type = 'password';
-        this.textContent = '👁️';
-      }
-    });
-
-    // ===== AUTHENTICATE =====
-    document.getElementById('login-button').addEventListener('click', async function() {
-      const btn = this;
-      const errEl = document.getElementById('error-msg');
-      const email = document.getElementById('email-input').value.trim();
-      const password = document.getElementById('password-input').value;
-
-      errEl.style.display = 'none';
-
-      if (!email || !password) {
-        errEl.textContent = '⛔ Email dan password harus diisi!';
-        errEl.style.display = 'block';
-        return;
+        // Retry sekali lagi setelah 1 detik
+        setTimeout(() => {
+          try {
+            if (!supabase && window.supabase && window.supabase.createClient) {
+              supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+              console.log('✅ Supabase ready (retry)');
+            }
+          } catch(e2) {}
+        }, 1000);
+        return false;
       }
 
-      btn.textContent = '⏳ Connecting...';
-      btn.disabled = true;
+      // ===== RBAC PERMISSIONS =====
+      const ROLE_PERMISSIONS = {
+        dev: ['admin_users','cmd','sec','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting'],
+        kabag_umum: ['cmd','sec','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting','admin_users'],
+        guru: ['booking', 'k3'],
+        janitor_indoor: ['janitor-indoor'],
+        janitor_outdoor: ['janitor-outdoor'],
+        security: ['security'],
+        maintenance: ['maintenance'],
+        staff: ['profile','qr','about','setting']
+      };
 
-      // Dev bypass
-      if (email === 'dev@dream.os' && password === 'devbypass') {
-        localStorage.setItem('dreamos_bound_user', JSON.stringify({
-          id: 'dreamos-dev', email: email, nama: 'Developer', role: 'dev'
-        }));
-        localStorage.setItem('dreamos_session_active', 'true');
-        btn.textContent = '✅ Dev Mode!';
-        setTimeout(showDashboard, 500);
-        return;
+      function getStoredUser() {
+        try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
+        catch(e) { return {}; }
       }
 
-      // Init Supabase kalau belum
-      if (!supabase) initSupabase();
-
-      if (!supabase) {
-        errEl.textContent = '⚠️ Server belum siap. Coba lagi.';
-        errEl.style.display = 'block';
-        btn.textContent = '⚡ ACCESS CORE';
-        btn.disabled = false;
-        return;
+      function getUserRole() {
+        return getStoredUser().role || 'staff';
       }
 
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      function canAccess(moduleId) {
+        const role = getUserRole();
+        return (ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.staff || []).includes(moduleId);
+      }
+
+      // ===== AMBIL ELEMEN (PASTI ADA KARENA DOMContentLoaded) =====
+      const togglePinEl = document.getElementById('toggle-pin');
+      const loginBtn = document.getElementById('login-button');
+      const emailInput = document.getElementById('email-input');
+      const passwordInput = document.getElementById('password-input');
+      const errorEl = document.getElementById('error-msg');
+
+      // ===== TOGGLE PASSWORD =====
+      if (togglePinEl && passwordInput) {
+        togglePinEl.addEventListener('click', function() {
+          if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            togglePinEl.textContent = '🙈';
+          } else {
+            passwordInput.type = 'password';
+            togglePinEl.textContent = '👁️';
+          }
+        });
+      }
+
+      // ===== ENTER KEY HANDLER =====
+      if (emailInput) {
+        emailInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter' && passwordInput) passwordInput.focus();
+        });
+      }
+      if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter' && loginBtn) loginBtn.click();
+        });
+      }
+
+      // ===== LOGIN HANDLER =====
+      if (loginBtn) {
+        loginBtn.addEventListener('click', async function() {
+          const btn = this;
+          const email = emailInput ? emailInput.value.trim() : '';
+          const password = passwordInput ? passwordInput.value : '';
+
+          if (errorEl) errorEl.style.display = 'none';
+
+          if (!email || !password) {
+            if (errorEl) {
+              errorEl.textContent = '⛔ Email dan password harus diisi!';
+              errorEl.style.display = 'block';
+            }
+            return;
+          }
+
+          btn.textContent = '⏳ Connecting...';
+          btn.disabled = true;
+
+          // Dev bypass
+          if (email === 'dev@dream.os' && password === 'devbypass') {
+            localStorage.setItem('dreamos_bound_user', JSON.stringify({
+              id: 'dreamos-dev', email: email, nama: 'Developer', role: 'dev'
+            }));
+            localStorage.setItem('dreamos_session_active', 'true');
+            btn.textContent = '✅ Dev Mode!';
+            setTimeout(showDashboard, 500);
+            return;
+          }
+
+          // Init Supabase
+          if (!supabase && !initSupabase()) {
+            // Coba tunggu sebentar
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            if (!supabase && !initSupabase()) {
+              if (errorEl) {
+                errorEl.textContent = '⚠️ Gagal menghubungkan ke server. Periksa koneksi.';
+                errorEl.style.display = 'block';
+              }
+              btn.textContent = '⚡ ACCESS CORE';
+              btn.disabled = false;
+              return;
+            }
+          }
+
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+              if (errorEl) {
+                errorEl.textContent = '⛔ ' + (error.message || 'Email/password salah');
+                errorEl.style.display = 'block';
+              }
+              btn.textContent = '⚡ ACCESS CORE';
+              btn.disabled = false;
+              return;
+            }
+
+            const user = data.user;
+            localStorage.setItem('dreamos_bound_user', JSON.stringify({
+              id: user.id,
+              email: user.email,
+              nama: user.user_metadata?.nama || email.split('@')[0],
+              role: user.user_metadata?.role || 'staff'
+            }));
+            localStorage.setItem('dreamos_session_active', 'true');
+            
+            btn.textContent = '✅ Success!';
+            setTimeout(showDashboard, 500);
+          } catch(e) {
+            console.error('Login error:', e);
+            if (errorEl) {
+              errorEl.textContent = '⚠️ Error: ' + e.message;
+              errorEl.style.display = 'block';
+            }
+            btn.textContent = '⚡ ACCESS CORE';
+            btn.disabled = false;
+          }
+        });
+      }
+
+      // ===== SHOW DASHBOARD =====
+      function showDashboard() {
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        const bottomNav = document.getElementById('bottom-nav');
         
-        if (error) {
-          errEl.textContent = '⛔ ' + (error.message || 'Email/password salah');
-          errEl.style.display = 'block';
-          btn.textContent = '⚡ ACCESS CORE';
-          btn.disabled = false;
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        if (bottomNav) bottomNav.style.display = 'block';
+        
+        renderDashboard();
+      }
+
+      // ===== RENDER DASHBOARD =====
+      function renderDashboard() {
+        const container = document.getElementById('dashboard-container');
+        if (!container) return;
+        
+        const user = getStoredUser();
+        
+        container.innerHTML = 
+          '<div class="header-main glass">' +
+            '<img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;" onerror="this.style.display=\'none\'">' +
+            '<div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
+            '<div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
+            '<div class="user-role-badge">Role: <strong>' + (user.role || 'staff') + '</strong></div>' +
+            '<div class="info-badges">' +
+              '<span class="badge" id="live-clock">⏱️ --:--:--</span>' +
+              '<span class="badge" id="battery-status">🔋 --%</span>' +
+              '<span class="badge" id="connection-status">📡 Checking...</span>' +
+            '</div>' +
+            '<div id="prayer-times-dash">🕌 Loading...</div>' +
+            '<button class="logout-btn" id="logout-btn">🚪 Logout</button>' +
+          '</div>' +
+          '<div class="module-grid" id="module-grid"></div>' +
+          '<div class="system-info-box glass">' +
+            '<strong>Dream OS Enterprise RBAC</strong><br>' +
+            'ISO 27001 • ISO 9001 • ISO 55001<br>' +
+            'The Power Soul Of Shalawat' +
+          '</div>';
+
+        // Pasang tombol logout
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function() {
+            if (confirm('Yakin logout?')) {
+              if (supabase) supabase.auth.signOut().catch(()=>{});
+              localStorage.removeItem('dreamos_bound_user');
+              localStorage.setItem('dreamos_session_active', 'false');
+              location.reload();
+            }
+          });
+        }
+
+        // Modules grid
+        const modules = [
+          { i:'👥', n:'Admin Users', id:'admin_users' },
+          { i:'🌍', n:'CMD Center', id:'cmd' },
+          { i:'🛡️', n:'Security', id:'security' },
+          { i:'⚠️', n:'K3 Safety', id:'k3' },
+          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
+          { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
+          { i:'📅', n:'Booking', id:'booking' },
+          { i:'🏢', n:'Asset', id:'asset' },
+          { i:'📦', n:'Stok', id:'stok' },
+          { i:'🔧', n:'Maintenance', id:'maintenance' },
+          { i:'💰', n:'Dana', id:'dana' }
+        ];
+
+        const grid = document.getElementById('module-grid');
+        if (!grid) return;
+        
+        modules.forEach(m => {
+          if (!canAccess(m.id)) return;
+          const card = document.createElement('div');
+          card.className = 'mod-card glass';
+          card.innerHTML = '<div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
+          card.addEventListener('click', () => openMod(m.id));
+          grid.appendChild(card);
+        });
+
+        // Start services
+        startLiveClock();
+        startBatteryMonitor();
+        checkConnection();
+        fetchPrayerTimes();
+      }
+
+      // ===== OPEN MODULE =====
+      function openMod(moduleId) {
+        if (!canAccess(moduleId)) {
+          alert('⛔ Akses Ditolak!');
           return;
         }
-
-        const user = data.user;
-        localStorage.setItem('dreamos_bound_user', JSON.stringify({
-          id: user.id,
-          email: user.email,
-          nama: user.user_metadata?.nama || email.split('@')[0],
-          role: user.user_metadata?.role || 'staff'
-        }));
-        localStorage.setItem('dreamos_session_active', 'true');
-        
-        btn.textContent = '✅ Success!';
-        setTimeout(showDashboard, 500);
-      } catch(e) {
-        errEl.textContent = '⚠️ Error: ' + e.message;
-        errEl.style.display = 'block';
-        btn.textContent = '⚡ ACCESS CORE';
-        btn.disabled = false;
-      }
-    });
-
-    // ===== ENTER KEY HANDLER =====
-    document.getElementById('email-input').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') document.getElementById('password-input').focus();
-    });
-
-    document.getElementById('password-input').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') document.getElementById('login-button').click();
-    });
-
-    // ===== SHOW DASHBOARD =====
-    function showDashboard() {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('main-app').style.display = 'block';
-      document.getElementById('bottom-nav').style.display = 'block';
-      renderDashboard();
-    }
-
-    // ===== RENDER DASHBOARD =====
-    function renderDashboard() {
-      const user = getStoredUser();
-      const container = document.getElementById('dashboard-container');
-      
-      container.innerHTML = 
-        '<div class="header-main glass">' +
-          '<img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;" onerror="this.style.display=\'none\'">' +
-          '<div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
-          '<div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
-          '<div class="user-role-badge">Role: <strong>' + (user.role || 'staff') + '</strong></div>' +
-          '<div class="info-badges">' +
-            '<span class="badge" id="live-clock">⏱️ --:--:--</span>' +
-            '<span class="badge" id="battery-status">🔋 --%</span>' +
-            '<span class="badge" id="connection-status">📡 Checking...</span>' +
-          '</div>' +
-          '<div id="prayer-times-dash">🕌 Loading...</div>' +
-          '<button class="logout-btn" id="logout-btn">🚪 Logout</button>' +
-        '</div>' +
-        '<div class="module-grid" id="module-grid"></div>' +
-        '<div class="system-info-box glass">' +
-          '<strong>Dream OS Enterprise RBAC</strong><br>' +
-          'ISO 27001 • ISO 9001 • ISO 55001<br>' +
-          'The Power Soul Of Shalawat' +
-        '</div>';
-
-      // Modules
-      const modules = [
-        { i:'👥', n:'Admin Users', id:'admin_users' },
-        { i:'🌍', n:'CMD Center', id:'cmd' },
-        { i:'🛡️', n:'Security', id:'security' },
-        { i:'⚠️', n:'K3 Safety', id:'k3' },
-        { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
-        { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
-        { i:'📅', n:'Booking', id:'booking' },
-        { i:'🏢', n:'Asset', id:'asset' },
-        { i:'📦', n:'Stok', id:'stok' },
-        { i:'🔧', n:'Maintenance', id:'maintenance' },
-        { i:'💰', n:'Dana', id:'dana' }
-      ];
-
-      const grid = document.getElementById('module-grid');
-      modules.forEach(m => {
-        if (!canAccess(m.id)) return;
-        const card = document.createElement('div');
-        card.className = 'mod-card glass';
-        card.innerHTML = '<div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
-        card.addEventListener('click', () => openMod(m.id));
-        grid.appendChild(card);
-      });
-
-      // Logout handler
-      document.getElementById('logout-btn').addEventListener('click', logout);
-
-      // Start services
-      startLiveClock();
-      startBatteryMonitor();
-      checkConnection();
-      fetchPrayerTimes();
-    }
-
-    // ===== LOGOUT =====
-    function logout() {
-      if (confirm('Yakin logout?')) {
-        if (supabase) supabase.auth.signOut().catch(()=>{});
-        localStorage.removeItem('dreamos_bound_user');
-        localStorage.setItem('dreamos_session_active', 'false');
-        location.reload();
-      }
-    }
-
-    // ===== OPEN MODULE =====
-    function openMod(moduleId) {
-      if (!canAccess(moduleId)) {
-        alert('⛔ Akses Ditolak!');
-        return;
-      }
-      const map = {
-        admin_users:'admin_users.html', cmd:'commandcenter.html', sec:'security.html', security:'security.html',
-        k3:'k3.html', 'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
-        maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
-        dana:'dana.html', profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
-      };
-      const file = map[moduleId];
-      if (!file) return;
-      
-      let c = document.getElementById('mod-container');
-      if (!c) {
-        c = document.createElement('div');
-        c.id = 'mod-container';
-        c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);padding-bottom:5rem;';
-        document.body.appendChild(c);
-      }
-      c.style.display = 'block';
-      c.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Loading...</div>';
-      
-      fetch('modules/' + file + '?v=' + Date.now())
-        .then(r => r.text())
-        .then(html => {
-          c.innerHTML = html;
-          c.querySelectorAll('script').forEach(s => {
-            const ns = document.createElement('script');
-            if (s.src) ns.src = s.src;
-            else ns.textContent = s.textContent;
-            document.body.appendChild(ns);
-          });
-        })
-        .catch(err => {
-          c.innerHTML = '<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal</h3><p>' + err.message + '</p><button onclick="goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;">Kembali</button></div>';
-        });
-    }
-
-    function goHome() {
-      const c = document.getElementById('mod-container');
-      if (c) { c.style.display = 'none'; c.innerHTML = ''; }
-      document.getElementById('main-app').style.display = 'block';
-      document.getElementById('bottom-nav').style.display = 'block';
-    }
-
-    // ===== SERVICES =====
-    function startLiveClock() {
-      setInterval(() => {
-        const el = document.getElementById('live-clock');
-        if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
-      }, 1000);
-    }
-
-    function startBatteryMonitor() {
-      if (!('getBattery' in navigator)) return;
-      navigator.getBattery().then(b => {
-        const el = document.getElementById('battery-status');
-        const update = () => {
-          if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%';
+        const map = {
+          admin_users:'admin_users.html', cmd:'commandcenter.html', security:'security.html',
+          k3:'k3.html', 'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
+          maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
+          dana:'dana.html', profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
         };
-        update();
-        b.addEventListener('levelchange', update);
-      }).catch(()=>{});
-    }
-
-    async function checkConnection() {
-      const el = document.getElementById('connection-status');
-      if (!el) return;
-      if (!navigator.onLine) {
-        el.textContent = '📡 Offline';
-        el.className = 'badge offline';
-        return;
-      }
-      try {
-        const start = Date.now();
-        const res = await fetch(SUPABASE_URL + '/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } });
-        if (res.ok) {
-          el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)';
-          el.className = 'badge online';
-        } else throw new Error('Status ' + res.status);
-      } catch(e) {
-        el.textContent = '📡 Offline';
-        el.className = 'badge offline';
-      }
-    }
-
-    async function fetchPrayerTimes() {
-      const el = document.getElementById('prayer-times-dash');
-      if (!el) return;
-      try {
-        const d = new Date();
-        const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`);
-        const data = await res.json();
-        if (data.code === 200) {
-          const t = data.data.timings;
-          el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`;
+        const file = map[moduleId];
+        if (!file) return;
+        
+        let c = document.getElementById('mod-container');
+        if (!c) {
+          c = document.createElement('div');
+          c.id = 'mod-container';
+          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);padding-bottom:5rem;';
+          document.body.appendChild(c);
         }
-      } catch(e) {
-        el.textContent = '🕌 Gagal memuat';
+        c.style.display = 'block';
+        c.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">⏳ Loading...</div>';
+        
+        fetch('modules/' + file + '?v=' + Date.now())
+          .then(r => r.text())
+          .then(html => {
+            c.innerHTML = html;
+            c.querySelectorAll('script').forEach(s => {
+              const ns = document.createElement('script');
+              if (s.src) ns.src = s.src;
+              else ns.textContent = s.textContent;
+              document.body.appendChild(ns);
+            });
+          })
+          .catch(err => {
+            c.innerHTML = '<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal</h3><p>' + err.message + '</p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;">Kembali</button></div>';
+          });
       }
-    }
 
-    // ===== STARFIELD =====
-    (function() {
-      const canvas = document.getElementById('star-field');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      let stars = [];
-      function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; createStars(); }
-      function createStars() {
-        stars = [];
-        const density = Math.floor((canvas.width * canvas.height) / 2000);
-        for (let i = 0; i < density; i++) {
-          stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 });
+      window.goHome = function() {
+        const c = document.getElementById('mod-container');
+        if (c) { c.style.display = 'none'; c.innerHTML = ''; }
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('bottom-nav').style.display = 'block';
+      };
+
+      // ===== SERVICES =====
+      function startLiveClock() {
+        setInterval(() => {
+          const el = document.getElementById('live-clock');
+          if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
+        }, 1000);
+      }
+
+      function startBatteryMonitor() {
+        if (!('getBattery' in navigator)) return;
+        navigator.getBattery().then(b => {
+          const el = document.getElementById('battery-status');
+          const update = () => {
+            if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%';
+          };
+          update();
+          b.addEventListener('levelchange', update);
+        }).catch(()=>{});
+      }
+
+      async function checkConnection() {
+        const el = document.getElementById('connection-status');
+        if (!el) return;
+        if (!navigator.onLine) {
+          el.textContent = '📡 Offline';
+          el.className = 'badge offline';
+          return;
+        }
+        try {
+          const start = Date.now();
+          const res = await fetch(SUPABASE_URL + '/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } });
+          if (res.ok) {
+            el.textContent = '📡 Online (' + (Date.now() - start) + 'ms)';
+            el.className = 'badge online';
+          } else throw new Error('Status ' + res.status);
+        } catch(e) {
+          el.textContent = '📡 Offline';
+          el.className = 'badge offline';
         }
       }
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#e2e8f0';
-        stars.forEach(s => {
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
-          s.y += s.speed;
-          if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
-        });
-        requestAnimationFrame(animate);
-      }
-      resize(); window.addEventListener('resize', resize); animate();
-    })();
 
-    // ===== AUTO LOGIN (AMAN, TANPA LOOP) =====
-    (function() {
+      async function fetchPrayerTimes() {
+        const el = document.getElementById('prayer-times-dash');
+        if (!el) return;
+        try {
+          const d = new Date();
+          const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`);
+          const data = await res.json();
+          if (data.code === 200) {
+            const t = data.data.timings;
+            el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`;
+          }
+        } catch(e) {
+          el.textContent = '🕌 Gagal memuat';
+        }
+      }
+
+      // ===== STARFIELD =====
+      (function() {
+        const canvas = document.getElementById('star-field');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; createStars(); }
+        function createStars() {
+          stars = [];
+          const density = Math.floor((canvas.width * canvas.height) / 2000);
+          for (let i = 0; i < density; i++) {
+            stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 });
+          }
+        }
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#e2e8f0';
+          stars.forEach(s => {
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+            s.y += s.speed;
+            if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+          });
+          requestAnimationFrame(animate);
+        }
+        resize(); window.addEventListener('resize', resize); animate();
+      })();
+
+      // ===== INIT SUPABASE & AUTO LOGIN =====
+      initSupabase();
+      
       if (localStorage.getItem('dreamos_session_active') === 'true') {
         const user = getStoredUser();
         if (user.role) {
           console.log('🔐 Auto-login sebagai:', user.role);
-          setTimeout(showDashboard, 100);
+          showDashboard();
         }
       }
-    })();
 
-    console.log('✅ Dream OS loaded successfully!');
+      console.log('✅ Dream OS siap! Semua tombol sudah aktif.');
+    });
   </script>
 </body>
 </html>
