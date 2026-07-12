@@ -325,6 +325,17 @@ html {
   }
 }
 
+
+.cast-btn { position: fixed; bottom: 100px; right: 15px; z-index: 9998; background: rgba(0,255,157,0.2); border: 1px solid #00ff9d; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; box-shadow: 0 0 15px rgba(0,255,157,0.3); transition: 0.3s; }
+.cast-btn:hover { background: rgba(0,255,157,0.4); transform: scale(1.1); }
+.cast-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; align-items: center; justify-content: center; }
+.cast-modal.show { display: flex; }
+.cast-content { background: #1e293b; border: 1px solid #00ff9d; border-radius: 16px; padding: 2rem; max-width: 400px; width: 90%; text-align: center; }
+.cast-content h3 { color: #00ff9d; margin-bottom: 1rem; }
+.cast-btn-option { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid rgba(0,255,157,0.3); border-radius: 8px; background: rgba(0,255,157,0.05); color: #e2e8f0; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+.cast-btn-option:hover { background: rgba(0,255,157,0.15); }
+#cast-qr { width: 180px; height: 180px; margin: 1rem auto; }
+
 </style>
 
   <link rel="manifest" href="manifest.json">
@@ -373,7 +384,26 @@ html {
 
   <div id="notif-panel" class="notif-panel"></div>
   
-  <div id="main-app">
+  
+<button class="cast-btn" onclick="openCastModal()" title="Cast ke TV">📺</button>
+<div class="cast-modal" id="cast-modal">
+  <div class="cast-content">
+    <h3>📺 Cast & Present</h3>
+    <p style="font-size:0.75rem;color:#94a3b8;margin-bottom:1rem;">Tampilkan Dream OS di Smart TV</p>
+    
+    <button class="cast-btn-option" onclick="shareToTV()">📡 Share ke TV (Chromecast/Android TV)</button>
+    <button class="cast-btn-option" onclick="showQRForTV()">📱 Scan QR dari TV</button>
+    <button class="cast-btn-option" onclick="openPresentationMode()">🖥️ Buka Presentation Mode</button>
+    <button class="cast-btn-option" onclick="mirrorScreen()">🪞 Screen Mirror (Experimental)</button>
+    
+    <div id="cast-qr" style="display:none;"></div>
+    <p id="cast-url" style="font-size:0.65rem;color:#64748b;margin-top:0.5rem;display:none;"></p>
+    
+    <button class="cast-btn-option" onclick="closeCastModal()" style="background:rgba(239,68,68,0.1);border-color:#e11d48;color:#e11d48;">✕ Tutup</button>
+  </div>
+</div>
+
+<div id="main-app">
     <div id="dashboard-container"></div>
   </div>
 
@@ -856,6 +886,66 @@ window.addEventListener('DOMContentLoaded', function() {
     document.documentElement.classList.add('is-mobile');
   }
 });
+
+
+// ===== CAST & PRESENT =====
+window.openCastModal = function() {
+  document.getElementById('cast-modal').classList.add('show');
+};
+
+window.closeCastModal = function() {
+  document.getElementById('cast-modal').classList.remove('show');
+  document.getElementById('cast-qr').style.display = 'none';
+  document.getElementById('cast-url').style.display = 'none';
+};
+
+window.shareToTV = function() {
+  const url = window.location.origin + '/dream-os-final/presentation.html';
+  if (navigator.share) {
+    navigator.share({ title: 'Dream OS Presentation', url: url }).catch(function(){});
+  } else if (navigator.canShare) {
+    navigator.share({ title: 'Dream OS Presentation', url: url }).catch(function(){});
+  } else {
+    alert('📡 Buka ' + url + ' di browser Smart TV Anda');
+  }
+};
+
+window.showQRForTV = function() {
+  const url = window.location.origin + '/dream-os-final/presentation.html';
+  document.getElementById('cast-url').textContent = url;
+  document.getElementById('cast-url').style.display = 'block';
+  
+  // Generate QR sederhana (fallback jika QR library tidak ada)
+  const qrDiv = document.getElementById('cast-qr');
+  qrDiv.style.display = 'block';
+  qrDiv.innerHTML = '<div style="background:#fff;padding:15px;border-radius:8px;text-align:center;"><p style="color:#000;font-weight:700;font-size:0.7rem;">Scan QR untuk buka di TV</p><p style="color:#64748b;font-size:0.65rem;">' + url + '</p></div>';
+  
+  // Jika QR library tersedia, generate QR code sebenarnya
+  if (typeof qrcode !== 'undefined') {
+    qrDiv.innerHTML = '';
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    qrDiv.innerHTML = qr.createImgTag(5);
+  }
+};
+
+window.openPresentationMode = function() {
+  window.open('/dream-os-final/presentation.html', '_blank', 'fullscreen=yes,menubar=no,toolbar=no,location=no,status=no');
+};
+
+window.mirrorScreen = function() {
+  if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+    navigator.mediaDevices.getDisplayMedia({ video: true }).then(function(stream) {
+      // Screen capture started - bisa ditampilkan di elemen video atau dikirim ke server
+      alert('✅ Screen mirror aktif! Gunakan fitur cast bawaan HP untuk tampil di TV.');
+    }).catch(function() {
+      alert('⚠️ Gunakan fitur Smart View / Screen Cast bawaan HP Anda.');
+    });
+  } else {
+    alert('📱 Gunakan Smart View (Samsung) / Screen Cast (Android) / AirPlay (iPhone) dari panel notifikasi HP Anda.');
+  }
+};
 
 console.log('💚 The Power Soul Of Shalawat');
     });
