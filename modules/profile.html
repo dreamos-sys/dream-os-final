@@ -1,16 +1,4 @@
 
-<script>
-// Auto-fallback untuk fungsi global
-if (!window.goHome) window.goHome = function() { 
-  if (window.parent && window.parent.goHome) window.parent.goHome();
-  else window.location.reload();
-};
-if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
-  window.supabaseClient = window.parent.supabaseClient;
-if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
-  window.renderDashboard = window.parent.renderDashboard;
-</script>
-
 <style>
         :root { --glass-bg: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 255, 157, 0.1); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
         * { box-sizing: border-box; }
@@ -152,12 +140,19 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
   function sanitize(str) { if(!str) return ''; var d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
   function getUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user')||'null'); } catch(e) { return null; } }
   async function getDNA() { try { var c=document.createElement('canvas'); var x=c.getContext('2d'); x.fillStyle='#f60'; x.fillRect(125,1,62,20); var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode([navigator.hardwareConcurrency||0,screen.colorDepth,c.toDataURL()].join('|'))); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join('').substring(0,32); } catch(e) { return 'UNKNOWN'; } }
-  async function hashPW(pw) { var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw+'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
 
+  
+  // Fallback SEC (jika tidak ada dari index.html)
+  var SEC = window.SEC || { 
+    sanitize: function(s) { return String(s || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); },
+    hashPassword: async function(p) { var e = new TextEncoder(); var h = await crypto.subtle.digest('SHA-256', e.encode(p + 'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(''); }
+  };
   var user = getUser();
-  if (!window.supabaseClient) { window.supabaseClient = window.parent?.supabaseClient; }
-    console.warn('⚠️ Supabase client belum siap di profile module. Menunggu...');
-    setTimeout(function() { if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia'); }, 2000);
+  if (!window.supabaseClient) { 
+    console.warn('⚠️ Supabase client belum siap. Menunggu...');
+    setTimeout(function() { 
+      if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia'); 
+    }, 2000);
   }
   if (!user) {
     document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2></div>';
@@ -218,7 +213,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     if (!user) return alert('❌ Sesi tidak valid.');
     
     try {
-        if (!window.supabaseClient) { window.supabaseClient = window.parent?.supabaseClient; }
+        if (!window.supabaseClient) {
             alert('⚠️ Koneksi database terputus. Silakan refresh halaman.');
             return;
         }
@@ -295,12 +290,12 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     if (n.length<6) return alert('⚠️ Min 6 karakter!');
     if (n!==c) return alert('⚠️ Tidak cocok!');
 
-    var oh = await hashPW(o);
+    var oh = await SEC.hashPassword(o);
     var users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
     var cu = users.find(function(u){return u.email===user.email;});
     if (!cu||cu.password_hash!==oh) return alert('⚠️ Password lama salah!');
 
-    cu.password_hash = await hashPW(n);
+    cu.password_hash = await SEC.hashPassword(n);
     localStorage.setItem('dreamos_users_db', JSON.stringify(users));
     notifyParent('CHANGE_PASSWORD', 'Password changed');
     alert('✅ Password diganti!');
@@ -325,7 +320,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     if (users.find(function(u){return u.email===e;})) { msg.textContent = '⚠️ Email sudah terdaftar!'; msg.style.color = '#ef4444'; return; }
 
     try {
-      users.push({ nama:n, email:e, role:r, password_hash:await hashPW(p), device_dna:'', created_at:new Date().toISOString() });
+      users.push({ nama:n, email:e, role:r, password_hash:await SEC.hashPassword(p), device_dna:'', created_at:new Date().toISOString() });
       localStorage.setItem('dreamos_users_db', JSON.stringify(users));
     } catch(ex) {
       msg.textContent = '⚠️ Penyimpanan penuh! Minta Admin membersihkan cache.'; msg.style.color = '#ef4444'; return;
