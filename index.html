@@ -88,7 +88,16 @@
     .notif-item:last-child { border-bottom: none; }
     .notif-time { font-size: 0.5rem; color: #64748b; }
     .offline-badge { background: #f59e0b; color: #000; padding: 0.1rem 0.4rem; border-radius: 12px; font-size: 0.55rem; font-weight: 700; margin-left: 0.5rem; display: none; }
-  </style>
+  
+#mod-container {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+</style>
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
@@ -282,7 +291,33 @@
         }
       }
 
-      window.renderDashboard = async function() {
+      // Fungsi update modul grid saja (tanpa recreate seluruh dashboard)
+function updateModuleGrid() {
+        const grid = document.getElementById('module-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        const modules = [
+          { i:'🌍', n:'CMD Center', id:'cmd' },
+          { i:'🛡️', n:'Security', id:'security' },
+          { i:'⚠️', n:'K3 Safety', id:'k3' },
+          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
+          { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
+          { i:'📅', n:'Booking', id:'booking' },
+          { i:'🏢', n:'Asset', id:'asset' },
+          { i:'📦', n:'Stok Gudang', id:'stok' },
+          { i:'🔧', n:'Maintenance', id:'maintenance' }
+        ];
+        modules.forEach(m => {
+          if (!canAccess(m.id)) return;
+          const card = document.createElement('div');
+          card.className = 'mod-card glass';
+          card.innerHTML = '<div class="mod-status"></div><div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
+          card.addEventListener('click', () => openMod(m.id));
+          grid.appendChild(card);
+        });
+      }
+
+window.renderDashboard = async function() {
         const container = document.getElementById('dashboard-container');
         if (!container) return;
         
@@ -373,7 +408,9 @@
         if (c) { c.style.display = 'none'; c.innerHTML = ''; }
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
-        renderDashboard();
+        // JANGAN render ulang dashboard — cukup update modul grid saja
+        updateModuleGrid();
+        setActiveNav('home');
       };
 
       window.openMod = function(moduleId) {
