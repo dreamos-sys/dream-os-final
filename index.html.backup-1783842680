@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Dream OS • Enterprise RBAC</title>
+  
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com;">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --neon: #ff00ff; --accent: #00ffff; --warning: #ffff00; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.6); --glass-border: rgba(0, 255, 157, 0.2); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+    .glass { background: rgba(15, 23, 42, 0.7) !important; backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 24px; }
+    #login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 14, 39, 0.95); z-index: 10000; transition: opacity 0.5s; }
+    .login-container { text-align: center; max-width: 400px; width: 100%; padding: 2rem; }
+    .login-logo { width: 100px; height: 100px; border-radius: 24px; margin-bottom: 2rem; }
+    .arabic { font-family: 'Scheherazade New', serif; font-size: 2.2rem; color: var(--neon); text-shadow: 0 0 30px rgba(0,255,157,0.6); margin-bottom: 0.5rem; }
+    .shalawat { font-family: 'Scheherazade New', serif; font-size: 1rem; color: var(--accent); margin-bottom: 2rem; }
+    .input-wrapper { position: relative; margin-bottom: 1.5rem; }
+    .pin-input { width: 100%; padding: 1.2rem 4rem 1.2rem 1.5rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(0,255,157,0.3); border-radius: 16px; color: var(--neon); font-family: 'Orbitron', monospace; font-size: 1.2rem; text-align: center; outline: none; }
+    .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.5rem; color: var(--neon); user-select: none; }
+    .access-btn { width: 100%; padding: 1.2rem; background: #10b981; color: white; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+    .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+    .access-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .error-msg { color: var(--warning); font-size: 0.9rem; margin-top: 1rem; display: none; }
+    #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
+    .header-main { padding: 2rem 1.5rem 1rem; text-align: center; margin: 1.5rem; }
+    .user-role-badge { display: inline-block; background: rgba(212,175,55,0.2); color: var(--gold); padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.7rem; margin: 0.5rem 0; }
+    .info-badges { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+    .badge { padding: 0.5rem 1.2rem; border-radius: 24px; font-size: 0.7rem; color: var(--neon); font-weight: 700; background: rgba(0,255,157,0.1); border: 1px solid rgba(0,255,157,0.3); }
+    .badge.online { background: rgba(16,185,129,0.2); color: #10b981; }
+    .badge.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
+    #prayer-times-dash { font-size: 0.65rem; color: #94a3b8; margin-top: 1rem; padding: 0.6rem 1.2rem; background: rgba(0,0,0,0.3); border-radius: 20px; display: inline-block; }
+    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 1.5rem; margin-bottom: 2rem; }
+    .mod-card { text-align: center; cursor: pointer; padding: 1.5rem 0.5rem; transition: all 0.3s; }
+    .mod-card:hover { transform: translateY(-5px); border-color: var(--neon); box-shadow: 0 12px 40px rgba(0,255,157,0.3); }
+    .mod-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .mod-title { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; color: var(--neon); }
+    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding: 12px 8px; background: rgba(10, 14, 39, 0.95); border-top: 2px solid rgba(0, 255, 157, 0.3); display: none; }
+    .nav-container { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(0, 255, 157, 0.2); border-radius: 16px; cursor: pointer; transition: all 0.3s; }
+    .nav-item.active { background: rgba(0, 255, 157, 0.15); border-color: var(--neon); transform: translateY(-4px); box-shadow: 0 0 20px rgba(0,255,157,0.3); }
+    .nav-icon-wrapper { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(0, 255, 157, 0.2); border-radius: 12px; }
+    .nav-icon { font-size: 1.5rem; }
+    .nav-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; }
+    .nav-item.active .nav-label { color: var(--neon); }
+    .logout-btn { background: rgba(239,68,68,0.2); border: 1px solid var(--warning); color: var(--warning); padding: 0.5rem 1.5rem; border-radius: 20px; cursor: pointer; font-weight: 600; margin-top: 0.5rem; }
+    .system-info-box { text-align: center; font-size: 0.65rem; color: #94a3b8; margin: 1.5rem; padding: 1.5rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-spinner { width: 30px; height: 30px; border: 3px solid rgba(0,255,157,0.3); border-top-color: var(--neon); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+  
+  /*  MOBILE OPTIMIZATION */
+  @media screen and (max-width: 768px) {
+    /* Mencegah zoom otomatis saat input di iOS/Android */
+    input, select, textarea { 
+      font-size: 16px !important; 
+      -webkit-appearance: none;
+      border-radius: 12px;
+    }
+    
+    /* Touch target lebih gede (min 44px) */
+    .mod-card { 
+      padding: 1.2rem 0.5rem !important; 
+      min-height: 100px;
+    }
+    
+    .btn, button { 
+      min-height: 44px; 
+      touch-action: manipulation;
+    }
+    
+    /* Bottom nav aman dari tombol back HP */
+    #bottom-nav { 
+      padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    /* Font lebih enak dibaca di HP */
+    body { 
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Scroll lebih smooth */
+    html { 
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+</style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#00ff9d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <canvas id="star-field"></canvas>
+
+  <div id="login-screen">
+    <div class="login-container">
+      <img src="assets/logo-sultan.png" alt="Dream OS" class="login-logo" onerror="this.style.display='none'">
+      <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+      <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+      <div class="input-wrapper">
+        <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
+      </div>
+      <div class="input-wrapper">
+        <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
+        <span class="toggle-pin" id="toggle-pin">👁️</span>
+      </div>
+      <button class="access-btn" id="login-button">⚡ ACCESS CORE</button>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+  </div>
+
+  <div id="main-app">
+    <div id="dashboard-container"></div>
+  </div>
+
+  <nav id="bottom-nav">
+    <div class="nav-container">
+      <button class="nav-item active" data-nav="home"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label">Home</span></button>
+      <button class="nav-item" data-mod="profile"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label">Profile</span></button>
+      <button class="nav-item" data-mod="qr"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label">QR</span></button>
+      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label">About</span></button>
+      <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label">System</span></button>
+    </div>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <script>
+    // Global error handler
+    window.onerror = function(msg, url, line) {
+      console.error('🚨 Error:', msg, 'at line', line);
+      return true;
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+      
+      // GLOBAL: Supabase client
+      window.supabaseClient = null;
+
+      function initSupabase() {
+        if (window.supabaseClient) return true;
+        try {
+          if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('✅ Supabase ready');
+            return true;
+          }
+        } catch(e) { console.warn('Supabase init retry...'); }
+        return false;
+      }
+
+      // ===== RBAC =====
+      const ROLE_PERMISSIONS = {
+        dev: ['admin_users','cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting'],
+        kabag_umum: ['cmd','security','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting','admin_users'],
+        koordinator_umum: ['dana'],
+        komandan_regu: ['security', 'security_edit_jadwal'],
+        guru: ['booking', 'k3'],
+        janitor_indoor: ['janitor-indoor'],
+        janitor_outdoor: ['janitor-outdoor'],
+        security: ['security'],
+        maintenance: ['maintenance'],
+        staff: ['profile','qr','about','setting']
+      };
+
+      function getStoredUser() {
+        try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
+        catch(e) { return {}; }
+      }
+
+      window.getUserRole = function() { return getStoredUser().role || 'staff'; };
+      function canAccess(moduleId) { return (ROLE_PERMISSIONS[getUserRole()] || ROLE_PERMISSIONS.staff || []).includes(moduleId); }
+
+      // ===== ELEMENTS =====
+      const togglePinEl = document.getElementById('toggle-pin');
+      const loginBtn = document.getElementById('login-button');
+      const emailInput = document.getElementById('email-input');
+      const passwordInput = document.getElementById('password-input');
+      const errorEl = document.getElementById('error-msg');
+
+      // ===== TOGGLE PASSWORD =====
+      if (togglePinEl && passwordInput) {
+        togglePinEl.addEventListener('click', function() {
+          if (passwordInput.type === 'password') {
+            passwordInput.type = 'text'; togglePinEl.textContent = '🙈';
+          } else {
+            passwordInput.type = 'password'; togglePinEl.textContent = '👁️';
+          }
+        });
+      }
+
+      // ===== ENTER KEY =====
+      emailInput?.addEventListener('keypress', e => { if (e.key === 'Enter') passwordInput?.focus(); });
+      passwordInput?.addEventListener('keypress', e => { if (e.key === 'Enter') loginBtn?.click(); });
+
+      // ===== LOGIN HANDLER (CLEAN VERSION) =====
+      loginBtn?.addEventListener('click', async function() {
+        const btn = this;
+        const email = emailInput?.value.trim() || '';
+        const password = passwordInput?.value || '';
+        if (errorEl) errorEl.style.display = 'none';
+
+        if (!email || !password) {
+          if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; }
+          return;
+        }
+
+        btn.textContent = '⏳ Connecting...'; btn.disabled = true;
+
+        // 🔐 TRINITY LAYER 1: Physical Security Check
+        if (window.trinityPhysical) {
+          if (window.trinityPhysical.isBlocked(email)) {
+            if (errorEl) {
+              errorEl.textContent = '⛔ Account temporarily blocked. Try again later.';
+              errorEl.style.display = 'block';
+            }
+            btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            return;
+          }
+          
+          const deviceCheck = await window.trinityPhysical.validateDevice(email);
+          if (!deviceCheck.success) {
+            if (errorEl) {
+              errorEl.textContent = '⛔ ' + deviceCheck.reason;
+              errorEl.style.display = 'block';
+            }
+            btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            return;
+          }
+        }
+
+        // Init Supabase if needed
+        if (!window.supabaseClient && !initSupabase()) {
+          await new Promise(r => setTimeout(r, 1500));
+          if (!window.supabaseClient && !initSupabase()) {
+            if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
+            btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            return;
+          }
+        }
+
+        try {
+          const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+          
+          if (error) {
+            if (errorEl) { errorEl.textContent = '⛔ ' + error.message; errorEl.style.display = 'block'; }
+            btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            
+            // Track failed login
+            if (window.trinityPhysical) {
+              window.trinityPhysical.trackLogin(email, false);
+            }
+            return;
+          }
+
+          // Success - save user data
+          localStorage.setItem('dreamos_bound_user', JSON.stringify({
+            id: data.user.id, 
+            email: data.user.email,
+            nama: data.user.user_metadata?.nama || email.split('@')[0],
+            role: data.user.user_metadata?.role || 'staff'
+          }));
+          localStorage.setItem('dreamos_session_active', 'true');
+          
+          // Track successful login
+          if (window.trinityPhysical) {
+            window.trinityPhysical.trackLogin(email, true);
+          }
+
+          // 🕌 TRINITY LAYER 3: Spiritual audit log
+          if (window.trinitySpiritual) {
+            await window.trinitySpiritual.auditLog('LOGIN_SUCCESS', data.user.id, { email });
+          }
+
+          btn.textContent = '✅ Success!';
+          setTimeout(showDashboard, 500);
+        } catch(e) {
+          if (errorEl) { errorEl.textContent = '⚠️ Error: ' + e.message; errorEl.style.display = 'block'; }
+          btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+        }
+      });
+
+      // ===== SHOW DASHBOARD =====
+      function showDashboard() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('bottom-nav').style.display = 'block';
+        renderDashboard();
+      }
+
+      // ===== FETCH DASHBOARD DATA =====
+      async function fetchDashboardData() {
+        if (!window.supabaseClient) return { users: 0, k3Pending: 0, maintActive: 0 };
+        
+        try {
+          const [users, k3, maint] = await Promise.all([
+            window.supabaseClient.from('users').select('*', { count: 'exact', head: true }),
+            window.supabaseClient.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            window.supabaseClient.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
+          ]);
+          
+          return { 
+            users: users.count || 0, 
+            k3Pending: k3.count || 0, 
+            maintActive: maint.count || 0, 
+            timestamp: Date.now() 
+          };
+        } catch(e) {
+          console.error('Fetch dashboard error:', e);
+          return { users: 0, k3Pending: 0, maintActive: 0 };
+        }
+      }
+
+      // ===== RENDER DASHBOARD WITH DATA =====
+      function renderDashboardWithData(data) {
+        const kpiDiv = document.getElementById('kpi-cards');
+        if (!kpiDiv) return;
+        
+        kpiDiv.innerHTML = `
+          <div class="kpi-card" onclick="switchTab('users')">
+            <div class="kpi-value" style="color:#8b5cf6;">${data.users}</div>
+            <div class="kpi-label">Users 🟢</div>
+          </div>
+          <div class="kpi-card" onclick="switchTab('k3')">
+            <div class="kpi-value" style="color:#ef4444;">${data.k3Pending}</div>
+            <div class="kpi-label">K3 Pending 🟢</div>
+          </div>
+          <div class="kpi-card" onclick="switchTab('maint')">
+            <div class="kpi-value" style="color:#0ea5e9;">${data.maintActive}</div>
+            <div class="kpi-label">Maint Aktif 🟢</div>
+          </div>`;
+      }
+
+      // ===== RENDER DASHBOARD =====
+      window.renderDashboard = async function() {
+        const container = document.getElementById('dashboard-container');
+        if (!container) return;
+        
+        const user = getStoredUser();
+        
+        container.innerHTML = 
+          '<div class="header-main glass">' +
+            '<img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;" onerror="this.style.display=\'none\'">' +
+            '<div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
+            '<div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
+            '<div class="user-role-badge">👤 ' + (user.nama || user.email || 'User') + ' | Role: <strong>' + (user.role || 'staff') + '</strong></div>' +
+            '<div class="info-badges">' +
+              '<span class="badge" id="live-clock">⏱️ --:--:--</span>' +
+              '<span class="badge" id="battery-status">🔋 --%</span>' +
+              '<span class="badge online" id="connection-status">📡 Online</span>' +
+            '</div>' +
+            '<div id="prayer-times-dash">🕌 Loading...</div>' +
+            '<button class="logout-btn" id="logout-btn">🚪 Logout</button>' +
+          '</div>' +
+          '<div class="module-grid" id="module-grid"></div>' +
+          '<div class="system-info-box glass">' +
+            '<strong>Dream OS Enterprise RBAC v2.0</strong><br>' +
+            'ISO 27001 • ISO 9001 • ISO 55001 Ready<br>' +
+            'Engineered by Family Dream Team<br>' +
+            '<span style="color:var(--accent);">The Power Soul Of Shalawat</span>' +
+          '</div>';
+
+        document.getElementById('logout-btn')?.addEventListener('click', () => {
+          if (confirm('Yakin logout?')) {
+            window.supabaseClient?.auth.signOut().catch(()=>{});
+            localStorage.removeItem('dreamos_bound_user');
+            localStorage.setItem('dreamos_session_active', 'false');
+            location.reload();
+          }
+        });
+
+        // Modules
+        const modules = [
+          { i:'🌍', n:'CMD Center', id:'cmd' },
+          { i:'🛡️', n:'Security', id:'security' },
+          { i:'⚠️', n:'K3 Safety', id:'k3' },
+          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
+          { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
+          { i:'📅', n:'Booking', id:'booking' },
+          { i:'🏢', n:'Asset', id:'asset' },
+          { i:'📦', n:'Stok Gudang', id:'stok' },
+          { i:'🔧', n:'Maintenance', id:'maintenance' }
+        ];
+
+        const grid = document.getElementById('module-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        
+        modules.forEach(m => {
+          if (!canAccess(m.id)) return;
+          const card = document.createElement('div');
+          card.className = 'mod-card glass';
+          card.innerHTML = '<div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
+          card.addEventListener('click', () => openMod(m.id));
+          grid.appendChild(card);
+        });
+
+        startLiveClock(); startBatteryMonitor();  fetchPrayerTimes();
+      
+      
+        setActiveNav('home');
+      }
+
+      // ===== NAVIGATION =====
+      document.getElementById('bottom-nav').addEventListener('click', function(e) {
+        const navItem = e.target.closest('.nav-item');
+        if (!navItem) return;
+        const mod = navItem.dataset.mod;
+        const nav = navItem.dataset.nav;
+        if (mod) window.openMod(mod);
+        if (nav === 'home') window.goHome();
+        setActiveNav(mod || nav || 'home');
+      });
+
+      function setActiveNav(nav) {
+        document.querySelectorAll('#bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
+        let active = document.querySelector(`#bottom-nav .nav-item[data-nav="${nav}"]`);
+        if (!active) active = document.querySelector(`#bottom-nav .nav-item[data-mod="${nav}"]`);
+        if (active) active.classList.add('active');
+      }
+
+      window.goHome = function() {
+        const c = document.getElementById('mod-container');
+        if (c) { c.style.display = 'none'; c.innerHTML = ''; }
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('bottom-nav').style.display = 'block';
+        renderDashboard();
+      };
+
+      // ===== OPEN MODULE =====
+      window.openMod = function(moduleId) {
+        if (!canAccess(moduleId)) {
+          alert('⛔ Akses Ditolak!');
+          return;
+        }
+        const map = {
+          admin_users:'admin_users.html', cmd:'commandcenter.html', security:'security.html',
+          security_edit_jadwal:'security_edit_jadwal.html', k3:'k3.html',
+          'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
+          maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
+          dana:'dana.html', profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
+        };
+        const file = map[moduleId];
+        if (!file) return;
+        
+        let c = document.getElementById('mod-container');
+        if (!c) {
+          c = document.createElement('div'); c.id = 'mod-container';
+          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);padding-bottom:5rem;';
+          document.body.appendChild(c);
+        }
+        c.style.display = 'block';
+        c.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;"><div class="loading-spinner"></div><p style="margin-top:1rem;">Memuat modul...</p></div>';
+        
+        fetch('modules/' + file + '?v=' + Date.now())
+          .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+          .then(html => {
+            c.innerHTML = html;
+            c.querySelectorAll('script').forEach(s => {
+              const ns = document.createElement('script');
+              if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
+              document.body.appendChild(ns);
+            });
+          })
+          .catch(err => {
+            c.innerHTML = '<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal Memuat Modul</h3><p>' + err.message + '</p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;">🏠 Kembali</button></div>';
+          });
+      }
+
+      // ===== SERVICES =====
+      function startLiveClock() {
+        setInterval(() => {
+          const el = document.getElementById('live-clock');
+          if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
+        }, 1000);
+      }
+
+      function startBatteryMonitor() {
+        const el = document.getElementById('battery-status');
+    if (!('getBattery' in navigator)) {
+      if (el) el.textContent = '🔋 N/A';
+      return;
+    }
+        navigator.getBattery().then(b => {
+          const el = document.getElementById('battery-status');
+          const update = () => { if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%'; };
+          update(); b.addEventListener('levelchange', update);
+        }).catch(()=>{});
+      }
+
+      
+
+      async function fetchPrayerTimes() {
+        const el = document.getElementById('prayer-times-dash');
+        if (!el) return;
+        try {
+          const d = new Date();
+          const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`);
+          const data = await res.json();
+          if (data.code === 200) {
+            const t = data.data.timings;
+            el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`;
+          }
+        } catch(e) { el.textContent = '🕌 Gagal memuat jadwal shalat'; }
+      }
+
+      // ===== STARFIELD =====
+      (function() {
+        const canvas = document.getElementById('star-field');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; createStars(); }
+        function createStars() {
+          stars = [];
+          for (let i = 0; i < Math.floor((canvas.width * canvas.height) / 2000); i++) {
+            stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 });
+          }
+        }
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#e2e8f0';
+          stars.forEach(s => {
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+            s.y += s.speed;
+            if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+          });
+          requestAnimationFrame(animate);
+        }
+        resize(); window.addEventListener('resize', resize); animate();
+      })();
+
+      // ===== INIT =====
+      initSupabase();
+      
+      if (localStorage.getItem('dreamos_session_active') === 'true') {
+        const user = getStoredUser();
+        if (user.role) {
+          console.log('🔐 Auto-login:', user.role);
+          showDashboard();
+        }
+      }
+
+      console.log('🚀 Dream OS Enterprise RBAC v2.0 siap!');
+      console.log('🏛️ Trinity Architecture: Physical + Logical + Spiritual');
+      console.log('💚 The Power Soul Of Shalawat');
+    });
+  </script>
+  <!-- Trinity Architecture Scripts (di-load setelah DOM ready) -->
+  <script src="sync-manager.js"></script>
+  <script src="trinity-physical.js"></script>
+  <script src="trinity-logical.js"></script>
+  <script src="trinity-spiritual.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('✅ SW registered:', reg.scope))
+          .catch(err => console.warn('⚠️ SW registration failed:', err));
+      });
+    }
+  </script>
+
+
+
+</body>
+</html>
