@@ -1,12 +1,10 @@
 /**
- * 🏛️ TRINITY PROXY - SECURITY ALERTS
- * Cloudflare Pages Function untuk Telegram notifications
+ * 🛡️ DREAM OS SECURITY ALERTS - Pages Function
  */
 
 export async function onRequestPost(context) {
   const { request, env } = context;
   
-  // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -17,34 +15,25 @@ export async function onRequestPost(context) {
   try {
     const { type, data, timestamp } = await request.json();
     
-    // Check env vars
     if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
       return new Response(JSON.stringify({ 
-        error: 'Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in Pages env vars.' 
+        error: 'Telegram not configured' 
       }), { status: 500, headers });
     }
     
     let message = '';
-    switch (type) {
-      case 'LOGIN_BLOCKED':
-        message = `🚨 <b>LOGIN BLOCKED</b>\nEmail: ${data.email}\nAttempts: ${data.attempts}`;
-        break;
-      case 'NEW_DEVICE':
-        message = `📱 <b>NEW DEVICE</b>\nEmail: ${data.email}`;
-        break;
-      case 'SUSPICIOUS_DEVICE':
-        message = `⚠️ <b>SUSPICIOUS DEVICE</b>\nEmail: ${data.email}`;
-        break;
-      case 'HONEYPOT_TRIGGERED':
-        message = `🍯 <b>HONEYPOT TRIGGERED</b>\nURL: ${data.url}`;
-        break;
-      default:
-        message = `🔔 <b>SECURITY ALERT</b>\nType: ${type}\nData: ${JSON.stringify(data)}`;
+    if (type === 'LOGIN_BLOCKED') {
+      message = `🚨 <b>LOGIN BLOCKED</b>\n📧 Email: ${data.email}\n🔄 Attempts: ${data.attempts}`;
+    } else if (type === 'NEW_DEVICE') {
+      message = `📱 <b>NEW DEVICE</b>\n📧 Email: ${data.email}`;
+    } else if (type === 'SUSPICIOUS_DEVICE') {
+      message = `⚠️ <b>SUSPICIOUS DEVICE</b>\n📧 Email: ${data.email}`;
+    } else {
+      message = `🔔 <b>SECURITY ALERT</b>\n📋 Type: ${type}`;
     }
     
     message += `\n⏰ ${new Date(timestamp).toLocaleString('id-ID')}`;
     
-    // Send to Telegram
     const tgResponse = await fetch(
       `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, 
       {
@@ -61,8 +50,7 @@ export async function onRequestPost(context) {
     const tgResult = await tgResponse.json();
     
     return new Response(JSON.stringify({ 
-      success: tgResult.ok,
-      telegram: tgResult 
+      success: tgResult.ok 
     }), { headers });
     
   } catch (e) {
@@ -72,7 +60,6 @@ export async function onRequestPost(context) {
   }
 }
 
-// Handle OPTIONS untuk CORS preflight
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
