@@ -173,7 +173,7 @@
       logs.unshift({ time: new Date().toISOString(), user: user.email, role: user.role, action: action, details: detail });
       if (logs.length > 100) logs.pop();
       localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-      if (window.parent && window.renderDashboard) {
+      if (window.renderDashboard) {
         setTimeout(function() { window.renderDashboard(); }, 500);
       }
     } catch(e) {}
@@ -204,6 +204,10 @@
     if (!user) return alert('❌ Sesi tidak valid.');
     
     try {
+        if (!window.supabaseClient) {
+            alert('⚠️ Koneksi database terputus. Silakan refresh halaman.');
+            return;
+        }
         var { error } = await window.supabaseClient
             .from('users')
             .upsert({
@@ -326,7 +330,7 @@
     if (confirm('🚪 Yakin logout? Session akan dihapus dan harus login ulang.')) {
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
-      if (window.parent) window.location.reload();
+      window.location.reload();
       else location.reload();
     }
   };

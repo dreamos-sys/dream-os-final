@@ -233,6 +233,11 @@
 // ========== MAIN APP ==========
 (function() {
   var SEC = window.SEC;
+  
+  // Safety check
+  if (!window.supabaseClient) {
+    console.warn('⚠️ Supabase client belum siap, beberapa fitur mungkin tidak berfungsi');
+  }
   var user = SEC.getCurrentUser();
   if (!user) { document.body.innerHTML = '<h2 style="color:#ef4444;text-align:center;padding:4rem;">🔒 Silakan login.</h2>'; return; }
 
@@ -598,14 +603,28 @@
 
   window.syncUsersToSupabase = function() {
     if (!canAccess('users')) return alert('⛔ Akses ditolak.');
+    if (!window.supabaseClient) return alert('⚠️ Koneksi database terputus.');
+    
     var users = safeGet('dreamos_users_db', []);
     var count = 0;
+    var errors = [];
+    
     users.forEach(function(u) {
       window.supabaseClient.from('users').upsert({
         id: u.id, email: u.email, nama: u.nama, role: u.role, password_hash: u.password_hash
-      }).then(function(res) { if (!res.error) count++; });
+      }).then(function(res) { 
+        if (!res.error) count++; 
+        else errors.push(u.email);
+      });
     });
-    alert('✅ ' + count + ' user disync ke cloud!');
+    
+    setTimeout(function() {
+      if (errors.length > 0) {
+        alert('⚠️ ' + count + ' user berhasil, ' + errors.length + ' gagal:\n' + errors.join('\n'));
+      } else {
+        alert('✅ ' + count + ' user disync ke cloud!');
+      }
+    }, 2000);
   };
 
   // Export functions
