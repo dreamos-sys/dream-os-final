@@ -1,14 +1,14 @@
 /**
- * 🏛️ TRINITY PROXY
- * Handle security alerts & Telegram notifications
+ * 🏛️ TRINITY PROXY - SECURITY ALERTS
  */
-
 export default {
   async fetch(request, env) {
+    // CORS headers - ALLOW GitHub Pages!
     const headers = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Content-Type': 'application/json'
     };
     
     if (request.method === 'OPTIONS') {
@@ -16,15 +16,21 @@ export default {
     }
     
     if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405, headers });
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
     }
     
     try {
       const url = new URL(request.url);
       
-      // Security alert endpoint
       if (url.pathname === '/api/security-alert') {
         const { type, data, timestamp } = await request.json();
+        
+        // Check env vars
+        if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+          return new Response(JSON.stringify({ 
+            error: 'Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in Worker env vars.' 
+          }), { status: 500, headers });
+        }
         
         let message = '';
         switch (type) {
@@ -41,13 +47,13 @@ export default {
             message = `🍯 <b>HONEYPOT TRIGGERED</b>\nURL: ${data.url}`;
             break;
           default:
-            message = `🔔 <b>SECURITY ALERT</b>\nType: ${type}`;
+            message = `🔔 <b>SECURITY ALERT</b>\nType: ${type}\nData: ${JSON.stringify(data)}`;
         }
         
-        message += `\nTime: ${new Date(timestamp).toLocaleString('id-ID')}`;
+        message += `\n⏰ ${new Date(timestamp).toLocaleString('id-ID')}`;
         
         // Send to Telegram
-        await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        const tgResponse = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -57,15 +63,17 @@ export default {
           })
         });
         
-        return new Response(JSON.stringify({ success: true }), { headers });
+        const tgResult = await tgResponse.json();
+        
+        return new Response(JSON.stringify({ 
+          success: tgResult.ok,
+          telegram: tgResult 
+        }), { headers });
       }
       
-      return new Response('Not found', { status: 404, headers });
+      return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers });
     } catch (e) {
-      return new Response(JSON.stringify({ error: e.message }), { 
-        status: 500, 
-        headers 
-      });
+      return new Response(JSON.stringify({ error: e.message }), { status: 500, headers });
     }
   }
 };
