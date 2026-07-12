@@ -1,547 +1,410 @@
+<style>
+  :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
+  .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,157,0.1); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
+  .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
+  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-danger { background: var(--warning); color: #fff; }
+  .btn-warning { background: var(--gold); color: #000; }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .input-field, select { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; outline: none; margin-bottom: 0.5rem; }
+  .input-field:focus, select:focus { border-color: var(--neon); }
+  .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
+  .tab-btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; background: rgba(30,41,59,0.5); color: #94a3b8; transition: 0.2s; white-space: nowrap; }
+  .tab-btn.active { background: rgba(14,165,233,0.15); color: var(--accent); }
+  .mini-stat { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.5rem; text-align: center; }
+  .mini-stat-val { font-size: 1.2rem; font-weight: 700; color: #e2e8f0; }
+  .mini-stat-label { font-size: 0.6rem; color: #94a3b8; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+  th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; font-size: 0.6rem; text-transform: uppercase; }
+  td { padding: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .badge { padding: 0.15rem 0.4rem; border-radius: 10px; font-size: 0.55rem; font-weight: 600; }
+  .badge-aman { background: rgba(16,185,129,0.1); color: #10b981; }
+  .badge-kritis { background: rgba(239,68,68,0.1); color: #ef4444; }
+  .badge-rusak { background: rgba(245,158,11,0.1); color: #f59e0b; }
+</style>
 
-<script>
-// Auto-fallback untuk fungsi global
-if (!window.goHome) window.goHome = function() { 
-  if (window.parent && window.parent.goHome) window.parent.goHome();
-  else window.location.reload();
-};
-if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
-  window.supabaseClient = window.parent.supabaseClient;
-if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
-  window.renderDashboard = window.parent.renderDashboard;
-</script>
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
 
-<!-- 
-=========================================================================
-🏛️ DREAM OS ASSET, GUDANG & RAB MODULE - ERP EDITION V2
-=========================================================================
-👨‍💻 Engineered by: Family Dream Team (Sultan Architect & Co.)
-📌 FITUR ENTERPRISE BARU:
-1. AUTO-TRIGGER RAB: Stok < Minimal -> Klik "Ajukan" -> Masuk Modul Dana.
-2. DEPRECIATION ENGINE: Hitung Nilai Buku Aset untuk Laporan Pajak.
-3. FIXED BUGS: Perbaikan HybridSync payload & UI Table Professional.
-=========================================================================
--->
-
-<button onclick="window.goHome()" style="position:fixed;top:1rem;left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:100000;">← Kembali</button>
-
-<div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="asset-app">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+<div style="max-width: 1100px; margin: 0 auto; padding: 3.5rem 0.8rem 5rem;">
+  
+  <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
-      <h2 style="color:#f59e0b;font-size:1.4rem;margin:0;font-weight:800;">🏛️ Manajemen Aset & Gudang ERP</h2>
-      <p style="color:#94a3b8;font-size:0.75rem;margin-top:0.2rem;">ISO 55001 • Auto-RAB Integration • Depreciation Calc</p>
+      <h2 style="color: var(--gold); margin: 0; font-size: 1.1rem;">🏛️ Manajemen Aset & Gudang ERP</h2>
+      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">ISO 55001 • Auto-RAB • Enterprise Grade</p>
     </div>
-    <div id="asset-sync-status" style="font-size:0.7rem;color:#10b981;background:rgba(16,185,129,0.1);padding:0.3rem 0.8rem;border-radius:1rem;">☁️ Synced</div>
+    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+      <button class="btn btn-success" onclick="syncGudangToCloud()">☁️ Sync Gudang</button>
+      <button class="btn btn-primary" onclick="syncAssetToCloud()">☁️ Sync Aset</button>
+    </div>
   </div>
 
-  <!-- TABS -->
-  <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;overflow-x:auto;padding-bottom:0.5rem;border-bottom:1px solid #1e293b;">
-    <button class="ast-tab active" data-tab="gudang">📦 Gudang & Stok</button>
-    <button class="ast-tab" data-tab="strategis">🏢 Aset Strategis</button>
-    <button class="ast-tab" data-tab="rab">📊 RAB & Pajak (Dashboard)</button>
-    <button class="ast-tab" data-tab="log">📜 Audit Log</button>
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+    <button class="tab-btn active" id="tab-gudang" onclick="switchTab('gudang')">📦 Gudang & Stok</button>
+    <button class="tab-btn" id="tab-strategis" onclick="switchTab('strategis')">🏢 Aset Strategis</button>
+    <button class="tab-btn" id="tab-rab" onclick="switchTab('rab')">📊 RAB & Pajak</button>
+    <button class="tab-btn" id="tab-log" onclick="switchTab('log')">📜 Audit Log</button>
   </div>
 
-  <!-- TAB: GUDANG INVENTARIS -->
-  <div id="panel-gudang" class="ast-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <h3 style="color:#10b981;margin:0;font-size:1rem;">📦 Inventaris Gudang</h3>
-      <button class="ast-btn btn-success" style="width:auto;" onclick="document.getElementById('form-gudang').style.display='block'">+ Tambah Barang</button>
-      <button class="ast-btn" style="width:auto;background:#6366f1;color:white;" onclick="syncGudangToCloud()">☁️ Sync ke Cloud</button>
-    </div>
-    
-    <!-- Form Input Gudang -->
-    <div id="form-gudang" style="display:none;background:rgba(15,23,42,0.8);padding:1rem;border-radius:0.5rem;border:1px solid #334155;margin-bottom:1rem;">
-      <h4 style="margin-top:0;font-size:0.85rem;color:#e2e8f0;">Input Data Barang</h4>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
-        <input id="gd-nama" class="ast-input" placeholder="Nama Barang (Mis: Kertas A4)">
-        <select id="gd-kategori" class="ast-input">
+  <div id="panel-gudang">
+    <div class="glass">
+      <div class="section-title" style="color: #10b981;">📦 Inventaris Gudang</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+        <input type="text" id="gd-nama" class="input-field" placeholder="Nama Barang *">
+        <select id="gd-kategori" class="input-field">
           <option value="ATK">ATK</option><option value="Elektronik">Elektronik</option>
           <option value="Perlengkapan">Perlengkapan</option><option value="Lainnya">Lainnya</option>
-        </select>        <input id="gd-jumlah" type="number" class="ast-input" placeholder="Stok Saat Ini (Qty)">
-        <input id="gd-minimal" type="number" class="ast-input" placeholder="Batas Minimum (Trigger RAB)">
-        <input id="gd-nilai" type="number" class="ast-input" placeholder="Harga Satuan (Rp)">
-        <select id="gd-kondisi" class="ast-input">
-          <option value="Baik">Baik</option><option value="Rusak Ringan">Rusak Ringan</option>
-          <option value="Rusak Berat">Rusak Berat</option>
+        </select>
+        <input type="number" id="gd-jumlah" class="input-field" placeholder="Stok Saat Ini (Qty)">
+        <input type="number" id="gd-minimal" class="input-field" placeholder="Batas Minimum">
+        <input type="number" id="gd-nilai" class="input-field" placeholder="Harga Satuan (Rp)">
+        <select id="gd-kondisi" class="input-field">
+          <option value="Baik">Baik</option><option value="Rusak Ringan">Rusak Ringan</option><option value="Rusak Berat">Rusak Berat</option>
         </select>
       </div>
       <input type="hidden" id="gd-edit-id">
-      <div style="display:flex;gap:0.5rem;">
-        <button class="ast-btn btn-success" data-act="save-gudang" id="btn-save-gudang" style="flex:1;">💾 Simpan</button>
-        <button class="ast-btn btn-warning" data-act="cancel-edit-gudang" id="btn-cancel-edit-gudang" style="flex:1;display:none;">❌ Batal</button>
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-success" onclick="saveGudang()" style="flex: 1;">💾 SIMPAN BARANG</button>
+        <button class="btn btn-danger" onclick="resetForm('gudang')" id="btn-cancel-gudang" style="flex: 1; display: none;">❌ Batal Edit</button>
       </div>
     </div>
-
-    <!-- Table Gudang -->
-    <div style="overflow-x:auto;">
-      <table class="ast-table">
-        <thead><tr><th>Nama Barang</th><th>Kategori</th><th>Stok</th><th>Min</th><th>Harga Satuan</th><th>Status</th><th>Aksi</th></tr></thead>
-        <tbody id="gudang-list"></tbody>
-      </table>
+    <div class="glass" style="overflow-x: auto;">
+      <table><thead><tr><th>Nama Barang</th><th>Kategori</th><th>Stok</th><th>Min</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="gudang-list"></tbody></table>
     </div>
   </div>
 
-  <!-- TAB: ASSET STRATEGIS -->
-  <div id="panel-strategis" class="ast-panel" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <h3 style="color:#06b6d4;margin:0;font-size:1rem;">🏢 Aset Tetap & Tidak Berwujud</h3>
-      <button class="ast-btn btn-primary" style="width:auto;" onclick="document.getElementById('form-asset').style.display='block'">+ Tambah Aset</button>
-    </div>
-
-    <!-- Form Input Asset -->
-    <div id="form-asset" style="display:none;background:rgba(15,23,42,0.8);padding:1rem;border-radius:0.5rem;border:1px solid #334155;margin-bottom:1rem;">
-      <h4 style="margin-top:0;font-size:0.85rem;color:#e2e8f0;">Input Data Aset Strategis</h4>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
-        <input id="as-nama" class="ast-input" placeholder="Nama Aset (Mis: Gedung SMP, AC Daikin)">
-        <select id="as-jenis" class="ast-input">
-          <option value="Gedung">Gedung/Bangunan</option><option value="Tanah">Tanah</option>
-          <option value="Kendaraan">Kendaraan Dinas</option><option value="Elektronik">Elektronik/IT</option>
-          <option value="Meubelair">Meubelair</option>
+  <div id="panel-strategis" style="display: none;">
+    <div class="glass">
+      <div class="section-title" style="color: #06b6d4;">🏢 Aset Strategis</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+        <input type="text" id="as-nama" class="input-field" placeholder="Nama Aset *">
+        <select id="as-jenis" class="input-field">
+          <option value="Gedung">Gedung</option><option value="Tanah">Tanah</option>
+          <option value="Kendaraan">Kendaraan</option><option value="Elektronik">Elektronik/IT</option><option value="Meubelair">Meubelair</option>
         </select>
-        <input id="as-lokasi" class="ast-input" placeholder="Lokasi Penempatan">
-        <input id="as-nilai" type="number" class="ast-input" placeholder="Nilai Perolehan (Rp)">
-        <input id="as-tahun" type="number" class="ast-input" placeholder="Tahun Perolehan (Mis: 2020)">
-        <select id="as-status" class="ast-input">
-          <option value="Baik">Baik</option><option value="Rusak">Rusak</option>
-          <option value="Dalam Perbaikan">Dalam Perbaikan</option>
+        <input type="text" id="as-lokasi" class="input-field" placeholder="Lokasi">
+        <input type="number" id="as-nilai" class="input-field" placeholder="Nilai Perolehan (Rp)">
+        <input type="number" id="as-tahun" class="input-field" placeholder="Tahun Perolehan">
+        <select id="as-status" class="input-field">
+          <option value="Baik">Baik</option><option value="Rusak">Rusak</option><option value="Dalam Perbaikan">Dalam Perbaikan</option>
         </select>
       </div>
-      <input type="hidden" id="as-edit-id">      <div style="display:flex;gap:0.5rem;">
-        <button class="ast-btn btn-primary" data-act="save-asset" id="btn-save-asset" style="flex:1;">💾 Simpan</button>
-        <button class="ast-btn btn-warning" data-act="cancel-edit" id="btn-cancel-edit" style="flex:1;display:none;">❌ Batal</button>
+      <input type="hidden" id="as-edit-id">
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-primary" onclick="saveAsset()" style="flex: 1;">💾 SIMPAN ASET</button>
+        <button class="btn btn-danger" onclick="resetForm('asset')" id="btn-cancel-asset" style="flex: 1; display: none;">❌ Batal Edit</button>
       </div>
     </div>
-
-    <!-- Table Asset -->
-    <div style="overflow-x:auto;">
-      <table class="ast-table">
-        <thead><tr><th>Nama Aset</th><th>Jenis</th><th>Lokasi</th><th>Nilai Perolehan</th><th>Tahun</th><th>Status</th><th>Aksi</th></tr></thead>
-        <tbody id="asset-list"></tbody>
-      </table>
+    <div class="glass" style="overflow-x: auto;">
+      <table><thead><tr><th>Nama Aset</th><th>Jenis</th><th>Lokasi</th><th>Nilai</th><th>Tahun</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="asset-list"></tbody></table>
     </div>
   </div>
 
-  <!-- TAB: RAB & PAJAK (DASHBOARD) -->
-  <div id="panel-rab" class="ast-panel" style="display:none;">
-    <h3 style="color:#f59e0b;margin-top:0;font-size:1.1rem;">📊 Dashboard RAB & Pajak Otomatis</h3>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-      <!-- SECTION RAB -->
-      <div style="background:rgba(15,23,42,0.6);padding:1rem;border-radius:0.5rem;border:1px solid #334155;">
-        <h4 style="color:#10b981;margin-top:0;font-size:0.9rem;">💰 Estimasi Pengadaan (RAB)</h4>
-        <p style="font-size:0.7rem;color:#94a3b8;margin-bottom:1rem;">Barang dengan stok di bawah batas minimum.</p>
-        <div id="rab-suggestion-list" style="max-height:200px;overflow-y:auto;margin-bottom:1rem;"></div>
-        <div style="border-top:1px solid #334155;padding-top:0.5rem;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:1.1rem;font-weight:bold;color:#f59e0b;" id="rab-total-estimate">Rp 0</div>
-          <button class="ast-btn btn-success" style="width:auto;font-size:0.7rem;" data-act="submit-rab-to-finance">📤 Ajukan ke Dana</button>
+  <div id="panel-rab" style="display: none;">
+    <div class="glass">
+      <div class="section-title" style="color: var(--gold);">📊 Dashboard RAB & Pajak</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px;">
+          <h4 style="color: #10b981; margin: 0 0 0.5rem;">💰 Estimasi Pengadaan (RAB)</h4>
+          <div id="rab-suggestion-list"></div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 700; color: var(--gold);" id="rab-total">Rp 0</div>
+            <button class="btn btn-success" onclick="submitRAB()" style="font-size: 0.7rem;">📤 Ajukan ke Dana</button>
+          </div>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px;">
+          <h4 style="color: var(--accent); margin: 0 0 0.5rem;">📉 Penyusutan Nilai Aset</h4>
+          <div id="tax-summary"></div>
         </div>
       </div>
-
-      <!-- SECTION TAX/DEPRECIATION -->
-      <div style="background:rgba(15,23,42,0.6);padding:1rem;border-radius:0.5rem;border:1px solid #334155;">
-        <h4 style="color:#0ea5e9;margin-top:0;font-size:0.9rem;">📉 Penyusutan Nilai Aset (Pajak)</h4>
-        <p style="font-size:0.7rem;color:#94a3b8;margin-bottom:1rem;">Metode Garis Lurus: Gedung 2%/th, Lainnya 10%/th.</p>
-        <div id="tax-summary" style="max-height:200px;overflow-y:auto;"></div>
-      </div>
     </div>
   </div>
 
-  <!-- TAB: LOG AUDIT -->
-  <div id="panel-log" class="ast-panel" style="display:none;">
-    <h3 style="color:#f59e0b;margin-top:0;font-size:1rem;">📜 Log Audit Perubahan (ISO 27001)</h3>
-    <div style="background:#0f172a;padding:1rem;border-radius:0.5rem;font-family:monospace;font-size:0.7rem;max-height:400px;overflow-y:auto;color:#94a3b8;" id="log-list"></div>
+  <div id="panel-log" style="display: none;">
+    <div class="glass">
+      <div class="section-title">📜 Log Audit Perubahan</div>
+      <div id="log-list" style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.65rem; color: #94a3b8;"></div>
+    </div>
   </div>
 </div>
 
-<style>
-.ast-panel{background:rgba(15,23,42,0.4);border-radius:0.75rem;padding:1rem;}
-.ast-input{width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;box-sizing:border-box;}.ast-input:focus{border-color:#0ea5e9;outline:none;}
-.ast-btn{padding:0.6rem 1rem;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;font-size:0.8rem;width:100%;transition:opacity 0.2s;}
-.ast-btn:hover{opacity:0.9;}
-.btn-primary{background:#0ea5e9;color:#fff;}
-.btn-success{background:#10b981;color:#fff;}
-.btn-danger{background:#ef4444;color:#fff;}
-.btn-warning{background:#f59e0b;color:#000;}
-.ast-tab{padding:0.6rem 1rem;border:none;border-radius:0.5rem 0.5rem 0 0;cursor:pointer;font-weight:600;font-size:0.8rem;background:transparent;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;}
-.ast-tab.active{background:rgba(245,158,11,0.1);color:#f59e0b;border-bottom-color:#f59e0b;}
-.ast-table{width:100%;border-collapse:collapse;font-size:0.75rem;}
-.ast-table th{background:#0f172a;color:#64748b;padding:0.75rem;text-align:left;font-weight:600;text-transform:uppercase;font-size:0.65rem;}
-.ast-table td{padding:0.75rem;border-bottom:1px solid #1e293b;color:#e2e8f0;}
-.ast-table tr:hover td{background:rgba(255,255,255,0.02);}
-.badge{padding:0.2rem 0.5rem;border-radius:99px;font-size:0.65rem;font-weight:600;}
-.badge-aman{background:rgba(16,185,129,0.1);color:#10b981;}
-.badge-kritis{background:rgba(239,68,68,0.1);color:#ef4444;}
-.badge-rusak{background:rgba(245,158,11,0.1);color:#f59e0b;}
-.action-btns{display:flex;gap:0.3rem;}
-.action-btns button{padding:0.3rem 0.6rem;font-size:0.65rem;width:auto;}
-</style>
-
 <script>
-(function(){
-  function safeGet(k, fb){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }catch(e){ return fb; } }
-  function safeSet(k, d){ localStorage.setItem(k, JSON.stringify(d)); updateSyncStatus(); }
-  function fmtRp(v){ return 'Rp ' + (parseInt(v)||0).toLocaleString('id-ID'); }
-  
-  function updateSyncStatus(){
-    var el = document.getElementById('asset-sync-status');
-    if(el) { el.innerHTML = '☁️ Synced'; el.style.color = '#10b981'; el.style.background = 'rgba(16,185,129,0.1)'; }
+(function() {
+  'use strict';
+
+  let currentTab = 'gudang';
+
+  function safeGet(key, fb) { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fb)); } catch(e) { return fb; } }
+  function safeSet(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtRp(v) { return 'Rp ' + (parseInt(v) || 0).toLocaleString('id-ID'); }
+
+  function isAdmin() {
+    let user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    return ['dev', 'kabag_umum', 'koordinator_umum'].includes(user.role);
   }
 
-  function verifyPin(cb){
-    var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-    if (['dev','kabag_umum','koordinator_umum'].includes(user.role)) { cb(); return; }
-    alert('⛔ Hanya admin yang bisa melakukan aksi ini.');
-}
-
-  function logAudit(aksi, detail){ 
-    var l=safeGet('dreamos_asset_log',[]); 
-    l.unshift({waktu:new Date().toISOString(), aksi:aksi, detail:detail}); 
-    safeSet('dreamos_asset_log', l.slice(0,100)); 
+  function logAudit(action, detail) {
+    let logs = safeGet('dreamos_asset_log', []);
+    logs.unshift({ waktu: new Date().toISOString(), aksi: action, detail: detail });
+    safeSet('dreamos_asset_log', logs.slice(0, 100));
+    if (window.BankAudit) BankAudit.log('ASSET_' + action, { detail });
   }
 
-  // --- RENDER GUDANG ---
-  function renderGudang(){
-    var data = safeGet('dreamos_gudang',[]);
-    var h = '';
-    data.forEach(function(g){      var qty = parseInt(g.jumlah);
-      var minQty = parseInt(g.minimal || 5);
-      var isLow = qty <= minQty;
-      var statusBadge = isLow ? '<span class="badge badge-kritis">⚠️ Kritis</span>' : '<span class="badge badge-aman">✅ Aman</span>';
-      if(g.kondisi.includes('Rusak')) statusBadge = '<span class="badge badge-rusak">🔧 Rusak</span>';
-
-      h += '<tr>';
-      h += '<td><b>'+g.nama+'</b></td>';
-      h += '<td>'+g.kategori+'</td>';
-      h += '<td style="font-weight:bold;color:'+(isLow?'#ef4444':'#e2e8f0')+'">'+qty+'</td>';
-      h += '<td>'+minQty+'</td>';
-      h += '<td>'+fmtRp(g.nilai)+'</td>';
-      h += '<td>'+statusBadge+'</td>';
-      h += '<td class="action-btns">';
-      h += '<button data-act="edit-gudang" data-id="'+g.id+'" class="ast-btn btn-primary">✏️</button>';
-      h += '<button data-act="del-gudang" data-id="'+g.id+'" class="ast-btn btn-danger">🗑️</button>';
-      h += '</td></tr>';
+  // ===== RENDER GUDANG =====
+  function renderGudang() {
+    let data = safeGet('dreamos_gudang', []);
+    let html = '';
+    data.forEach(g => {
+      let qty = parseInt(g.jumlah) || 0;
+      let minQty = parseInt(g.minimal) || 5;
+      let isLow = qty <= minQty;
+      let statusBadge = isLow ? '<span class="badge badge-kritis">⚠️ Kritis</span>' : '<span class="badge badge-aman">✅ Aman</span>';
+      if (g.kondisi && g.kondisi.includes('Rusak')) statusBadge = '<span class="badge badge-rusak">🔧 Rusak</span>';
+      html += '<tr><td><b>' + esc(g.nama) + '</b></td><td>' + esc(g.kategori) + '</td><td style="color:' + (isLow ? '#ef4444' : '#e2e8f0') + ';font-weight:700;">' + qty + '</td><td>' + minQty + '</td><td>' + fmtRp(g.nilai) + '</td><td>' + statusBadge + '</td>';
+      html += '<td><button class="btn btn-primary" onclick="editGudang(\'' + g.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteGudang(\'' + g.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
     });
-    document.getElementById('gudang-list').innerHTML = h || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data barang.</td></tr>';
+    document.getElementById('gudang-list').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data barang.</td></tr>';
   }
 
-  // --- RENDER ASSET ---
-  function renderAsset(){
-    var data = safeGet('dreamos_assets',[]);
-    var h = '';
-    data.forEach(function(a){
-      var statusBadge = a.status === 'Baik' ? '<span class="badge badge-aman">'+a.status+'</span>' : '<span class="badge badge-rusak">'+a.status+'</span>';
-      h += '<tr>';
-      h += '<td><b>'+a.nama+'</b></td>';
-      h += '<td>'+a.jenis+'</td>';
-      h += '<td>'+a.lokasi+'</td>';
-      h += '<td>'+fmtRp(a.nilai)+'</td>';
-      h += '<td>'+a.tahun+'</td>';
-      h += '<td>'+statusBadge+'</td>';
-      h += '<td class="action-btns">';
-      h += '<button data-act="edit-asset" data-id="'+a.id+'" class="ast-btn btn-primary">✏️</button>';
-      h += '<button data-act="del-asset" data-id="'+a.id+'" class="ast-btn btn-danger">🗑️</button>';
-      h += '</td></tr>';
+  // ===== RENDER ASSET =====
+  function renderAsset() {
+    let data = safeGet('dreamos_assets', []);
+    let html = '';
+    data.forEach(a => {
+      let statusBadge = a.status === 'Baik' ? '<span class="badge badge-aman">' + a.status + '</span>' : '<span class="badge badge-rusak">' + a.status + '</span>';
+      html += '<tr><td><b>' + esc(a.nama) + '</b></td><td>' + esc(a.jenis) + '</td><td>' + esc(a.lokasi) + '</td><td>' + fmtRp(a.nilai) + '</td><td>' + esc(a.tahun) + '</td><td>' + statusBadge + '</td>';
+      html += '<td><button class="btn btn-primary" onclick="editAsset(\'' + a.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteAsset(\'' + a.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
     });
-    document.getElementById('asset-list').innerHTML = h || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data aset.</td></tr>';
+    document.getElementById('asset-list').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data aset.</td></tr>';
   }
 
-  // --- RENDER RAB & PAJAK ---
-  function renderRABandTax(){
-    // 1. RAB CALCULATION
-    var gudang = safeGet('dreamos_gudang',[]);
-    var rabList = [];
-    var totalRAB = 0;
-
-    gudang.forEach(function(g){      var qty = parseInt(g.jumlah);
-      var minQty = parseInt(g.minimal || 5);
-      var price = parseInt(g.nilai || 0);
-      
-      if(qty < minQty){
-        var need = minQty - qty;
-        var cost = need * price;
-        rabList.push({nama: g.nama, qty: need, cost: cost, price: price});
-        totalRAB += cost;
+  // ===== RENDER RAB & TAX =====
+  function renderRAB() {
+    let gudang = safeGet('dreamos_gudang', []);
+    let rabList = [], totalRAB = 0;
+    gudang.forEach(g => {
+      let qty = parseInt(g.jumlah) || 0;
+      let minQty = parseInt(g.minimal) || 5;
+      let price = parseInt(g.nilai) || 0;
+      if (qty < minQty) {
+        let need = minQty - qty;
+        rabList.push({ nama: g.nama, qty: need, cost: need * price });
+        totalRAB += need * price;
       }
     });
-
-    var rabHtml = '';
-    if(rabList.length === 0){
-      rabHtml = '<div style="padding:0.5rem;color:#10b981;font-size:0.75rem;">✅ Stok gudang aman. Tidak ada pengajuan mendesak.</div>';
-    } else {
-      rabHtml = '<table class="ast-table" style="font-size:0.7rem;"><tr><th>Barang</th><th>Kurang</th><th>Total Biaya</th></tr>';
-      rabList.forEach(function(r){
-        rabHtml += '<tr><td>'+r.nama+'</td><td>'+r.qty+' unit</td><td>'+fmtRp(r.cost)+'</td></tr>';
-      });
-      rabHtml += '</table>';
-    }
+    let rabHtml = rabList.length ? '<table style="font-size:0.65rem;"><tr><th>Barang</th><th>Kurang</th><th>Biaya</th></tr>' + rabList.map(r => '<tr><td>' + esc(r.nama) + '</td><td>' + r.qty + ' unit</td><td>' + fmtRp(r.cost) + '</td></tr>').join('') + '</table>' : '<p style="color:#10b981;font-size:0.7rem;">✅ Stok gudang aman.</p>';
     document.getElementById('rab-suggestion-list').innerHTML = rabHtml;
-    document.getElementById('rab-total-estimate').innerHTML = fmtRp(totalRAB);
-    document.getElementById('rab-total-estimate').dataset.value = totalRAB;
-    document.getElementById('rab-total-estimate').dataset.items = JSON.stringify(rabList);
+    document.getElementById('rab-total').textContent = fmtRp(totalRAB);
+    document.getElementById('rab-total').dataset.value = totalRAB;
+    document.getElementById('rab-total').dataset.items = JSON.stringify(rabList);
 
-    // 2. TAX / DEPRECIATION CALCULATION
-    var assets = safeGet('dreamos_assets',[]);
-    var currentYear = new Date().getFullYear();
-    var taxHtml = '';
-    var totalBookValue = 0;
-
-    assets.forEach(function(a){
-      var purchaseVal = parseInt(a.nilai || 0);
-      var year = parseInt(a.tahun || currentYear);
-      var age = currentYear - year;
-      
-      if(age > 0 && purchaseVal > 0){
-        var rate = (a.jenis === 'Gedung') ? 0.02 : (a.jenis === 'Tanah' ? 0 : 0.10);
-        var depAmount = purchaseVal * rate * age;
-        var bookValue = Math.max(0, purchaseVal - depAmount);
+    // Tax
+    let assets = safeGet('dreamos_assets', []);
+    let currentYear = new Date().getFullYear();
+    let taxHtml = '', totalBookValue = 0;
+    assets.forEach(a => {
+      let purchaseVal = parseInt(a.nilai) || 0;
+      let year = parseInt(a.tahun) || currentYear;
+      let age = currentYear - year;
+      if (age > 0 && purchaseVal > 0) {
+        let rate = a.jenis === 'Gedung' ? 0.02 : (a.jenis === 'Tanah' ? 0 : 0.10);
+        let depAmount = purchaseVal * rate * age;
+        let bookValue = Math.max(0, purchaseVal - depAmount);
         totalBookValue += bookValue;
-
-        if(rate > 0){
-           taxHtml += '<div style="margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid #334155;font-size:0.7rem;">';
-           taxHtml += '<div style="display:flex;justify-content:space-between;"><b>'+a.nama+'</b> <span style="color:#64748b;">('+age+' thn)</span></div>';
-           taxHtml += '<div style="color:#94a3b8;margin-top:0.2rem;">Perolehan: '+fmtRp(purchaseVal)+' → Nilai Buku: <b style="color:#0ea5e9;">'+fmtRp(bookValue)+'</b></div>';
-           taxHtml += '</div>';
-        }      }
+        if (rate > 0) {
+          taxHtml += '<div style="font-size:0.7rem;margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid rgba(255,255,255,0.03);"><b>' + esc(a.nama) + '</b> <span style="color:#64748b;">(' + age + ' thn)</span><br>Perolehan: ' + fmtRp(purchaseVal) + ' → Nilai Buku: <b style="color:var(--accent);">' + fmtRp(bookValue) + '</b></div>';
+        }
+      }
     });
-
-    if(taxHtml === '') taxHtml = '<div style="color:#64748b;font-size:0.75rem;">Belum ada aset yang masuk hitungan penyusutan.</div>';
-    taxHtml += '<div style="margin-top:1rem;padding-top:0.5rem;border-top:1px solid #334155;text-align:right;font-size:0.8rem;">';
-    taxHtml += 'Total Nilai Buku Aset (Pajak): <b style="color:#f59e0b;font-size:1rem;">' + fmtRp(totalBookValue) + '</b>';
-    taxHtml += '</div>';
-
+    if (!taxHtml) taxHtml = '<p style="color:#64748b;font-size:0.7rem;">Belum ada aset yang masuk hitungan.</p>';
+    taxHtml += '<div style="text-align:right;font-weight:700;color:var(--gold);margin-top:0.5rem;">Total Nilai Buku: ' + fmtRp(totalBookValue) + '</div>';
     document.getElementById('tax-summary').innerHTML = taxHtml;
   }
 
-  function renderLog(){
-    var logs = safeGet('dreamos_asset_log',[]);
-    var h = logs.map(function(l){ 
-      return '<div style="margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid #1e293b;">'+
-             '<span style="color:#475569">['+new Date(l.waktu).toLocaleString('id-ID')+']</span> '+
-             '<b style="color:#e2e8f0">'+l.aksi+'</b>: <span style="color:#94a3b8">'+l.detail+'</span></div>'; 
-    }).join('');
-    document.getElementById('log-list').innerHTML = h || '<p style="text-align:center;">Belum ada log aktivitas.</p>';
+  function renderLog() {
+    let logs = safeGet('dreamos_asset_log', []);
+    document.getElementById('log-list').innerHTML = logs.length ? logs.map(l => '<div style="margin-bottom:0.3rem;">[' + new Date(l.waktu).toLocaleString('id-ID') + '] <b>' + esc(l.aksi) + '</b>: ' + esc(l.detail) + '</div>').join('') : '<p>Belum ada log.</p>';
   }
 
-  function switchTab(tab){
-    document.querySelectorAll('.ast-tab').forEach(b => b.classList.remove('active'));
-    document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
-    ['gudang','strategis','rab','log'].forEach(t => {
-      document.getElementById('panel-'+t).style.display = (t===tab)?'block':'none';
+  // ===== TAB SWITCHING =====
+  window.switchTab = function(tab) {
+    currentTab = tab;
+    ['gudang', 'strategis', 'rab', 'log'].forEach(t => {
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+      document.getElementById('panel-' + t).style.display = t === tab ? 'block' : 'none';
     });
-    if(tab==='log') renderLog();
-    else if(tab==='rab') renderRABandTax();
-  }
+    if (tab === 'rab') renderRAB();
+    if (tab === 'log') renderLog();
+  };
 
-  // --- EDIT & FORM LOGIC ---
-  function toggleForm(type, show){ document.getElementById('form-'+type).style.display = show?'block':'none'; }
-  
-  function fillForm(type, id){
-    var data = safeGet(type==='asset'?'dreamos_assets':'dreamos_gudang',[]);
-    var item = data.find(x => x.id === id);
-    if(!item) return;
-    
-    if(type==='asset'){
-      ['as-nama','as-jenis','as-lokasi','as-nilai','as-tahun','as-status'].forEach(k => document.getElementById(k).value = item[k.replace('as-','')]);
-      document.getElementById('as-edit-id').value = id;
-      document.getElementById('btn-save-asset').textContent = '💾 Update Aset';
-      document.getElementById('btn-save-asset').className = 'ast-btn btn-warning';
-      document.getElementById('btn-cancel-edit').style.display = 'block';
+  // ===== CRUD GUDANG =====
+  window.saveGudang = function() {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menyimpan data.');
+    let nama = document.getElementById('gd-nama').value.trim();
+    if (!nama) return alert('⚠️ Nama barang wajib diisi!');
+    let item = {
+      id: document.getElementById('gd-edit-id').value || ('gd_' + Date.now()),
+      nama, kategori: document.getElementById('gd-kategori').value,
+      jumlah: document.getElementById('gd-jumlah').value,
+      minimal: document.getElementById('gd-minimal').value,
+      nilai: document.getElementById('gd-nilai').value,
+      kondisi: document.getElementById('gd-kondisi').value,
+      updated_at: new Date().toISOString()
+    };
+    let data = safeGet('dreamos_gudang', []);
+    let editId = document.getElementById('gd-edit-id').value;
+    if (editId) { let idx = data.findIndex(g => g.id === editId); if (idx > -1) data[idx] = item; } else { data.push(item); }
+    safeSet('dreamos_gudang', data);
+    if (window.supabaseClient) window.supabaseClient.from('stok').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, jumlah: parseInt(item.jumlah) || 0, ambang_batas: parseInt(item.minimal) || 5, kondisi: item.kondisi }).then(() => {}).catch(() => {});
+    if (window.OfflineQueue) window.OfflineQueue.add('stok', 'upsert', item);
+    logAudit(editId ? 'UPDATE_GUDANG' : 'TAMBAH_GUDANG', item.nama);
+    resetForm('gudang'); renderGudang();
+  };
+
+  window.editGudang = function(id) {
+    let data = safeGet('dreamos_gudang', []), item = data.find(g => g.id === id);
+    if (!item) return;
+    document.getElementById('gd-nama').value = item.nama || '';
+    document.getElementById('gd-kategori').value = item.kategori || 'ATK';
+    document.getElementById('gd-jumlah').value = item.jumlah || '';
+    document.getElementById('gd-minimal').value = item.minimal || '';
+    document.getElementById('gd-nilai').value = item.nilai || '';
+    document.getElementById('gd-kondisi').value = item.kondisi || 'Baik';
+    document.getElementById('gd-edit-id').value = id;
+    document.getElementById('btn-cancel-gudang').style.display = 'block';
+  };
+
+  window.deleteGudang = function(id) {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menghapus data.');
+    if (!confirm('Hapus barang ini?')) return;
+    let data = safeGet('dreamos_gudang', []).filter(g => g.id !== id);
+    safeSet('dreamos_gudang', data);
+    if (window.supabaseClient) window.supabaseClient.from('stok').delete().eq('id', id).then(() => {}).catch(() => {});
+    logAudit('HAPUS_GUDANG', 'ID: ' + id);
+    renderGudang();
+  };
+
+  // ===== CRUD ASSET =====
+  window.saveAsset = function() {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menyimpan data.');
+    let nama = document.getElementById('as-nama').value.trim();
+    if (!nama) return alert('⚠️ Nama aset wajib diisi!');
+    let item = {
+      id: document.getElementById('as-edit-id').value || ('asset_' + Date.now()),
+      nama, jenis: document.getElementById('as-jenis').value,
+      lokasi: document.getElementById('as-lokasi').value,
+      nilai: document.getElementById('as-nilai').value,
+      tahun: document.getElementById('as-tahun').value,
+      status: document.getElementById('as-status').value,
+      updated_at: new Date().toISOString()
+    };
+    let data = safeGet('dreamos_assets', []);
+    let editId = document.getElementById('as-edit-id').value;
+    if (editId) { let idx = data.findIndex(a => a.id === editId); if (idx > -1) data[idx] = item; } else { data.push(item); }
+    safeSet('dreamos_assets', data);
+    if (window.supabaseClient) window.supabaseClient.from('assets').upsert(item).then(() => {}).catch(() => {});
+    if (window.OfflineQueue) window.OfflineQueue.add('assets', 'upsert', item);
+    logAudit(editId ? 'UPDATE_ASET' : 'TAMBAH_ASET', item.nama);
+    resetForm('asset'); renderAsset();
+  };
+
+  window.editAsset = function(id) {
+    let data = safeGet('dreamos_assets', []), item = data.find(a => a.id === id);
+    if (!item) return;
+    document.getElementById('as-nama').value = item.nama || '';
+    document.getElementById('as-jenis').value = item.jenis || 'Gedung';
+    document.getElementById('as-lokasi').value = item.lokasi || '';
+    document.getElementById('as-nilai').value = item.nilai || '';
+    document.getElementById('as-tahun').value = item.tahun || '';
+    document.getElementById('as-status').value = item.status || 'Baik';
+    document.getElementById('as-edit-id').value = id;
+    document.getElementById('btn-cancel-asset').style.display = 'block';
+  };
+
+  window.deleteAsset = function(id) {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menghapus data.');
+    if (!confirm('Hapus aset ini?')) return;
+    let data = safeGet('dreamos_assets', []).filter(a => a.id !== id);
+    safeSet('dreamos_assets', data);
+    if (window.supabaseClient) window.supabaseClient.from('assets').delete().eq('id', id).then(() => {}).catch(() => {});
+    logAudit('HAPUS_ASET', 'ID: ' + id);
+    renderAsset();
+  };
+
+  // ===== RESET FORM =====
+  window.resetForm = function(type) {
+    if (type === 'gudang') {
+      document.getElementById('gd-nama').value = '';
+      document.getElementById('gd-jumlah').value = '';
+      document.getElementById('gd-minimal').value = '';
+      document.getElementById('gd-nilai').value = '';
+      document.getElementById('gd-edit-id').value = '';
+      document.getElementById('btn-cancel-gudang').style.display = 'none';
     } else {
-      ['gd-nama','gd-kategori','gd-jumlah','gd-minimal','gd-nilai','gd-kondisi'].forEach(k => document.getElementById(k).value = item[k.replace('gd-','')]);
-      document.getElementById('gd-edit-id').value = id;
-      document.getElementById('btn-save-gudang').textContent = '💾 Update Barang';
-      document.getElementById('btn-save-gudang').className = 'ast-btn btn-warning';      document.getElementById('btn-cancel-edit-gudang').style.display = 'block';
+      document.getElementById('as-nama').value = '';
+      document.getElementById('as-lokasi').value = '';
+      document.getElementById('as-nilai').value = '';
+      document.getElementById('as-tahun').value = '';
+      document.getElementById('as-edit-id').value = '';
+      document.getElementById('btn-cancel-asset').style.display = 'none';
     }
-  }
+  };
 
-  function resetForm(type){
-    document.querySelectorAll('#form-'+type+' input').forEach(i => i.value = '');
-    document.getElementById(type+'-edit-id').value = '';
-    if(type==='asset'){
-      document.getElementById('btn-save-asset').textContent = '💾 Simpan';
-      document.getElementById('btn-save-asset').className = 'ast-btn btn-primary';
-      document.getElementById('btn-cancel-edit').style.display = 'none';
-    } else {
-      document.getElementById('btn-save-gudang').textContent = '💾 Simpan';
-      document.getElementById('btn-save-gudang').className = 'ast-btn btn-success';
-      document.getElementById('btn-cancel-edit-gudang').style.display = 'none';
-    }
-  }
+  // ===== RAB SUBMIT =====
+  window.submitRAB = function() {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa mengajukan RAB.');
+    let total = parseInt(document.getElementById('rab-total').dataset.value || 0);
+    let items = JSON.parse(document.getElementById('rab-total').dataset.items || '[]');
+    if (!total || !items.length) return alert('⚠️ Tidak ada item yang perlu diajukan.');
+    let desc = 'Pengadaan otomatis: ' + items.map(i => i.nama + ' (' + i.qty + ' unit)').join(', ');
+    let dana = safeGet('dreamos_dana', []);
+    dana.push({ id: 'rab_auto_' + Date.now(), judul: 'Pengadaan Barang Gudang (Auto-RAB)', nominal: total, deskripsi: desc, status: 'pending', tanggal: new Date().toLocaleDateString('id-ID'), created_at: new Date().toISOString() });
+    safeSet('dreamos_dana', dana);
+    if (window.OfflineQueue) window.OfflineQueue.add('dana', 'insert', dana[dana.length - 1]);
+    logAudit('AJUKAN_RAB', 'Total: ' + fmtRp(total));
+    alert('✅ Draft RAB senilai ' + fmtRp(total) + ' telah dikirim ke Modul Dana!');
+  };
 
-  // --- EVENT HANDLERS ---
-  document.getElementById('asset-app').addEventListener('click', function(e){
-    var t = e.target.closest('[data-act]');
-    if(!t) return;
-    var act = t.dataset.act, id = t.dataset.id;
+  // ===== SYNC TO CLOUD =====
+  window.syncGudangToCloud = async function() {
+    if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
+    let data = safeGet('dreamos_gudang', []);
+    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
+    let count = 0;
+    for (let item of data) {
+      try {
+        await window.supabaseClient.from('stok').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, jumlah: parseInt(item.jumlah) || 0, ambang_batas: parseInt(item.minimal) || 5, kondisi: item.kondisi });
+        count++;
+      } catch(e) { console.warn('Sync error:', e.message); if (window.OfflineQueue) window.OfflineQueue.add('stok', 'upsert', item); }
+    }
+    alert('✅ ' + count + '/' + data.length + ' barang tersync ke cloud!');
+    if (window.BankAudit) BankAudit.log('ASSET_SYNC_GUDANG', { total: data.length, success: count });
+  };
 
-    if(act === 'save-asset'){
-      verifyPin(function(){
-        var nama = document.getElementById('as-nama').value.trim();
-        if(!nama) return alert('Nama aset wajib diisi!');
-        var asset = {
-          id: document.getElementById('as-edit-id').value || ('asset_' + Date.now()),
-          nama: nama, jenis: document.getElementById('as-jenis').value,
-          lokasi: document.getElementById('as-lokasi').value.trim(), nilai: document.getElementById('as-nilai').value,
-          tahun: document.getElementById('as-tahun').value, status: document.getElementById('as-status').value
-        };
-        var data = safeGet('dreamos_assets',[]);
-        var editId = document.getElementById('as-edit-id').value;
-        if(editId){ var idx = data.findIndex(a => a.id === editId); if(idx > -1) data[idx] = asset; } else { data.push(asset); }
-        safeSet('dreamos_assets', data);
-        if(typeof window.HybridSync !== 'undefined') window.HybridSync.push('assets', asset); // FIXED PAYLOAD
-        logAudit(editId ? 'UPDATE ASET' : 'TAMBAH ASET', asset.nama + ' ('+asset.jenis+')');
-        resetForm('asset'); toggleForm('asset', false); renderAsset();
-        alert('✅ Aset berhasil disimpan.');
-      });
+  window.syncAssetToCloud = async function() {
+    if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
+    let data = safeGet('dreamos_assets', []);
+    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
+    let count = 0;
+    for (let item of data) {
+      try {
+        await window.supabaseClient.from('assets').upsert(item);
+        count++;
+      } catch(e) { console.warn('Sync error:', e.message); if (window.OfflineQueue) window.OfflineQueue.add('assets', 'upsert', item); }
     }
-    else if(act === 'del-asset'){
-      verifyPin(function(){
-        var data = safeGet('dreamos_assets',[]).filter(a => a.id !== id);
-        safeSet('dreamos_assets', data);
-        if(typeof window.HybridSync !== 'undefined') window.HybridSync.push('assets', {id:id, _deleted:true});
-        logAudit('HAPUS ASET', 'ID: '+id); renderAsset();      });
-    }
-    else if(act === 'edit-asset'){ toggleForm('asset', true); fillForm('asset', id); }
-    else if(act === 'cancel-edit'){ resetForm('asset'); toggleForm('asset', false); }
-
-    else if(act === 'save-gudang'){
-      verifyPin(function(){
-        var nama = document.getElementById('gd-nama').value.trim();
-        if(!nama) return alert('Nama barang wajib diisi!');
-        var gudang = {
-          id: document.getElementById('gd-edit-id').value || ('gd_' + Date.now()),
-          nama: nama, kategori: document.getElementById('gd-kategori').value,
-          jumlah: document.getElementById('gd-jumlah').value, minimal: document.getElementById('gd-minimal').value,
-          nilai: document.getElementById('gd-nilai').value, kondisi: document.getElementById('gd-kondisi').value
-        };
-        var data = safeGet('dreamos_gudang',[]);
-        var editId = document.getElementById('gd-edit-id').value;
-        if(editId){ var idx = data.findIndex(g => g.id === editId); if(idx > -1) data[idx] = gudang; } else { data.push(gudang); }
-        safeSet('dreamos_gudang', data);
-        if(typeof window.HybridSync !== 'undefined') window.HybridSync.push('stok', gudang); // FIXED PAYLOAD & TABLE NAME
-        logAudit(editId ? 'UPDATE GUDANG' : 'TAMBAH GUDANG', gudang.nama + ' (Qty: '+gudang.jumlah+')');
-        resetForm('gudang'); toggleForm('gudang', false); renderGudang();
-        alert('✅ Barang berhasil disimpan.');
-      });
-    }
-    else if(act === 'del-gudang'){
-      verifyPin(function(){
-        var data = safeGet('dreamos_gudang',[]).filter(g => g.id !== id);
-        safeSet('dreamos_gudang', data);
-        if(typeof window.HybridSync !== 'undefined') window.HybridSync.push('stok', {id:id, _deleted:true});
-        logAudit('HAPUS GUDANG', 'ID: '+id); renderGudang();
-      });
-    }
-    else if(act === 'edit-gudang'){ toggleForm('gudang', true); fillForm('gudang', id); }
-    else if(act === 'cancel-edit-gudang'){ resetForm('gudang'); toggleForm('gudang', false); }
-
-    // 🚀 ENTERPRISE FEATURE: AUTO SUBMIT RAB TO FINANCE MODULE
-    else if(act === 'submit-rab-to-finance'){
-      var total = parseInt(document.getElementById('rab-total-estimate').dataset.value || 0);
-      var items = JSON.parse(document.getElementById('rab-total-estimate').dataset.items || '[]');
-      if(total === 0) return alert('Tidak ada item yang perlu diajukan.');
-      
-      verifyPin(function(){
-        var desc = 'Pengadaan otomatis berdasarkan stok minimum: ' + items.map(i=>i.nama+' ('+i.qty+' unit)').join(', ');
-        var dana = safeGet('dreamos_dana', []);
-        dana.push({
-          id: 'rab_auto_' + Date.now(),
-          judul: 'Pengadaan Barang Gudang (Auto-RAB)',
-          nominal: total,
-          deskripsi: desc,          status: 'pending',
-          tanggal: new Date().toLocaleDateString('id-ID'),
-          created_at: new Date().toISOString()
-        });
-        safeSet('dreamos_dana', dana);
-        if(typeof window.HybridSync !== 'undefined') window.HybridSync.push('dana', dana[dana.length-1]);
-        logAudit('AJUKAN RAB', 'Total: '+fmtRp(total)+' ke Modul Dana');
-        alert('✅ Draft RAB senilai '+fmtRp(total)+' telah dikirim ke Modul Dana untuk di-ACC Pak Hanung!');
-        switchTab('gudang');
-      });
-    }
-  });
-
-  document.querySelectorAll('.ast-tab').forEach(function(btn){
-    btn.addEventListener('click', function(){ switchTab(this.dataset.tab); });
-  });
+    alert('✅ ' + count + '/' + data.length + ' aset tersync ke cloud!');
+    if (window.BankAudit) BankAudit.log('ASSET_SYNC_ASSET', { total: data.length, success: count });
+  };
 
   // Init
-  renderAsset(); renderGudang();
-
-  window.syncGudangToCloud = async function() {
-    var data = safeGet('dreamos_gudang', []);
-    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
-    var count = 0;
-    for (var item of data) {
-      try {
-        var { error } = await window.supabaseClient.from('stok').upsert({
-          id: item.id,
-          nama_barang: item.nama,
-          kategori: item.kategori,
-          jumlah: parseInt(item.jumlah) || 0,
-          satuan: item.satuan || 'pcs',
-          lokasi: item.lokasi || '',
-          ambang_batas: parseInt(item.minimal) || 5,
-          dibuat_oleh: JSON.parse(localStorage.getItem('dreamos_bound_user'))?.id
-        });
-        if (error) throw error;
-        count++;
-      } catch(e) { console.warn('Sync error:', e); }
-    }
-    alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
-  };
-
-
-  window.syncGudangToCloud = async function() {
-    var data = safeGet('dreamos_gudang', []);
-    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
-    var count = 0;
-    for (var item of data) {
-      try {
-        var { error } = await window.supabaseClient.from('stok').upsert({
-          id: item.id,
-          nama_barang: item.nama,
-          kategori: item.kategori,
-          jumlah: parseInt(item.jumlah) || 0,
-          satuan: item.satuan || 'pcs',
-          lokasi: item.lokasi || '',
-          ambang_batas: parseInt(item.minimal) || 5,
-          dibuat_oleh: JSON.parse(localStorage.getItem('dreamos_bound_user'))?.id
-        });
-        if (error) throw error;
-        count++;
-      } catch(e) { console.warn('Sync error:', e); }
-    }
-    alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
-  };
-
+  renderGudang(); renderAsset();
+  if (window.BankAudit) BankAudit.log('ACCESS_ASSET_MODULE');
+  console.log('🏛️ Asset Module Ready');
 })();
-
-  window.syncGudangToCloud = async function() {
-    var data = safeGet('dreamos_gudang', []);
-    if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
-    
-    var count = 0;
-    for (var item of data) {
-      try {
-        var { error } = await window.supabaseClient.from('stok').upsert({
-          id: item.id,
-          nama_barang: item.nama,
-          kategori: item.kategori,
-          jumlah: parseInt(item.jumlah) || 0,
-          satuan: item.satuan || 'pcs',
-          lokasi: item.lokasi || '',
-          ambang_batas: parseInt(item.minimal) || 5,
-          dibuat_oleh: JSON.parse(localStorage.getItem('dreamos_bound_user'))?.id
-        });
-        if (error) throw error;
-        count++;
-      } catch(e) {
-        console.warn('Sync error:', e);
-      }
-    }
-    alert('✅ ' + count + '/' + data.length + ' barang disync ke cloud!');
-  };
-
 </script>
