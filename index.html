@@ -178,6 +178,7 @@
   <meta name="theme-color" content="#00ff9d">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="syncEngine.js"></script>
 </head>
 <body>
   <canvas id="star-field"></canvas>
@@ -366,7 +367,7 @@
           }
 
           btn.textContent = '✅ Success!';
-          setTimeout(showDashboard, 500);
+          setTimeout(() => { showDashboard(); console.log('🔄 Menghidupkan Sync Engine...'); }, 500);
         } catch(e) {
           if (errorEl) { errorEl.textContent = '⚠️ Error: ' + e.message; errorEl.style.display = 'block'; }
           btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
@@ -455,7 +456,8 @@
 
         document.getElementById('logout-btn')?.addEventListener('click', () => {
           if (confirm('Yakin logout?')) {
-            window.supabaseClient?.auth.signOut().catch(()=>{});
+            window.SyncEngine?.unsubscribeAll();
+      window.supabaseClient?.auth.signOut().catch(()=>{});
             localStorage.removeItem('dreamos_bound_user');
             localStorage.setItem('dreamos_session_active', 'false');
             location.reload();
