@@ -55,6 +55,7 @@
     .loading-spinner { width: 30px; height: 30px; border: 3px solid rgba(0,255,157,0.3); border-top-color: var(--neon); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
   </style>
 
+  <!-- Trinity Architecture Scripts -->
   <script src="trinity-physical.js"></script>
   <script src="trinity-logical.js"></script>
   <script src="trinity-spiritual.js"></script>
@@ -107,7 +108,7 @@
       const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
       
-      // GLOBAL: Supabase client - bisa diakses semua modul
+      // GLOBAL: Supabase client
       window.supabaseClient = null;
 
       function initSupabase() {
@@ -141,7 +142,7 @@
         catch(e) { return {}; }
       }
 
-      window.getUserRole = function() { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}').role || 'staff'; };
+      window.getUserRole = function() { return getStoredUser().role || 'staff'; };
       function canAccess(moduleId) { return (ROLE_PERMISSIONS[getUserRole()] || ROLE_PERMISSIONS.staff || []).includes(moduleId); }
 
       // ===== ELEMENTS =====
@@ -166,7 +167,7 @@
       emailInput?.addEventListener('keypress', e => { if (e.key === 'Enter') passwordInput?.focus(); });
       passwordInput?.addEventListener('keypress', e => { if (e.key === 'Enter') loginBtn?.click(); });
 
-      // ===== LOGIN =====
+      // ===== LOGIN HANDLER (CLEAN VERSION) =====
       loginBtn?.addEventListener('click', async function() {
         const btn = this;
         const email = emailInput?.value.trim() || '';
@@ -180,32 +181,29 @@
 
         btn.textContent = '⏳ Connecting...'; btn.disabled = true;
 
-        // Dev bypass
-        // ALL BYPASS REMOVED - Trinity Architecture requires proper authentication));
-          
-          // Track login attempt
-          if (window.realSecurity) {
-            window.realSecurity.trackLogin(email, !error);
+        // 🔐 TRINITY LAYER 1: Physical Security Check
+        if (window.trinityPhysical) {
+          if (window.trinityPhysical.isBlocked(email)) {
+            if (errorEl) {
+              errorEl.textContent = '⛔ Account temporarily blocked. Try again later.';
+              errorEl.style.display = 'block';
+            }
+            btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            return;
           }
-
           
-          // 🧠 TRINITY LAYER 2: Track login attempt
-          if (window.trinityPhysical) {
-            window.trinityPhysical.trackLogin(email, !error);
+          const deviceCheck = await window.trinityPhysical.validateDevice(email);
+          if (!deviceCheck.success) {
+            if (errorEl) {
+              errorEl.textContent = '⛔ ' + deviceCheck.reason;
+              errorEl.style.display = 'block';
+            }
+            btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            return;
           }
-
-          localStorage.setItem('dreamos_session_active', 'true');
-          btn.textContent = '✅ Dev Mode!';
-          
-          // 🕌 TRINITY LAYER 3: Spiritual audit log
-          if (window.trinitySpiritual) {
-            await window.trinitySpiritual.auditLog('LOGIN_SUCCESS', data.user.id, { email });
-          }
-
-          setTimeout(showDashboard, 500);
-          return;
         }
 
+        // Init Supabase if needed
         if (!window.supabaseClient && !initSupabase()) {
           await new Promise(r => setTimeout(r, 1500));
           if (!window.supabaseClient && !initSupabase()) {
@@ -216,81 +214,39 @@
         }
 
         try {
+          const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
           
-    // 🔐 REAL SECURITY INTEGRATION
-    if (window.realSecurity) {
-      // Check if blocked
-      if (window.realSecurity.isBlocked(email)) {
-        if (errorEl) {
-          errorEl.textContent = '⛔ Account temporarily blocked. Try again later.';
-          errorEl.style.display = 'block';
-        }
-        return;
-      }
-      
-      // Validate device
-      const deviceCheck = await window.realSecurity.validateDevice(email);
-      if (!deviceCheck.success) {
-        if (errorEl) {
-          errorEl.textContent = '⛔ ' + deviceCheck.reason;
-          errorEl.style.display = 'block';
-        }
-        return;
-      }
-    }
-
-        
-      // 🔐 TRINITY LAYER 1: Physical Security Check
-      if (window.trinityPhysical) {
-        if (window.trinityPhysical.isBlocked(email)) {
-          if (errorEl) {
-            errorEl.textContent = '⛔ Account temporarily blocked. Try again later.';
-            errorEl.style.display = 'block';
-          }
-          return;
-        }
-        
-        const deviceCheck = await window.trinityPhysical.validateDevice(email);
-        if (!deviceCheck.success) {
-          if (errorEl) {
-            errorEl.textContent = '⛔ ' + deviceCheck.reason;
-            errorEl.style.display = 'block';
-          }
-          return;
-        }
-      }
-
-        const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
           if (error) {
             if (errorEl) { errorEl.textContent = '⛔ ' + error.message; errorEl.style.display = 'block'; }
             btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
+            
+            // Track failed login
+            if (window.trinityPhysical) {
+              window.trinityPhysical.trackLogin(email, false);
+            }
             return;
           }
+
+          // Success - save user data
           localStorage.setItem('dreamos_bound_user', JSON.stringify({
-            id: data.user.id, email: data.user.email,
+            id: data.user.id, 
+            email: data.user.email,
             nama: data.user.user_metadata?.nama || email.split('@')[0],
             role: data.user.user_metadata?.role || 'staff'
           }));
-          
-          // Track login attempt
-          if (window.realSecurity) {
-            window.realSecurity.trackLogin(email, !error);
-          }
-
-          
-          // 🧠 TRINITY LAYER 2: Track login attempt
-          if (window.trinityPhysical) {
-            window.trinityPhysical.trackLogin(email, !error);
-          }
-
           localStorage.setItem('dreamos_session_active', 'true');
-          btn.textContent = '✅ Success!';
           
+          // Track successful login
+          if (window.trinityPhysical) {
+            window.trinityPhysical.trackLogin(email, true);
+          }
+
           // 🕌 TRINITY LAYER 3: Spiritual audit log
           if (window.trinitySpiritual) {
             await window.trinitySpiritual.auditLog('LOGIN_SUCCESS', data.user.id, { email });
           }
 
+          btn.textContent = '✅ Success!';
           setTimeout(showDashboard, 500);
         } catch(e) {
           if (errorEl) { errorEl.textContent = '⚠️ Error: ' + e.message; errorEl.style.display = 'block'; }
@@ -306,27 +262,54 @@
         renderDashboard();
       }
 
+      // ===== FETCH DASHBOARD DATA =====
+      async function fetchDashboardData() {
+        if (!window.supabaseClient) return { users: 0, k3Pending: 0, maintActive: 0 };
+        
+        try {
+          const [users, k3, maint] = await Promise.all([
+            window.supabaseClient.from('users').select('*', { count: 'exact', head: true }),
+            window.supabaseClient.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            window.supabaseClient.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
+          ]);
+          
+          return { 
+            users: users.count || 0, 
+            k3Pending: k3.count || 0, 
+            maintActive: maint.count || 0, 
+            timestamp: Date.now() 
+          };
+        } catch(e) {
+          console.error('Fetch dashboard error:', e);
+          return { users: 0, k3Pending: 0, maintActive: 0 };
+        }
+      }
+
+      // ===== RENDER DASHBOARD WITH DATA =====
+      function renderDashboardWithData(data) {
+        const kpiDiv = document.getElementById('kpi-cards');
+        if (!kpiDiv) return;
+        
+        kpiDiv.innerHTML = `
+          <div class="kpi-card" onclick="switchTab('users')">
+            <div class="kpi-value" style="color:#8b5cf6;">${data.users}</div>
+            <div class="kpi-label">Users 🟢</div>
+          </div>
+          <div class="kpi-card" onclick="switchTab('k3')">
+            <div class="kpi-value" style="color:#ef4444;">${data.k3Pending}</div>
+            <div class="kpi-label">K3 Pending 🟢</div>
+          </div>
+          <div class="kpi-card" onclick="switchTab('maint')">
+            <div class="kpi-value" style="color:#0ea5e9;">${data.maintActive}</div>
+            <div class="kpi-label">Maint Aktif 🟢</div>
+          </div>`;
+      }
+
       // ===== RENDER DASHBOARD =====
       window.renderDashboard = async function() {
-
-      // ⚡ TRINITY: Smart cache load
-      const user = getStoredUser();
-      if (user.id && window.trinityLogical) {
-        const data = await window.trinityLogical.smartCacheLoad(user.id, fetchDashboardData);
-        renderDashboardWithData(data);
-        return;
-      }
-
-
-      // ⚡ Load dashboard dengan secure cache
-      const user = getStoredUser();
-      if (user.id && window.secureDashboardCache) {
-        window.secureDashboardCache.smartLoad(user.id);
-        return;
-      }
-
         const container = document.getElementById('dashboard-container');
         if (!container) return;
+        
         const user = getStoredUser();
         
         container.innerHTML = 
@@ -390,7 +373,7 @@
         setActiveNav('home');
       }
 
-      // ===== NAVIGATION (EVENT DELEGATION) =====
+      // ===== NAVIGATION =====
       document.getElementById('bottom-nav').addEventListener('click', function(e) {
         const navItem = e.target.closest('.nav-item');
         if (!navItem) return;
@@ -408,7 +391,7 @@
         if (active) active.classList.add('active');
       }
 
-      window.goHome = window.goHome || function() {
+      window.goHome = function() {
         const c = document.getElementById('mod-container');
         if (c) { c.style.display = 'none'; c.innerHTML = ''; }
         document.getElementById('main-app').style.display = 'block';
@@ -416,10 +399,10 @@
         renderDashboard();
       };
 
-      // ===== OPEN MODULE (GLOBAL) =====
+      // ===== OPEN MODULE =====
       window.openMod = function(moduleId) {
         if (!canAccess(moduleId)) {
-          alert('⛔ Akses Ditolak! Anda tidak memiliki izin untuk modul ini.');
+          alert('⛔ Akses Ditolak!');
           return;
         }
         const map = {
@@ -452,7 +435,7 @@
             });
           })
           .catch(err => {
-            c.innerHTML = '<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal Memuat Modul</h3><p>' + err.message + '</p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;">🏠 Kembali ke Dashboard</button></div>';
+            c.innerHTML = '<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal Memuat Modul</h3><p>' + err.message + '</p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;">🏠 Kembali</button></div>';
           });
       }
 
@@ -537,7 +520,7 @@
       }
 
       console.log('🚀 Dream OS Enterprise RBAC v2.0 siap!');
-      console.log('👥 Role-based access control aktif');
+      console.log('🏛️ Trinity Architecture: Physical + Logical + Spiritual');
       console.log('💚 The Power Soul Of Shalawat');
     });
   </script>
