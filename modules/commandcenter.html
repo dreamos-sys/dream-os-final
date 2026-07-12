@@ -424,7 +424,7 @@
     }
     document.getElementById('booking-ruang').value = '';
     document.getElementById('booking-peminjam').value = '';
-    alert('✅ Booking tersimpan!'); if (window.sendNotification) window.sendNotification(user.id, 'Booking baru: ' + ruang + ' pada ' + tgl);
+    alert('✅ Booking tersimpan!'); if (typeof window.sendNotification === 'function') { window.sendNotification(user.id, 'Booking baru: ' + ruang + ' pada ' + tgl); }
   };
 
   window.addUserWithForm = async function() {
@@ -471,7 +471,7 @@
   window.clearAllData = function() { if(confirm('HAPUS SEMUA DATA? Aksi ini tidak bisa dibatalkan!')){ localStorage.clear(); location.reload(); } };
 
   // SYNC ENGINE
-  if (window.SyncEngine) {
+  if (window.SyncEngine && window.supabaseClient) {
     window.SyncEngine.subscribe('bookings', function() { if (canAccess('booking')) renderBookingList(); });
     window.SyncEngine.subscribe('k3_reports', function() { if (canAccess('k3')) { renderK3Active(); renderK3All(); } });
     window.SyncEngine.subscribe('dana_requests', function() { if (canAccess('dana')) { renderDanaPending(); renderBudgetSummary(); renderDanaHistory(); } });
