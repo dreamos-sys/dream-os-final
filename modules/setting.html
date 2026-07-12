@@ -68,7 +68,7 @@
       <div class="section-title" style="color: var(--gold);">♿ Accessibility Suite</div>
       <div class="set-row"><div><div class="set-label">High Contrast</div><div class="set-desc">WCAG 2.2 AA compliant</div></div><div class="toggle-switch" id="tog-highContrast" onclick="toggleSetting('highContrast')"></div></div>
       <div class="set-row"><div><div class="set-label">Reduced Motion</div><div class="set-desc">No animations</div></div><div class="toggle-switch" id="tog-reduceMotion" onclick="toggleSetting('reduceMotion')"></div></div>
-      <div class="set-row"><div><div class="set-label">Screen Reader</div><div class="set-desc">ARIA labels</div></div><div class="toggle-switch" id="tog-screenReader" onclick="toggleSetting('screenReader')"></div></div>
+      <div class="set-row"><div><div class="set-label">Screen Reader</div><div class="set-desc">ARIA live region (untuk pembaca layar)</div></div><div class="toggle-switch" id="tog-screenReader" onclick="toggleSetting('screenReader')"></div></div>
     </div>
   </div>
 
@@ -113,15 +113,37 @@
 
   function applySettings() {
     const root = document.documentElement;
+    const body = document.body;
     root.setAttribute('data-theme', state.theme);
+    root.setAttribute('data-high-contrast', state.highContrast ? 'true' : 'false');
+    root.setAttribute('data-reduce-motion', state.reduceMotion ? 'true' : 'false');
     root.style.setProperty('--font-scale', state.fontSize + '%');
+    root.setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+    
     const canvas = document.getElementById('star-field');
     if (canvas) canvas.style.display = state.starfield ? 'block' : 'none';
+    
     const alpha = (state.glassIntensity / 100).toFixed(2);
     const bg = state.theme === 'light' ? 'rgba(240,245,255,' + alpha + ')' : 'rgba(15,23,42,' + alpha + ')';
     root.style.setProperty('--glass-bg', bg);
-    if (state.highContrast) { root.style.setProperty('--text-main', '#ffffff'); root.style.setProperty('--glass-border', 'rgba(0,255,157,0.6)'); }
-    if (state.reduceMotion) root.style.setProperty('--animation-duration', '0s');
+    
+    if (state.highContrast) {
+      root.style.setProperty('--text-main', '#ffffff');
+      root.style.setProperty('--glass-border', 'rgba(0,255,157,0.6)');
+      body.style.background = '#000000';
+    } else {
+      body.style.background = state.theme === 'light' ? '#f0f4ff' : '#0a0e27';
+    }
+    
+    if (state.reduceMotion) {
+      root.style.setProperty('--animation-duration', '0s');
+    } else {
+      root.style.setProperty('--animation-duration', '0.3s');
+    }
+    
+    if (state.screenReader) {
+      root.setAttribute('aria-live', 'polite');
+    }
   }
 
   function updateAllUI() {
