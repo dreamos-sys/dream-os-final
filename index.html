@@ -501,7 +501,20 @@
       async function checkConnection() {
         const el = document.getElementById('connection-status');
         if (!el) return;
-        if (!navigator.onLine) { el.textContent = '📡 Offline'; el.className = 'badge offline'; return; }
+        // Lebih reliable: coba fetch ke server
+        try {
+          const start = Date.now();
+          await fetch('https://www.google.com/favicon.ico', {mode: 'no-cors', cache: 'no-store'});
+          if (el) {
+            el.textContent = '📡 Online (' + (Date.now()-start) + 'ms)';
+            el.className = 'badge online';
+          }
+        } catch(e) {
+          if (el) {
+            el.textContent = '📡 Offline';
+            el.className = 'badge offline';
+          }
+        }
         try {
           const start = Date.now();
           const res = await fetch(SUPABASE_URL + '/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_KEY } });
