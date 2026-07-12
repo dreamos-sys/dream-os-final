@@ -1,3 +1,16 @@
+
+<script>
+// Auto-fallback untuk fungsi global
+if (!window.goHome) window.goHome = function() { 
+  if (window.parent && window.parent.goHome) window.parent.goHome();
+  else window.location.reload();
+};
+if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
+  window.supabaseClient = window.parent.supabaseClient;
+if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
+  window.renderDashboard = window.parent.renderDashboard;
+</script>
+
 <script src="../js/security-helper.js">
 async function tambahTugas() {
     const judul = document.getElementById('maint-judul')?.value || '';
@@ -117,7 +130,7 @@ function setSyncStatus(s) {
     const pin = prompt('🔐 PIN Admin/Kabag:');   
     if(!pin) return;
     const hash = window.parent.hashPin(pin);   
-    if (hash === window.parent.ROLE_HASHES['kabag'] || hash === window.parent.ROLE_HASHES['koord']) {     
+    if (hash === window.parent.ROLE_HASHES['kabag_umum'] || hash === window.parent.ROLE_HASHES['koordinator_umum']) {     
       if(window.parent && typeof window.parent.triggerDzikirFeedback==='function') window.parent.triggerDzikirFeedback();     
       cb();   
     } else { alert('❌ PIN salah.'); } 

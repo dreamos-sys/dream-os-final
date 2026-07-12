@@ -1,3 +1,16 @@
+
+<script>
+// Auto-fallback untuk fungsi global
+if (!window.goHome) window.goHome = function() { 
+  if (window.parent && window.parent.goHome) window.parent.goHome();
+  else window.location.reload();
+};
+if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
+  window.supabaseClient = window.parent.supabaseClient;
+if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
+  window.renderDashboard = window.parent.renderDashboard;
+</script>
+
 <style>
         :root { --glass-bg: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 255, 157, 0.1); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
         * { box-sizing: border-box; }
@@ -142,7 +155,7 @@
   async function hashPW(pw) { var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw+'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
 
   var user = getUser();
-  if (!window.supabaseClient) {
+  if (!window.supabaseClient) { window.supabaseClient = window.parent?.supabaseClient; }
     console.warn('⚠️ Supabase client belum siap di profile module. Menunggu...');
     setTimeout(function() { if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia'); }, 2000);
   }
@@ -205,7 +218,7 @@
     if (!user) return alert('❌ Sesi tidak valid.');
     
     try {
-        if (!window.supabaseClient) {
+        if (!window.supabaseClient) { window.supabaseClient = window.parent?.supabaseClient; }
             alert('⚠️ Koneksi database terputus. Silakan refresh halaman.');
             return;
         }
