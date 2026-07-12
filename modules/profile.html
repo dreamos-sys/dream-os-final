@@ -133,7 +133,7 @@
 </div>
 
 <script>
-// ========== PROFILE MODULE (CLEAN VERSION) ==========
+// ========== PROFILE MODULE (ENTERPRISE) ==========
 (function() {
   'use strict';
 
@@ -142,19 +142,20 @@
   async function getDNA() { try { var c=document.createElement('canvas'); var x=c.getContext('2d'); x.fillStyle='#f60'; x.fillRect(125,1,62,20); var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode([navigator.hardwareConcurrency||0,screen.colorDepth,c.toDataURL()].join('|'))); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join('').substring(0,32); } catch(e) { return 'UNKNOWN'; } }
 
   
-  // Fallback SEC (jika tidak ada dari index.html)
-  var SEC = window.SEC || { 
-    sanitize: function(s) { return String(s || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); },
-    hashPassword: async function(p) { var e = new TextEncoder(); var h = await crypto.subtle.digest('SHA-256', e.encode(p + 'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(''); }
+  // SEC Global (dari index.html atau fallback)
+  var SEC = window.SEC || {
+    sanitize: function(s) { if(!s) return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; },
+    hashPassword: async function(p) { var e=new TextEncoder(); var h=await crypto.subtle.digest('SHA-256',e.encode(p+'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
   };
   var user = getUser();
-  if (!window.supabaseClient) { 
-    console.warn('⚠️ Supabase client belum siap. Menunggu...');
-    setTimeout(function() { 
-      if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia'); 
-    }, 2000);
-  } else {
+  // Cek Supabase client
+  if (window.supabaseClient) {
     console.log('✅ Supabase client tersedia di Profile Module');
+  } else {
+    console.warn('⚠️ Supabase client belum siap, retry dalam 2 detik...');
+    setTimeout(function() {
+      if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia setelah retry');
+    }, 2000);
   }
   if (!user) {
     document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2></div>';
