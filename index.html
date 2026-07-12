@@ -54,6 +54,10 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-spinner { width: 30px; height: 30px; border: 3px solid rgba(0,255,157,0.3); border-top-color: var(--neon); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
   </style>
+
+  <script src="trinity-physical.js"></script>
+  <script src="trinity-logical.js"></script>
+  <script src="trinity-spiritual.js"></script>
 </head>
 <body>
   <canvas id="star-field"></canvas>
@@ -177,16 +181,27 @@
         btn.textContent = '⏳ Connecting...'; btn.disabled = true;
 
         // Dev bypass
-        if (email === 'dreamos.sch.id@gmail.com' && password === 'DreamOS2026!') {
-          localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: 'dreamos-dev', email, nama: 'Developer', role: 'dev' }));
+        // ALL BYPASS REMOVED - Trinity Architecture requires proper authentication));
           
           // Track login attempt
           if (window.realSecurity) {
             window.realSecurity.trackLogin(email, !error);
           }
 
+          
+          // 🧠 TRINITY LAYER 2: Track login attempt
+          if (window.trinityPhysical) {
+            window.trinityPhysical.trackLogin(email, !error);
+          }
+
           localStorage.setItem('dreamos_session_active', 'true');
           btn.textContent = '✅ Dev Mode!';
+          
+          // 🕌 TRINITY LAYER 3: Spiritual audit log
+          if (window.trinitySpiritual) {
+            await window.trinitySpiritual.auditLog('LOGIN_SUCCESS', data.user.id, { email });
+          }
+
           setTimeout(showDashboard, 500);
           return;
         }
@@ -224,6 +239,27 @@
       }
     }
 
+        
+      // 🔐 TRINITY LAYER 1: Physical Security Check
+      if (window.trinityPhysical) {
+        if (window.trinityPhysical.isBlocked(email)) {
+          if (errorEl) {
+            errorEl.textContent = '⛔ Account temporarily blocked. Try again later.';
+            errorEl.style.display = 'block';
+          }
+          return;
+        }
+        
+        const deviceCheck = await window.trinityPhysical.validateDevice(email);
+        if (!deviceCheck.success) {
+          if (errorEl) {
+            errorEl.textContent = '⛔ ' + deviceCheck.reason;
+            errorEl.style.display = 'block';
+          }
+          return;
+        }
+      }
+
         const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
           if (error) {
             if (errorEl) { errorEl.textContent = '⛔ ' + error.message; errorEl.style.display = 'block'; }
@@ -241,8 +277,20 @@
             window.realSecurity.trackLogin(email, !error);
           }
 
+          
+          // 🧠 TRINITY LAYER 2: Track login attempt
+          if (window.trinityPhysical) {
+            window.trinityPhysical.trackLogin(email, !error);
+          }
+
           localStorage.setItem('dreamos_session_active', 'true');
           btn.textContent = '✅ Success!';
+          
+          // 🕌 TRINITY LAYER 3: Spiritual audit log
+          if (window.trinitySpiritual) {
+            await window.trinitySpiritual.auditLog('LOGIN_SUCCESS', data.user.id, { email });
+          }
+
           setTimeout(showDashboard, 500);
         } catch(e) {
           if (errorEl) { errorEl.textContent = '⚠️ Error: ' + e.message; errorEl.style.display = 'block'; }
@@ -259,7 +307,16 @@
       }
 
       // ===== RENDER DASHBOARD =====
-      window.renderDashboard = function() {
+      window.renderDashboard = async function() {
+
+      // ⚡ TRINITY: Smart cache load
+      const user = getStoredUser();
+      if (user.id && window.trinityLogical) {
+        const data = await window.trinityLogical.smartCacheLoad(user.id, fetchDashboardData);
+        renderDashboardWithData(data);
+        return;
+      }
+
 
       // ⚡ Load dashboard dengan secure cache
       const user = getStoredUser();
