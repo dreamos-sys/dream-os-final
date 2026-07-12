@@ -1,9 +1,13 @@
 /**
- * 🛡️ DREAM OS SECURITY ALERTS - Pages Function
+ * 🛡️ DREAM OS SECURITY ALERTS - HARDCODED VERSION (Testing)
  */
 
+// HARDCODE BUAT TESTING - NANTI DIPINDAH KE ENV VARS!
+const TELEGRAM_BOT_TOKEN = '8769945646:AAG_myHkLd_hvo4yj4uwe4uuL5hOhgwy0bo';
+const TELEGRAM_CHAT_ID = '1298505314';
+
 export async function onRequestPost(context) {
-  const { request, env } = context;
+  const { request } = context;
   
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -14,12 +18,6 @@ export async function onRequestPost(context) {
   
   try {
     const { type, data, timestamp } = await request.json();
-    
-    if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
-      return new Response(JSON.stringify({ 
-        error: 'Telegram not configured' 
-      }), { status: 500, headers });
-    }
     
     let message = '';
     if (type === 'LOGIN_BLOCKED') {
@@ -34,13 +32,14 @@ export async function onRequestPost(context) {
     
     message += `\n⏰ ${new Date(timestamp).toLocaleString('id-ID')}`;
     
+    // Kirim ke Telegram
     const tgResponse = await fetch(
-      `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, 
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, 
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: env.TELEGRAM_CHAT_ID,
+          chat_id: TELEGRAM_CHAT_ID,
           text: message,
           parse_mode: 'HTML'
         })
@@ -50,7 +49,8 @@ export async function onRequestPost(context) {
     const tgResult = await tgResponse.json();
     
     return new Response(JSON.stringify({ 
-      success: tgResult.ok 
+      success: tgResult.ok,
+      telegram: tgResult
     }), { headers });
     
   } catch (e) {
