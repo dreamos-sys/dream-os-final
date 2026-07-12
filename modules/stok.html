@@ -1,18 +1,190 @@
-<style>:root{--neon:#00ff9d;--accent:#0ea5e9}*{box-sizing:border-box}body{background:#0a0e27;color:#e2e8f0;font-family:'Inter',sans-serif;min-height:100vh;margin:0;padding:1rem}.glass{background:rgba(15,23,42,0.7);backdrop-filter:blur(20px);border:1px solid rgba(0,255,157,0.1);border-radius:16px;padding:1rem;margin-bottom:1rem}.btn{padding:0.5rem 1rem;border:none;border-radius:8px;font-weight:700;cursor:pointer}.btn-success{background:#10b981;color:#fff}.btn-danger{background:#e11d48;color:#fff}.input-field{width:100%;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e2e8f0;font-size:0.8rem;outline:none;margin-bottom:0.5rem}table{width:100%;border-collapse:collapse;font-size:0.7rem}th{background:rgba(0,0,0,0.3);color:#94a3b8;padding:0.4rem;text-align:left}td{padding:0.35rem;border-bottom:1px solid rgba(255,255,255,0.03)}</style>
-<button onclick="window.goHome()" style="background:rgba(30,41,59,0.9);border:1px solid var(--neon);color:var(--neon);padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.7rem;position:fixed;top:0.8rem;left:0.8rem;z-index:1000">← HOME</button>
-<div style="max-width:800px;margin:0 auto;padding-top:3.5rem;">
-  <div class="glass"><h2 style="color:var(--neon)">📦 Stok Gudang</h2>
-    <input type="text" id="stok-nama" class="input-field" placeholder="Nama Barang">
-    <input type="number" id="stok-qty" class="input-field" placeholder="Jumlah">
-    <input type="text" id="stok-lokasi" class="input-field" placeholder="Lokasi / Gudang">
-    <button class="btn btn-success" onclick="addStok()" style="width:100%">✅ SIMPAN BARANG</button>
+<style>
+  :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
+  .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,157,0.1); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
+  .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
+  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-danger { background: var(--warning); color: #fff; }
+  .btn-warning { background: var(--gold); color: #000; }
+  .input-field { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; outline: none; margin-bottom: 0.5rem; }
+  .input-field:focus { border-color: var(--neon); }
+  .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+  th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; }
+  td { padding: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .mini-stat { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.5rem; text-align: center; }
+  .mini-stat-val { font-size: 1.2rem; font-weight: 700; color: #e2e8f0; }
+  .mini-stat-label { font-size: 0.6rem; color: #94a3b8; }
+</style>
+
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
+
+<div style="max-width: 900px; margin: 0 auto; padding: 3.5rem 0.8rem 5rem;">
+  
+  <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem;">📦 Stok Gudang</h2>
+      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Manajemen Inventaris • Bank-Grade Security</p>
+    </div>
+    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+      <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
+      <button class="btn btn-primary" onclick="syncToCloud()">☁️ Sync</button>
+    </div>
   </div>
-  <div class="glass"><h3 style="color:var(--accent)">📋 Daftar Barang</h3><div id="stok-list"></div></div>
+
+  <div class="glass">
+    <div class="section-title" style="color: var(--accent);">➕ Tambah Barang</div>
+    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
+      <input type="text" id="stok-nama" class="input-field" placeholder="Nama Barang" style="margin-bottom:0;">
+      <input type="number" id="stok-qty" class="input-field" placeholder="Jumlah" style="margin-bottom:0;" min="1">
+      <input type="text" id="stok-lokasi" class="input-field" placeholder="Lokasi / Gudang" style="margin-bottom:0;">
+      <button class="btn btn-success" onclick="addStok()" style="height: 2.4rem;">✅ SIMPAN</button>
+    </div>
+  </div>
+
+  <div class="glass" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+    <div class="mini-stat"><div class="mini-stat-val" id="stat-total">0</div><div class="mini-stat-label">Total Item</div></div>
+    <div class="mini-stat"><div class="mini-stat-val" id="stat-qty">0</div><div class="mini-stat-label">Total Qty</div></div>
+    <div class="mini-stat"><div class="mini-stat-val" id="stat-lokasi">0</div><div class="mini-stat-label">Lokasi</div></div>
+    <div class="mini-stat"><div class="mini-stat-val" id="stat-last">-</div><div class="mini-stat-label">Update Terakhir</div></div>
+  </div>
+
+  <div class="glass">
+    <div class="section-title" style="color: var(--neon);">📋 Daftar Barang</div>
+    <div id="stok-list" style="max-height: 500px; overflow-y: auto;"></div>
+  </div>
+
+  <div class="glass" style="display: flex; gap: 0.5rem; justify-content: center;">
+    <button class="btn btn-warning" onclick="syncToCloud()">☁️ Sync Semua ke Cloud</button>
+    <button class="btn btn-danger" onclick="clearAll()">🧹 Hapus Semua</button>
+  </div>
 </div>
+
 <script>
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function renderList(){var s=JSON.parse(localStorage.getItem('dreamos_stok')||'[]');document.getElementById('stok-list').innerHTML=s.length?('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>Aksi</th></tr>'+s.map(function(x,i){return'<tr><td>'+esc(x.nama)+'</td><td>'+x.qty+'</td><td>'+esc(x.lokasi)+'</td><td><button onclick="deleteStok('+i+')" class="btn btn-danger" style="font-size:0.5rem;">🗑️</button></td></tr>'}).join('')+'</table>'):'<p>Belum ada data.</p>'}
-window.addStok=function(){var nama=document.getElementById('stok-nama').value.trim();var qty=parseInt(document.getElementById('stok-qty').value)||0;var lokasi=document.getElementById('stok-lokasi').value.trim();if(!nama||qty<=0)return alert('⚠️ Nama dan jumlah harus diisi!');var s=JSON.parse(localStorage.getItem('dreamos_stok')||'[]');s.push({nama:nama,qty:qty,lokasi:lokasi||'-',id:'stok_'+Date.now()});localStorage.setItem('dreamos_stok',JSON.stringify(s));renderList();document.getElementById('stok-nama').value='';document.getElementById('stok-qty').value='';document.getElementById('stok-lokasi').value=''}
-window.deleteStok=function(i){var s=JSON.parse(localStorage.getItem('dreamos_stok')||'[]');s.splice(i,1);localStorage.setItem('dreamos_stok',JSON.stringify(s));renderList()}
-renderList()
+(function() {
+  'use strict';
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderList() {
+    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    document.getElementById('stok-list').innerHTML = s.length ? 
+      ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>Aksi</th></tr>' + 
+       s.map(function(x, i) {
+         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.qty + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size:0.55rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size:0.45rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
+       }).join('') + '</table>') : 
+      '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada data barang.</p>';
+    updateStats();
+  }
+
+  function updateStats() {
+    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    document.getElementById('stat-total').textContent = s.length;
+    document.getElementById('stat-qty').textContent = s.reduce(function(a, x) { return a + (x.qty || 0); }, 0);
+    var lokasi = new Set(s.map(function(x) { return x.lokasi; }));
+    document.getElementById('stat-lokasi').textContent = lokasi.size;
+    if (s.length > 0) {
+      var last = s[s.length - 1];
+      document.getElementById('stat-last').textContent = last.nama ? last.nama.substring(0, 10) : '-';
+    }
+  }
+
+  window.addStok = function() {
+    var nama = document.getElementById('stok-nama').value.trim();
+    var qty = parseInt(document.getElementById('stok-qty').value) || 0;
+    var lokasi = document.getElementById('stok-lokasi').value.trim();
+    if (!nama || qty <= 0) return alert('⚠️ Nama dan jumlah harus diisi!');
+    
+    var item = { nama: nama, qty: qty, lokasi: lokasi || '-', id: 'stok_' + Date.now(), created_at: new Date().toISOString() };
+    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    
+    // Cek duplikat (update qty jika nama & lokasi sama)
+    var exist = s.find(function(x) { return x.nama.toLowerCase() === nama.toLowerCase() && x.lokasi === lokasi; });
+    if (exist) {
+      exist.qty += qty;
+      exist.updated_at = new Date().toISOString();
+      alert('✅ Barang sudah ada, quantity ditambahkan!');
+    } else {
+      s.push(item);
+      alert('✅ Barang baru disimpan!');
+    }
+    
+    localStorage.setItem('dreamos_stok', JSON.stringify(s));
+    renderList();
+    
+    // Bersihkan form
+    document.getElementById('stok-nama').value = '';
+    document.getElementById('stok-qty').value = '';
+    
+    // Sync ke cloud jika tersedia
+    if (window.supabaseClient) {
+      window.supabaseClient.from('stok_gudang').upsert(exist || item).then(function() {
+        console.log('✅ Stok synced to cloud');
+      }).catch(function() {});
+    }
+    if (window.BankAudit) BankAudit.log('STOK_ADD', { nama: nama, qty: qty });
+  };
+
+  window.deleteStok = function(i) {
+    if (!confirm('Hapus barang ini?')) return;
+    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var deleted = s[i];
+    s.splice(i, 1);
+    localStorage.setItem('dreamos_stok', JSON.stringify(s));
+    renderList();
+    
+    if (window.supabaseClient && deleted.id) {
+      window.supabaseClient.from('stok_gudang').delete().eq('id', deleted.id).then(function() {}).catch(function() {});
+    }
+    if (window.BankAudit) BankAudit.log('STOK_DELETE', { nama: deleted.nama });
+  };
+
+  window.syncToCloud = async function() {
+    if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
+    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    if (s.length === 0) return alert('⚠️ Tidak ada data untuk disync.');
+    
+    var count = 0;
+    for (var i = 0; i < s.length; i++) {
+      try {
+        await window.supabaseClient.from('stok_gudang').upsert(s[i]);
+        count++;
+      } catch(e) {
+        console.warn('Sync failed for:', s[i].nama, e.message);
+        if (window.OfflineQueue) window.OfflineQueue.add('stok_gudang', 'upsert', s[i]);
+      }
+    }
+    alert('✅ ' + count + '/' + s.length + ' barang tersync ke cloud!');
+    if (window.BankAudit) BankAudit.log('STOK_SYNC', { total: s.length, success: count });
+  };
+
+  window.exportCSV = function() {
+    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var csv = 'Nama,Qty,Lokasi,ID\n' + s.map(function(x) { return '"' + x.nama + '",' + x.qty + ',"' + (x.lokasi||'-') + '",' + (x.id||'-'); }).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'stok_gudang_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    alert('✅ CSV berhasil diexport!');
+  };
+
+  window.clearAll = function() {
+    if (confirm('⚠️ HAPUS SEMUA DATA STOK? Aksi ini tidak bisa dibatalkan!')) {
+      localStorage.removeItem('dreamos_stok');
+      renderList();
+      alert('✅ Semua data stok dihapus.');
+      if (window.BankAudit) BankAudit.log('STOK_CLEAR_ALL');
+    }
+  };
+
+  // Init
+  renderList();
+  if (window.BankAudit) BankAudit.log('ACCESS_STOK_MODULE');
+  console.log('📦 Stok Gudang Ready');
+})();
 </script>
