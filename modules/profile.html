@@ -153,6 +153,8 @@
     setTimeout(function() { 
       if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia'); 
     }, 2000);
+  } else {
+    console.log('✅ Supabase client tersedia di Profile Module');
   }
   if (!user) {
     document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2></div>';
@@ -175,17 +177,28 @@
   getDNA().then(function(d) { document.getElementById('info-dna').textContent = d; });
 
   renderUserList();
+  
+  // 🔐 Enterprise Audit: catat akses modul profile
+  if (window.BankAudit) {
+    BankAudit.log('ACCESS_PROFILE_MODULE', { role: user.role });
+  }
 
   function notifyParent(action, detail) {
+    // Gunakan BankAudit untuk enterprise-grade audit trail
+    if (window.BankAudit) {
+      BankAudit.log(action, detail);
+    }
+    // Fallback: tetap simpan ke localStorage
     try {
       var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs')||'[]');
       logs.unshift({ time: new Date().toISOString(), user: user.email, role: user.role, action: action, details: detail });
       if (logs.length > 100) logs.pop();
       localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-      if (window.renderDashboard) {
-        setTimeout(function() { window.renderDashboard(); }, 500);
-      }
     } catch(e) {}
+    // Update dashboard parent jika ada
+    if (window.renderDashboard) {
+      setTimeout(function() { window.renderDashboard(); }, 500);
+    }
   }
 
   window.switchTab = function(name, btn) {
@@ -202,6 +215,14 @@
     var el = document.getElementById('user-list');
     if (!el) return;
     el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+users.map(function(u){ return '<tr><td>'+sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+sanitize(u.email)+'</td><td>'+sanitize(u.role)+'</td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;text-align:center;">Belum ada pengguna.</p>';
+  }
+  
+  // 🔄 Real-Time Sync untuk user list (jika SyncEngine tersedia)
+  if (window.SyncEngine && window.supabaseClient) {
+    window.SyncEngine.subscribe('users', function() {
+      console.log('📡 User list updated via SyncEngine');
+      renderUserList();
+    });
   }
 
   // ========== SAVE PROFILE (SUPABASE + AVATAR) ==========
