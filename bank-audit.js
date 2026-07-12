@@ -1,18 +1,3 @@
-const BankAudit = {
-  async log(action, details = {}) {
-    const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-    const entry = {
-      id: crypto.randomUUID(), user_id: user.id || 'anonymous', email: user.email || 'unknown',
-      role: user.role || 'staff', action, details: JSON.stringify(details),
-      ip: 'client-side', user_agent: navigator.userAgent,
-      device_fingerprint: await this.getFingerprint(),
-      timestamp: new Date().toISOString(), session_id: localStorage.getItem('session_id') || 'unknown'
-    };
-    if (window.BankEncryption) { const logs = await window.BankEncryption.secureGet('audit_logs') || []; logs.push(entry); if (logs.length > 200) logs.splice(0, logs.length - 200); await window.BankEncryption.secureSet('audit_logs', logs); }
-    if (window.supabaseClient) { window.supabaseClient.from('audit_logs').insert(entry).then(() => {}).catch(() => {}); }
-    return entry;
-  },
-  async getFingerprint() { const data = [navigator.userAgent, navigator.language, screen.colorDepth].join('|'); const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data)); return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('').substr(0, 16); }
-};
-window.BankAudit = BankAudit;
-console.log('🏦 Bank-Grade Audit Trail Ready');
+const BankAudit={async log(a,d={}){const u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');const e={id:crypto.randomUUID(),uid:u.id||'anon',email:u.email||'?',role:u.role||'staff',action:a,details:JSON.stringify(d),ua:navigator.userAgent,fp:await this.fp(),ts:new Date().toISOString(),sid:localStorage.getItem('sid')||'?'};const l=await BankEncryption.secureGet('audit')||[];l.push(e);if(l.length>500)l.splice(0,l.length-500);await BankEncryption.secureSet('audit',l);if(window.supabaseClient)window.supabaseClient.from('audit_logs').insert(e).then(()=>{}).catch(()=>{});return e},
+async fp(){const d=[navigator.userAgent,navigator.language,screen.colorDepth].join('|');const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(d));return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('').substr(0,16)}};
+window.BankAudit=BankAudit;console.log('🏦 Audit Trail Ready');

@@ -1,15 +1,8 @@
-const BankSession = {
-  SESSION_DURATION: 7200000,
-  create(user) {
-    const sessionId = crypto.randomUUID();
-    const session = { id: sessionId, user_id: user.id, email: user.email, role: user.role, created_at: Date.now(), expires_at: Date.now() + this.SESSION_DURATION, last_activity: Date.now() };
-    localStorage.setItem('session_id', sessionId);
-    if (window.BankEncryption) { window.BankEncryption.secureSet('session', session); }
-    return session;
-  },
-  async validate() { const session = window.BankEncryption ? await window.BankEncryption.secureGet('session') : null; if (!session || Date.now() > session.expires_at) { this.destroy(); return false; } session.last_activity = Date.now(); if (window.BankEncryption) await window.BankEncryption.secureSet('session', session); return true; },
-  destroy() { localStorage.removeItem('session_id'); localStorage.removeItem('enc_session'); localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); }
-};
-window.BankSession = BankSession;
-setInterval(async () => { if (localStorage.getItem('dreamos_session_active') === 'true') { const valid = await BankSession.validate(); if (!valid) { alert('⏰ Sesi berakhir. Silakan login ulang.'); BankSession.destroy(); window.location.reload(); } } }, 30000);
-console.log('🏦 Bank-Grade Session Management Ready');
+const BankSession={DURATION:7200000,create(u){const s={id:crypto.randomUUID(),uid:u.id,email:u.email,role:u.role,created:Date.now(),expires:Date.now()+this.DURATION,last:Date.now()};localStorage.setItem('sid',s.id);BankEncryption.secureSet('session',s);return s},
+async valid(){const s=await BankEncryption.secureGet('session');if(!s||Date.now()>s.expires){this.destroy();return false}s.last=Date.now();await BankEncryption.secureSet('session',s);return true},
+async refresh(){const s=await BankEncryption.secureGet('session');if(s){s.expires=Date.now()+this.DURATION;await BankEncryption.secureSet('session',s)}},
+destroy(){['sid','enc_session','dreamos_bound_user','dreamos_session_active'].forEach(k=>localStorage.removeItem(k));BankEncryption.resetKey()},
+logout(){this.destroy();window.location.reload()}
+};window.BankSession=BankSession;
+setInterval(async()=>{if(localStorage.getItem('dreamos_session_active')==='true'){const v=await BankSession.valid();if(!v)BankSession.logout()}},30000);
+console.log('🏦 Session Management Ready');
