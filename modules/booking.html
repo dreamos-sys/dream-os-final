@@ -1,22 +1,315 @@
-<style>:root{--neon:#00ff9d;--accent:#0ea5e9}*{box-sizing:border-box}body{background:#0a0e27;color:#e2e8f0;font-family:'Inter',sans-serif;min-height:100vh;margin:0;padding:1rem}.glass{background:rgba(15,23,42,0.7);backdrop-filter:blur(20px);border:1px solid rgba(0,255,157,0.1);border-radius:16px;padding:1rem;margin-bottom:1rem}.btn{padding:0.5rem 1rem;border:none;border-radius:8px;font-weight:700;cursor:pointer}.btn-success{background:#10b981;color:#fff}.input-field{width:100%;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e2e8f0;font-size:0.8rem;outline:none;margin-bottom:0.5rem}table{width:100%;border-collapse:collapse;font-size:0.7rem}th{background:rgba(0,0,0,0.3);color:#94a3b8;padding:0.4rem;text-align:left}td{padding:0.35rem;border-bottom:1px solid rgba(255,255,255,0.03)}</style>
-<button onclick="window.goHome()" style="background:rgba(30,41,59,0.9);border:1px solid var(--neon);color:var(--neon);padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.7rem;position:fixed;top:0.8rem;left:0.8rem;z-index:1000">← HOME</button>
-<div style="max-width:800px;margin:0 auto;padding-top:3.5rem;">
-  <div class="glass"><h2 style="color:var(--neon)">📅 Booking Ruangan</h2>
-    <input type="date" id="booking-tgl" class="input-field">
-    <input type="text" id="booking-ruang" class="input-field" placeholder="Ruangan">
-    <input type="text" id="booking-peminjam" class="input-field" placeholder="Nama Peminjam">
-    <div style="display:flex;gap:0.5rem;"><input type="time" id="booking-jam-mulai" class="input-field" value="08:00"><input type="time" id="booking-jam-selesai" class="input-field" value="10:00"></div>
-    <button class="btn btn-success" onclick="addBooking()" style="width:100%">✅ SIMPAN BOOKING</button>
-  </div>
-  <div class="glass"><h3 style="color:var(--accent)">📋 Daftar Booking</h3><div id="booking-list"></div></div>
-  <div id="qr-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;"><div style="background:#1e293b;padding:2rem;border-radius:16px;text-align:center;"><h3 style="color:#00ff9d">QR Code Booking</h3><canvas id="qr-canvas"></canvas><p id="qr-text" style="color:#fff;margin-top:1rem;font-size:0.8rem;"></p><button onclick="closeQR()" class="btn" style="background:#e11d48;color:#fff;margin-top:1rem;">Tutup</button></div></div>
+<!-- modules/booking.html - Dream OS Enterprise -->
+<style>
+    :root {
+        --neon: #00ff9d;
+        --accent: #0ea5e9;
+        --danger: #e11d48;
+    }
+    * { box-sizing: border-box; }
+    body {
+        background: #0a0e27;
+        color: #e2e8f0;
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        padding: 1rem;
+    }
+    .glass {
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 255, 157, 0.15);
+        border-radius: 20px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .btn {
+        padding: 0.55rem 1.2rem;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+    }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-info { background: var(--accent); color: #fff; }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--neon);
+        color: var(--neon);
+    }
+    .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .input-field {
+        width: 100%;
+        padding: 0.7rem 0.8rem;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #e2e8f0;
+        font-size: 0.8rem;
+        outline: none;
+        margin-bottom: 0.7rem;
+        transition: border 0.2s;
+    }
+    .input-field:focus { border-color: var(--neon); }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.7rem;
+    }
+    th {
+        background: rgba(0, 0, 0, 0.3);
+        color: #94a3b8;
+        padding: 0.5rem;
+        text-align: left;
+    }
+    td {
+        padding: 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .qr-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+    }
+    .qr-content {
+        background: #1e293b;
+        padding: 2rem;
+        border-radius: 20px;
+        text-align: center;
+        border: 1px solid var(--neon);
+        max-width: 320px;
+    }
+    #qr-code {
+        display: inline-block;
+        margin: 1rem 0;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 8px;
+    }
+    .home-btn {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1000;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid var(--neon);
+        color: var(--neon);
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+    .home-btn:hover { background: rgba(0, 255, 157, 0.1); }
+    .flex-row { display: flex; gap: 0.5rem; }
+    .flex-row .input-field { margin-bottom: 0; }
+    @media (max-width: 500px) {
+        .flex-row { flex-direction: column; }
+    }
+</style>
+
+<button class="home-btn" onclick="window.goHome()">← HOME</button>
+
+<div style="max-width: 850px; margin: 0 auto; padding-top: 4rem;">
+    <div class="glass">
+        <h2 style="color: var(--neon); margin-top: 0;">📅 Booking Ruangan</h2>
+        <div>
+            <input type="date" id="booking-tgl" class="input-field">
+            <input type="text" id="booking-ruang" class="input-field" placeholder="Nama Ruangan (contoh: Aula, Lab Komputer)">
+            <input type="text" id="booking-peminjam" class="input-field" placeholder="Nama Peminjam">
+            <div class="flex-row">
+                <input type="time" id="booking-jam-mulai" class="input-field" value="08:00" placeholder="Mulai">
+                <input type="time" id="booking-jam-selesai" class="input-field" value="10:00" placeholder="Selesai">
+            </div>
+            <button class="btn btn-success" onclick="addBooking()" style="width:100%; margin-top:0.5rem;">✅ SIMPAN BOOKING</button>
+        </div>
+    </div>
+
+    <div class="glass">
+        <h3 style="color: var(--accent); margin-top: 0;">📋 Daftar Booking</h3>
+        <div id="booking-list"></div>
+    </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+<!-- QR Code Modal -->
+<div id="qr-modal" class="qr-modal">
+    <div class="qr-content">
+        <h3 style="color: #00ff9d;">🎫 QR Booking</h3>
+        <div id="qr-code"></div>
+        <p id="qr-text" style="color: #fff; font-size:0.75rem; word-break: break-all;"></p>
+        <button onclick="closeQR()" class="btn btn-danger" style="margin-top:1rem;">Tutup</button>
+    </div>
+</div>
+
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 <script>
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function renderList(){var b=JSON.parse(localStorage.getItem('dreamos_bookings')||'[]');document.getElementById('booking-list').innerHTML=b.length?('<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th><th>QR</th></tr>'+b.map(function(x,i){return'<tr><td>'+esc(x.tgl)+'</td><td>'+esc(x.ruang)+'</td><td>'+esc(x.nama_peminjam)+'</td><td>'+esc(x.jam_mulai)+'-'+esc(x.jam_selesai)+'</td><td><button onclick="showQR('+i+')" style="background:#0ea5e9;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.6rem;">QR</button></td></tr>'}).join('')+'</table>'):'<p>Belum ada booking.</p>'}
-window.showQR=function(idx){var b=JSON.parse(localStorage.getItem('dreamos_bookings')||'[]')[idx];if(!b)return;var text=b.tgl+'|'+b.ruang+'|'+b.nama_peminjam+'|'+b.jam_mulai+'-'+b.jam_selesai;var qr=qrcode(0,'M');qr.addData(text);qr.make();document.getElementById('qr-canvas').innerHTML='';var c=document.getElementById('qr-canvas');c.width=200;c.height=200;var ctx=c.getContext('2d');var img=new Image();img.src=qr.createDataURL(4);img.onload=function(){ctx.drawImage(img,0,0,200,200)};document.getElementById('qr-text').textContent='Booking: '+b.ruang+' - '+b.nama_peminjam;document.getElementById('qr-modal').style.display='flex'}
-window.closeQR=function(){document.getElementById('qr-modal').style.display='none'}
-window.addBooking=async function(){var tgl=document.getElementById('booking-tgl').value;var ruang=document.getElementById('booking-ruang').value.trim();var peminjam=document.getElementById('booking-peminjam').value.trim();var mulai=document.getElementById('booking-jam-mulai').value;var selesai=document.getElementById('booking-jam-selesai').value;if(!tgl||!ruang||!peminjam)return alert('⚠️ Lengkapi semua field!');var book={id:'book_'+Date.now(),tgl:tgl,ruang:ruang,nama_peminjam:peminjam,jam_mulai:mulai,jam_selesai:selesai,status:'pending',created_at:new Date().toISOString()};var books=JSON.parse(localStorage.getItem('dreamos_bookings')||'[]');books.push(book);localStorage.setItem('dreamos_bookings',JSON.stringify(books));renderList();if(window.supabaseClient)window.supabaseClient.from('bookings').insert(book).then(function(){}).catch(function(){});if(window.addNotification)window.addNotification('Booking baru: '+ruang+' oleh '+peminjam);document.getElementById('booking-ruang').value='';document.getElementById('booking-peminjam').value='';alert('✅ Booking tersimpan!')}
-renderList()
+// Helper sanitasi
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Ambil data booking dari localStorage
+function getBookings() {
+    try {
+        return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+// Simpan booking ke localStorage
+function saveBookings(bookings) {
+    localStorage.setItem('dreamos_bookings', JSON.stringify(bookings));
+}
+
+// Render tabel booking
+function renderBookings() {
+    const bookings = getBookings();
+    const listEl = document.getElementById('booking-list');
+    if (!bookings.length) {
+        listEl.innerHTML = '<p style="color:#64748b; font-size:0.75rem;">Belum ada booking.</p>';
+        return;
+    }
+
+    let html = '<table><thead><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th><th>Aksi</th></tr></thead><tbody>';
+    bookings.forEach((b, i) => {
+        html += `<tr>
+            <td>${esc(b.tgl)}</td>
+            <td>${esc(b.ruang)}</td>
+            <td>${esc(b.nama_peminjam)}</td>
+            <td>${esc(b.jam_mulai)} - ${esc(b.jam_selesai)}</td>
+            <td style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                <button onclick="showQR(${i})" class="btn btn-info" style="font-size:0.65rem; padding:0.3rem 0.5rem;">QR</button>
+                <button onclick="deleteBooking(${i})" class="btn btn-danger" style="font-size:0.65rem; padding:0.3rem 0.5rem;">🗑️</button>
+            </td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    listEl.innerHTML = html;
+}
+
+// Tambah booking baru
+window.addBooking = async function() {
+    const tgl = document.getElementById('booking-tgl').value.trim();
+    const ruang = document.getElementById('booking-ruang').value.trim();
+    const peminjam = document.getElementById('booking-peminjam').value.trim();
+    const mulai = document.getElementById('booking-jam-mulai').value;
+    const selesai = document.getElementById('booking-jam-selesai').value;
+
+    if (!tgl || !ruang || !peminjam) {
+        alert('⚠️ Tanggal, ruangan, dan peminjam wajib diisi!');
+        return;
+    }
+
+    const newBooking = {
+        id: 'book_' + Date.now(),
+        tgl,
+        ruang,
+        nama_peminjam: peminjam,
+        jam_mulai: mulai || '08:00',
+        jam_selesai: selesai || '10:00',
+        status: 'pending',
+        created_at: new Date().toISOString()
+    };
+
+    // Simpan ke localStorage
+    const bookings = getBookings();
+    bookings.push(newBooking);
+    saveBookings(bookings);
+
+    // Sinkron ke Supabase (jika tersedia)
+    if (window.supabaseClient) {
+        try {
+            await window.supabaseClient.from('bookings').insert([newBooking]);
+        } catch (err) {
+            console.warn('Supabase sync pending:', err);
+        }
+    }
+
+    // Notifikasi internal (jika ada fungsi dari index)
+    if (window.addNotification) {
+        window.addNotification(`Booking: ${ruang} oleh ${peminjam}`);
+    }
+
+    // Reset form
+    document.getElementById('booking-ruang').value = '';
+    document.getElementById('booking-peminjam').value = '';
+    document.getElementById('booking-jam-mulai').value = '08:00';
+    document.getElementById('booking-jam-selesai').value = '10:00';
+    // Tanggal tidak direset biar cepat input berikutnya
+
+    renderBookings();
+    alert('✅ Booking berhasil disimpan!');
+};
+
+// Tampilkan QR Code
+window.showQR = function(index) {
+    const bookings = getBookings();
+    const b = bookings[index];
+    if (!b) return;
+
+    const qrText = `${b.tgl} | ${b.ruang} | ${b.nama_peminjam} | ${b.jam_mulai}-${b.jam_selesai}`;
+    document.getElementById('qr-text').textContent = qrText;
+
+    // Bersihkan container QR
+    const qrContainer = document.getElementById('qr-code');
+    qrContainer.innerHTML = '';
+
+    // Buat QR Code dengan library qrcodejs
+    try {
+        new QRCode(qrContainer, {
+            text: qrText,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    } catch (e) {
+        qrContainer.innerHTML = '<p style="color:red;">Gagal generate QR</p>';
+    }
+
+    document.getElementById('qr-modal').style.display = 'flex';
+};
+
+// Tutup modal QR
+window.closeQR = function() {
+    document.getElementById('qr-modal').style.display = 'none';
+    // Kosongkan QR container agar ringan
+    document.getElementById('qr-code').innerHTML = '';
+};
+
+// Hapus booking
+window.deleteBooking = function(index) {
+    if (!confirm('Yakin hapus booking ini?')) return;
+    const bookings = getBookings();
+    const deleted = bookings.splice(index, 1)[0];
+    saveBookings(bookings);
+    renderBookings();
+
+    // Notifikasi
+    if (window.addNotification) {
+        window.addNotification(`Booking dihapus: ${deleted.ruang}`);
+    }
+};
+
+// Tutup modal QR jika klik di luar konten
+document.getElementById('qr-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeQR();
+});
+
+// Render pertama kali
+renderBookings();
 </script>
