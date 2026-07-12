@@ -45,7 +45,7 @@
   <!-- HEADER -->
   <div class="glass" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
     <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v5.4</span></h2>
+      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v5.5</span></h2>
       <p style="color:#94a3b8; font-size:0.62rem; margin:0;" id="role-subtitle">Loading...</p>
     </div>
     <div style="display:flex; align-items:center; gap:0.8rem;">
@@ -247,6 +247,9 @@
       var h = await crypto.subtle.digest('SHA-256', e.encode(p + 'dreamos_salt_2026'));
       return Array.from(new Uint8Array(h)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
+    } catch(e) {
+      console.error('Chart rendering error:', e);
+    }
   };
   global.SEC = SANDBOX;
 })(window);
@@ -263,7 +266,7 @@
 
   var role = user.role || 'staff';
   var ud = document.getElementById('user-display'); if (ud) ud.textContent = user.nama || 'User';
-  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.4';
+  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.5';
   setInterval(function() { var lc = document.getElementById('live-clock'); if (lc) lc.textContent = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
@@ -461,6 +464,8 @@
       return;
     }
     
+    try {
+    
     // Main Chart - Activity Overview
     var mainCtx = document.getElementById('mainChart');
     if (mainCtx) {
@@ -528,6 +533,11 @@
         categories[k.kategori] = (categories[k.kategori] || 0) + 1;
       });
       
+      // Handle empty data
+      if (Object.keys(categories).length === 0) {
+        categories = {'Belum Ada Data': 0};
+      }
+      
       new Chart(k3Ctx.getContext('2d'), {
         type: 'bar',
         data: {
@@ -550,6 +560,31 @@
       });
     }
   }
+
+  
+  // ========== FILTER FUNCTIONS ==========
+  window.filterDana = function() {
+    var search = document.getElementById('dana-search').value.toLowerCase();
+    var status = document.getElementById('dana-filter-status').value;
+    var items = document.querySelectorAll('#dana-pending-list > div, #dana-history table tr');
+    items.forEach(function(item) {
+      var text = item.textContent.toLowerCase();
+      var show = text.includes(search);
+      if (status !== 'all') {
+        show = show && item.textContent.toLowerCase().includes(status);
+      }
+      item.style.display = show ? '' : 'none';
+    });
+  };
+
+  window.filterK3 = function() {
+    var search = document.getElementById('k3-search').value.toLowerCase();
+    var items = document.querySelectorAll('#k3-active-list > div, #k3-all-list table tr');
+    items.forEach(function(item) {
+      var text = item.textContent.toLowerCase();
+      item.style.display = text.includes(search) ? '' : 'none';
+    });
+  };
 
   // ========== ACTIONS ==========
   window.switchTab = function(name) {
@@ -764,9 +799,11 @@
     setTimeout(function() {
       SEC.auditLog('SYNC_USERS', 'Success: ' + count + ', Failed: ' + errors.length);
       if (errors.length > 0) {
-        alert('⚠️ ' + count + ' user berhasil, ' + errors.length + ' gagal:\n' + errors.join('\n'));
-      } else {
+        alert('⚠️ ' + count + ' user berhasil, ' + errors.length + ' gagal:\n' + errors.join('\n') + '\n\n💡 Tip: Pastikan RLS policy di Supabase sudah benar.');
+      } else if (count > 0) {
         alert('✅ ' + count + ' user disync ke cloud!');
+      } else {
+        alert('⚠️ Tidak ada user yang disync. Pastikan ada data di localStorage.');
       }
     }, 2000);
   };
@@ -783,6 +820,6 @@
 
   // Init
   renderAll();
-  SEC.auditLog('ACCESS_CMD_CENTER', 'v5.4');
+  SEC.auditLog('ACCESS_CMD_CENTER', 'v5.5');
 })();
 </script>
