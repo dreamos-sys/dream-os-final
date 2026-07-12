@@ -90,19 +90,21 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
       
-      let supabase = null;
+      // GLOBAL: Supabase client - bisa diakses semua modul
+      window.supabaseClient = null;
 
       function initSupabase() {
-        if (supabase) return true;
+        if (window.supabaseClient) return true;
         try {
           if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             console.log('✅ Supabase ready');
             return true;
           }
@@ -129,7 +131,7 @@
         catch(e) { return {}; }
       }
 
-      function getUserRole() { return getStoredUser().role || 'staff'; }
+      window.getUserRole = function() { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}').role || 'staff'; };
       function canAccess(moduleId) { return (ROLE_PERMISSIONS[getUserRole()] || ROLE_PERMISSIONS.staff || []).includes(moduleId); }
 
       // ===== ELEMENTS =====
@@ -169,7 +171,7 @@
         btn.textContent = '⏳ Connecting...'; btn.disabled = true;
 
         // Dev bypass
-        if (email === 'dev@dream.os' && password === 'devbypass') {
+        if (email === 'dreamos.sch.id@gmail.com' && password === 'DreamOS2026!') {
           localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: 'dreamos-dev', email, nama: 'Developer', role: 'dev' }));
           localStorage.setItem('dreamos_session_active', 'true');
           btn.textContent = '✅ Dev Mode!';
@@ -187,7 +189,7 @@
         }
 
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
           if (error) {
             if (errorEl) { errorEl.textContent = '⛔ ' + error.message; errorEl.style.display = 'block'; }
             btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
@@ -216,7 +218,7 @@
       }
 
       // ===== RENDER DASHBOARD =====
-      function renderDashboard() {
+      window.renderDashboard = function() {
         const container = document.getElementById('dashboard-container');
         if (!container) return;
         const user = getStoredUser();
@@ -245,7 +247,7 @@
 
         document.getElementById('logout-btn')?.addEventListener('click', () => {
           if (confirm('Yakin logout?')) {
-            supabase?.auth.signOut().catch(()=>{});
+            window.supabaseClient?.auth.signOut().catch(()=>{});
             localStorage.removeItem('dreamos_bound_user');
             localStorage.setItem('dreamos_session_active', 'false');
             location.reload();

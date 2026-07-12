@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Command Center Pro • Enterprise v5.2</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root { --glass-bg: rgba(15, 23, 42, 0.6); --glass-border: rgba(0, 255, 157, 0.12); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; }
-  .glass { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .glass { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
   .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; }
   .btn-primary { background: var(--accent); color: #fff; }
@@ -17,7 +10,6 @@
   .btn-danger { background: var(--warning); color: #fff; }
   .btn-warning { background: var(--gold); color: #000; }
   .btn-purple { background: var(--purple); color: #fff; }
-  .btn:hover { transform: translateY(-1px); opacity: 0.95; }
   .input-field, textarea, select { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; outline: none; font-family: 'Inter',sans-serif; }
   .input-field:focus { border-color: var(--neon); }
   table { width:100%; border-collapse:collapse; font-size:0.7rem; }
@@ -44,17 +36,14 @@
   .chart-container { min-height: 200px; position: relative; }
   .loading-text { text-align: center; padding: 2rem; color: #94a3b8; }
 </style>
-</head>
-<body>
-
-<button class="back-btn" onclick="window.parent.goHome()">← HOME</button>
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
 
 <div style="max-width:1400px; margin:0 auto; padding:3.5rem 0.8rem 5rem;">
 
   <!-- HEADER -->
   <div class="glass" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
     <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v5.2</span></h2>
+      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v5.3</span></h2>
       <p style="color:#94a3b8; font-size:0.62rem; margin:0;" id="role-subtitle">Loading...</p>
     </div>
     <div style="display:flex; align-items:center; gap:0.8rem;">
@@ -67,13 +56,14 @@
     </div>
   </div>
 
-  <!-- QUICK ACTIONS -->
+  <!-- QUICK ACTIONS (hanya untuk role tertentu) -->
   <div class="quick-actions">
-    <button class="btn btn-primary" onclick="quickAddDana()">💸 Dana</button>
-    <button class="btn btn-warning" onclick="quickAddK3()">⚠️ K3</button>
-    <button class="btn btn-purple" onclick="quickAddMaint()">🔧 Maint</button>
-    <button class="btn btn-pink" onclick="openSlideManager()">📢 Slide</button>
-    <button class="btn btn-success" onclick="openExecutiveNote()">📝 Catatan</button>
+    <button class="btn btn-primary" onclick="quickAddDana()" id="qa-dana" style="display:none;">💸 Dana</button>
+    <button class="btn btn-warning" onclick="quickAddK3()" id="qa-k3" style="display:none;">⚠️ K3</button>
+    <button class="btn btn-purple" onclick="quickAddMaint()" id="qa-maint" style="display:none;">🔧 Maint</button>
+    <button class="btn btn-success" onclick="quickAddBooking()" id="qa-booking" style="display:none;">📅 Booking</button>
+    <button class="btn btn-pink" onclick="openSlideManager()" id="qa-slide" style="display:none;">📢 Slide</button>
+    <button class="btn btn-success" onclick="openExecutiveNote()" id="qa-note" style="display:none;">📝 Catatan</button>
   </div>
 
   <!-- KPI DASHBOARD -->
@@ -100,7 +90,6 @@
       <div><label style="font-size:0.6rem;">Slide 5</label><input class="input-field" id="slide5-input"></div>
       <div><label style="font-size:0.6rem;">Slide 6</label><input class="input-field" id="slide6-input"></div>
       <div><label style="font-size:0.6rem;">Slide 7</label><input class="input-field" id="slide7-input"></div>
-      <div><label style="font-size:0.6rem;">Security</label><input class="input-field" id="slide-sec-input"></div>
     </div>
     <button class="btn btn-pink" onclick="saveSlides()" style="margin-top:0.5rem;">💾 Simpan</button>
   </div>
@@ -180,9 +169,24 @@
     </div>
   </div>
 
-  <!-- TAB BOOKING -->
+  <!-- TAB BOOKING (SEKARANG ADA FORM) -->
   <div id="tab-booking" class="tab-content" style="display:none;">
-    <div class="glass"><div class="section-title" style="color:var(--accent);">📅 Booking</div><div id="booking-list" class="loading-text">Memuat...</div><button class="btn btn-success" onclick="exportBooking()" style="margin-top:0.4rem;">📥 CSV</button></div>
+    <div class="glass">
+      <div class="section-title" style="color:var(--accent);">📅 FORM BOOKING</div>
+      <div style="display:grid; gap:0.5rem;">
+        <input type="date" id="booking-tgl" class="input-field">
+        <input type="text" id="booking-ruang" class="input-field" placeholder="Ruangan (misal: Aula, Lab Komputer)">
+        <input type="text" id="booking-peminjam" class="input-field" placeholder="Nama Peminjam">
+        <input type="time" id="booking-jam-mulai" class="input-field" value="08:00">
+        <input type="time" id="booking-jam-selesai" class="input-field" value="10:00">
+        <button class="btn btn-success" onclick="addBooking()">✅ SIMPAN BOOKING</button>
+      </div>
+    </div>
+    <div class="glass" style="margin-top:0.8rem;">
+      <div class="section-title">📋 DAFTAR BOOKING</div>
+      <div id="booking-list" class="loading-text">Memuat...</div>
+      <button class="btn btn-success" onclick="exportBooking()" style="margin-top:0.4rem;">📥 CSV</button>
+    </div>
   </div>
 
   <!-- TAB AUDIT -->
@@ -234,7 +238,7 @@
 
   var role = user.role || 'staff';
   var ud = document.getElementById('user-display'); if (ud) ud.textContent = user.nama || 'User';
-  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.2';
+  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.3';
   setInterval(function() { var lc = document.getElementById('live-clock'); if (lc) lc.textContent = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
@@ -244,50 +248,50 @@
   function getAllowedTabs() {
     var tabs = {
       dev: ['users','dana','k3','maint','booking','audit','system'],
-      kabag: ['users','dana','k3','maint','booking','audit','system'],
-      koord: ['users','dana','k3','maint','booking','audit','system'],
+      kabag_umum: ['users','dana','k3','maint','booking','audit','system'],
+      koordinator_umum: ['dana'],
       guru: ['k3','booking'],
       security: [],
-      janitor: [],
+      janitor_indoor: [],
+      janitor_outdoor: [],
+      komandan_regu: [],
       maintenance: ['maint'],
       staff: []
     };
     return tabs[role] || [];
   }
 
-  // Sembunyikan tab yang tidak diizinkan
   var allowed = getAllowedTabs();
+
+  // Sembunyikan tab yang tidak diizinkan
   document.querySelectorAll('#workspace-tabs .tab').forEach(function(tab) {
     var tabName = tab.dataset.tab;
     if (!allowed.includes(tabName)) {
       tab.style.display = 'none';
     }
   });
+
   // Jika tidak ada tab yang diizinkan, sembunyikan seluruh tabs
   if (allowed.length === 0) {
     document.getElementById('workspace-tabs').style.display = 'none';
   }
 
-  // Sembunyikan quick action buttons yang tidak sesuai role
-  var quickActions = {
-    'quickAddDana': ['dana'],
-    'quickAddK3': ['k3'],
-    'quickAddMaint': ['maint'],
-    'openSlideManager': ['users'] // hanya admin yang bisa slide
-  };
-  for (var btnId in quickActions) {
-    var requiredTabs = quickActions[btnId];
-    var hasAccess = requiredTabs.some(function(tab) { return canAccess(tab); });
-    if (!hasAccess) {
-      var btn = document.querySelector('[onclick*="' + btnId + '"]');
-      if (btn) btn.style.display = 'none';
-    }
+  // Tampilkan/sembunyikan quick action sesuai role
+  function showQuickAction(id, requiredTab) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = canAccess(requiredTab) ? '' : 'none';
   }
+  showQuickAction('qa-dana', 'dana');
+  showQuickAction('qa-k3', 'k3');
+  showQuickAction('qa-maint', 'maint');
+  showQuickAction('qa-booking', 'booking');
+  showQuickAction('qa-slide', 'users');
+  showQuickAction('qa-note', 'users');
 
   // ========== RBAC HELPER ==========
-  function isAdmin() { return ['dev','kabag','koord'].includes(role); }
-  function isKabag() { return role === 'kabag'; }
-  function isKoord() { return role === 'koord'; }
+  function isAdmin() { return ['dev','kabag_umum','koordinator_umum'].includes(role); }
+  function isKabag() { return role === 'kabag_umum'; }
+  function isKoord() { return role === 'koordinator_umum'; }
   function isDev() { return role === 'dev'; }
   function canAccess(tabName) { return allowed.includes(tabName); }
 
@@ -307,7 +311,7 @@
   function refreshTab(name) {
     if (name === 'users') renderUserTable();
     if (name === 'dana') { renderDanaPending(); renderBudgetSummary(); renderDanaHistory(); }
-    if (name === 'k3') { renderK3Active(); renderK3Chart(); }
+    if (name === 'k3') { renderK3Active(); renderK3All(); renderK3Chart(); }
     if (name === 'maint') { renderMaintenanceActive(); renderMaintenanceDone(); }
     if (name === 'booking') renderBookingList();
     if (name === 'audit') renderAuditFull();
@@ -318,7 +322,7 @@
     renderKPIs();
     if (canAccess('users')) renderUserTable();
     if (canAccess('dana')) { renderDanaPending(); renderBudgetSummary(); renderDanaHistory(); }
-    if (canAccess('k3')) { renderK3Active(); renderK3Chart(); }
+    if (canAccess('k3')) { renderK3Active(); renderK3All(); renderK3Chart(); }
     if (canAccess('maint')) { renderMaintenanceActive(); renderMaintenanceDone(); }
     if (canAccess('booking')) renderBookingList();
     if (canAccess('audit')) renderAuditFull();
@@ -331,41 +335,26 @@
     var kpiDiv = document.getElementById('kpi-cards');
     if (!kpiDiv) return;
     kpiDiv.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;">🔄 Memuat data...</div>';
-    Promise.all([
-      window.parent.supabase.from('users').select('*', { count: 'exact', head: true }),
-      window.parent.supabase.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      window.parent.supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true }).neq('status', 'Selesai')
-    ]).then(function(results) {
-      var total = results[0].count || 0;
-      var k3 = results[1].count || 0;
-      var maint = results[2].count || 0;
-      kpiDiv.innerHTML = '<div class="kpi-card" onclick="switchTab(\'users\')"><div class="kpi-value" style="color:#8b5cf6;">' + total + '</div><div class="kpi-label">Users 🟢</div></div>' +
-        '<div class="kpi-card" onclick="switchTab(\'k3\')"><div class="kpi-value" style="color:#ef4444;">' + k3 + '</div><div class="kpi-label">K3 Pending 🟢</div></div>' +
-        '<div class="kpi-card" onclick="switchTab(\'maint\')"><div class="kpi-value" style="color:#0ea5e9;">' + maint + '</div><div class="kpi-label">Maint Aktif 🟢</div></div>';
-    }).catch(function() {
+    try {
       var u = safeGet('dreamos_users_db', []), k = safeGet('dreamos_k3_reports', []), m = safeGet('dreamos_maintenance_tasks', []);
-      kpiDiv.innerHTML = '<div class="kpi-card"><div class="kpi-value" style="color:#8b5cf6;">' + u.length + '</div><div class="kpi-label">Users 🟡</div></div>' +
-        '<div class="kpi-card"><div class="kpi-value" style="color:#ef4444;">' + k.filter(function(x){return x.status==='pending';}).length + '</div><div class="kpi-label">K3 🟡</div></div>' +
-        '<div class="kpi-card"><div class="kpi-value" style="color:#0ea5e9;">' + m.filter(function(x){return x.status!=='Selesai';}).length + '</div><div class="kpi-label">Maint 🟡</div></div>';
-    });
+      kpiDiv.innerHTML = '<div class="kpi-card" onclick="switchTab(\'users\')"><div class="kpi-value" style="color:#8b5cf6;">' + u.length + '</div><div class="kpi-label">Users 🟢</div></div>' +
+        '<div class="kpi-card" onclick="switchTab(\'k3\')"><div class="kpi-value" style="color:#ef4444;">' + k.filter(function(x){return x.status==='pending';}).length + '</div><div class="kpi-label">K3 Pending 🟢</div></div>' +
+        '<div class="kpi-card" onclick="switchTab(\'maint\')"><div class="kpi-value" style="color:#0ea5e9;">' + m.filter(function(x){return x.status!=='Selesai';}).length + '</div><div class="kpi-label">Maint Aktif 🟢</div></div>';
+    } catch(e) { console.error(e); }
   }
 
   function renderUserTable() {
     if (!canAccess('users')) return;
     var el = document.getElementById('user-table');
     if (!el) return;
-    el.innerHTML = '<p>🔄 Memuat dari cloud...</p>';
-    window.parent.supabase.from('users').select('*').then(function(res) {
-      if (res.error) throw res.error;
-      var html = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>';
-      res.data.forEach(function(u) {
-        html += '<tr><td>' + SEC.sanitize(u.nama) + '</td><td>' + SEC.sanitize(u.email) + '</td><td>' + SEC.sanitize(u.role) + '</td><td><button class="btn btn-danger" onclick="deleteUser(\'' + u.id + '\')" style="font-size:0.45rem;">🗑️</button></td></tr>';
-      });
-      html += '</table>';
-      el.innerHTML = html;
-    }).catch(function() {
-      el.innerHTML = '<p style="color:#f59e0b;">⚠️ Gagal memuat. Periksa koneksi.</p>';
+    el.innerHTML = '<p>🔄 Memuat...</p>';
+    var users = safeGet('dreamos_users_db', []);
+    var html = '<table><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr>';
+    users.forEach(function(u) {
+      html += '<tr><td>' + SEC.sanitize(u.nama) + '</td><td>' + SEC.sanitize(u.email) + '</td><td>' + SEC.sanitize(u.role) + '</td><td><button class="btn btn-danger" onclick="deleteUser(\'' + u.id + '\')" style="font-size:0.45rem;">🗑️</button></td></tr>';
     });
+    html += '</table>';
+    el.innerHTML = html;
   }
 
   function renderDanaPending() {
@@ -374,51 +363,67 @@
     var el = document.getElementById('dana-pending-list'); if (!el) return;
     el.innerHTML = pending.length ? pending.map(function(d){ return '<div style="background:rgba(0,0,0,0.2);padding:0.4rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+SEC.sanitize(d.judul)+'</b> • Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'<br><button class="btn btn-success" onclick="approveDana(\''+d.id+'\')" style="font-size:0.5rem;">✅</button> <button class="btn btn-danger" onclick="rejectDana(\''+d.id+'\')" style="font-size:0.5rem;">❌</button></div>'; }).join('') : '<p style="color:#94a3b8;">✅ Tidak ada.</p>';
   }
+
   function renderDanaHistory() {
     if (!canAccess('dana')) return;
     var all = safeGet('dreamos_dana',[]).slice(-20).reverse();
     var el = document.getElementById('dana-history'); if (!el) return;
     el.innerHTML = all.length ? '<table><tr><th>Tgl</th><th>Judul</th><th>Nominal</th><th>Status</th></tr>'+all.map(function(d){ return '<tr><td>'+SEC.sanitize(d.tanggal)+'</td><td>'+SEC.sanitize(d.judul)+'</td><td>Rp '+parseInt(d.nominal).toLocaleString('id-ID')+'</td><td><span class="badge badge-'+(d.status==='approved'?'approved':d.status==='rejected'?'rejected':'pending')+'">'+d.status+'</span></td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;">Belum ada.</p>';
   }
+
   function renderBudgetSummary() {
     if (!canAccess('dana')) return;
     var d = safeGet('dreamos_dana',[]), cap = parseInt(localStorage.getItem('dreamos_budget_cap') || 50000000), spent = d.filter(function(x){return x.status==='approved';}).reduce(function(s,x){return s+(parseInt(x.nominal)||0);},0);
     var el = document.getElementById('budget-summary'); if (!el) return;
     el.innerHTML = 'Realisasi: Rp '+spent.toLocaleString('id-ID')+'<br>Pagu: Rp '+cap.toLocaleString('id-ID');
   }
+
   function renderMaintenanceActive() {
     if (!canAccess('maint')) return;
     var active = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status!=='Selesai';});
     var el = document.getElementById('maint-active-list'); if (!el) return;
     el.innerHTML = active.length ? active.map(function(m){ return '<div><b>'+SEC.sanitize(m.judul)+'</b> • '+SEC.sanitize(m.status)+'</div>'; }).join('') : '<p>✅ Semua selesai.</p>';
   }
+
   function renderMaintenanceDone() {
     if (!canAccess('maint')) return;
     var done = safeGet('dreamos_maintenance_tasks',[]).filter(function(m){return m.status==='Selesai';}).slice(-10);
     var el = document.getElementById('maint-done-list'); if (!el) return;
     el.innerHTML = done.length ? done.map(function(m){ return '<div>✅ '+SEC.sanitize(m.judul)+'</div>'; }).join('') : '<p>Belum ada.</p>';
   }
+
   function renderK3Active() {
     if (!canAccess('k3')) return;
     var k3 = safeGet('dreamos_k3_reports',[]);
     var el = document.getElementById('k3-active-list'); if (!el) return;
     el.innerHTML = k3.length ? k3.map(function(k){ return '<div><b>'+SEC.sanitize(k.lokasi)+'</b> • '+SEC.sanitize(k.status)+'</div>'; }).join('') : '<p>Tidak ada.</p>';
   }
+
+  function renderK3All() {
+    if (!canAccess('k3')) return;
+    var k3 = safeGet('dreamos_k3_reports',[]);
+    var el = document.getElementById('k3-all-list'); if (!el) return;
+    el.innerHTML = k3.length ? k3.map(function(k){ return '<div>'+SEC.sanitize(k.lokasi)+' ('+SEC.sanitize(k.status)+')</div>'; }).join('') : '<p>Tidak ada.</p>';
+  }
+
   function renderK3Chart() {
     if (!canAccess('k3')) return;
   }
+
   function renderBookingList() {
     if (!canAccess('booking')) return;
     var b = safeGet('dreamos_bookings',[]);
     var el = document.getElementById('booking-list'); if (!el) return;
-    el.innerHTML = b.length ? '<table>'+b.map(function(x){ return '<tr><td>'+x.tgl+'</td><td>'+x.ruang+'</td><td>'+x.nama_peminjam+'</td></tr>'; }).join('')+'</table>' : '<p>Belum ada.</p>';
+    el.innerHTML = b.length ? '<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th></tr>'+b.map(function(x){ return '<tr><td>'+SEC.sanitize(x.tgl)+'</td><td>'+SEC.sanitize(x.ruang)+'</td><td>'+SEC.sanitize(x.nama_peminjam)+'</td><td>'+SEC.sanitize(x.jam_mulai)+'-'+SEC.sanitize(x.jam_selesai)+'</td></tr>'; }).join('')+'</table>' : '<p>Belum ada.</p>';
   }
+
   function renderAuditFull() {
     if (!canAccess('audit')) return;
     var logs = safeGet('dreamos_audit_logs',[]);
     var el = document.getElementById('audit-log-full'); if (!el) return;
     el.innerHTML = logs.length ? logs.map(function(l){ return '<div>['+new Date(l.time).toLocaleTimeString('id-ID')+'] '+SEC.sanitize(l.user)+': '+SEC.sanitize(l.action)+'</div>'; }).join('') : '<p>Belum ada.</p>';
   }
+
   function renderSystemInfo() {
     if (!canAccess('system')) return;
     var el = document.getElementById('system-info'); if (!el) return;
@@ -428,45 +433,55 @@
     html += '</table>';
     el.innerHTML = html;
   }
-  function renderCharts() {}
+
+  function renderCharts() {
+    if (typeof Chart === 'undefined') {
+      console.warn('⚠️ Chart.js belum load, skip charts');
+      return;
+    }
+    if (!window.supabaseClient) {
+      console.warn('⚠️ Supabase client belum siap');
+      return;
+    }
+  }
 
   // ========== ACTIONS ==========
   window.switchTab = function(name) {
     if (!canAccess(name)) return alert('⛔ Role Anda tidak memiliki akses ke tab ini.');
     var t = document.querySelector('.tab[data-tab="'+name+'"]'); if (t) t.click();
   };
-  
+
   window.approveDana = function(id) {
     if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
-    if (!isAdmin()) return alert('⛔ Hanya admin/kabag/koord yang bisa approve.');
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa approve.');
     var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;});
     if(i){i.status='approved'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAllNow();}
   };
-  
+
   window.rejectDana = function(id) {
     if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
-    if (!isAdmin()) return alert('⛔ Hanya admin/kabag/koord yang bisa reject.');
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa reject.');
     var d=safeGet('dreamos_dana',[]), i=d.find(function(x){return x.id===id;});
     if(i){i.status='rejected'; localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAllNow();}
   };
-  
+
   window.setBudgetCap = function() {
     if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
-    if (!isKabag() && !isDev()) return alert('⛔ Hanya Kabag yang bisa mengatur pagu anggaran.');
+    if (!isKabag() && !isDev()) return alert('⛔ Hanya Kabag Umum yang bisa mengatur pagu anggaran.');
     var c=prompt('Pagu (Rp):', localStorage.getItem('dreamos_budget_cap')||'50000000');
     if(c){localStorage.setItem('dreamos_budget_cap',c); renderAllNow();}
   };
-  
+
   window.quickAddDana = function() {
     if (!canAccess('dana')) return alert('⛔ Akses ditolak.');
-    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menambah dana.');
+    if (!isAdmin() && !isKoord()) return alert('⛔ Hanya admin/koordinator yang bisa mengajukan dana.');
     var j=prompt('Judul:'), n=prompt('Nominal (Rp):');
     if(!j||!n)return;
     var d=safeGet('dreamos_dana',[]);
     d.push({id:'dana_'+Date.now(),judul:j,nominal:n,status:'pending',tanggal:new Date().toLocaleDateString('id-ID')});
     localStorage.setItem('dreamos_dana',JSON.stringify(d)); renderAllNow();
   };
-  
+
   window.quickAddK3 = function() {
     if (!canAccess('k3')) return alert('⛔ Akses ditolak.');
     var l=prompt('Lokasi:'), k=prompt('Kategori:');
@@ -475,7 +490,7 @@
     d.push({id:'k3_'+Date.now(),lokasi:l,kategori:k||'Umum',status:'pending'});
     localStorage.setItem('dreamos_k3_reports',JSON.stringify(d)); renderAllNow();
   };
-  
+
   window.quickAddMaint = function() {
     if (!canAccess('maint')) return alert('⛔ Akses ditolak.');
     var j=prompt('Judul:'), l=prompt('Lokasi:');
@@ -484,23 +499,53 @@
     d.push({id:'maint_'+Date.now(),judul:j,lokasi:l||'-',status:'Pending'});
     localStorage.setItem('dreamos_maintenance_tasks',JSON.stringify(d)); renderAllNow();
   };
-  
+
+  // ===== FORM BOOKING =====
+  window.addBooking = function() {
+    if (!canAccess('booking')) return alert('⛔ Akses ditolak.');
+    var tgl = document.getElementById('booking-tgl').value;
+    var ruang = document.getElementById('booking-ruang').value.trim();
+    var peminjam = document.getElementById('booking-peminjam').value.trim();
+    var mulai = document.getElementById('booking-jam-mulai').value;
+    var selesai = document.getElementById('booking-jam-selesai').value;
+    if (!tgl || !ruang || !peminjam) return alert('⚠️ Tanggal, ruangan, dan peminjam wajib diisi.');
+    var bookings = safeGet('dreamos_bookings', []);
+    bookings.push({
+      id: 'book_' + Date.now(),
+      tgl: tgl,
+      ruang: ruang,
+      nama_peminjam: peminjam,
+      jam_mulai: mulai,
+      jam_selesai: selesai
+    });
+    localStorage.setItem('dreamos_bookings', JSON.stringify(bookings));
+    renderBookingList();
+    // Reset form
+    document.getElementById('booking-ruang').value = '';
+    document.getElementById('booking-peminjam').value = '';
+    alert('✅ Booking tersimpan!');
+  };
+
+  window.quickAddBooking = function() {
+    document.querySelector('.tab[data-tab="booking"]').click();
+  };
+
   window.saveSlides = function() {
     if (!isAdmin()) return alert('⛔ Hanya admin yang bisa mengatur slide.');
-    localStorage.setItem('dreamos_slide_5',document.getElementById('slide5-input').value);
-    localStorage.setItem('dreamos_slide_6',document.getElementById('slide6-input').value);
-    localStorage.setItem('dreamos_slide_7',document.getElementById('slide7-input').value);
+    localStorage.setItem('dreamos_slide_5', document.getElementById('slide5-input').value);
+    localStorage.setItem('dreamos_slide_6', document.getElementById('slide6-input').value);
+    localStorage.setItem('dreamos_slide_7', document.getElementById('slide7-input').value);
     alert('✅ Slide disimpan!');
   };
-  
+
   window.openSlideManager = function() {
     if (!isAdmin()) return alert('⛔ Hanya admin yang bisa mengakses Slide Manager.');
     document.getElementById('slide-manager-panel').style.display='block';
   };
-  
+
   window.openExecutiveNote = function() { document.getElementById('executive-note-panel').style.display='block'; };
-  window.saveExecutiveNote = function() { localStorage.setItem('dreamos_executive_note',document.getElementById('executive-note-input').value); alert('✅ Disimpan!'); };
-  
+  window.saveExecutiveNote = function() { localStorage.setItem('dreamos_executive_note', document.getElementById('executive-note-input').value); alert('✅ Disimpan!'); };
+
   window.addUserWithForm = async function() {
     if (!canAccess('users')) return alert('⛔ Akses ditolak.');
     if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menambah user.');
@@ -513,21 +558,24 @@
     var users = safeGet('dreamos_users_db', []);
     if (users.find(function(u) { return u.email === email; })) return alert('⚠️ Email sudah terdaftar!');
     var hashed = await SEC.hashPassword(password);
-    users.push({ nama: nama, email: email, role: newRole, password_hash: hashed, created_at: new Date().toISOString() });
+    users.push({ id: 'user_' + Date.now(), nama: nama, email: email, role: newRole, password_hash: hashed, created_at: new Date().toISOString() });
     localStorage.setItem('dreamos_users_db', JSON.stringify(users));
     renderUserTable();
     alert('✅ ' + nama + ' berhasil ditambahkan!');
   };
-  
-  window.deleteUser = async function(id) {
+
+  window.deleteUser = function(id) {
     if (!canAccess('users')) return alert('⛔ Akses ditolak.');
     if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menghapus user.');
-    if(!confirm('Hapus user ini?'))return;
-    try { await window.parent.supabase.from('users').delete().eq('id', id); renderUserTable(); } catch(e) { alert('⚠️ Gagal: '+e.message); }
+    if(!confirm('Hapus user ini?')) return;
+    var users = safeGet('dreamos_users_db', []);
+    users = users.filter(function(u) { return u.id !== id; });
+    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+    renderUserTable();
   };
-  
-  window.doLogout = function() { localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); window.parent.location.reload(); };
-  
+
+  window.doLogout = function() { localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); window.location.reload(); };
+
   window.clearLocalCache = function() {
     if (!isDev()) return alert('⛔ Hanya Developer yang bisa membersihkan cache.');
     if(confirm('Bersihkan cache?')) {
@@ -553,7 +601,7 @@
     var users = safeGet('dreamos_users_db', []);
     var count = 0;
     users.forEach(function(u) {
-      window.parent.supabase.from('users').upsert({
+      window.supabaseClient.from('users').upsert({
         id: u.id, email: u.email, nama: u.nama, role: u.role, password_hash: u.password_hash
       }).then(function(res) { if (!res.error) count++; });
     });
@@ -562,8 +610,8 @@
 
   // Export functions
   window.exportDana = function() { var d=safeGet('dreamos_dana',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Tgl,Judul,Nominal,Status\n'+d.map(function(x){return x.tanggal+','+x.judul+','+x.nominal+','+x.status;}).join('\n')); a.download='dana.csv'; a.click(); };
-  window.exportK3 = function() { var d=safeGet('dreamos_k3_reports',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Lokasi,Kategori,Status,Tanggal\n'+d.map(function(x){return x.lokasi+','+x.kategori+','+x.status+','+x.tanggal;}).join('\n')); a.download='k3.csv'; a.click(); };
-  window.exportBooking = function() { var d=safeGet('dreamos_bookings',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Tgl,Ruangan,Peminjam,Jam\n'+d.map(function(x){return x.tgl+','+x.ruang+','+x.nama_peminjam+','+x.jam_mulai+'-'+x.jam_selesai;}).join('\n')); a.download='booking.csv'; a.click(); };
+  window.exportK3 = function() { var d=safeGet('dreamos_k3_reports',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Lokasi,Kategori,Status\n'+d.map(function(x){return x.lokasi+','+x.kategori+','+x.status;}).join('\n')); a.download='k3.csv'; a.click(); };
+  window.exportBooking = function() { var d=safeGet('dreamos_bookings',[]); var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURI('Tgl,Ruangan,Peminjam,Jam Mulai,Jam Selesai\n'+d.map(function(x){return x.tgl+','+x.ruang+','+x.nama_peminjam+','+x.jam_mulai+','+x.jam_selesai;}).join('\n')); a.download='booking.csv'; a.click(); };
   window.exportAllData = function() { var data={}; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i); try{data[k]=JSON.parse(localStorage.getItem(k));}catch(e){data[k]=localStorage.getItem(k);}} var a=document.createElement('a'); a.href='data:text/json;charset=utf-8,'+encodeURI(JSON.stringify(data)); a.download='backup.json'; a.click(); };
   window.exportAuditLog = function() { var logs=safeGet('dreamos_audit_logs',[]); var a=document.createElement('a'); a.href='data:text/json;charset=utf-8,'+encodeURI(JSON.stringify(logs)); a.download='audit.json'; a.click(); };
   window.importData = function() { var input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=function(e){ var file=e.target.files[0]; if(!file)return; var reader=new FileReader(); reader.onload=function(ev){ try{ var data=JSON.parse(ev.target.result); if(!confirm('⚠️ Timpa semua?'))return; Object.keys(data).forEach(function(k){localStorage.setItem(k,JSON.stringify(data[k]));}); alert('✅ Direstore!'); location.reload(); }catch(err){alert('❌ Gagal!');} }; reader.readAsText(file); }; input.click(); };
@@ -572,10 +620,8 @@
 
   // Init
   renderAll();
-  SEC.auditLog('ACCESS', 'v5.2');
+  SEC.auditLog('ACCESS', 'v5.3');
 })();
 </script>
 
 
-</body>
-</html>

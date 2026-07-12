@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Profile • Dream OS Enterprise</title>
-    <style>
+<style>
         :root { --glass-bg: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 255, 157, 0.1); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
         * { box-sizing: border-box; }
         body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',sans-serif; min-height:100vh; }
@@ -33,10 +27,7 @@
         td { padding: 0.35rem 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .section-title { font-size: 0.85rem; font-weight: 700; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
     </style>
-</head>
-<body>
-
-<button class="back-btn" onclick="window.parent.goHome()">← HOME</button>
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
 
 <div style="max-width:650px; margin:0 auto; padding:4rem 1.2rem 5rem;">
 
@@ -151,6 +142,9 @@
   async function hashPW(pw) { var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw+'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
 
   var user = getUser();
+  if (!window.supabaseClient) {
+    console.warn('⚠️ Supabase client belum siap di profile module');
+  }
   if (!user) {
     document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2></div>';
     return;
@@ -179,8 +173,8 @@
       logs.unshift({ time: new Date().toISOString(), user: user.email, role: user.role, action: action, details: detail });
       if (logs.length > 100) logs.pop();
       localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-      if (window.parent && window.parent.renderDashboard) {
-        setTimeout(function() { window.parent.renderDashboard(); }, 500);
+      if (window.parent && window.renderDashboard) {
+        setTimeout(function() { window.renderDashboard(); }, 500);
       }
     } catch(e) {}
   }
@@ -210,7 +204,7 @@
     if (!user) return alert('❌ Sesi tidak valid.');
     
     try {
-        var { error } = await window.parent.supabase
+        var { error } = await window.supabaseClient
             .from('users')
             .upsert({
                 id: user.id,
@@ -234,7 +228,7 @@
         
         alert('✅ Profile disimpan ke Cloud & Lokal!');
         
-        window.parent.supabase.from('audit_logs').insert({
+        window.supabaseClient.from('audit_logs').insert({
             user_id: user.id,
             action: 'UPDATE_PROFILE',
             details: 'Profile updated'
@@ -252,7 +246,7 @@
       if (!user) return alert('❌ Sesi tidak valid.');
       
       var filePath = user.id + '/' + Date.now() + '_' + file.name;
-      var { data, error } = await window.parent.supabase.storage
+      var { data, error } = await window.supabaseClient.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
         
@@ -261,7 +255,7 @@
         return;
       }
       
-      var { data: publicData } = window.parent.supabase.storage
+      var { data: publicData } = window.supabaseClient.storage
         .from('avatars')
         .getPublicUrl(filePath);
         
@@ -332,11 +326,9 @@
     if (confirm('🚪 Yakin logout? Session akan dihapus dan harus login ulang.')) {
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
-      if (window.parent) window.parent.location.reload();
+      if (window.parent) window.location.reload();
       else location.reload();
     }
   };
 })();
 </script>
-</body>
-</html>
