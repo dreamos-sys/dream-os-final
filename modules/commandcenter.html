@@ -45,7 +45,7 @@
   <!-- HEADER -->
   <div class="glass" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
     <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v5.5</span></h2>
+      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v5.6</span></h2>
       <p style="color:#94a3b8; font-size:0.62rem; margin:0;" id="role-subtitle">Loading...</p>
     </div>
     <div style="display:flex; align-items:center; gap:0.8rem;">
@@ -231,13 +231,25 @@
         
         // Sync ke Supabase kalau ada
         if (window.supabaseClient) {
+          // Coba insert dengan struktur yang mungkin berbeda
           window.supabaseClient.from('audit_logs').insert({
             user_id: user ? user.id : null,
             action: a,
-            details: d || '',
-            timestamp: new Date().toISOString()
+            description: d || '',  // Coba kolom 'description' sebagai alternatif
+            created_at: new Date().toISOString()
           }).then(function(res) {
-            if (res.error) console.warn('Audit sync failed:', res.error);
+            if (res.error) {
+              // Kalau gagal, coba struktur lain
+              console.warn('First attempt failed, trying alternative structure...');
+              window.supabaseClient.from('audit_logs').insert({
+                user_id: user ? user.id : null,
+                action: a,
+                metadata: d || '',  // Atau 'metadata'
+                timestamp: new Date().toISOString()
+              }).then(function(res2) {
+                if (res2.error) console.warn('Audit sync failed:', res2.error);
+              });
+            }
           });
         }
       } catch(e) { console.error('Audit log error:', e); }
@@ -266,7 +278,7 @@
 
   var role = user.role || 'staff';
   var ud = document.getElementById('user-display'); if (ud) ud.textContent = user.nama || 'User';
-  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.5';
+  var rs = document.getElementById('role-subtitle'); if (rs) rs.textContent = 'Role: ' + role.toUpperCase() + ' • v5.6';
   setInterval(function() { var lc = document.getElementById('live-clock'); if (lc) lc.textContent = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
@@ -820,6 +832,6 @@
 
   // Init
   renderAll();
-  SEC.auditLog('ACCESS_CMD_CENTER', 'v5.5');
+  SEC.auditLog('ACCESS_CMD_CENTER', 'v5.6');
 })();
 </script>
