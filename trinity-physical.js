@@ -6,7 +6,7 @@ const PHYSICAL_CONFIG = {
   blockDuration: 15 * 60 * 1000,
   salt: 'DREAM_OS_SALT_2026_SECURE',
   // ⚠️ GANTI DENGAN URL WORKER LO SETELAH DEPLOY!
-  alertProxy: 'dreamos-trinity-proxy.dreamos.workers.dev/api/security-alert'
+  alertProxy: '/api/security-alert'
 };
 
 // ===== DEVICE FINGERPRINT =====
