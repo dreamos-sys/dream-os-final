@@ -280,16 +280,16 @@
     var tabs = {
       dev: ['users','dana','k3','maint','booking','audit','system'],
       kabag_umum: ['users','dana','k3','maint','booking','audit','system'],
-      koordinator_umum: ['dana','k3','booking'],
-      guru: ['k3','booking'],
-      security: ['k3','maint'],
-      janitor_indoor: ['maint'],
-      janitor_outdoor: ['maint'],
-      komandan_regu: ['k3','maint'],
-      maintenance: ['maint','k3'],
-      staff: ['k3','booking']
+      koordinator_umum: ['dana'],
+      komandan_regu: ['security'],
+      guru: ['booking', 'k3'],
+      janitor_indoor: ['janitor-indoor'],
+      janitor_outdoor: ['janitor-outdoor'],
+      security: ['security'],
+      maintenance: ['maint'],
+      staff: ['profile','qr','about','setting']
     };
-    return tabs[role] || ['k3','booking'];
+    return tabs[role] || [];
   }
 
   var allowed = getAllowedTabs();
@@ -316,9 +316,9 @@
   showQuickAction('qa-slide', 'users');
   showQuickAction('qa-note', 'users');
 
-  function isAdmin() { return ['dev','kabag_umum'].includes(role); }
-  function isKabag() { return role === 'kabag_umum'; }
-  function isKoord() { return role === 'koordinator_umum'; }
+  function isAdmin() { return ['dev','kabag_umum','koordinator_umum'].includes(role); }
+  function isKabag() { return role === 'kabag_umum' || role === 'dev'; }
+  function isKoord() { return role === 'koordinator_umum' || role === 'dev'; }
   function isDev() { return role === 'dev'; }
   function canAccess(tabName) { return allowed.includes(tabName); }
 
@@ -440,7 +440,19 @@
     if (!canAccess('booking')) return;
     var b = safeGet('dreamos_bookings',[]);
     var el = document.getElementById('booking-list'); if (!el) return;
-    el.innerHTML = b.length ? '<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th></tr>'+b.map(function(x){ return '<tr><td>'+SEC.sanitize(x.tgl)+'</td><td>'+SEC.sanitize(x.ruang)+'</td><td>'+SEC.sanitize(x.nama_peminjam)+'</td><td>'+SEC.sanitize(x.jam_mulai)+'-'+SEC.sanitize(x.jam_selesai)+'</td></tr>'; }).join('')+'</table>' : '<p>Belum ada.</p>';
+    var html = '<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th><th>Status</th>';
+    if (isAdmin()) html += '<th>Aksi</th>';
+    html += '</tr>';
+    b.forEach(function(x) {
+      html += '<tr><td>'+SEC.sanitize(x.tgl)+'</td><td>'+SEC.sanitize(x.ruang)+'</td><td>'+SEC.sanitize(x.nama_peminjam)+'</td><td>'+SEC.sanitize(x.jam_mulai)+'-'+SEC.sanitize(x.jam_selesai)+'</td>';
+      html += '<td><span class="badge badge-'+(x.status==='approved'?'approved':x.status==='rejected'?'rejected':'pending')+'">'+(x.status||'pending')+'</span></td>';
+      if (isAdmin()) {
+        html += '<td><button class="btn btn-success" onclick="approveBooking(''+x.id+'')" style="font-size:0.45rem;">✅</button> <button class="btn btn-danger" onclick="rejectBooking(''+x.id+'')" style="font-size:0.45rem;">❌</button></td>';
+      }
+      html += '</tr>';
+    });
+    html += '</table>';
+    el.innerHTML = b.length ? html : '<p>Belum ada.</p>';
   }
 
   function renderAuditFull() {
@@ -671,7 +683,7 @@
     renderAllNow();
   };
 
-  window.addBooking = function() {
+  window.addBooking = async function() {
     if (!canAccess('booking')) return alert('⛔ Akses ditolak.');
     var tgl = document.getElementById('booking-tgl').value;
     var ruang = document.getElementById('booking-ruang').value.trim();
@@ -679,24 +691,75 @@
     var mulai = document.getElementById('booking-jam-mulai').value;
     var selesai = document.getElementById('booking-jam-selesai').value;
     if (!tgl || !ruang || !peminjam) return alert('⚠️ Tanggal, ruangan, dan peminjam wajib diisi.');
-    var bookings = safeGet('dreamos_bookings', []);
-    bookings.push({
+    
+    var bookingData = {
       id: 'book_' + Date.now(),
       tgl: tgl,
       ruang: ruang,
       nama_peminjam: peminjam,
       jam_mulai: mulai,
-      jam_selesai: selesai
-    });
+      jam_selesai: selesai,
+      created_at: new Date().toISOString(),
+      status: 'pending'
+    };
+    
+    // Simpan ke localStorage dulu (optimistic)
+    var bookings = safeGet('dreamos_bookings', []);
+    bookings.push(bookingData);
     localStorage.setItem('dreamos_bookings', JSON.stringify(bookings));
-    SEC.auditLog('ADD_BOOKING', 'Ruang: ' + ruang + ', Tgl: ' + tgl);
     renderBookingList();
+    
+    // Coba sync ke Supabase
+    if (window.supabaseClient) {
+      try {
+        var { error } = await window.supabaseClient.from('bookings').insert(bookingData);
+        if (error) throw error;
+        console.log('✅ Booking tersimpan di cloud');
+      } catch(e) {
+        console.warn('⚠️ Gagal sync ke cloud, tetap tersimpan di lokal:', e.message);
+      }
+    }
+    
+    SEC.auditLog('ADD_BOOKING', 'Ruang: ' + ruang + ', Tgl: ' + tgl);
     document.getElementById('booking-ruang').value = '';
     document.getElementById('booking-peminjam').value = '';
     alert('✅ Booking tersimpan!');
   };
 
-  window.quickAddBooking = function() {
+  
+  window.approveBooking = async function(id) {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa approve.');
+    if (!confirm('Approve booking ini?')) return;
+    var bookings = safeGet('dreamos_bookings', []);
+    var booking = bookings.find(function(b) { return b.id === id; });
+    if (booking) {
+      booking.status = 'approved';
+      localStorage.setItem('dreamos_bookings', JSON.stringify(bookings));
+      if (window.supabaseClient) {
+        await window.supabaseClient.from('bookings').update({ status: 'approved' }).eq('id', id);
+      }
+      SEC.auditLog('APPROVE_BOOKING', 'ID: ' + id);
+      renderBookingList();
+    }
+  };
+  
+  window.rejectBooking = async function(id) {
+    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa reject.');
+    if (!confirm('Reject booking ini?')) return;
+    var bookings = safeGet('dreamos_bookings', []);
+    var booking = bookings.find(function(b) { return b.id === id; });
+    if (booking) {
+      booking.status = 'rejected';
+      localStorage.setItem('dreamos_bookings', JSON.stringify(bookings));
+      if (window.supabaseClient) {
+        await window.supabaseClient.from('bookings').update({ status: 'rejected' }).eq('id', id);
+      }
+      SEC.auditLog('REJECT_BOOKING', 'ID: ' + id);
+      renderBookingList();
+    }
+  };
+
+window.quickAddBooking = function() {
     document.querySelector('.tab[data-tab="booking"]').click();
   };
 
@@ -828,6 +891,28 @@
 
   // Init
   renderAll();
+  
+  // ========== REAL-TIME SYNC INTEGRATION ==========
+  if (window.SyncEngine && window.supabaseClient) {
+    // Subscribe ke semua tabel utama
+    window.SyncEngine.subscribe('bookings', function() {
+      if (canAccess('booking')) renderBookingList();
+    });
+    window.SyncEngine.subscribe('k3_reports', function() {
+      if (canAccess('k3')) { renderK3Active(); renderK3All(); }
+    });
+    window.SyncEngine.subscribe('dana_requests', function() {
+      if (canAccess('dana')) { renderDanaPending(); renderDanaHistory(); renderBudgetSummary(); }
+    });
+    window.SyncEngine.subscribe('maintenance_tasks', function() {
+      if (canAccess('maint')) { renderMaintenanceActive(); renderMaintenanceDone(); }
+    });
+    window.SyncEngine.subscribe('users', function() {
+      if (canAccess('users')) renderUserTable();
+    });
+    console.log('🔄 Real-Time Sync di Command Center AKTIF!');
+  }
+
   SEC.auditLog('ACCESS_CMD_CENTER', 'v5.8');
 })();
 </script>
