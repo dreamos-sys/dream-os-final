@@ -1,119 +1,51 @@
-
 <style>
-  :root {
-    --glass-bg: rgba(15, 23, 42, 0.5);
-    --glass-border: rgba(0, 255, 157, 0.12);
-    --neon: #00ff9d;
-    --accent: #0ea5e9;
-    --warning: #e11d48;
-    --gold: #f59e0b;
-    --purple: #8b5cf6;
-  }
+  :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
   * { box-sizing: border-box; }
-  body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',sans-serif; min-height:100vh; }
-  .glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-  .back-btn {
-    position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000;
-    background: rgba(30,41,59,0.9); border: 1px solid var(--neon);
-    color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px;
-    cursor: pointer; font-weight: 700; font-size: 0.7rem;
-  }
-  .btn {
-    padding: 0.5rem 0.9rem; border: none; border-radius: 10px;
-    font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: all 0.2s ease;
-  }
+  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
+  .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,157,0.1); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
+  .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
+  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: 0.2s; }
   .btn-danger { background: var(--warning); color: #fff; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-success { background: #10b981; color: #fff; }
   .btn:hover { transform: translateY(-1px); opacity: 0.95; }
-
-  /* TABS */
-  .tab-nav {
-    display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap;
-  }
-  .tab-btn {
-    padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600;
-    cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(30,41,59,0.7); color: #94a3b8;
-    transition: all 0.2s ease; white-space: nowrap;
-  }
+  .tab-nav { display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .tab-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(30,41,59,0.7); color: #94a3b8; transition: 0.2s; white-space: nowrap; }
   .tab-btn:hover { background: rgba(30,41,59,0.9); border-color: var(--neon); color: #e2e8f0; }
   .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.4); }
-
-  .set-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
+  .set-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
   .set-row:last-child { border-bottom: none; }
   .set-label { font-size: 0.8rem; color: #e2e8f0; font-weight: 600; }
   .set-desc { font-size: 0.65rem; color: #94a3b8; margin-top: 0.15rem; }
-
-  /* TOGGLE SWITCH - FIXED */
-  .toggle-switch {
-    width: 48px; height: 26px; background: #334155;
-    border-radius: 13px; position: relative; cursor: pointer;
-    transition: all 0.3s ease; flex-shrink: 0;
-    border: 1px solid rgba(255,255,255,0.1);
-  }
+  .toggle-switch { width: 48px; height: 26px; background: #334155; border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
   .toggle-switch.on { background: var(--neon); border-color: var(--neon); box-shadow: 0 0 12px rgba(0,255,157,0.4); }
-  .toggle-switch::after {
-    content: ''; position: absolute; top: 2px; left: 2px;
-    width: 20px; height: 20px; background: white; border-radius: 50%;
-    transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  }
+  .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
   .toggle-switch.on::after { left: 24px; }
-
-  /* RANGE SLIDER */
-  input[type=range] {
-    width: 100px; height: 6px; -webkit-appearance: none; appearance: none;
-    background: rgba(0,255,157,0.2); border-radius: 3px; outline: none;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 20px; height: 20px;
-    background: var(--neon); border-radius: 50%; cursor: pointer;
-    box-shadow: 0 0 10px rgba(0,255,157,0.5);
-  }
+  input[type=range] { width: 100px; height: 6px; -webkit-appearance: none; appearance: none; background: rgba(0,255,157,0.2); border-radius: 3px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--neon); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px rgba(0,255,157,0.5); }
   .range-val { display: inline-block; min-width: 45px; text-align: center; color: var(--neon); font-weight: 700; font-size: 0.75rem; }
-
-  /* SELECT */
-  select {
-    padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
-    color: #e2e8f0; font-size: 0.75rem; outline: none;
-  }
+  select { padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.75rem; outline: none; }
   select:focus { border-color: var(--neon); }
-
-  .section-title {
-    font-size: 0.85rem; font-weight: 700; margin: 0 0 0.8rem;
-    display: flex; align-items: center; gap: 0.4rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;
-  }
-  
-  .json-preview {
-    margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.3);
-    border-radius: 12px; border: 1px solid rgba(0,255,157,0.15);
-    font-size: 0.65rem; color: var(--neon); max-height: 200px; overflow-y: auto;
-  }
+  .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
+  .json-preview { margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(0,255,157,0.15); font-size: 0.65rem; color: var(--neon); max-height: 200px; overflow-y: auto; }
 </style>
 
 <button class="back-btn" onclick="window.goHome()">← HOME</button>
 
-<div style="max-width:700px; margin:0 auto; padding:3.5rem 1rem 5rem;">
+<div style="max-width: 700px; margin: 0 auto; padding: 3.5rem 1rem 5rem;">
 
-  <!-- HEADER -->
-  <div class="glass" style="display:flex; justify-content:space-between; align-items:center;">
+  <div class="glass" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1rem;">⚙️ Enterprise Settings</h2>
-      <p style="color:#94a3b8; font-size:0.6rem; margin:0;">ISO 9241-171 • WCAG 2.2 • v1.0 Final</p>
+      <h2 style="color: var(--neon); margin: 0; font-size: 1rem;">⚙️ Enterprise Settings</h2>
+      <p style="color: #94a3b8; font-size: 0.6rem; margin: 0;">ISO 9241-171 • WCAG 2.2 • Bank-Grade</p>
     </div>
-    <button class="btn btn-danger" onclick="resetAll()">🔄 Reset Default</button>
+    <div style="display: flex; gap: 0.3rem;">
+      <button class="btn btn-primary" onclick="exportSettings()">📥 Export</button>
+      <button class="btn btn-success" onclick="importSettings()">📤 Import</button>
+      <button class="btn btn-danger" onclick="resetAll()">🔄 Reset</button>
+    </div>
   </div>
 
-  <!-- TABS -->
   <div class="tab-nav">
     <button class="tab-btn active" data-tab="display" onclick="switchTab('display', this)">🎨 Display</button>
     <button class="tab-btn" data-tab="access" onclick="switchTab('access', this)">♿ Access</button>
@@ -121,288 +53,138 @@
     <button class="tab-btn" data-tab="advanced" onclick="switchTab('advanced', this)">🔬 Advanced</button>
   </div>
 
-  <!-- TAB: DISPLAY -->
   <div id="tab-display" class="tab-content">
     <div class="glass">
-      <div class="section-title" style="color:var(--accent);">🎨 Visual Preferences</div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Dark Mode</div><div class="set-desc">Enterprise dark theme</div></div>
-        <div class="toggle-switch on" id="tog-theme" onclick="toggleSetting('theme')"></div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Font Scale</div><div class="set-desc">Global text size</div></div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <input type="range" min="80" max="140" value="100" id="rng-font" oninput="updateFontSize(this.value)">
-          <span class="range-val" id="val-font">100%</span>
-        </div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Starfield</div><div class="set-desc">Animated background</div></div>
-        <div class="toggle-switch on" id="tog-starfield" onclick="toggleSetting('starfield')"></div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Glass Intensity</div><div class="set-desc">Blur opacity level</div></div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <input type="range" min="30" max="90" value="70" id="rng-glass" oninput="updateGlass(this.value)">
-          <span class="range-val" id="val-glass">70%</span>
-        </div>
-      </div>
+      <div class="section-title" style="color: var(--accent);">🎨 Visual Preferences</div>
+      <div class="set-row"><div><div class="set-label">Dark Mode</div><div class="set-desc">Enterprise dark theme</div></div><div class="toggle-switch on" id="tog-theme" onclick="toggleSetting('theme')"></div></div>
+      <div class="set-row"><div><div class="set-label">Font Scale</div><div class="set-desc">Global text size</div></div><div style="display:flex;align-items:center;gap:0.5rem;"><input type="range" min="80" max="140" value="100" id="rng-font" oninput="updateFontSize(this.value)"><span class="range-val" id="val-font">100%</span></div></div>
+      <div class="set-row"><div><div class="set-label">Starfield</div><div class="set-desc">Animated background</div></div><div class="toggle-switch on" id="tog-starfield" onclick="toggleSetting('starfield')"></div></div>
+      <div class="set-row"><div><div class="set-label">Glass Intensity</div><div class="set-desc">Blur opacity level</div></div><div style="display:flex;align-items:center;gap:0.5rem;"><input type="range" min="30" max="90" value="70" id="rng-glass" oninput="updateGlass(this.value)"><span class="range-val" id="val-glass">70%</span></div></div>
     </div>
   </div>
 
-  <!-- TAB: ACCESS -->
-  <div id="tab-access" class="tab-content" style="display:none;">
+  <div id="tab-access" class="tab-content" style="display: none;">
     <div class="glass">
-      <div class="section-title" style="color:var(--gold);">♿ Accessibility Suite</div>
-      
-      <div class="set-row">
-        <div><div class="set-label">High Contrast</div><div class="set-desc">WCAG 2.2 AA compliant</div></div>
-        <div class="toggle-switch" id="tog-highContrast" onclick="toggleSetting('highContrast')"></div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Reduced Motion</div><div class="set-desc">No animations</div></div>
-        <div class="toggle-switch" id="tog-reduceMotion" onclick="toggleSetting('reduceMotion')"></div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Screen Reader</div><div class="set-desc">ARIA labels</div></div>
-        <div class="toggle-switch" id="tog-screenReader" onclick="toggleSetting('screenReader')"></div>
-      </div>
+      <div class="section-title" style="color: var(--gold);">♿ Accessibility Suite</div>
+      <div class="set-row"><div><div class="set-label">High Contrast</div><div class="set-desc">WCAG 2.2 AA compliant</div></div><div class="toggle-switch" id="tog-highContrast" onclick="toggleSetting('highContrast')"></div></div>
+      <div class="set-row"><div><div class="set-label">Reduced Motion</div><div class="set-desc">No animations</div></div><div class="toggle-switch" id="tog-reduceMotion" onclick="toggleSetting('reduceMotion')"></div></div>
+      <div class="set-row"><div><div class="set-label">Screen Reader</div><div class="set-desc">ARIA labels</div></div><div class="toggle-switch" id="tog-screenReader" onclick="toggleSetting('screenReader')"></div></div>
     </div>
   </div>
 
-  <!-- TAB: LANGUAGE -->
-  <div id="tab-language" class="tab-content" style="display:none;">
+  <div id="tab-language" class="tab-content" style="display: none;">
     <div class="glass">
-      <div class="section-title" style="color:var(--purple);">🌍 Global Language</div>
-      
-      <div class="set-row">
-        <div><div class="set-label">System Language</div><div class="set-desc">Interface language</div></div>
-        <select id="sel-lang" onchange="changeLang(this.value)">
-          <option value="id">🇮🇩 Indonesia</option>
-          <option value="en">🇬🇧 English</option>
-          <option value="ar">🇸🇦 العربية</option>
-          <option value="zh">🇨🇳 中文</option>
-        </select>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Auto-Detect</div><div class="set-desc">Browser language</div></div>
-        <div class="toggle-switch" id="tog-autoDetect" onclick="toggleSetting('autoDetect')"></div>
-      </div>
+      <div class="section-title" style="color: var(--purple);">🌍 Global Language</div>
+      <div class="set-row"><div><div class="set-label">System Language</div><div class="set-desc">Interface language</div></div><select id="sel-lang" onchange="changeLang(this.value)"><option value="id">🇮🇩 Indonesia</option><option value="en">🇬🇧 English</option><option value="ar">🇸🇦 العربية</option><option value="zh">🇨🇳 中文</option></select></div>
+      <div class="set-row"><div><div class="set-label">Auto-Detect</div><div class="set-desc">Browser language</div></div><div class="toggle-switch" id="tog-autoDetect" onclick="toggleSetting('autoDetect')"></div></div>
     </div>
   </div>
 
-  <!-- TAB: ADVANCED -->
-  <div id="tab-advanced" class="tab-content" style="display:none;">
+  <div id="tab-advanced" class="tab-content" style="display: none;">
     <div class="glass">
-      <div class="section-title" style="color:var(--warning);">🔬 Advanced Options</div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Developer Mode</div><div class="set-desc">Show debug info</div></div>
-        <div class="toggle-switch" id="tog-devMode" onclick="toggleSetting('devMode')"></div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Auto-Save</div><div class="set-desc">Save every 30s</div></div>
-        <div class="toggle-switch on" id="tog-autoSave" onclick="toggleSetting('autoSave')"></div>
-      </div>
-      
-      <div class="set-row">
-        <div><div class="set-label">Cache Busting</div><div class="set-desc">Force reload on startup</div></div>
-        <div class="toggle-switch" id="tog-cacheBust" onclick="toggleSetting('cacheBust')"></div>
-      </div>
+      <div class="section-title" style="color: var(--warning);">🔬 Advanced Options</div>
+      <div class="set-row"><div><div class="set-label">Developer Mode</div><div class="set-desc">Show debug info</div></div><div class="toggle-switch" id="tog-devMode" onclick="toggleSetting('devMode')"></div></div>
+      <div class="set-row"><div><div class="set-label">Auto-Save</div><div class="set-desc">Save every 30s</div></div><div class="toggle-switch on" id="tog-autoSave" onclick="toggleSetting('autoSave')"></div></div>
+      <div class="set-row"><div><div class="set-label">Cache Busting</div><div class="set-desc">Force reload on startup</div></div><div class="toggle-switch" id="tog-cacheBust" onclick="toggleSetting('cacheBust')"></div></div>
     </div>
-    
     <div class="glass">
-      <div class="section-title" style="color:#94a3b8;">📊 Current Configuration</div>
+      <div class="section-title" style="color: #94a3b8;">📊 Current Configuration</div>
       <pre id="json-preview" class="json-preview"></pre>
     </div>
   </div>
-
 </div>
 
 <script>
-// ========== STANDALONE SETTINGS ENGINE v3.0 ==========
 (function() {
   'use strict';
 
-  // Default settings
-  var DEFAULTS = {
-    theme: 'dark',
-    fontSize: 100,
-    highContrast: false,
-    reduceMotion: false,
-    screenReader: false,
-    starfield: true,
-    glassIntensity: 70,
-    lang: 'id',
-    autoDetect: false,
-    devMode: false,
-    autoSave: true,
-    cacheBust: false
-  };
+  const DEFAULTS = { theme: 'dark', fontSize: 100, highContrast: false, reduceMotion: false, screenReader: false, starfield: true, glassIntensity: 70, lang: 'id', autoDetect: false, devMode: false, autoSave: true, cacheBust: false };
 
-  // Load state
-  var state = {};
-  try {
-    var saved = JSON.parse(localStorage.getItem('dreamos_settings') || '{}');
-    Object.keys(DEFAULTS).forEach(function(k) {
-      state[k] = (saved[k] !== undefined) ? saved[k] : DEFAULTS[k];
-    });
-  } catch(e) {
-    state = JSON.parse(JSON.stringify(DEFAULTS));
-  }
+  let state = {};
+  try { const saved = JSON.parse(localStorage.getItem('dreamos_settings') || '{}'); Object.keys(DEFAULTS).forEach(k => state[k] = (saved[k] !== undefined) ? saved[k] : DEFAULTS[k]); } catch(e) { state = JSON.parse(JSON.stringify(DEFAULTS)); }
 
-  // Save to localStorage
   function saveState() {
     localStorage.setItem('dreamos_settings', JSON.stringify(state));
     localStorage.setItem('dreamos_lang', state.lang);
+    applySettings();
     updateJSONPreview();
+    if (window.BankAudit) BankAudit.log('SETTINGS_UPDATE', { theme: state.theme, lang: state.lang });
   }
 
-  // Apply settings to parent window
-  function applyToParent() {
-    try {
-      var doc = document;
-      var root = doc.documentElement;
-      
-      root.setAttribute('data-theme', state.theme);
-      root.style.setProperty('--font-scale', state.fontSize + '%');
-      
-      // Starfield
-      var canvas = doc.getElementById('star-field');
-      if (canvas) canvas.style.display = state.starfield ? 'block' : 'none';
-      
-      // Glass intensity
-      var alpha = (state.glassIntensity / 100).toFixed(2);
-      var bg = state.theme === 'light' 
-        ? 'rgba(240,245,255,' + alpha + ')'
-        : 'rgba(15,23,42,' + alpha + ')';
-      root.style.setProperty('--glass-bg', bg);
-      
-      // High contrast
-      if (state.highContrast) {
-        root.style.setProperty('--text-main', '#ffffff');
-        root.style.setProperty('--glass-border', 'rgba(0,255,157,0.6)');
-      }
-      
-      // Reduced motion
-      if (state.reduceMotion) {
-        root.style.setProperty('--animation-duration', '0s');
-      }
-    } catch(e) {
-      // Parent not accessible (standalone mode)
-    }
+  function applySettings() {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', state.theme);
+    root.style.setProperty('--font-scale', state.fontSize + '%');
+    const canvas = document.getElementById('star-field');
+    if (canvas) canvas.style.display = state.starfield ? 'block' : 'none';
+    const alpha = (state.glassIntensity / 100).toFixed(2);
+    const bg = state.theme === 'light' ? 'rgba(240,245,255,' + alpha + ')' : 'rgba(15,23,42,' + alpha + ')';
+    root.style.setProperty('--glass-bg', bg);
+    if (state.highContrast) { root.style.setProperty('--text-main', '#ffffff'); root.style.setProperty('--glass-border', 'rgba(0,255,157,0.6)'); }
+    if (state.reduceMotion) root.style.setProperty('--animation-duration', '0s');
   }
 
-  // Update UI to match state
   function updateAllUI() {
-    // Toggles
-    var toggles = {
-      'theme': state.theme === 'dark',
-      'starfield': state.starfield,
-      'highContrast': state.highContrast,
-      'reduceMotion': state.reduceMotion,
-      'screenReader': state.screenReader,
-      'autoDetect': state.autoDetect,
-      'devMode': state.devMode,
-      'autoSave': state.autoSave,
-      'cacheBust': state.cacheBust
-    };
-    
-    Object.keys(toggles).forEach(function(k) {
-      var el = document.getElementById('tog-' + k);
-      if (el) {
-        if (toggles[k]) {
-          el.classList.add('on');
-        } else {
-          el.classList.remove('on');
-        }
-      }
-    });
-    
-    // Ranges
-    var rngFont = document.getElementById('rng-font');
-    if (rngFont) rngFont.value = state.fontSize;
-    var valFont = document.getElementById('val-font');
-    if (valFont) valFont.textContent = state.fontSize + '%';
-    
-    var rngGlass = document.getElementById('rng-glass');
-    if (rngGlass) rngGlass.value = state.glassIntensity;
-    var valGlass = document.getElementById('val-glass');
-    if (valGlass) valGlass.textContent = state.glassIntensity + '%';
-    
-    // Select
-    var selLang = document.getElementById('sel-lang');
-    if (selLang) selLang.value = state.lang;
-    
+    const toggles = { 'theme': state.theme === 'dark', 'starfield': state.starfield, 'highContrast': state.highContrast, 'reduceMotion': state.reduceMotion, 'screenReader': state.screenReader, 'autoDetect': state.autoDetect, 'devMode': state.devMode, 'autoSave': state.autoSave, 'cacheBust': state.cacheBust };
+    Object.keys(toggles).forEach(k => { const el = document.getElementById('tog-' + k); if (el) el.classList.toggle('on', toggles[k]); });
+    const rngFont = document.getElementById('rng-font'); if (rngFont) rngFont.value = state.fontSize;
+    const valFont = document.getElementById('val-font'); if (valFont) valFont.textContent = state.fontSize + '%';
+    const rngGlass = document.getElementById('rng-glass'); if (rngGlass) rngGlass.value = state.glassIntensity;
+    const valGlass = document.getElementById('val-glass'); if (valGlass) valGlass.textContent = state.glassIntensity + '%';
+    const selLang = document.getElementById('sel-lang'); if (selLang) selLang.value = state.lang;
     updateJSONPreview();
   }
 
-  function updateJSONPreview() {
-    var el = document.getElementById('json-preview');
-    if (el) el.textContent = JSON.stringify(state, null, 2);
-  }
+  function updateJSONPreview() { const el = document.getElementById('json-preview'); if (el) el.textContent = JSON.stringify(state, null, 2); }
 
-  // ========== PUBLIC FUNCTIONS ==========
-  
-  // Tab switching
   window.switchTab = function(name, btn) {
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.tab-content').forEach(function(c) { c.style.display = 'none'; });
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     if (btn) btn.classList.add('active');
-    var t = document.getElementById('tab-' + name);
+    const t = document.getElementById('tab-' + name);
     if (t) t.style.display = 'block';
   };
 
-  // Toggle setting
   window.toggleSetting = function(key) {
-    if (key === 'theme') {
-      state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    } else {
-      state[key] = !state[key];
-    }
-    updateAllUI();
-    saveState();
+    if (key === 'theme') state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    else state[key] = !state[key];
+    updateAllUI(); saveState();
   };
 
-  // Font size slider
-  window.updateFontSize = function(val) {
-    state.fontSize = parseInt(val);
-    document.getElementById('val-font').textContent = val + '%';
-    saveState();
+  window.updateFontSize = function(val) { state.fontSize = parseInt(val); document.getElementById('val-font').textContent = val + '%'; saveState(); };
+  window.updateGlass = function(val) { state.glassIntensity = parseInt(val); document.getElementById('val-glass').textContent = val + '%'; saveState(); };
+  window.changeLang = function(val) { state.lang = val; saveState(); };
+  window.resetAll = function() { if (confirm('🔄 Reset semua pengaturan ke default?')) { state = JSON.parse(JSON.stringify(DEFAULTS)); updateAllUI(); saveState(); } };
+
+  // Export/Import
+  window.exportSettings = function() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dreamos_settings_backup.json'; a.click(); URL.revokeObjectURL(a.href);
+    alert('✅ Pengaturan diexport!');
   };
 
-  // Glass intensity slider
-  window.updateGlass = function(val) {
-    state.glassIntensity = parseInt(val);
-    document.getElementById('val-glass').textContent = val + '%';
-    saveState();
+  window.importSettings = function() {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+    input.onchange = function(e) {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if (confirm('⚠️ Timpa pengaturan saat ini dengan file import?')) {
+            Object.keys(DEFAULTS).forEach(k => { if (imported[k] !== undefined) state[k] = imported[k]; });
+            updateAllUI(); saveState();
+            alert('✅ Pengaturan diimpor!');
+          }
+        } catch(e) { alert('❌ File JSON tidak valid!'); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
-  // Language select
-  window.changeLang = function(val) {
-    state.lang = val;
-    saveState();
-  };
-
-  // Reset all
-  window.resetAll = function() {
-    if (confirm('🔄 Reset semua pengaturan ke default?')) {
-      state = JSON.parse(JSON.stringify(DEFAULTS));
-      updateAllUI();
-      saveState();
-    }
-  };
-
-  // ========== INIT ==========
-  updateAllUI();
-  saveState();
+  updateAllUI(); saveState();
+  if (window.BankAudit) BankAudit.log('ACCESS_SETTINGS_MODULE');
+  console.log('⚙️ Enterprise Settings Ready');
 })();
 </script>
