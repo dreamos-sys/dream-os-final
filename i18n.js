@@ -237,6 +237,10 @@ window.setLanguage = function(lang) {
   
   console.log('🌍 Language changed to: ' + lang.toUpperCase());
   if (window.BankAudit) BankAudit.log('LANGUAGE_CHANGE', { to: lang });
+  // Auto-translate seluruh halaman
+  if (typeof window.i18nTranslate === 'function') {
+    setTimeout(window.i18nTranslate, 300);
+  }
   return true;
 };
 
