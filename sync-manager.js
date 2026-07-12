@@ -1,6 +1,7 @@
 /**
- * 🔄 DREAM OS SYNC MANAGER
+ * 🔄 DREAM OS SYNC MANAGER v2.0
  * Otomatis sinkronisasi LocalStorage ke Supabase
+ * Support: Real-time sync, Outbox queue, Manual sync all
  */
 
 const SYNC_CONFIG = {
@@ -52,7 +53,6 @@ localStorage.setItem = function(key, value) {
     try {
       const data = JSON.parse(value);
       if (Array.isArray(data)) {
-        // Ambil data terakhir aja buat di-sync (biar hemat kuota)
         const lastItem = data[data.length - 1];
         if (lastItem && lastItem.id) {
           syncQueue.push({
@@ -64,7 +64,6 @@ localStorage.setItem = function(key, value) {
             }
           });
           
-          // Debounce: sync 2 detik setelah user berhenti ngetik/klik
           clearTimeout(window._syncTimeout);
           window._syncTimeout = setTimeout(processSyncQueue, 2000);
         }
@@ -73,22 +72,30 @@ localStorage.setItem = function(key, value) {
   }
 };
 
-// Fungsi manual sync semua (buat backup)
+// Fungsi manual sync semua
 window.syncAllToCloud = async function() {
   if (!window.supabaseClient) return alert('⚠️ Database belum connect!');
   
-  alert(' Memulai sinkronisasi penuh...');
+  alert('🔄 Memulai sinkronisasi penuh...');
+  
+  let totalSynced = 0;
+  let totalFailed = 0;
   
   for (const [localKey, tableName] of Object.entries(SYNC_CONFIG)) {
     const data = JSON.parse(localStorage.getItem(localKey) || '[]');
     if (data.length > 0) {
       console.log(`☁️ Uploading ${data.length} items to ${tableName}...`);
       const { error } = await window.supabaseClient.from(tableName).upsert(data, { onConflict: 'id' });
-      if (error) console.warn(`Failed ${tableName}:`, error.message);
+      if (error) {
+        console.warn(`Failed ${tableName}:`, error.message);
+        totalFailed += data.length;
+      } else {
+        totalSynced += data.length;
+      }
     }
   }
   
-  alert('✅ Sinkronisasi penuh selesai!');
+  alert(`✅ Sinkronisasi selesai!\n\nBerhasil: ${totalSynced} items\nGagal: ${totalFailed} items`);
 };
 
-console.log('🔄 Sync Manager Active');
+console.log('🔄 Sync Manager v2.0 Active');
