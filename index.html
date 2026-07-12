@@ -179,6 +179,12 @@
         // Dev bypass
         if (email === 'dreamos.sch.id@gmail.com' && password === 'DreamOS2026!') {
           localStorage.setItem('dreamos_bound_user', JSON.stringify({ id: 'dreamos-dev', email, nama: 'Developer', role: 'dev' }));
+          
+          // Track login attempt
+          if (window.realSecurity) {
+            window.realSecurity.trackLogin(email, !error);
+          }
+
           localStorage.setItem('dreamos_session_active', 'true');
           btn.textContent = '✅ Dev Mode!';
           setTimeout(showDashboard, 500);
@@ -195,7 +201,30 @@
         }
 
         try {
-          const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+          
+    // 🔐 REAL SECURITY INTEGRATION
+    if (window.realSecurity) {
+      // Check if blocked
+      if (window.realSecurity.isBlocked(email)) {
+        if (errorEl) {
+          errorEl.textContent = '⛔ Account temporarily blocked. Try again later.';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+      
+      // Validate device
+      const deviceCheck = await window.realSecurity.validateDevice(email);
+      if (!deviceCheck.success) {
+        if (errorEl) {
+          errorEl.textContent = '⛔ ' + deviceCheck.reason;
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+    }
+
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
           if (error) {
             if (errorEl) { errorEl.textContent = '⛔ ' + error.message; errorEl.style.display = 'block'; }
             btn.textContent = '⚡ ACCESS CORE'; btn.disabled = false;
@@ -206,6 +235,12 @@
             nama: data.user.user_metadata?.nama || email.split('@')[0],
             role: data.user.user_metadata?.role || 'staff'
           }));
+          
+          // Track login attempt
+          if (window.realSecurity) {
+            window.realSecurity.trackLogin(email, !error);
+          }
+
           localStorage.setItem('dreamos_session_active', 'true');
           btn.textContent = '✅ Success!';
           setTimeout(showDashboard, 500);
@@ -225,6 +260,14 @@
 
       // ===== RENDER DASHBOARD =====
       window.renderDashboard = function() {
+
+      // ⚡ Load dashboard dengan secure cache
+      const user = getStoredUser();
+      if (user.id && window.secureDashboardCache) {
+        window.secureDashboardCache.smartLoad(user.id);
+        return;
+      }
+
         const container = document.getElementById('dashboard-container');
         if (!container) return;
         const user = getStoredUser();
