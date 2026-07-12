@@ -7,6 +7,8 @@
   
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta name="security-policy" content="bank-grade">
+  <meta name="robots" content="noindex, nofollow">
   <meta http-equiv="Content-Security-Policy" 
         content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com;">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
@@ -195,6 +197,9 @@
   <script src="bank-encryption.js"></script>
   <script src="bank-session.js"></script>
   <script src="bank-audit.js"></script>
+  <script src="bank-encryption.js"></script>
+  <script src="bank-session.js"></script>
+  <script src="bank-audit.js"></script>
   <script src="syncEngine.js"></script>
   <script src="workflowEngine.js"></script>
 </head>
@@ -373,6 +378,16 @@
             role: data.user.user_metadata?.role || 'staff'
           }));
           localStorage.setItem('dreamos_session_active', 'true');
+          if (window.BankSession) {
+            BankSession.create({
+              id: data.user.id,
+              email: data.user.email,
+              role: data.user.user_metadata?.role || 'staff'
+            });
+          }
+          if (window.BankAudit) {
+            BankAudit.log('LOGIN_SUCCESS', { email: data.user.email });
+          }
           if (window.BankSession) window.BankSession.create({ id: data.user.id, email: data.user.email, role: data.user.user_metadata?.role || 'staff' });
           if (window.BankSession) window.BankSession.create({ id: data.user.id, email: data.user.email, role: data.user.user_metadata?.role || 'staff' });
           
@@ -477,7 +492,8 @@
         document.getElementById('logout-btn')?.addEventListener('click', () => {
           if (confirm('Yakin logout?')) {
             window.SyncEngine?.unsubscribeAll();
-      window.BankSession?.destroy();window.supabaseClient?.auth.signOut().catch(()=>{});
+      window.BankSession?.destroy();window.BankSession?.destroy();
+      window.supabaseClient?.auth.signOut().catch(()=>{});
             localStorage.removeItem('dreamos_bound_user');
             localStorage.setItem('dreamos_session_active', 'false');
             location.reload();
@@ -567,6 +583,7 @@
         c.style.display = 'block';
         c.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;"><div class="loading-spinner"></div><p style="margin-top:1rem;">Memuat modul...</p></div>';
         
+        if (window.BankAudit) BankAudit.log('OPEN_MODULE', { module: file });
         fetch('modules/' + file + '?v=' + Date.now())
           .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
           .then(html => {
