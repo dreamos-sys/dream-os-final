@@ -209,22 +209,48 @@ const DREAM_I18N = {
   }
 };
 
+// ========== GLOBAL i18n FUNCTIONS ==========
 window.currentLang = localStorage.getItem('dreamos_lang') || 'id';
-window.t = function(key) { return (DREAM_I18N[window.currentLang] && DREAM_I18N[window.currentLang][key]) || key; };
+
+window.t = function(key) {
+  return (DREAM_I18N[window.currentLang] && DREAM_I18N[window.currentLang][key]) || key;
+};
+
+// 🔥 FUNGSI BARU: Set bahasa langsung (bukan cycling)
+window.setLanguage = function(lang) {
+  if (!DREAM_I18N[lang]) return false;
+  window.currentLang = lang;
+  localStorage.setItem('dreamos_lang', lang);
+  localStorage.setItem('dreamos_settings_lang', lang);
+  
+  // Update direction
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  
+  // Refresh dashboard
+  if (typeof window.renderDashboard === 'function') {
+    window.renderDashboard();
+  }
+  
+  // Update semua tombol bahasa
+  const langBtns = document.querySelectorAll('[onclick*="setLanguage"], [onclick*="toggleLanguage"]');
+  langBtns.forEach(btn => { btn.textContent = '🌐 ' + lang.toUpperCase(); });
+  
+  console.log('🌍 Language changed to: ' + lang.toUpperCase());
+  if (window.BankAudit) BankAudit.log('LANGUAGE_CHANGE', { to: lang });
+  return true;
+};
 
 window.toggleLanguage = function() {
   const langs = ['id', 'en', 'ar', 'zh'];
   const idx = langs.indexOf(window.currentLang);
-  window.currentLang = langs[(idx + 1) % langs.length];
-  localStorage.setItem('dreamos_lang', window.currentLang);
-  if (typeof window.renderDashboard === 'function') window.renderDashboard();
-  const btns = document.querySelectorAll('[onclick*="toggleLanguage"]');
-  btns.forEach(btn => { btn.textContent = '🌐 ' + window.currentLang.toUpperCase(); });
-  document.documentElement.setAttribute('dir', window.currentLang === 'ar' ? 'rtl' : 'ltr');
+  const next = langs[(idx + 1) % langs.length];
+  window.setLanguage(next);
 };
 
 window.getAllLanguages = function() { return Object.keys(DREAM_I18N); };
 window.getCurrentLanguage = function() { return window.currentLang; };
 
+// Set RTL saat startup
 document.documentElement.setAttribute('dir', window.currentLang === 'ar' ? 'rtl' : 'ltr');
+
 console.log('🌍 i18n Ready - Current: ' + window.currentLang.toUpperCase() + ' | Available: id, en, ar, zh');

@@ -204,7 +204,18 @@
 
   window.updateFontSize = function(val) { state.fontSize = parseInt(val); document.getElementById('val-font').textContent = val + '%'; saveState(); };
   window.updateGlass = function(val) { state.glassIntensity = parseInt(val); document.getElementById('val-glass').textContent = val + '%'; saveState(); };
-  window.changeLang = function(val) { state.lang = val; saveState(); };
+  window.changeLang = function(val) {
+    state.lang = val;
+    saveState();
+    // Panggil fungsi global i18n
+    if (typeof window.setLanguage === 'function') {
+      window.setLanguage(val);
+    } else {
+      window.currentLang = val;
+      localStorage.setItem('dreamos_lang', val);
+      if (typeof window.renderDashboard === 'function') window.renderDashboard();
+    }
+  };
 
   window.resetAll = function() {
     if (confirm('🔄 Reset semua pengaturan ke default pabrik?')) {
