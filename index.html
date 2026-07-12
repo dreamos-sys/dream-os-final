@@ -272,6 +272,14 @@
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
         renderDashboard();
+        // Start services hanya sekali
+        if (!window._servicesStarted) {
+          window._servicesStarted = true;
+          startLiveClock();
+          startBatteryMonitor();
+          checkConnection();
+          fetchPrayerTimes();
+        }
       }
 
       window.renderDashboard = async function() {
@@ -340,7 +348,6 @@
           grid.appendChild(card);
         });
 
-        startLiveClock(); startBatteryMonitor(); checkConnection(); fetchPrayerTimes();
         setActiveNav('home');
       }
 
@@ -409,14 +416,18 @@
           });
       }
 
-      function startLiveClock() {
-        setInterval(() => {
+      let liveClockInterval = null;
+function startLiveClock() {
+    if (liveClockInterval) clearInterval(liveClockInterval);
+        liveClockInterval = setInterval(() => {
           const el = document.getElementById('live-clock');
           if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
         }, 1000);
       }
 
-      function startBatteryMonitor() {
+      let batteryInterval = null;
+function startBatteryMonitor() {
+    if (batteryInterval) clearInterval(batteryInterval);
         const el = document.getElementById('battery-status');
         if (!('getBattery' in navigator)) { if (el) el.textContent = '🔋 N/A'; return; }
         navigator.getBattery().then(b => {
@@ -425,7 +436,9 @@
         }).catch(()=>{});
       }
 
-      async function checkConnection() {
+      let connectionInterval = null;
+async function checkConnection() {
+    if (connectionInterval) clearInterval(connectionInterval);
         const el = document.getElementById('connection-status');
         if (!el) return;
         try {
@@ -436,7 +449,9 @@
         } catch(e) { el.textContent = '📡 Offline'; el.className = 'badge offline'; }
       }
 
-      async function fetchPrayerTimes() {
+      let prayerInterval = null;
+async function fetchPrayerTimes() {
+    if (prayerInterval) clearInterval(prayerInterval);
         const el = document.getElementById('prayer-times-dash');
         if (!el) return;
         try {
