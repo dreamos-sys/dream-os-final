@@ -10,53 +10,61 @@
   .alat-item { font-size: 0.7rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
   .alat-item input[type="checkbox"] { accent-color: #00ff9d; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  /* Tombol Back ala Enterprise */
+  .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid #00ff9d; color: #00ff9d; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
 </style>
 
-<div class="glass-panel">
-  <h3 style="color: #00ff9d; margin-top:0; border-bottom: 1px solid rgba(0,255,157,0.2); padding-bottom: 0.5rem;">📅 Form Booking & Sarana</h3>
-  
-  <label style="color:#94a3b8; font-size:0.75rem;">Nama Peminjam</label>
-  <input type="text" id="book-nama" class="input-neon" readonly>
-  
-  <label style="color:#94a3b8; font-size:0.75rem;">Pilih Sarana/Ruangan</label>
-  <select id="book-ruang" class="input-neon"></select>
+<!-- TOMBOL KEMBALI -->
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
 
-  <div class="grid-2">
-    <div>
-      <label style="color:#94a3b8; font-size:0.75rem;">Tgl Mulai (Min H-1)</label>
-      <input type="date" id="book-tgl" class="input-neon">
+<!-- Padding top ditambah supaya nggak ketutup tombol back -->
+<div style="padding-top: 3.5rem;">
+  <div class="glass-panel">
+    <h3 style="color: #00ff9d; margin-top:0; border-bottom: 1px solid rgba(0,255,157,0.2); padding-bottom: 0.5rem;">📅 Form Booking & Sarana</h3>
+    
+    <label style="color:#94a3b8; font-size:0.75rem;">Nama Peminjam</label>
+    <input type="text" id="book-nama" class="input-neon" readonly>
+    
+    <label style="color:#94a3b8; font-size:0.75rem;">Pilih Sarana/Ruangan</label>
+    <select id="book-ruang" class="input-neon"></select>
+
+    <div class="grid-2">
+      <div>
+        <label style="color:#94a3b8; font-size:0.75rem;">Tgl Mulai (Min H-1)</label>
+        <input type="date" id="book-tgl" class="input-neon">
+      </div>
+      <div>
+        <label style="color:#94a3b8; font-size:0.75rem;">Tgl Selesai (Opsional)</label>
+        <input type="date" id="book-tgl-selesai" class="input-neon" placeholder="Jika > 1 hari">
+      </div>
     </div>
-    <div>
-      <label style="color:#94a3b8; font-size:0.75rem;">Tgl Selesai (Opsional)</label>
-      <input type="date" id="book-tgl-selesai" class="input-neon" placeholder="Jika > 1 hari">
+
+    <div class="grid-2">
+      <div>
+        <label style="color:#94a3b8; font-size:0.75rem;">Jam Mulai</label>
+        <input type="time" id="book-jam-mulai" class="input-neon">
+      </div>
+      <div>
+        <label style="color:#94a3b8; font-size:0.75rem;">Jam Selesai (Max 16:00)</label>
+        <input type="time" id="book-jam-selesai" class="input-neon">
+      </div>
     </div>
+
+    <label style="color:#94a3b8; font-size:0.75rem; display:block; margin-bottom:0.3rem;">Kebutuhan Alat</label>
+    <div class="alat-grid" id="alat-container"></div>
+
+    <label style="color:#94a3b8; font-size:0.75rem;">Keterangan Tambahan / Note Acara</label>
+    <input type="text" id="book-ket" class="input-neon" placeholder="Misal: Rapat evaluasi bulanan...">
+
+    <div id="booking-error" class="error-text"></div>
+
+    <button class="btn-submit" onclick="submitBooking()">Kirim Pengajuan</button>
   </div>
 
-  <div class="grid-2">
-    <div>
-      <label style="color:#94a3b8; font-size:0.75rem;">Jam Mulai</label>
-      <input type="time" id="book-jam-mulai" class="input-neon">
-    </div>
-    <div>
-      <label style="color:#94a3b8; font-size:0.75rem;">Jam Selesai (Max 16:00)</label>
-      <input type="time" id="book-jam-selesai" class="input-neon">
-    </div>
+  <div class="glass-panel">
+    <h3 style="color: #0ea5e9; margin-top:0; border-bottom: 1px solid rgba(14,165,233,0.2); padding-bottom: 0.5rem;">📋 Daftar Booking (Live)</h3>
+    <div id="booking-list">Memuat data real-time...</div>
   </div>
-
-  <label style="color:#94a3b8; font-size:0.75rem; display:block; margin-bottom:0.3rem;">Kebutuhan Alat</label>
-  <div class="alat-grid" id="alat-container"></div>
-
-  <label style="color:#94a3b8; font-size:0.75rem;">Keterangan Tambahan / Note Acara</label>
-  <input type="text" id="book-ket" class="input-neon" placeholder="Misal: Rapat evaluasi bulanan...">
-
-  <div id="booking-error" class="error-text"></div>
-
-  <button class="btn-submit" onclick="submitBooking()">Kirim Pengajuan</button>
-</div>
-
-<div class="glass-panel">
-  <h3 style="color: #0ea5e9; margin-top:0; border-bottom: 1px solid rgba(14,165,233,0.2); padding-bottom: 0.5rem;">📋 Daftar Booking (Live)</h3>
-  <div id="booking-list">Memuat data real-time...</div>
 </div>
 
 <script>
@@ -263,6 +271,7 @@
           <div class="approval-actions" style="margin-top:0.5rem;"></div>
         `;
 
+        // INJEKSI TOMBOL WORKFLOW BERDASARKAN ROLE
         if (window.WorkflowEngine && (role === 'dev' || role === 'kabag_umum') && item.status === 'pending') {
           const actionDiv = card.querySelector('.approval-actions');
           const approveBtn = document.createElement('button');
