@@ -12,17 +12,11 @@
   .btn:hover { transform: translateY(-1px); opacity: 0.95; }
   .input-field, select { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; outline: none; margin-bottom: 0.5rem; }
   .input-field:focus, select:focus { border-color: var(--neon); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
-  th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; }
-  td { padding: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-  .badge { padding: 0.12rem 0.4rem; border-radius: 10px; font-size: 0.55rem; font-weight: 600; }
-  .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
-  .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
-  .badge-rejected { background: rgba(225,29,72,0.2); color: #e11d48; }
-  .qr-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; }
-  .qr-content { background: #1e293b; padding: 2rem; border-radius: 16px; text-align: center; border: 1px solid var(--neon); max-width: 350px; }
   .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
   .flex-row { display: flex; gap: 0.5rem; }
+  .alat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.8rem; max-height: 150px; overflow-y: auto; }
+  .alat-item { font-size: 0.7rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+  .alat-item input[type="checkbox"] { accent-color: var(--neon); }
   @media (max-width: 500px) { .flex-row { flex-direction: column; } }
 </style>
 
@@ -32,8 +26,8 @@
 
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
-      <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem;">📅 Booking Ruangan</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Manajemen Peminjaman Ruangan • Enterprise Grade</p>
+      <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem;">📅 Booking Ruangan & Sarana</h2>
+      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Form Peminjaman Lengkap • Enterprise Grade</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
@@ -41,31 +35,62 @@
     </div>
   </div>
 
+  <!-- FORM BOOKING -->
   <div class="glass">
-    <div class="section-title" style="color: var(--accent);">📝 Form Booking Baru</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-      <input type="date" id="booking-tgl" class="input-field">
-      <input type="text" id="booking-ruang" class="input-field" placeholder="Nama Ruangan *">
-      <input type="text" id="booking-peminjam" class="input-field" placeholder="Nama Peminjam *">
-      <input type="text" id="booking-keperluan" class="input-field" placeholder="Keperluan (rapat, seminar, dll)">
-      <input type="time" id="booking-jam-mulai" class="input-field" value="08:00">
-      <input type="time" id="booking-jam-selesai" class="input-field" value="10:00">
+    <div class="section-title" style="color: var(--accent);">📝 Form Pengajuan Booking</div>
+    
+    <label style="color:#94a3b8; font-size:0.75rem;">Nama Peminjam</label>
+    <input type="text" id="booking-peminjam" class="input-field" readonly>
+
+    <label style="color:#94a3b8; font-size:0.75rem;">Pilih Sarana / Ruangan *</label>
+    <select id="booking-ruang" class="input-field"></select>
+
+    <div class="flex-row">
+      <div style="flex:1;">
+        <label style="color:#94a3b8; font-size:0.75rem;">Tanggal (Min H-1)</label>
+        <input type="date" id="booking-tgl" class="input-field">
+      </div>
+      <div style="flex:1;">
+        <label style="color:#94a3b8; font-size:0.75rem;">Tgl Selesai (Opsional)</label>
+        <input type="date" id="booking-tgl-selesai" class="input-field">
+      </div>
     </div>
-    <button class="btn btn-success" onclick="addBooking()" style="width: 100%; margin-top: 0.5rem;">✅ SIMPAN BOOKING</button>
+
+    <div class="flex-row">
+      <div style="flex:1;">
+        <label style="color:#94a3b8; font-size:0.75rem;">Jam Mulai</label>
+        <input type="time" id="booking-jam-mulai" class="input-field" value="08:00">
+      </div>
+      <div style="flex:1;">
+        <label style="color:#94a3b8; font-size:0.75rem;">Jam Selesai (Max 16:00)</label>
+        <input type="time" id="booking-jam-selesai" class="input-field" value="10:00">
+      </div>
+    </div>
+
+    <label style="color:#94a3b8; font-size:0.75rem; display:block; margin-bottom:0.3rem;">🔌 Kebutuhan Alat (Centang yang diperlukan)</label>
+    <div class="alat-grid" id="alat-container"></div>
+
+    <label style="color:#94a3b8; font-size:0.75rem;">Keterangan / Note Acara</label>
+    <input type="text" id="booking-keperluan" class="input-field" placeholder="Misal: Rapat evaluasi, Seminar, dll...">
+
+    <div id="booking-error" style="color: var(--warning); font-size: 0.75rem; margin-bottom: 0.5rem; display: none;"></div>
+    <button class="btn btn-success" onclick="addBooking()" style="width: 100%; margin-top: 0.5rem;">✅ KIRIM PENGAJUAN</button>
   </div>
 
+  <!-- DAFTAR BOOKING -->
   <div class="glass" style="overflow-x: auto;">
-    <div class="section-title" style="color: var(--neon);">📋 Daftar Booking</div>
+    <div class="section-title" style="color: var(--neon);">📋 Daftar Booking (Live)</div>
     <div id="booking-list"></div>
   </div>
 </div>
 
-<div id="qr-modal" class="qr-modal">
-  <div class="qr-content">
-    <h3 style="color: var(--neon);">🎫 QR Code Booking</h3>
-    <div id="qr-code" style="background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 1rem 0;"></div>
-    <p id="qr-text" style="color: #e2e8f0; font-size: 0.75rem; word-break: break-all;"></p>
-    <button onclick="closeQR()" class="btn btn-danger" style="margin-top: 1rem;">✕ Tutup</button>
+<!-- QR MODAL -->
+<div id="qr-modal" class="qr-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center;">
+  <div class="qr-content" style="background:#1e293b; padding:2rem; border-radius:16px; text-align:center; border:1px solid var(--neon); max-width:350px;">
+    <h3 style="color:var(--neon);">🎫 QR Code Booking</h3>
+    <div id="qr-code" style="background:#fff; padding:10px; border-radius:8px; display:inline-block; margin:1rem 0;"></div>
+    <p id="qr-text" style="color:#e2e8f0; font-size:0.75rem; word-break:break-all;"></p>
+    <button onclick="closeQR()" class="btn btn-danger" style="margin-top:1rem;">✕ Tutup</button>
   </div>
 </div>
 
@@ -75,17 +100,79 @@
 (function() {
   'use strict';
 
+  // ===== DATA MASTER =====
+  const SARANA_LIST = [
+    "Aula SMP", "Aula SMA", "Saung Besar", "Saung Kecil", "Masjid (Maintenance)", 
+    "Mushalla SMA", "Serbaguna", "Lapangan Basket", "Lapangan Volly", "Lapangan Tanah", 
+    "Lapangan SMA", "Kantin SMP", "Kantin SMA", "Labkom SD", "Labkom SMP", "Labkom SMA", 
+    "Perpustakaan SD", "Perpustakaan SMP", "Perpustakaan SMA", "Area Taman Depan Masjid", 
+    "Area Parkir Depan Dapur", "Area Parkir Loby SMA"
+  ];
+
+  const ALAT_LIST = [
+    "Sound Portable", "Sound Portable LCD", "Projector", "Standing Mic", "Meja Panjang",
+    "Meja Kantin", "Meja Siswa", "Meja Oshin", "Kursi Futura", "Kursi Chitose", 
+    "Kursi Siswa", "Taplak Meja", "Matras", "Smart Box TV", "Layar Projektor", 
+    "White Board", "Kabel AC Ekstension", "Dispenser"
+  ];
+
+  // ===== HELPER =====
   function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function getBookings() { try { return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch(e) { return []; } }
   function saveBookings(data) { localStorage.setItem('dreamos_bookings', JSON.stringify(data)); }
-  
+  function timeToFloat(t) { const [h, m] = t.split(':').map(Number); return h + m / 60; }
+
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
   const role = user.role || 'staff';
   document.getElementById('booking-peminjam').value = user.nama || user.email || '';
 
   function isAdmin() { return ['dev', 'kabag_umum', 'koordinator_umum'].includes(role); }
 
-  // ----- VALIDASI BENTROK -----
+  // ===== POPULATE DROPDOWN & ALAT =====
+  const ruangSelect = document.getElementById('booking-ruang');
+  SARANA_LIST.forEach(ruang => {
+    if (ruang === "Masjid (Maintenance)") return; // Skip Masjid
+    const opt = document.createElement('option');
+    opt.value = ruang; opt.textContent = ruang;
+    ruangSelect.appendChild(opt);
+  });
+
+  const alatContainer = document.getElementById('alat-container');
+  [...new Set(ALAT_LIST)].forEach(alat => {
+    alatContainer.innerHTML += `<label class="alat-item"><input type="checkbox" class="cb-alat" value="${alat}"> ${alat}</label>`;
+  });
+
+  // Set min date H-1
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split('T')[0];
+  document.getElementById('booking-tgl').min = minDate;
+  document.getElementById('booking-tgl-selesai').min = minDate;
+
+  // ===== RENDER LIST =====
+  function renderBookings() {
+    const bookings = getBookings();
+    const el = document.getElementById('booking-list');
+    if (!bookings.length) {
+      el.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada booking.</p>';
+      return;
+    }
+    let html = '<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th><th>Alat</th><th>Status</th><th>Aksi</th></tr>';
+    bookings.forEach((b, i) => {
+      html += '<tr>' +
+        '<td>' + esc(b.tgl) + '</td><td>' + esc(b.ruang) + '</td><td>' + esc(b.nama_peminjam) + '</td>' +
+        '<td>' + esc(b.jam_mulai) + '-' + esc(b.jam_selesai) + '</td><td style="font-size:0.6rem;">' + esc(b.sarana_alat || '-') + '</td>' +
+        '<td><span class="badge badge-' + (b.status === 'approved' ? 'approved' : b.status === 'rejected' ? 'rejected' : 'pending') + '">' + (b.status || 'pending') + '</span></td>' +
+        '<td style="display:flex;gap:0.2rem;">' +
+          '<button onclick="showQR(' + i + ')" class="btn btn-primary" style="font-size:0.5rem;padding:0.2rem 0.4rem;">QR</button>' +
+          (isAdmin() ? '<button onclick="approveBooking(\'' + b.id + '\')" class="btn btn-success" style="font-size:0.5rem;padding:0.2rem 0.4rem;">✅</button><button onclick="rejectBooking(\'' + b.id + '\')" class="btn btn-danger" style="font-size:0.5rem;padding:0.2rem 0.4rem;">❌</button>' : '') +
+          '<button onclick="deleteBooking(' + i + ')" class="btn btn-danger" style="font-size:0.5rem;padding:0.2rem 0.4rem;">🗑️</button>' +
+        '</td></tr>';
+    });
+    html += '</table>';
+    el.innerHTML = html;
+  }
+
+  // ===== VALIDASI BENTROK =====
   function isBentrok(newBooking, excludeIndex = -1) {
     const bookings = getBookings();
     return bookings.some((b, i) => {
@@ -99,108 +186,130 @@
     });
   }
 
-  // ----- RENDER LIST -----
-  function renderBookings() {
-    const bookings = getBookings();
-    const el = document.getElementById('booking-list');
-    if (!bookings.length) {
-      el.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada booking.</p>';
-      return;
-    }
-    let html = '<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Jam</th><th>Keperluan</th><th>Status</th><th>Aksi</th></tr>';
-    bookings.forEach((b, i) => {
-      html += '<tr>' +
-        '<td>' + esc(b.tgl) + '</td><td>' + esc(b.ruang) + '</td><td>' + esc(b.nama_peminjam) + '</td>' +
-        '<td>' + esc(b.jam_mulai) + '-' + esc(b.jam_selesai) + '</td><td style="font-size:0.65rem;">' + esc(b.keperluan || '-') + '</td>' +
-        '<td><span class="badge badge-' + (b.status === 'approved' ? 'approved' : b.status === 'rejected' ? 'rejected' : 'pending') + '">' + (b.status || 'pending') + '</span></td>' +
-        '<td style="display:flex;gap:0.2rem;">' +
-          '<button onclick="showQR(' + i + ')" class="btn btn-primary" style="font-size:0.5rem;padding:0.2rem 0.4rem;">QR</button>' +
-          (isAdmin() ? '<button onclick="approveBooking(\'' + b.id + '\')" class="btn btn-success" style="font-size:0.5rem;padding:0.2rem 0.4rem;">✅</button><button onclick="rejectBooking(\'' + b.id + '\')" class="btn btn-danger" style="font-size:0.5rem;padding:0.2rem 0.4rem;">❌</button>' : '') +
-          '<button onclick="deleteBooking(' + i + ')" class="btn btn-danger" style="font-size:0.5rem;padding:0.2rem 0.4rem;">🗑️</button>' +
-        '</td></tr>';
-    });
-    html += '</table>';
-    el.innerHTML = html;
-  }
-
-  // ----- TAMBAH BOOKING -----
+  // ===== TAMBAH BOOKING =====
   window.addBooking = async function() {
-    const tgl = document.getElementById('booking-tgl').value.trim();
-    const ruang = document.getElementById('booking-ruang').value.trim();
+    const tglMulai = document.getElementById('booking-tgl').value;
+    const tglSelesai = document.getElementById('booking-tgl-selesai').value || tglMulai;
+    const jamMulai = document.getElementById('booking-jam-mulai').value;
+    const jamSelesai = document.getElementById('booking-jam-selesai').value;
+    const ruang = document.getElementById('booking-ruang').value;
     const peminjam = document.getElementById('booking-peminjam').value.trim();
     const keperluan = document.getElementById('booking-keperluan').value.trim();
-    const mulai = document.getElementById('booking-jam-mulai').value;
-    const selesai = document.getElementById('booking-jam-selesai').value;
+    const errorEl = document.getElementById('booking-error');
+    
+    const checkboxes = document.querySelectorAll('.cb-alat:checked');
+    const saranaStr = Array.from(checkboxes).map(cb => cb.value).join(', ') || 'Tidak ada alat';
 
-    if (!tgl || !ruang || !peminjam) return alert('⚠️ Tanggal, ruangan, dan peminjam wajib diisi!');
+    errorEl.style.display = 'none';
 
-    const newBooking = { id: 'book_' + Date.now(), tgl, ruang, nama_peminjam: peminjam, keperluan, jam_mulai: mulai || '08:00', jam_selesai: selesai || '10:00', status: 'pending', created_at: new Date().toISOString() };
-
-    if (isBentrok(newBooking)) {
-      if (!confirm('⚠️ Jadwal bentrok dengan booking lain di ruangan dan tanggal yang sama. Tetap simpan?')) return;
+    if (!tglMulai || !jamMulai || !jamSelesai || !ruang) {
+      errorEl.textContent = '⚠️ Tanggal, ruangan, dan jam wajib diisi!';
+      errorEl.style.display = 'block'; return;
+    }
+    if (tglSelesai < tglMulai) {
+      errorEl.textContent = '⚠️ Tanggal selesai tidak boleh lebih awal!';
+      errorEl.style.display = 'block'; return;
     }
 
-    const bookings = getBookings();
-    bookings.push(newBooking);
-    saveBookings(bookings);
-    renderBookings();
+    const dateObj = new Date(tglMulai);
+    const dayOfWeek = dateObj.getDay();
+    const startT = timeToFloat(jamMulai);
+    const endT = timeToFloat(jamSelesai);
+
+    if (dayOfWeek === 0) {
+      errorEl.textContent = '⛔ Hari Minggu libur booking!';
+      errorEl.style.display = 'block'; return;
+    }
+    if (startT < 7.5 || endT > 16.0 || startT >= endT) {
+      errorEl.textContent = '⛔ Jam booking di luar operasional (07:30-16:00) atau tidak valid.';
+      errorEl.style.display = 'block'; return;
+    }
+    if (dayOfWeek === 5 && (ruang === 'Aula SMP' || ruang === 'Serbaguna')) {
+      if (startT < 13.0 && endT > 10.5) {
+        errorEl.textContent = '⛔ Hari Jumat jam 10:30-13:00 digunakan untuk Shalat Jumat!';
+        errorEl.style.display = 'block'; return;
+      }
+    }
+    if (dayOfWeek === 6) {
+      if (!confirm('⚠️ Booking hari Sabtu perlu koordinasi langsung. Lanjutkan?')) return;
+    }
+
+    const tglDisplay = tglMulai === tglSelesai ? tglMulai : tglMulai + ' s/d ' + tglSelesai;
+
+    const newBooking = {
+      id: 'book_' + Date.now(),
+      tgl: tglDisplay, ruang, nama_peminjam: peminjam,
+      jam_mulai: jamMulai, jam_selesai: jamSelesai,
+      keperluan, sarana_alat: saranaStr,
+      status: 'pending', created_at: new Date().toISOString()
+    };
+
+    if (isBentrok(newBooking)) {
+      if (!confirm('⚠️ Jadwal bentrok. Tetap simpan?')) return;
+    }
+
+    const bookings = getBookings(); bookings.push(newBooking); saveBookings(bookings); renderBookings();
 
     if (window.supabaseClient) window.supabaseClient.from('bookings').insert(newBooking).then(() => {}).catch(() => {});
     else if (window.OfflineQueue) window.OfflineQueue.add('bookings', 'insert', newBooking);
 
-    if (window.PhantomAlerter) window.PhantomAlerter.newBooking(ruang, peminjam, tgl);
-    if (window.addNotification) window.addNotification('Booking baru: ' + ruang + ' oleh ' + peminjam);
-    if (window.BankAudit) BankAudit.log('BOOKING_ADD', { ruang, peminjam, tgl });
+    if (window.PhantomAlerter) window.PhantomAlerter.newBooking(ruang, peminjam, tglDisplay);
+    if (window.addNotification) window.addNotification('Booking: ' + ruang);
+    if (window.BankAudit) BankAudit.log('BOOKING_ADD', { ruang, tgl: tglDisplay });
 
-    document.getElementById('booking-ruang').value = '';
+    document.getElementById('booking-tgl').value = '';
+    document.getElementById('booking-tgl-selesai').value = '';
+    document.getElementById('booking-jam-mulai').value = '08:00';
+    document.getElementById('booking-jam-selesai').value = '10:00';
     document.getElementById('booking-keperluan').value = '';
-    alert('✅ Booking tersimpan!');
+    checkboxes.forEach(cb => cb.checked = false);
+    alert('✅ Pengajuan booking berhasil dikirim!');
   };
 
-  // ----- APPROVE / REJECT -----
+  // ===== APPROVE / REJECT =====
   window.approveBooking = function(id) {
-    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa approve.');
+    if (!isAdmin()) return alert('⛔ Hanya admin.');
     const bookings = getBookings(); const b = bookings.find(x => x.id === id);
     if (b) { b.status = 'approved'; saveBookings(bookings); renderBookings(); }
     if (window.supabaseClient) window.supabaseClient.from('bookings').update({ status: 'approved' }).eq('id', id).then(() => {}).catch(() => {});
     if (window.BankAudit) BankAudit.log('BOOKING_APPROVE', { id });
   };
   window.rejectBooking = function(id) {
-    if (!isAdmin()) return alert('⛔ Hanya admin yang bisa reject.');
+    if (!isAdmin()) return alert('⛔ Hanya admin.');
     const bookings = getBookings(); const b = bookings.find(x => x.id === id);
     if (b) { b.status = 'rejected'; saveBookings(bookings); renderBookings(); }
     if (window.supabaseClient) window.supabaseClient.from('bookings').update({ status: 'rejected' }).eq('id', id).then(() => {}).catch(() => {});
     if (window.BankAudit) BankAudit.log('BOOKING_REJECT', { id });
   };
 
-  // ----- DELETE -----
+  // ===== DELETE =====
   window.deleteBooking = function(index) {
-    if (!confirm('Hapus booking ini?')) return;
-    const bookings = getBookings(); const deleted = bookings.splice(index, 1)[0];
+    if (!confirm('Hapus?')) return;
+    const bookings = getBookings(); const d = bookings.splice(index, 1)[0];
     saveBookings(bookings); renderBookings();
-    if (window.supabaseClient) window.supabaseClient.from('bookings').delete().eq('id', deleted.id).then(() => {}).catch(() => {});
-    if (window.BankAudit) BankAudit.log('BOOKING_DELETE', { id: deleted.id });
+    if (window.supabaseClient) window.supabaseClient.from('bookings').delete().eq('id', d.id).then(() => {}).catch(() => {});
+    if (window.BankAudit) BankAudit.log('BOOKING_DELETE', { id: d.id });
   };
 
-  // ----- QR CODE -----
+  // ===== QR =====
   window.showQR = function(index) {
     const b = getBookings()[index]; if (!b) return;
-    const qrText = b.tgl + '|' + b.ruang + '|' + b.nama_peminjam + '|' + b.jam_mulai + '-' + b.jam_selesai;
-    document.getElementById('qr-text').textContent = qrText;
+    const txt = b.tgl + '|' + b.ruang + '|' + b.nama_peminjam + '|' + b.jam_mulai + '-' + b.jam_selesai;
+    document.getElementById('qr-text').textContent = txt;
     document.getElementById('qr-code').innerHTML = '';
     if (typeof qrcode !== 'undefined') {
-      const qr = qrcode(0, 'M'); qr.addData(qrText); qr.make();
+      const qr = qrcode(0, 'M'); qr.addData(txt); qr.make();
       document.getElementById('qr-code').innerHTML = qr.createImgTag(5);
     }
     document.getElementById('qr-modal').style.display = 'flex';
   };
   window.closeQR = function() { document.getElementById('qr-modal').style.display = 'none'; };
 
-  // ----- EXPORT CSV -----
+  // ===== EXPORT =====
   window.exportCSV = function() {
     const bookings = getBookings();
-    let csv = 'Tgl,Ruang,Peminjam,Jam,Keperluan,Status\n';
-    bookings.forEach(b => csv += `"${b.tgl}","${b.ruang}","${b.nama_peminjam}","${b.jam_mulai}-${b.jam_selesai}","${b.keperluan||'-'}","${b.status||'pending'}"\n`);
+    let csv = 'Tgl,Ruang,Peminjam,Jam,Alat,Keperluan,Status\n';
+    bookings.forEach(b => csv += `"${b.tgl}","${b.ruang}","${b.nama_peminjam}","${b.jam_mulai}-${b.jam_selesai}","${b.sarana_alat||'-'}","${b.keperluan||'-'}","${b.status||'pending'}"\n`);
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = 'booking_' + new Date().toISOString().split('T')[0] + '.csv';
@@ -208,14 +317,12 @@
     alert('✅ CSV diexport!');
   };
 
-  // ----- SYNC CLOUD -----
   window.syncToCloud = async function() {
-    if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
+    if (!window.supabaseClient) return alert('⚠️ Tidak terkoneksi.');
     const bookings = getBookings(); if (!bookings.length) return alert('⚠️ Tidak ada data.');
     let count = 0;
     for (const b of bookings) { try { await window.supabaseClient.from('bookings').upsert(b); count++; } catch(e) {} }
-    alert('✅ ' + count + '/' + bookings.length + ' booking tersync!');
-    if (window.BankAudit) BankAudit.log('BOOKING_SYNC', { total: bookings.length, success: count });
+    alert('✅ ' + count + '/' + bookings.length + ' tersync!');
   };
 
   // Init
