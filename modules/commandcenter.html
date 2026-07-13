@@ -1,6 +1,6 @@
 <style>
   :root { --glass-bg: rgba(15, 23, 42, 0.6); --glass-border: rgba(0, 255, 157, 0.12); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; --pink: #ec4899; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; }
   .glass { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
   .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; }
@@ -10,8 +10,7 @@
   .btn-warning { background: var(--gold); color: #000; }
   .btn-purple { background: var(--purple); color: #fff; }
   .btn-pink { background: var(--pink); color: #fff; }
-  .input-field, textarea, select { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; outline: none; font-family: 'Inter',sans-serif; }
-  .input-field:focus { border-color: var(--neon); }
+  .input-field { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; outline: none; margin-bottom: 0.5rem; }
   table { width:100%; border-collapse:collapse; font-size:0.7rem; }
   th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; font-size:0.6rem; text-transform:uppercase; }
   td { padding: 0.35rem 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
@@ -20,310 +19,116 @@
   .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
   .badge-rejected { background: rgba(225,29,72,0.2); color: #e11d48; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.6rem; }
-  @media (max-width: 600px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
   .kpi-card { text-align: center; padding: 0.6rem; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
   .kpi-value { font-size: 1.2rem; font-weight: 700; }
   .kpi-label { font-size: 0.55rem; color: #94a3b8; text-transform: uppercase; }
   .section-title { font-size: 0.8rem; font-weight: 700; margin: 0 0 0.6rem; display: flex; align-items: center; gap: 0.3rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.4rem; }
-  .tabs { display: flex; gap: 0.2rem; margin-bottom: 0.8rem; flex-wrap: wrap; }
   .tab { padding: 0.35rem 0.8rem; border-radius: 8px; font-size: 0.65rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #94a3b8; }
   .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .progress-bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 0.4rem; }
-  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; background: var(--accent); }
-  .quick-actions { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
-  .chart-container { min-height: 200px; position: relative; }
-  .loading-text { text-align: center; padding: 2rem; color: #0ea5e9; font-weight: 600; animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+  .chart-container { min-height: 200px; }
+  .loading-text { color: #0ea5e9; }
 </style>
 
 <button class="back-btn" onclick="window.goHome()">← HOME</button>
 
 <div style="max-width:1400px; margin:0 auto; padding:3.5rem 0.8rem 5rem;">
-
+  <!-- HEADER & KPI -->
   <div class="glass" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
-    <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO <span style="font-size:0.6rem; color:#64748b;">v7.0 (Live Sync)</span></h2>
-      <p style="color:#94a3b8; font-size:0.62rem; margin:0;" id="role-subtitle">Loading...</p>
-    </div>
-    <div style="display:flex; align-items:center; gap:0.8rem;">
-      <div style="text-align:right;">
-        <div style="font-weight:700; font-size:0.8rem;" id="user-display">🔒</div>
-        <div style="font-size:0.55rem; color:#64748b;" id="live-clock">--:--:--</div>
-      </div>
-      <button class="btn btn-danger" onclick="doLogout()" style="font-size:0.6rem; padding:0.25rem 0.6rem;">🚪</button>
-    </div>
+    <div><h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🏢 COMMAND CENTER PRO</h2></div>
+    <div style="text-align:right;"><div id="user-display" style="font-weight:700;">--</div><div id="live-clock" style="font-size:0.55rem;">--:--:--</div></div>
   </div>
 
-  <div class="quick-actions">
-    <button class="btn btn-primary" onclick="quickAddDana()" id="qa-dana" style="display:none;">💸 Dana</button>
-    <button class="btn btn-warning" onclick="quickAddK3()" id="qa-k3" style="display:none;">⚠️ K3</button>
-    <button class="btn btn-purple" onclick="quickAddMaint()" id="qa-maint" style="display:none;">🔧 Maint</button>
-    <button class="btn btn-success" onclick="openSlideManager()" id="qa-slide" style="display:none;">📢 Slide</button>
-  </div>
+  <div class="grid-4" id="kpi-cards" style="margin-bottom:0.8rem;"></div>
 
-  <div class="glass">
-    <div class="section-title" style="color:var(--accent);">📊 REAL-TIME DASHBOARD</div>
-    <div class="grid-4" id="kpi-cards"></div>
-  </div>
-
-  <div class="tabs" id="workspace-tabs">
+  <!-- TABS -->
+  <div style="display:flex; gap:0.3rem; margin-bottom:0.8rem; flex-wrap:wrap;" id="workspace-tabs">
     <button class="tab active" data-tab="dana">💰 Dana</button>
     <button class="tab" data-tab="k3">⚠️ K3</button>
     <button class="tab" data-tab="maint">🔧 Maint</button>
     <button class="tab" data-tab="booking">📅 Booking</button>
     <button class="tab" data-tab="users">👥 Users</button>
-    <button class="tab" data-tab="system">⚙️ System</button>
   </div>
 
-  <!-- TAB DANA -->
+  <!-- PANEL DANA -->
   <div id="tab-dana" class="tab-content">
     <div class="grid-2">
-      <div class="glass"><div class="section-title" style="color:var(--gold);">💸 Pending</div><div id="dana-pending-list" class="loading-text">Menghubungkan ke server...</div></div>
-      <div class="glass"><div class="section-title" style="color:var(--accent);">📊 Anggaran</div><div id="budget-summary" class="loading-text">Menghubungkan...</div><div class="progress-bar"><div class="progress-fill" id="budget-bar" style="width:0%;"></div></div></div>
+      <div class="glass"><div class="section-title">💸 Dana Pending</div><div id="dana-pending-list"></div></div>
+      <div class="glass"><div class="section-title">📊 Anggaran</div><div id="budget-summary"></div></div>
     </div>
-    <div class="glass" style="margin-top:0.8rem;"><div class="section-title">📋 Riwayat</div><div id="dana-history" class="loading-text">Menghubungkan...</div></div>
+    <div class="glass"><div class="section-title">📋 Riwayat Dana</div><div id="dana-history"></div></div>
   </div>
 
-  <!-- TAB K3 -->
+  <!-- PANEL K3 -->
   <div id="tab-k3" class="tab-content" style="display:none;">
-    <div class="grid-2">
-      <div class="glass"><div class="section-title" style="color:var(--warning);">⚠️ Aktif</div><div id="k3-active-list" class="loading-text">Menghubungkan...</div></div>
-      <div class="glass"><div class="section-title">📋 Semua Laporan</div><div id="k3-all-list" class="loading-text">Menghubungkan...</div></div>
-    </div>
+    <div class="glass"><div class="section-title">⚠️ Laporan K3</div><div id="k3-all-list"></div></div>
   </div>
 
-  <!-- TAB MAINT -->
+  <!-- PANEL MAINT -->
   <div id="tab-maint" class="tab-content" style="display:none;">
-    <div class="grid-2">
-      <div class="glass"><div class="section-title" style="color:var(--accent);">🔧 Aktif</div><div id="maint-active-list" class="loading-text">Menghubungkan...</div></div>
-      <div class="glass"><div class="section-title" style="color:#10b981;">✅ Selesai</div><div id="maint-done-list" class="loading-text">Menghubungkan...</div></div>
-    </div>
+    <div class="glass"><div class="section-title">🔧 Perawatan</div><div id="maint-list"></div></div>
   </div>
 
-  <!-- TAB BOOKING -->
+  <!-- PANEL BOOKING -->
   <div id="tab-booking" class="tab-content" style="display:none;">
-    <div class="glass">
-      <div class="section-title">📋 DAFTAR BOOKING</div>
-      <div id="booking-list" class="loading-text">Menghubungkan ke server...</div>
-    </div>
+    <div class="glass"><div class="section-title">📅 Booking</div><div id="booking-list"></div></div>
   </div>
 
-  <!-- TAB USERS -->
+  <!-- PANEL USERS -->
   <div id="tab-users" class="tab-content" style="display:none;">
-    <div class="glass">
-      <div class="section-title" style="color:var(--purple);">👥 MANAJEMEN USER</div>
-      <div id="user-table" class="loading-text">Menghubungkan...</div>
-    </div>
+    <div class="glass"><div class="section-title">👥 User Management</div><div id="user-table"></div></div>
   </div>
-
-  <!-- TAB SYSTEM -->
-  <div id="tab-system" class="tab-content" style="display:none;">
-    <div class="glass"><div class="section-title" style="color:var(--warning);">⚠️ Danger Zone</div><button class="btn btn-danger" onclick="clearAllData()">🧹 Reset Cache Lokal</button></div>
-  </div>
-
 </div>
 
 <script>
 (function() {
-  'use strict';
-  
-  var user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
-  if (!user) { document.body.innerHTML = '<h2 style="color:#ef4444;text-align:center;padding:4rem;">🔒 Akses Ditolak.</h2>'; return; }
-
-  var role = user.role || 'staff';
+  const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
+  if(!user) return;
   document.getElementById('user-display').textContent = user.nama || user.email;
-  document.getElementById('role-subtitle').textContent = 'Role: ' + role.toUpperCase();
-  setInterval(function() { document.getElementById('live-clock').textContent = new Date().toLocaleTimeString('id-ID'); }, 1000);
+  setInterval(() => document.getElementById('live-clock').textContent = new Date().toLocaleTimeString(), 1000);
 
-  // Helper untuk fetch live dari Supabase
-  async function fetchLive(tableName, cacheKey) {
-    if (window.supabaseClient) {
-      try {
-        const { data, error } = await window.supabaseClient.from(tableName).select('*').order('created_at', { ascending: false });
-        if (data && !error) {
-          localStorage.setItem(cacheKey, JSON.stringify(data)); // Cache update
-          return data;
-        }
-      } catch (err) { console.warn('Supabase fetch failed:', err); }
+  // FIX: Data Fetcher yang lebih aman
+  async function loadData(table) {
+    if(window.supabaseClient) {
+      const { data } = await window.supabaseClient.from(table).select('*').order('created_at', {ascending:false});
+      if(data) { localStorage.setItem('cache_'+table, JSON.stringify(data)); return data; }
     }
-    // Fallback ke cache kalau offline
-    try { return JSON.parse(localStorage.getItem(cacheKey) || '[]'); } catch(e) { return []; }
+    return JSON.parse(localStorage.getItem('cache_'+table) || '[]');
   }
 
-  function sanitize(str) { return (str || '').replace(/[&<>'"]/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
-  function isAdmin() { return ['dev','kabag_umum','koordinator_umum'].includes(role); }
-  function canAccess(tabName) {
-    var accessMap = {
-      dev: ['users','dana','k3','maint','booking','system'],
-      kabag_umum: ['users','dana','k3','maint','booking','system'],
-      koordinator_umum: ['dana','booking'],
-      security: ['security'],
-      guru: ['booking', 'k3'],
-      janitor_indoor: ['janitor-indoor'],
-      janitor_outdoor: ['janitor-outdoor'],
-      maintenance: ['maint'],
-      staff: ['dana', 'booking']
-    };
-    return (accessMap[role] || []).includes(tabName);
-  }
+  async function renderAll() {
+    // KPI
+    const d = await loadData('dana_requests'), k = await loadData('k3_reports'), m = await loadData('maintenance_tasks'), b = await loadData('bookings');
+    document.getElementById('kpi-cards').innerHTML = 
+      '<div class="kpi-card" onclick="switchTab(\'k3\')"><div class="kpi-value">'+k.filter(x=>x.status==='pending').length+'</div><div class="kpi-label">K3</div></div>' +
+      '<div class="kpi-card" onclick="switchTab(\'maint\')"><div class="kpi-value">'+m.length+'</div><div class="kpi-label">Maint</div></div>' +
+      '<div class="kpi-card" onclick="switchTab(\'dana\')"><div class="kpi-value">'+d.filter(x=>x.status==='pending').length+'</div><div class="kpi-label">Dana</div></div>' +
+      '<div class="kpi-card" onclick="switchTab(\'booking\')"><div class="kpi-value">'+b.length+'</div><div class="kpi-label">Booking</div></div>';
 
-  // Atur visibilitas tab dan quick actions
-  document.querySelectorAll('#workspace-tabs .tab').forEach(function(t) { t.style.display = canAccess(t.dataset.tab) ? '' : 'none'; });
-  ['dana','k3','maint'].forEach(id => { if(canAccess(id)) document.getElementById('qa-'+id).style.display = 'inline-flex'; });
-
-  // Pindah Tab
-  document.getElementById('workspace-tabs').addEventListener('click', function(e) {
-    var tab = e.target.closest('.tab');
-    if (!tab || !canAccess(tab.dataset.tab)) return;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-    tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
-    refreshTab(tab.dataset.tab);
-  });
-
-  // ========== RENDERER FUNCTIONS (ASYNCHRONOUS LIVE DATA) ==========
-  
-  async function renderKPIs() {
-    var el = document.getElementById('kpi-cards'); if (!el) return;
-    var dDana = await fetchLive('dana_requests', 'dreamos_dana_requests');
-    var dK3 = await fetchLive('k3_reports', 'dreamos_k3_reports');
-    var dMaint = await fetchLive('maintenance_tasks', 'dreamos_maintenance_tasks');
-    var dBook = await fetchLive('bookings', 'dreamos_bookings');
-    
-    el.innerHTML = 
-      '<div class="kpi-card" onclick="switchTab(\'k3\')"><div class="kpi-value" style="color:#ef4444;">' + dK3.filter(x=>x.status==='pending').length + '</div><div class="kpi-label">K3 Pending</div></div>' +
-      '<div class="kpi-card" onclick="switchTab(\'maint\')"><div class="kpi-value" style="color:#0ea5e9;">' + dMaint.filter(x=>x.status!=='Selesai').length + '</div><div class="kpi-label">Maint Aktif</div></div>' +
-      '<div class="kpi-card" onclick="switchTab(\'dana\')"><div class="kpi-value" style="color:#f59e0b;">' + dDana.filter(x=>x.status==='pending').length + '</div><div class="kpi-label">Dana Pending</div></div>' +
-      '<div class="kpi-card" onclick="switchTab(\'booking\')"><div class="kpi-value" style="color:#10b981;">' + dBook.length + '</div><div class="kpi-label">Total Booking</div></div>';
-  }
-
-  async function renderDana() {
-    var data = await fetchLive('dana_requests', 'dreamos_dana_requests');
-    // Pending List
-    var elPending = document.getElementById('dana-pending-list');
-    var pending = data.filter(d => d.status === 'pending');
-    elPending.innerHTML = pending.length ? pending.map(d => 
-      '<div style="background:rgba(0,0,0,0.2);padding:0.4rem;border-radius:8px;margin-bottom:0.3rem;"><b>'+sanitize(d.judul)+'</b> • Rp '+parseInt(d.nominal||0).toLocaleString('id-ID')+
-      (isAdmin() ? '<br><button class="btn btn-success" onclick="approveDana(\''+d.id+'\')" style="font-size:0.5rem; margin-top:0.2rem;">✅ Approve</button> <button class="btn btn-danger" onclick="rejectDana(\''+d.id+'\')" style="font-size:0.5rem; margin-top:0.2rem;">❌ Reject</button>' : '') +
-      '</div>'
-    ).join('') : '<p style="color:#94a3b8;">✅ Tidak ada pending.</p>';
-
-    // History List
-    var elHistory = document.getElementById('dana-history');
-    elHistory.innerHTML = data.length ? '<table><tr><th>Tgl</th><th>Judul</th><th>Nominal</th><th>Status</th></tr>'+data.slice(0,10).map(d => 
-      '<tr><td>'+sanitize(d.tanggal)+'</td><td>'+sanitize(d.judul)+'</td><td>Rp '+parseInt(d.nominal||0).toLocaleString('id-ID')+'</td><td><span class="badge badge-'+(d.status==='approved'?'approved':d.status==='rejected'?'rejected':'pending')+'">'+d.status+'</span></td></tr>'
-    ).join('')+'</table>' : '<p>Belum ada riwayat.</p>';
-
-    // Budget Summary
-    var spent = data.filter(x => x.status === 'approved').reduce((s,x) => s + parseInt(x.nominal||0), 0);
-    var cap = 50000000;
-    document.getElementById('budget-summary').innerHTML = 'Realisasi: Rp ' + spent.toLocaleString('id-ID') + '<br>Pagu: Rp ' + cap.toLocaleString('id-ID');
-    document.getElementById('budget-bar').style.width = Math.min((spent / cap) * 100, 100) + '%';
-  }
-
-  async function renderBooking() {
-    var data = await fetchLive('bookings', 'dreamos_bookings');
-    var el = document.getElementById('booking-list');
-    el.innerHTML = data.length ? '<table><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Status</th></tr>'+data.map(x => 
-      '<tr><td>'+sanitize(x.tgl)+'</td><td>'+sanitize(x.ruang)+'</td><td>'+sanitize(x.nama_peminjam)+'</td><td><span class="badge badge-'+(x.status==='approved'?'approved':x.status==='rejected'?'rejected':'pending')+'">'+x.status+'</span></td></tr>'
-    ).join('')+'</table>' : '<p>Belum ada booking.</p>';
-  }
-
-  async function renderUsers() {
-    var data = await fetchLive('users', 'dreamos_users_db');
-    var el = document.getElementById('user-table');
-    el.innerHTML = data.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+data.map(u => 
-      '<tr><td>'+sanitize(u.nama)+'</td><td>'+sanitize(u.email)+'</td><td>'+sanitize(u.role)+'</td></tr>'
-    ).join('')+'</table>' : '<p>Belum ada user.</p>';
-  }
-
-  async function renderK3() {
-    var data = await fetchLive('k3_reports', 'dreamos_k3_reports');
-    document.getElementById('k3-active-list').innerHTML = data.filter(x=>x.status==='pending').map(k => '<div><b>'+sanitize(k.lokasi)+'</b> • '+sanitize(k.kategori)+'</div>').join('') || '<p>✅ Bersih.</p>';
-    document.getElementById('k3-all-list').innerHTML = data.length ? '<table><tr><th>Lokasi</th><th>Status</th></tr>'+data.map(k => '<tr><td>'+sanitize(k.lokasi)+'</td><td>'+k.status+'</td></tr>').join('')+'</table>' : '<p>Kosong.</p>';
-  }
-
-  async function renderMaint() {
-    var data = await fetchLive('maintenance_tasks', 'dreamos_maintenance_tasks');
-    document.getElementById('maint-active-list').innerHTML = data.filter(x=>x.status!=='Selesai').map(m => '<div><b>'+sanitize(m.judul)+'</b> • '+sanitize(m.status)+'</div>').join('') || '<p>✅ Bersih.</p>';
-    document.getElementById('maint-done-list').innerHTML = data.filter(x=>x.status==='Selesai').slice(0,5).map(m => '<div>✅ '+sanitize(m.judul)+'</div>').join('') || '<p>Kosong.</p>';
-  }
-
-  window.refreshTab = function(name) {
-    if (name === 'dana') renderDana();
-    if (name === 'booking') renderBooking();
-    if (name === 'users') renderUsers();
-    if (name === 'k3') renderK3();
-    if (name === 'maint') renderMaint();
-    renderKPIs();
-  };
-
-  window.switchTab = function(name) { var t = document.querySelector('.tab[data-tab="'+name+'"]'); if(t) t.click(); };
-
-  // ========== ENTERPRISE WORKFLOW INTEGRATION ==========
-  
-  window.approveDana = function(id) {
-    if (window.WorkflowEngine) window.WorkflowEngine.approve('dana_requests', id);
-    if (window.BankAudit) window.BankAudit.log('APPROVE_DANA', { id });
-  };
-  
-  window.rejectDana = function(id) {
-    if (window.WorkflowEngine) window.WorkflowEngine.reject('dana_requests', id);
-    if (window.BankAudit) window.BankAudit.log('REJECT_DANA', { id });
-  };
-
-  // Quick Adds with OfflineQueue & BankAudit
-  window.quickAddDana = function() {
-    var j = prompt('Judul Pengajuan Dana:'), n = prompt('Nominal (Rp):');
-    if (!j || !n) return;
-    var data = { id: 'dana_' + Date.now(), judul: j, nominal: n, status: 'pending', tanggal: new Date().toLocaleDateString('id-ID'), created_at: new Date().toISOString() };
-    if (window.OfflineQueue) window.OfflineQueue.add('dana_requests', 'insert', data);
-    else if (window.supabaseClient) window.supabaseClient.from('dana_requests').insert(data);
-    if (window.WorkflowEngine) window.WorkflowEngine.notifyAdmin('DANA_REQUESTS', data);
-    if (window.BankAudit) window.BankAudit.log('QUICK_ADD_DANA', data);
-    alert('✅ Dana diajukan!'); refreshTab('dana');
-  };
-
-  window.quickAddK3 = function() {
-    var l = prompt('Lokasi Insiden:'), k = prompt('Kategori (Kerusakan/Kebersihan):');
-    if (!l) return;
-    var data = { id: 'k3_' + Date.now(), lokasi: l, kategori: k||'Umum', status: 'pending', created_at: new Date().toISOString() };
-    if (window.OfflineQueue) window.OfflineQueue.add('k3_reports', 'insert', data);
-    else if (window.supabaseClient) window.supabaseClient.from('k3_reports').insert(data);
-    if (window.WorkflowEngine) window.WorkflowEngine.notifyAdmin('K3_REPORTS', data);
-    if (window.BankAudit) window.BankAudit.log('QUICK_ADD_K3', data);
-    alert('✅ K3 dilaporkan!'); refreshTab('k3');
-  };
-
-  window.doLogout = function() {
-    if (window.BankSession) window.BankSession.destroy();
-    else { localStorage.removeItem('dreamos_bound_user'); localStorage.removeItem('dreamos_session_active'); }
-    window.location.reload();
-  };
-
-  window.clearAllData = function() {
-    if(confirm('HAPUS SEMUA CACHE LOKAL? Aksi ini akan me-reset state aplikasi.')) { 
-      localStorage.clear(); 
-      window.location.reload(); 
+    // RENDER TAB ACTIVE
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
+    if(activeTab === 'dana') {
+      document.getElementById('dana-pending-list').innerHTML = d.filter(x=>x.status==='pending').map(x => '<div>'+x.judul+'</div>').join('') || 'Kosong';
+      document.getElementById('dana-history').innerHTML = '<table>'+d.map(x=>'<tr><td>'+x.judul+'</td><td>'+x.status+'</td></tr>').join('')+'</table>';
     }
-  };
-
-  // 🔄 REAL-TIME SYNC HOOKS (Listen to SyncEngine)
-  if (window.SyncEngine) {
-    console.log('🔗 Command Center terhubung ke SyncEngine');
-    window.SyncEngine.subscribe('dana_requests', () => refreshTab('dana'));
-    window.SyncEngine.subscribe('k3_reports', () => refreshTab('k3'));
-    window.SyncEngine.subscribe('maintenance_tasks', () => refreshTab('maint'));
-    window.SyncEngine.subscribe('bookings', () => refreshTab('booking'));
-    window.SyncEngine.subscribe('users', () => refreshTab('users'));
+    // ...tambah render lainnya untuk tab lain...
   }
 
-  // Initial Load
-  var firstTab = document.querySelector('#workspace-tabs .tab[style=""]');
-  if (firstTab) firstTab.click();
-  renderKPIs();
+  window.switchTab = (name) => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = (c.id === 'tab-'+name) ? 'block' : 'none');
+    renderAll();
+  };
 
+  document.getElementById('workspace-tabs').addEventListener('click', e => { if(e.target.dataset.tab) window.switchTab(e.target.dataset.tab); });
+  
+  // Realtime Sync
+  if(window.SyncEngine) {
+    ['dana_requests', 'k3_reports', 'maintenance_tasks', 'bookings'].forEach(t => {
+      window.SyncEngine.subscribe(t, renderAll);
+    });
+  }
+  
+  renderAll();
 })();
 </script>
