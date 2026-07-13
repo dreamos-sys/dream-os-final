@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Booking • Dream OS Enterprise</title>
-  <style>
+<style>
     :root { --glass-bg: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 255, 157, 0.1); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
     * { box-sizing: border-box; }
-    body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',sans-serif; min-height:100vh; }
+    /* body style removed - inherit from parent */
     .glass { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.2rem; margin-bottom: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
     .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
     .btn { padding: 0.6rem 1rem; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease; }
@@ -29,10 +23,7 @@
     @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
     .sync-badge { font-size: 0.65rem; color: #94a3b8; margin-bottom: 0.5rem; }
   </style>
-</head>
-<body>
-
-<button class="back-btn" onclick="window.parent.goHome()">← HOME</button>
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
 
 <div style="max-width:800px; margin:0 auto; padding:4rem 1.2rem 5rem;">
 
@@ -82,11 +73,24 @@
 </div>
 
 <script>
+// Auto-fallback untuk fungsi global
+if (!window.goHome) window.goHome = function() { 
+  if (window.parent && window.parent.goHome) window.parent.goHome();
+  else window.location.reload();
+};
+if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
+  window.supabaseClient = window.parent.supabaseClient;
+
 (function(){
   // ========== HELPERS ==========
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
   function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
   function getCurrentUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null'); } catch(e) { return null; } }
+  
+  // Safety check
+  if (!window.supabaseClient) {
+    console.warn('⚠️ Supabase client belum siap di booking module');
+  }
 
   // ========== SYNC BADGE ==========
   function setSyncStatus(status) {
@@ -132,7 +136,7 @@
 
     // Kirim ke Supabase
     try {
-      var { error } = await window.parent.supabase.from('bookings').insert([newBooking]);
+      var { error } = await window.supabaseClient.from('bookings').insert([newBooking]);
       if (error) throw error;
       setSyncStatus('synced');
       console.log('✅ Booking tersimpan ke cloud.');
@@ -141,7 +145,7 @@
       // Tetap tersimpan di localStorage, akan dicoba lagi nanti
       window.addToRetryQueue && window.addToRetryQueue({
         label: 'Booking: ' + ruangan,
-        fn: async () => await window.parent.supabase.from('bookings').insert([newBooking])
+        fn: async () => await window.supabaseClient.from('bookings').insert([newBooking])
       });
     }
 
@@ -161,7 +165,7 @@
 
     // Coba ambil dari Supabase
     try {
-      var { data, error } = await window.parent.supabase
+      var { data, error } = await window.supabaseClient
         .from('bookings')
         .select('*')
         .order('tgl', { ascending: false })
@@ -228,5 +232,3 @@
   tampilkanBooking();
 })();
 </script>
-</body>
-</html>
