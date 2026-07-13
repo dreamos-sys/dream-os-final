@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Admin - Dream OS</title>
+  <style>
+    body { 
+      background: #0a0e27; 
+      color: #e2e8f0; 
+      font-family: 'Inter', sans-serif; 
+      padding: 2rem; 
+      max-width: 600px; 
+      margin: 0 auto;
+    }
+    .card { 
+      background: rgba(15,23,42,0.8); 
+      border: 1px solid rgba(0,255,157,0.2); 
+      border-radius: 16px; 
+      padding: 2rem; 
+      margin-bottom: 1rem;
+    }
+    h1 { color: #00ff9d; text-align: center; }
+    .btn { 
+      background: #10b981; 
+      color: white; 
+      border: none; 
+      padding: 1rem 2rem; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      font-size: 1rem; 
+      font-weight: 700;
+      width: 100%;
+      margin-top: 1rem;
+    }
+    .btn:hover { background: #059669; }
+    .success { background: rgba(16,185,129,0.2); border: 1px solid #10b981; padding: 1rem; border-radius: 8px; margin-top: 1rem; display: none; }
+    .error { background: rgba(239,68,68,0.2); border: 1px solid #ef4444; padding: 1rem; border-radius: 8px; margin-top: 1rem; display: none; }
+    label { display: block; margin: 1rem 0 0.5rem; color: #94a3b8; }
+    input, select { 
+      width: 100%; 
+      padding: 0.8rem; 
+      background: rgba(0,0,0,0.4); 
+      border: 1px solid rgba(255,255,255,0.1); 
+      border-radius: 8px; 
+      color: #e2e8f0;
+      font-size: 0.9rem;
+    }
+    .info { background: rgba(14,165,233,0.1); border-left: 4px solid #0ea5e9; padding: 1rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>👑 SETUP ADMIN</h1>
+  
+  <div class="card">
+    <div class="info">
+      <strong>ℹ️ Info:</strong><br>
+      Halaman ini untuk membuat Admin Kabag & Koordinator.<br>
+      Login sebagai Developer terlebih dahulu.
+    </div>
+
+    <h3 style="color: #f59e0b;">👔 Buat Admin Kabag</h3>
+    <label>Nama:</label>
+    <input type="text" id="kabag-nama" value="Kepala Bagian Umum">
+    
+    <label>Email:</label>
+    <input type="email" id="kabag-email" value="kabag@dreamos.local">
+    
+    <label>Role:</label>
+    <select id="kabag-role">
+      <option value="kabag_umum">Kabag Umum</option>
+    </select>
+    
+    <label>Password:</label>
+    <input type="text" id="kabag-pass" value="4dm1n_k@b49" readonly>
+    
+    <button class="btn" onclick="createKabag()">✅ Buat Admin Kabag</button>
+
+    <h3 style="color: #f59e0b; margin-top: 2rem;">👨‍ Buat Admin Koordinator</h3>
+    <label>Nama:</label>
+    <input type="text" id="koord-nama" value="Koordinator Umum">
+    
+    <label>Email:</label>
+    <input type="email" id="koord-email" value="koord@dreamos.local">
+    
+    <label>Role:</label>
+    <select id="koord-role">
+      <option value="koordinator_umum">Koordinator Umum</option>
+    </select>
+    
+    <label>Password:</label>
+    <input type="text" id="koord-pass" value="4dm1n_k002d" readonly>
+    
+    <button class="btn" onclick="createKoord()">✅ Buat Admin Koord</button>
+
+    <div id="success-msg" class="success"></div>
+    <div id="error-msg" class="error"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function hashPassword(pwd) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pwd + 'dreamos_salt_2026');
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function createKabag() {
+      await createUser('kabag');
+    }
+
+    async function createKoord() {
+      await createUser('koord');
+    }
+
+    async function createUser(type) {
+      const successEl = document.getElementById('success-msg');
+      const errorEl = document.getElementById('error-msg');
+      successEl.style.display = 'none';
+      errorEl.style.display = 'none';
+
+      const nama = document.getElementById(type + '-nama').value;
+      const email = document.getElementById(type + '-email').value;
+      const role = document.getElementById(type + '-role').value;
+      const password = document.getElementById(type + '-pass').value;
+
+      try {
+        const hashed = await hashPassword(password);
+        const newUser = {
+          id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          email: email,
+          nama: nama,
+          role: role,
+          divisi: 'Management',
+          password_hash: hashed,
+          must_change_password: false,
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
+
+        // Simpan ke localStorage
+        let localUsers = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+        localUsers = localUsers.filter(u => u.email !== email);
+        localUsers.push(newUser);
+        localStorage.setItem('dreamos_users_db', JSON.stringify(localUsers));
+
+        // Simpan ke Supabase
+        const { error } = await supabase.from('users').upsert(newUser, { onConflict: 'email' });
+        if (error) throw error;
+
+        successEl.innerHTML = `
+          <strong>✅ ${role.toUpperCase()} berhasil dibuat!</strong><br>
+          Email: ${email}<br>
+          Password: ${password}<br><br>
+          <a href="index.html" style="color: #10b981;">← Kembali ke Login</a>
+        `;
+        successEl.style.display = 'block';
+
+      } catch(e) {
+        errorEl.innerHTML = '❌ Error: ' + e.message;
+        errorEl.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
