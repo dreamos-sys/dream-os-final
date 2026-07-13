@@ -1,234 +1,296 @@
 <style>
-    :root { --glass-bg: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 255, 157, 0.1); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
-    * { box-sizing: border-box; }
-    /* body style removed - inherit from parent */
-    .glass { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.2rem; margin-bottom: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-    .back-btn { position: fixed; top: 0.8rem; left: 0.8rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
-    .btn { padding: 0.6rem 1rem; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-success { background: #10b981; color: #fff; }
-    .btn-danger { background: var(--warning); color: #fff; }
-    .btn:hover { transform: translateY(-1px); opacity: 0.95; }
-    .input-field, select, textarea { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.78rem; outline: none; }
-    .input-field:focus, select:focus { border-color: var(--neon); }
-    table { width:100%; border-collapse:collapse; font-size:0.7rem; }
-    th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; }
-    td { padding: 0.35rem 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .badge { padding: 0.12rem 0.4rem; border-radius: 10px; font-size: 0.55rem; font-weight: 600; }
-    .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
-    .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
-    .badge-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
-    .section-title { font-size: 0.85rem; font-weight: 700; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
-    .sync-badge { font-size: 0.65rem; color: #94a3b8; margin-bottom: 0.5rem; }
-  </style>
-<button class="back-btn" onclick="window.goHome()">← HOME</button>
+  .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(0, 255, 157, 0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+  .input-neon { width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #00ff9d; margin-bottom: 0.8rem; font-size: 0.8rem; }
+  .input-neon:focus { border-color: #0ea5e9; outline: none; }
+  .btn-submit { background: #0ea5e9; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.3s; margin-top: 0.5rem; }
+  .btn-submit:hover { background: #0284c7; box-shadow: 0 0 15px rgba(14, 165, 233, 0.5); }
+  .error-text { color: #e11d48; font-size: 0.75rem; margin-bottom: 1rem; display: none; font-weight: bold; }
+  .booking-card { background: rgba(0,0,0,0.3); border-left: 3px solid #0ea5e9; padding: 1rem; border-radius: 8px; margin-bottom: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .alat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.8rem; max-height: 150px; overflow-y: auto; }
+  .alat-item { font-size: 0.7rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+  .alat-item input[type="checkbox"] { accent-color: #00ff9d; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+</style>
 
-<div style="max-width:800px; margin:0 auto; padding:4rem 1.2rem 5rem;">
+<div class="glass-panel">
+  <h3 style="color: #00ff9d; margin-top:0; border-bottom: 1px solid rgba(0,255,157,0.2); padding-bottom: 0.5rem;">📅 Form Booking & Sarana</h3>
+  
+  <label style="color:#94a3b8; font-size:0.75rem;">Nama Peminjam</label>
+  <input type="text" id="book-nama" class="input-neon" readonly>
+  
+  <label style="color:#94a3b8; font-size:0.75rem;">Pilih Sarana/Ruangan</label>
+  <select id="book-ruang" class="input-neon"></select>
 
-  <!-- Header -->
-  <div class="glass" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+  <div class="grid-2">
     <div>
-      <h2 style="color:var(--neon); margin:0; font-size:1rem;">📅 Pemesanan Ruangan</h2>
-      <div class="sync-badge" id="sync-badge">🟡 Cached</div>
+      <label style="color:#94a3b8; font-size:0.75rem;">Tgl Mulai (Min H-1)</label>
+      <input type="date" id="book-tgl" class="input-neon">
     </div>
-    <div style="display:flex; gap:0.4rem;">
-      <button class="btn btn-primary" onclick="document.getElementById('booking-form').style.display='block'">+ Tambah Booking</button>
-      <button class="btn btn-success" onclick="exportBooking()">📥 CSV</button>
-    </div>
-  </div>
-
-  <!-- Form Tambah Booking -->
-  <div id="booking-form" class="glass" style="display:none;">
-    <div class="section-title" style="color:var(--neon);">📝 Tambah Pesanan Baru</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
-      <select id="booking-ruangan" class="input-field">
-        <option value="">Pilih Ruangan</option>
-        <option value="Aula Besar">Aula Besar</option>
-        <option value="Ruang Meeting 1">Ruang Meeting 1</option>
-        <option value="Ruang Meeting 2">Ruang Meeting 2</option>
-        <option value="Lab Komputer">Lab Komputer</option>
-        <option value="Lapangan">Lapangan</option>
-        <option value="Musholla">Musholla</option>
-      </select>
-      <input type="date" id="booking-tgl" class="input-field" placeholder="Tanggal">
-      <input type="time" id="booking-jam-mulai" class="input-field" placeholder="Jam Mulai">
-      <input type="time" id="booking-jam-selesai" class="input-field" placeholder="Jam Selesai">
-      <input type="text" id="booking-peminjam" class="input-field" placeholder="Nama Peminjam" style="grid-column:span 2;">
-      <textarea id="booking-keperluan" class="input-field" placeholder="Keperluan / Agenda" style="grid-column:span 2; min-height:60px;"></textarea>
-    </div>
-    <div style="display:flex; gap:0.5rem;">
-      <button class="btn btn-success" onclick="simpanBooking()" style="flex:1;">💾 Simpan ke Cloud</button>
-      <button class="btn btn-danger" onclick="document.getElementById('booking-form').style.display='none'" style="flex:1;">❌ Batal</button>
+    <div>
+      <label style="color:#94a3b8; font-size:0.75rem;">Tgl Selesai (Opsional)</label>
+      <input type="date" id="book-tgl-selesai" class="input-neon" placeholder="Jika > 1 hari">
     </div>
   </div>
 
-  <!-- Daftar Booking -->
-  <div class="glass">
-    <div class="section-title" style="color:var(--accent);">📋 Daftar Pemesanan</div>
-    <div id="booking-list">🔄 Memuat data...</div>
+  <div class="grid-2">
+    <div>
+      <label style="color:#94a3b8; font-size:0.75rem;">Jam Mulai</label>
+      <input type="time" id="book-jam-mulai" class="input-neon">
+    </div>
+    <div>
+      <label style="color:#94a3b8; font-size:0.75rem;">Jam Selesai (Max 16:00)</label>
+      <input type="time" id="book-jam-selesai" class="input-neon">
+    </div>
   </div>
 
+  <label style="color:#94a3b8; font-size:0.75rem; display:block; margin-bottom:0.3rem;">Kebutuhan Alat</label>
+  <div class="alat-grid" id="alat-container"></div>
+
+  <label style="color:#94a3b8; font-size:0.75rem;">Keterangan Tambahan / Note Acara</label>
+  <input type="text" id="book-ket" class="input-neon" placeholder="Misal: Rapat evaluasi bulanan...">
+
+  <div id="booking-error" class="error-text"></div>
+
+  <button class="btn-submit" onclick="submitBooking()">Kirim Pengajuan</button>
+</div>
+
+<div class="glass-panel">
+  <h3 style="color: #0ea5e9; margin-top:0; border-bottom: 1px solid rgba(14,165,233,0.2); padding-bottom: 0.5rem;">📋 Daftar Booking (Live)</h3>
+  <div id="booking-list">Memuat data real-time...</div>
 </div>
 
 <script>
-// Auto-fallback untuk fungsi global
-if (!window.goHome) window.goHome = function() { 
-  if (window.parent && window.parent.goHome) window.parent.goHome();
-  else window.location.reload();
-};
-if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
-  window.supabaseClient = window.parent.supabaseClient;
-
-(function(){
-  // ========== HELPERS ==========
-  function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
-  function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
-  function getCurrentUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null'); } catch(e) { return null; } }
+(function() {
+  'use strict';
   
-  // Safety check
-  if (!window.supabaseClient) {
-    console.warn('⚠️ Supabase client belum siap di booking module');
+  const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+  const role = user.role || 'staff';
+  document.getElementById('book-nama').value = user.nama || user.email || 'Unknown User';
+
+  // ===== DATA LISTS =====
+  const SARANA_LIST = [
+    "Aula SMP", "Aula SMA", "Saung Besar", "Saung Kecil", "Masjid (Maintenance)", 
+    "Mushalla SMA", "Serbaguna", "Lapangan Basket", "Lapangan Volly", "Lapangan Tanah", 
+    "Lapangan SMA", "Kantin SMP", "Kantin SMA", "Labkom SD", "Labkom SMP", "Labkom SMA", 
+    "Perpustakaan SD", "Perpustakaan SMP", "Perpustakaan SMA", "Area Taman Depan Masjid", 
+    "Area Parkir Depan Dapur", "Area Parkir Loby SMA"
+  ];
+
+  const ALAT_LIST = [
+    "Sound Portable", "SoundPortable LCD", "Projector", "Standing Mic", "Meja Panjang",
+    "Meja Kantin", "Meja Siswa", "Meja Oshin", "Kursi Futura", "Kursi Chitose", 
+    "Kursi Siswa", "Taplak Meja", "Matras", "Smart Box TV", "Layar Projektor", 
+    "White Board", "Kabel AC Ekstention", "Dispenser"
+  ];
+
+  // Render Pilihan Ruangan (Filter Masjid Maintenance)
+  const ruangSelect = document.getElementById('book-ruang');
+  SARANA_LIST.forEach(ruang => {
+    if (ruang === "Masjid (Maintenance)") return; // Skip Masjid
+    let opt = document.createElement('option');
+    opt.value = ruang;
+    opt.textContent = ruang;
+    ruangSelect.appendChild(opt);
+  });
+
+  // Render Pilihan Alat
+  const alatContainer = document.getElementById('alat-container');
+  // Hapus duplikat dari list alat
+  [...new Set(ALAT_LIST)].forEach(alat => {
+    alatContainer.innerHTML += `<label class="alat-item"><input type="checkbox" class="cb-alat" value="${alat}"> ${alat}</label>`;
+  });
+
+  // Kunci Tanggal Minimal H-1
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDateStr = tomorrow.toISOString().split('T')[0];
+  document.getElementById('book-tgl').min = minDateStr;
+  document.getElementById('book-tgl-selesai').min = minDateStr;
+
+  // Validasi Waktu Helper
+  function timeToFloat(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h + (m / 60);
   }
 
-  // ========== SYNC BADGE ==========
-  function setSyncStatus(status) {
-    var badge = document.getElementById('sync-badge');
-    if (!badge) return;
-    if (status === 'synced') { badge.innerHTML = '🟢 Synced'; badge.style.color = '#10b981'; }
-    else if (status === 'cached') { badge.innerHTML = '🟡 Cached'; badge.style.color = '#f59e0b'; }
-    else { badge.innerHTML = '🔴 Error'; badge.style.color = '#ef4444'; }
-  }
+  window.submitBooking = async function() {
+    const tglMulai = document.getElementById('book-tgl').value;
+    const tglSelesai = document.getElementById('book-tgl-selesai').value || tglMulai;
+    const jamMulai = document.getElementById('book-jam-mulai').value;
+    const jamSelesai = document.getElementById('book-jam-selesai').value;
+    const ruang = document.getElementById('book-ruang').value;
+    const ket = document.getElementById('book-ket').value;
+    const errorEl = document.getElementById('booking-error');
+    
+    const checkboxes = document.querySelectorAll('.cb-alat:checked');
+    const saranaStr = Array.from(checkboxes).map(cb => cb.value).join(', ') || 'Tidak ada alat';
 
-  // ========== SIMPAN BOOKING ==========
-  window.simpanBooking = async function() {
-    var ruangan = document.getElementById('booking-ruangan').value;
-    var tgl = document.getElementById('booking-tgl').value;
-    var jamMulai = document.getElementById('booking-jam-mulai').value;
-    var jamSelesai = document.getElementById('booking-jam-selesai').value;
-    var peminjam = document.getElementById('booking-peminjam').value.trim();
-    var keperluan = document.getElementById('booking-keperluan').value.trim();
-    var user = getCurrentUser();
+    errorEl.style.display = 'none';
 
-    if (!ruangan || !tgl || !jamMulai || !jamSelesai) return alert('⚠️ Ruangan, tanggal, dan jam wajib diisi!');
-    if (jamMulai >= jamSelesai) return alert('⚠️ Jam selesai harus lebih besar dari jam mulai.');
-
-    var newBooking = {
-      id: 'book_' + Date.now(),
-      ruangan: ruangan,
-      tgl: tgl,
-      jam_mulai: jamMulai,
-      jam_selesai: jamSelesai,
-      nama_peminjam: peminjam || user?.nama || 'Unknown',
-      keperluan: keperluan,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      peminjam_id: user?.id || null
-    };
-
-    // Simpan ke localStorage dulu (offline-first)
-    var localData = safeGet('dreamos_bookings', []);
-    localData.unshift(newBooking);
-    safeSet('dreamos_bookings', localData);
-    tampilkanBooking();
-    setSyncStatus('cached');
-
-    // Kirim ke Supabase
-    try {
-      var { error } = await window.supabaseClient.from('bookings').insert([newBooking]);
-      if (error) throw error;
-      setSyncStatus('synced');
-      console.log('✅ Booking tersimpan ke cloud.');
-    } catch(e) {
-      console.warn('⚠️ Gagal sync ke cloud:', e.message);
-      // Tetap tersimpan di localStorage, akan dicoba lagi nanti
-      window.addToRetryQueue && window.addToRetryQueue({
-        label: 'Booking: ' + ruangan,
-        fn: async () => await window.supabaseClient.from('bookings').insert([newBooking])
-      });
-    }
-
-    // Reset form
-    ['booking-ruangan','booking-tgl','booking-jam-mulai','booking-jam-selesai','booking-peminjam','booking-keperluan'].forEach(function(id) {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('booking-form').style.display = 'none';
-    alert('✅ Booking berhasil disimpan!');
-  };
-
-  // ========== TAMPILKAN BOOKING ==========
-  window.tampilkanBooking = async function() {
-    var container = document.getElementById('booking-list');
-    if (!container) return;
-    container.innerHTML = '<p style="color:#94a3b8;">🔄 Memuat dari cloud...</p>';
-
-    // Coba ambil dari Supabase
-    try {
-      var { data, error } = await window.supabaseClient
-        .from('bookings')
-        .select('*')
-        .order('tgl', { ascending: false })
-        .order('jam_mulai', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        safeSet('dreamos_bookings', data); // update cache
-        renderBookingList(data);
-        setSyncStatus('synced');
-        return;
-      }
-    } catch(e) {
-      console.warn('⚠️ Gagal ambil dari cloud:', e.message);
-    }
-
-    // Fallback ke localStorage
-    var localData = safeGet('dreamos_bookings', []);
-    setSyncStatus(localData.length > 0 ? 'cached' : 'error');
-    renderBookingList(localData);
-  };
-
-  function renderBookingList(data) {
-    var container = document.getElementById('booking-list');
-    if (!container) return;
-    if (!data || data.length === 0) {
-      container.innerHTML = '<p style="color:#94a3b8;text-align:center;">Belum ada pemesanan.</p>';
+    if (!tglMulai || !jamMulai || !jamSelesai) {
+      errorEl.textContent = '⚠️ Tanggal dan Jam Mulai/Selesai wajib diisi!';
+      errorEl.style.display = 'block';
       return;
     }
 
-    var html = '<table><tr><th>Ruangan</th><th>Tanggal</th><th>Jam</th><th>Peminjam</th><th>Keperluan</th><th>Status</th></tr>';
-    data.forEach(function(b) {
-      var statusClass = b.status === 'approved' ? 'approved' : (b.status === 'rejected' ? 'rejected' : 'pending');
-      html += '<tr>' +
-        '<td><b>' + (b.ruangan || '-') + '</b></td>' +
-        '<td>' + (b.tgl || '-') + '</td>' +
-        '<td>' + (b.jam_mulai || '') + ' - ' + (b.jam_selesai || '') + '</td>' +
-        '<td>' + (b.nama_peminjam || '-') + '</td>' +
-        '<td>' + (b.keperluan || '-') + '</td>' +
-        '<td><span class="badge badge-' + statusClass + '">' + (b.status || 'pending') + '</span></td>' +
-        '</tr>';
-    });
-    html += '</table>';
-    container.innerHTML = html;
-  }
+    if (tglSelesai < tglMulai) {
+      errorEl.textContent = '⚠️ Tanggal Selesai tidak boleh lebih awal dari Tanggal Mulai!';
+      errorEl.style.display = 'block';
+      return;
+    }
 
-  // ========== EXPORT CSV ==========
-  window.exportBooking = function() {
-    var data = safeGet('dreamos_bookings', []);
-    if (!data.length) return alert('⚠️ Tidak ada data untuk diexport.');
-    var csv = 'Ruangan,Tanggal,Jam Mulai,Jam Selesai,Peminjam,Keperluan,Status\n';
-    data.forEach(function(b) {
-      csv += '"' + (b.ruangan||'') + '","' + (b.tgl||'') + '","' + (b.jam_mulai||'') + '","' + (b.jam_selesai||'') + '","' + (b.nama_peminjam||'') + '","' + (b.keperluan||'') + '","' + (b.status||'') + '"\n';
-    });
-    var blob = new Blob([csv], {type: 'text/csv'});
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'booking_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
+    // ===== LOGIKA BISNIS KANJENG =====
+    const dateObj = new Date(tglMulai);
+    const dayOfWeek = dateObj.getDay(); // 0 = Minggu, 5 = Jumat, 6 = Sabtu
+
+    // 1. Cek Hari Minggu
+    if (dayOfWeek === 0) {
+      errorEl.textContent = '⛔ Akses Ditolak: Hari Minggu libur booking!';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    // 2. Cek Jam Operasional (07:30 - 16:00)
+    const startT = timeToFloat(jamMulai);
+    const endT = timeToFloat(jamSelesai);
+    if (startT < 7.5 || endT > 16.0 || startT >= endT) {
+      errorEl.textContent = '⛔ Akses Ditolak: Jam booking diluar operasional (07:30 - 16:00) atau tidak valid.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    // 3. Cek Khusus Hari Jumat (Aula SMP / Serbaguna)
+    if (dayOfWeek === 5 && (ruang === 'Aula SMP' || ruang === 'Serbaguna')) {
+      // Waktu terlarang: 10:30 (10.5) s/d 13:00 (13.0)
+      if (startT < 13.0 && endT > 10.5) {
+        errorEl.textContent = `⛔ Ditolak: Hari Jumat jam 10:30-13:00 ${ruang} digunakan untuk persiapan & Shalat Jumat!`;
+        errorEl.style.display = 'block';
+        return;
+      }
+    }
+
+    // 4. Warning Khusus Hari Sabtu
+    if (dayOfWeek === 6) {
+      const confirmSabtu = confirm('⚠️ Perhatian: Booking hari Sabtu memerlukan koordinasi langsung dengan Kabag & Koordinator Bagian Umum. Lanjutkan pengajuan?');
+      if (!confirmSabtu) return;
+    }
+
+    const tglDisplay = tglMulai === tglSelesai ? tglMulai : `${tglMulai} s/d ${tglSelesai}`;
+
+    const newBooking = {
+      id: 'bk_' + Date.now(),
+      nama_peminjam: user.nama || user.email,
+      email: user.email,
+      ruang: ruang,
+      tgl: tglDisplay, // Simpan display gabungan
+      jam_mulai: jamMulai,
+      jam_selesai: jamSelesai,
+      keterangan: ket,
+      sarana_alat: saranaStr,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      if (window.OfflineQueue) {
+        window.OfflineQueue.add('bookings', 'insert', newBooking);
+      } else if (window.supabaseClient) {
+        await window.supabaseClient.from('bookings').insert(newBooking);
+      }
+
+      if (window.WorkflowEngine) {
+        window.WorkflowEngine.notifyAdmin('BOOKING', { email: user.email, judul: `Booking ${ruang}`, ruang: ruang });
+      }
+
+      alert('✅ Pengajuan booking berhasil dikirim!');
+      
+      document.getElementById('book-tgl').value = '';
+      document.getElementById('book-tgl-selesai').value = '';
+      document.getElementById('book-jam-mulai').value = '';
+      document.getElementById('book-jam-selesai').value = '';
+      document.getElementById('book-ket').value = '';
+      checkboxes.forEach(cb => cb.checked = false);
+      
+    } catch(e) {
+      console.error('Error submitting booking:', e);
+      alert('⚠️ Terjadi kesalahan saat menyimpan booking.');
+    }
   };
 
-  // Init
-  tampilkanBooking();
+  window.renderBookingList = async function() {
+    const listEl = document.getElementById('booking-list');
+    if (!window.supabaseClient) return;
+
+    try {
+      const { data: bookings, error } = await window.supabaseClient
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      if (!bookings || bookings.length === 0) {
+        listEl.innerHTML = '<p style="color:#94a3b8; font-size:0.8rem;">Belum ada jadwal aktif.</p>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      bookings.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'booking-card';
+        
+        let statusColor = '#f59e0b'; let statusIcon = '⏳';
+        if (item.status === 'approved') { statusColor = '#10b981'; statusIcon = '✅'; }
+        if (item.status === 'rejected') { statusColor = '#e11d48'; statusIcon = '❌'; }
+
+        const alatBadge = item.sarana_alat && item.sarana_alat !== 'Tidak ada alat' 
+          ? `<div style="font-size:0.65rem; color:#00ff9d; margin-top:0.3rem;">🔌 Alat: ${sanitizeHTML(item.sarana_alat)}</div>` 
+          : '';
+          
+        const ketBadge = item.keterangan 
+          ? `<div style="font-size:0.65rem; color:#0ea5e9; font-style:italic;">📝 Note: ${sanitizeHTML(item.keterangan)}</div>` 
+          : '';
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <strong style="color:#e2e8f0; font-size:0.85rem;">${item.ruang}</strong>
+            <span style="background:rgba(0,0,0,0.5); padding:0.2rem 0.5rem; border-radius:12px; font-size:0.6rem; color:${statusColor}; border:1px solid ${statusColor};">${statusIcon} ${item.status.toUpperCase()}</span>
+          </div>
+          <div style="font-size:0.75rem; color:#94a3b8;">📅 ${item.tgl} | ⏰ ${item.jam_mulai} - ${item.jam_selesai || 'Selesai'}</div>
+          <div style="font-size:0.7rem; color:#64748b;">👤 ${sanitizeHTML(item.nama_peminjam)}</div>
+          ${alatBadge}
+          ${ketBadge}
+          <div class="approval-actions" style="margin-top:0.5rem;"></div>
+        `;
+
+        if (window.WorkflowEngine && (role === 'dev' || role === 'kabag_umum') && item.status === 'pending') {
+          const actionDiv = card.querySelector('.approval-actions');
+          const approveBtn = document.createElement('button');
+          approveBtn.innerHTML = '✅ Setujui';
+          approveBtn.style.cssText = 'background:#10b981; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; font-size:0.65rem; margin-right:0.4rem; cursor:pointer;';
+          approveBtn.onclick = () => window.WorkflowEngine.approve('bookings', item.id);
+          
+          const rejectBtn = document.createElement('button');
+          rejectBtn.innerHTML = '❌ Tolak';
+          rejectBtn.style.cssText = 'background:#e11d48; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; font-size:0.65rem; cursor:pointer;';
+          rejectBtn.onclick = () => window.WorkflowEngine.reject('bookings', item.id);
+
+          actionDiv.appendChild(approveBtn);
+          actionDiv.appendChild(rejectBtn);
+        }
+        listEl.appendChild(card);
+      });
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
+  function sanitizeHTML(str) { return (str || '').replace(/[&<>'"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[m]); }
+
+  if (window.SyncEngine) {
+    window.SyncEngine.subscribe('bookings', () => renderBookingList(), () => renderBookingList());
+  }
+
+  setTimeout(renderBookingList, 300);
 })();
 </script>
