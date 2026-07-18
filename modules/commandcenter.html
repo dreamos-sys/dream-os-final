@@ -326,7 +326,7 @@ if (!window.goHome) window.goHome = function() {
     }
   };
 
-  // ========== FUNGSI CREATE USER VERSI SUPABASE AUTH ==========
+  // ========== FUNGSI CREATE USER VERSI SUPABASE AUTH (NATIVE) ==========
   window.createUser = async function() {
     if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
     const nama = document.getElementById('new-user-nama').value.trim();
@@ -350,6 +350,7 @@ if (!window.goHome) window.goHome = function() {
     try {
       if (!window.supabaseClient) throw new Error('Supabase client belum siap. Coba refresh halaman.');
 
+      // 1. Daftar ke Supabase Auth (akun login beneran)
       const { data: authData, error: authError } = await window.supabaseClient.auth.signUp({
         email: email,
         password: password,
@@ -364,7 +365,7 @@ if (!window.goHome) window.goHome = function() {
 
       if (authError) throw authError;
 
-      // Simpan ke tabel users
+      // 2. Simpan juga di tabel 'users' untuk referensi cepat & RBAC
       await window.supabaseClient.from('users').upsert({
         id: authData.user.id,
         email: email,
@@ -374,13 +375,16 @@ if (!window.goHome) window.goHome = function() {
         created_at: new Date().toISOString()
       }, { onConflict: 'id' });
 
+      // 3. Log aktivitas
       if (permissions.logActivity) logActivity('CREATE_USER', { email, role: userRole, created_by: user.email });
 
+      // 4. Sukses & Reset Form
       msgEl.innerHTML = `<div class="alert alert-success">✅ Akun <strong>${nama}</strong> BERHASIL DIBUAT & AKTIF!<br>Email: ${email}<br>Password: ${password}<br><small>Silakan coba login di halaman utama.</small></div>`;
 
       document.getElementById('new-user-nama').value = '';
       document.getElementById('new-user-email').value = '';
       document.getElementById('new-user-password').value = '12345678';
+
       renderUserList();
     } catch(e) {
       msgEl.innerHTML = `<div class="alert alert-error">❌ Gagal: ${e.message}<br><small>Pastikan email belum terdaftar & server online.</small></div>`;
