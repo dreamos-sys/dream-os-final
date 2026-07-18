@@ -333,37 +333,69 @@ if (!window.goHome) window.goHome = function() {
     return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  window.createUser = async function() {
-    if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
-    const nama = document.getElementById('new-user-nama').value.trim();
-    const email = document.getElementById('new-user-email').value.trim();
-    const userRole = document.getElementById('new-user-role').value;
-    const divisi = document.getElementById('new-user-divisi').value;
-    const password = document.getElementById('new-user-password').value;
-    const msgEl = document.getElementById('user-form-message');
-    if (!nama || !email || !password) {
-      msgEl.innerHTML = '<div class="alert alert-error">⚠️ Nama, email, dan password wajib diisi!</div>';
-      return;
-    }
-    try {
-      const hashed = await hashPassword(password);
-      const newUser = { id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), email, nama, role: userRole, divisi, password_hash: hashed, must_change_password: true, is_active: true, created_at: new Date().toISOString() };
-      let localUsers = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-      if (localUsers.find(u => u.email === email)) throw new Error('Email sudah terdaftar!');
-      localUsers.push(newUser);
-      localStorage.setItem('dreamos_users_db', JSON.stringify(localUsers));
-      if (window.supabaseClient) await window.supabaseClient.from('users').upsert(newUser, { onConflict: 'email' });
-      if (permissions.logActivity) logActivity('CREATE_USER', { email, role: userRole });
-      msgEl.innerHTML = `<div class="alert alert-success">✅ User <strong>${nama}</strong> berhasil dibuat!<br>Email: ${email} | Password: ${password}<br><small>User wajib ganti password saat login pertama</small></div>`;
-      document.getElementById('new-user-nama').value = '';
-      document.getElementById('new-user-email').value = '';
-      document.getElementById('new-user-password').value = '12345678';
-      renderUserList();
-    } catch(e) {
-      msgEl.innerHTML = `<div class="alert alert-error">❌ Error: ${e.message}</div>`;
-    }
-  };
 
+window.createUser = async function() {
+  if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
+  const nama = document.getElementById('new-user-nama').value.trim();
+  const email = document.getElementById('new-user-email').value.trim();
+  const userRole = document.getElementById('new-user-role').value;
+  const divisi = document.getElementById('new-user-divisi').value;
+  const password = document.getElementById('new-user-password').value;
+  const msgEl = document.getElementById('user-form-message');
+
+  if (!nama || !email || !password) {
+    msgEl.innerHTML = '<div class="alert alert-error">⚠️ Nama, email, dan password wajib diisi!</div>';
+    return;
+  }
+  if (password.length < 6) {
+    msgEl.innerHTML = '<div class="alert alert-error">⚠️ Password minimal 6 karakter!</div>';
+    return;
+  }
+
+  msgEl.innerHTML = '<div class="alert" style="background:rgba(14,165,233,0.1);border:1px solid #0ea5e9;color:#0ea5e9;">⏳ Mendaftarkan akun ke sistem...</div>';
+
+  try {
+    // 1. Daftar ke Supabase Auth (akun login beneran)
+    const { data: authData, error: authError } = await window.supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          nama: nama,
+          role: userRole,
+          divisi: divisi
+        }
+      }
+    });
+
+    if (authError) throw new Error(authError.message);
+
+    // 2. Simpan juga di tabel 'users' untuk referensi cepat
+    if (window.supabaseClient) {
+      await window.supabaseClient.from('users').upsert({
+        id: authData.user.id,
+        email: email,
+        nama: nama,
+        role: userRole,
+        divisi: divisi,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+    }
+
+    // 3. Log aktivitas
+    if (permissions.logActivity) logActivity('CREATE_USER', { email, role: userRole, created_by: user.email });
+
+    // 4. Sukses
+    msgEl.innerHTML = `<div class="alert alert-success">✅ Akun <strong>${nama}</strong> BERHASIL DIBUAT & AKTIF!<br>Email: ${email}<br>Password: ${password}<br><small>Silakan coba login di halaman utama.</small></div>`;
+
+    document.getElementById('new-user-nama').value = '';
+    document.getElementById('new-user-email').value = '';
+    document.getElementById('new-user-password').value = '12345678';
+    renderUserList();
+  } catch(e) {
+    msgEl.innerHTML = `<div class="alert alert-error">❌ Gagal: ${e.message}<br><small>Pastikan email belum pernah terdaftar.</small></div>`;
+  }
+};
   function renderUserList() {
     const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
     const tbody = document.getElementById('user-tbody');
