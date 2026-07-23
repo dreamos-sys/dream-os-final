@@ -290,7 +290,9 @@
         renderDashboard();
         if (!window._servicesStarted) {
           window._servicesStarted = true;
-          // Services dipindahkan ke System Settings untuk performa & kebersihan UI
+          // Services sudah dipindahkan ke Tab System di Settings
+          // Fungsi startLiveClock, startBatteryMonitor, checkConnection, fetchPrayerTimes
+          // sekarang hanya berjalan saat user membuka Tab System
         }
       }
 
@@ -437,13 +439,14 @@
         if (liveClockInterval) clearInterval(liveClockInterval);
         liveClockInterval = setInterval(() => {
           const el = document.getElementById('live-clock');
-          if (el) el.textContent = '️ ' + new Date().toLocaleTimeString('id-ID');
+          if (el) el.textContent = '⏱️ ' + new Date().toLocaleTimeString('id-ID');
         }, 1000);
       }
 
       function startBatteryMonitor() {
         const el = document.getElementById('battery-status');
-        if (!('getBattery' in navigator)) { if (el) el.textContent = ' N/A'; return; }
+        if (!el) return; // Element tidak ada, keluar
+        if (!('getBattery' in navigator)) { el.textContent = '🔋 N/A'; return; }
         navigator.getBattery().then(b => {
           const update = () => { if (el) el.textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%'; };
           update(); b.addEventListener('levelchange', update);
@@ -463,7 +466,7 @@
 
       async function fetchPrayerTimes() {
         const el = document.getElementById('prayer-times-dash');
-        if (!el) return;
+        if (!el) return; // Element tidak ada, keluar
         try {
           const d = new Date();
           const res = await fetch(`https://api.aladhan.com/v1/timings/${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}?latitude=-6.2088&longitude=106.8456&method=20`);
@@ -472,7 +475,9 @@
             const t = data.data.timings;
             el.innerHTML = `🕌 Subuh ${t.Fajr} | Dzuhur ${t.Dhuhr} | Ashar ${t.Asr} | Maghrib ${t.Maghrib} | Isya ${t.Isha}`;
           }
-        } catch(e) { el.textContent = '🕌 Gagal memuat jadwal shalat'; }
+        } catch(e) { 
+          if (el) el.textContent = '🕌 Gagal memuat jadwal shalat'; 
+        }
       }
 
       // Keyboard Shortcuts
