@@ -573,6 +573,29 @@
       };
 
       // Service Worker
+      
+      // ===== ISO 27001: IDLE TIMEOUT (30 Menit) =====
+      let idleTime = 0;
+      const MAX_IDLE_MINUTES = 30; 
+      function resetIdleTimer() { idleTime = 0; }
+      window.addEventListener('mousemove', resetIdleTimer);
+      window.addEventListener('keypress', resetIdleTimer);
+      window.addEventListener('click', resetIdleTimer);
+      window.addEventListener('scroll', resetIdleTimer);
+      window.addEventListener('touchstart', resetIdleTimer);
+
+      setInterval(() => {
+        idleTime++;
+        if (idleTime >= MAX_IDLE_MINUTES && localStorage.getItem('dreamos_session_active') === 'true') {
+          alert('⚠️ Sesi berakhir karena tidak ada aktivitas (30 menit).');
+          if (window.supabaseClient) window.supabaseClient.auth.signOut().catch(()=>{});
+          localStorage.removeItem('dreamos_bound_user');
+          localStorage.setItem('dreamos_session_active', 'false');
+          location.reload();
+        }
+      }, 60000); // Cek setiap 1 menit
+
+      // Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('sw.js')

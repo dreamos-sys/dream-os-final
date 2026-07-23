@@ -49,7 +49,7 @@
         <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">📊 Overview</button>
         <button class="tab-btn" data-tab="edit" onclick="switchTab('edit', this)">✏️ Edit</button>
         <button class="tab-btn" data-tab="security" onclick="switchTab('security', this)">🔒 Security</button>
-        <button class="tab-btn" data-tab="users" onclick="switchTab('users', this)">👥 Users</button>
+        <button class="tab-btn" data-tab="users" onclick="switchTab('users', this)" style="display:none;">👥 Users</button>
         <button class="tab-btn" data-tab="settings" onclick="switchTab('settings', this)">⚙️ Settings</button>
     </div>
 
@@ -89,8 +89,8 @@
         </div>
     </div>
 
-    <!-- TAB: Users -->
-    <div id="tab-users" class="tab-content">
+    <!-- TAB: Users (Disabled: Centralized in Command Center for Zero Fraud) -->
+    <div id="tab-users" class="tab-content" style="display:none;">
         <div class="glass">
             <div class="section-title" style="color:var(--purple);">👥 Daftar Pengguna</div>
             <div id="user-list" style="max-height:300px; overflow-y:auto;"></div>
@@ -305,22 +305,40 @@
 
   // ========== OTHER FUNCTIONS ==========
   window.changePassword = async function() {
-    var o = document.getElementById('old-pass').value;
-    var n = document.getElementById('new-pass').value;
-    var c = document.getElementById('confirm-pass').value;
-    if (!o||!n||!c) return alert('⚠️ Isi semua!');
-    if (n.length<6) return alert('⚠️ Min 6 karakter!');
-    if (n!==c) return alert('⚠️ Tidak cocok!');
+    var oldPass = document.getElementById('old-pass').value;
+    var newPass = document.getElementById('new-pass').value;
+    var confirmPass = document.getElementById('confirm-pass').value;
+    
+    if (!oldPass || !newPass || !confirmPass) return alert('⚠️ Isi semua field!');
+    if (newPass.length < 6) return alert('⚠️ Minimal 6 karakter!');
+    if (newPass !== confirmPass) return alert('⚠️ Password tidak cocok!');
 
-    var oh = await SEC.hashPassword(o);
-    var users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
-    var cu = users.find(function(u){return u.email===user.email;});
-    if (!cu||cu.password_hash!==oh) return alert('⚠️ Password lama salah!');
+    try {
+      // 1. Verifikasi password lama langsung ke Supabase Auth
+      const { error: signInError } = await window.supabaseClient.auth.signInWithPassword({
+        email: user.email,
+        password: oldPass
+      });
+      if (signInError) throw new Error('Password lama salah!');
 
-    cu.password_hash = await SEC.hashPassword(n);
-    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-    notifyParent('CHANGE_PASSWORD', 'Password changed');
-    alert('✅ Password diganti!');
+      // 2. Update password baru di Supabase Auth (Bukan cuma localStorage)
+      const { error: updateError } = await window.supabaseClient.auth.updateUser({
+        password: newPass
+      });
+      if (updateError) throw updateError;
+
+      notifyParent('CHANGE_PASSWORD_SUCCESS', 'Password updated via Supabase Auth');
+      alert('✅ Password berhasil diubah! Silakan login ulang.');
+      
+      // 3. Logout paksa agar sesi baru menggunakan password baru (Zero Session Fraud)
+      await window.supabaseClient.auth.signOut();
+      localStorage.removeItem('dreamos_bound_user');
+      localStorage.removeItem('dreamos_session_active');
+      window.location.href = 'index.html';
+
+    } catch (e) {
+      alert('❌ Gagal: ' + e.message);
+    }
   };
 
   window.showRegisterForm = function() { document.getElementById('register-panel').style.display='block'; };
