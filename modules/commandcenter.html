@@ -92,6 +92,7 @@
     <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 User Management</button>
     <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit Log</button>
     <button class="tab" onclick="switchTab('uat')" id="tab-uat-btn" style="display:none;">📄 Dokumen & Cetak</button>
+    <button class="tab" onclick="switchTab('searchexport')" id="tab-searchexport-btn" style="display:none;">🔍 Search & Export</button>
   </div>
 
   <div id="tab-dashboard" class="tab-content active">
@@ -229,6 +230,30 @@
     </div>
   </div>
 
+
+  <div id="tab-searchexport" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--accent);">🔍 Global Search & Report Export</div>
+      <div class="form-group">
+        <input type="text" id="global-search-input" class="cmd-input" placeholder="Ketik nama, ruang, lokasi, judul..." autocomplete="off">
+        <div id="search-results" style="max-height:250px; overflow-y:auto; margin-top:0.5rem; display:none; background:rgba(0,0,0,0.4); border-radius:8px; border:1px solid rgba(255,255,255,0.1);"></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:1rem;">
+        <div class="form-group"><label>Tipe Laporan</label><select id="report-type" class="bk-input"><option value="booking">Booking</option><option value="k3">K3 Safety</option><option value="dana">Pengajuan Dana</option><option value="maintenance">Maintenance</option><option value="all">Semua Aktivitas</option></select></div>
+        <div class="form-group"><label>Format</label><select id="report-format" class="bk-input"><option value="pdf">PDF A4</option><option value="excel">Excel (Soon)</option></select></div>
+        <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="report-start" class="bk-input"></div>
+        <div class="form-group"><label>Tanggal Akhir</label><input type="date" id="report-end" class="bk-input"></div>
+      </div>
+      <button class="btn btn-primary" onclick="exportReport()" style="width:100%; margin-top:0.5rem;">📥 Generate Laporan PDF</button>
+      <div id="report-status" style="margin-top:0.5rem; font-size:0.8rem; text-align:center;"></div>
+    </div>
+    <div class="glass" style="margin-top:1rem;">
+      <div class="section-title" style="color: var(--gold);">📁 File Manager (Bukti Foto)</div>
+      <div class="form-group"><label>Bucket Storage</label><select id="file-bucket" class="bk-input"><option value="k3-foto">k3-foto</option><option value="spj-bukti">spj-bukti</option><option value="maintenance-docs">maintenance-docs</option></select></div>
+      <div id="file-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:0.8rem; margin-top:0.5rem; max-height:300px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <div id="tab-audit" class="tab-content">
     <div class="glass">
       <div class="section-title" style="color: var(--purple);">📜 Activity Log (ISO 27001 Compliant)</div>
@@ -284,6 +309,7 @@ if (!window.goHome) window.goHome = function() {
   if (permissions.canManageUsers) document.getElementById('tab-users-btn').style.display = 'flex';
   if (permissions.logActivity) document.getElementById('tab-audit-btn').style.display = 'flex';
   if (permissions.canManageUsers || permissions.canApproveDana) document.getElementById('tab-uat-btn').style.display = 'flex';
+  if (permissions.canApproveDana || permissions.canManageUsers) document.getElementById('tab-searchexport-btn').style.display = 'flex';
 
 
   // ========== MODUL DANA (SUBMIT & TRACK) ==========
@@ -406,7 +432,8 @@ if (!window.goHome) window.goHome = function() {
     if (tabName === 'approvals') loadApprovals();
     if (tabName === 'users') renderUserList();
     if (tabName === 'audit') renderAuditLog();
-    if (tabName === 'uat') { /* Static UAT panel, no extra fetch */ }
+    if (tabName === 'uat') { /* Static UAT panel */ }
+    if (tabName === 'searchexport') { initSearchExport(); }
   };
 
   window.openModule = function(modKey) {
@@ -655,6 +682,100 @@ if (!window.goHome) window.goHome = function() {
       document.getElementById('ann-ucapan').value = existing.find(a=>a.type==='ucapan')?.msg||'';
     }
   },300);
+
+  
+  // ===== 🔍 SEARCH, PDF EXPORT & FILE MANAGER (MODULAR ENTERPRISE) =====
+  let searchTimeout = null;
+  window.initSearchExport = function() {
+    const input = document.getElementById('global-search-input');
+    const results = document.getElementById('search-results');
+    if (!input || !results) return;
+
+    input.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (searchTimeout) clearTimeout(searchTimeout);
+      if (q.length < 2) { results.style.display='none'; return; }
+      searchTimeout = setTimeout(() => performGlobalSearch(q, results), 300);
+    });
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !results.contains(e.target)) results.style.display='none';
+    });
+    loadFileManager();
+  };
+
+  async function performGlobalSearch(query, container) {
+    container.innerHTML = '<div style="padding:0.8rem;color:#94a3b8;">⏳ Mencari...</div>';
+    container.style.display = 'block';
+    try {
+      const res = [];
+      const { data: b } = await window.supabaseClient.from('bookings').select('id,nama_peminjam,ruang,tanggal').or(`nama_peminjam.ilike.%${query}%,ruang.ilike.%${query}%`).limit(3);
+      if (b?.length) res.push({ type:'📅 Booking', items: b.map(x=>`${x.nama_peminjam} - ${x.ruang} (${x.tanggal})`) });
+      const { data: k } = await window.supabaseClient.from('k3_reports').select('id,lokasi,jenis_laporan,tanggal').or(`lokasi.ilike.%${query}%,jenis_laporan.ilike.%${query}%`).limit(3);
+      if (k?.length) res.push({ type:'⚠️ K3', items: k.map(x=>`${x.tanggal} ${x.lokasi} (${x.jenis_laporan})`) });
+      const { data: d } = await window.supabaseClient.from('dana_requests').select('id,judul,nominal').ilike('judul',`%${query}%`).limit(3);
+      if (d?.length) res.push({ type:'💸 Dana', items: d.map(x=>`${x.judul} - Rp ${x.nominal?.toLocaleString()}`) });
+
+      if (!res.length) { container.innerHTML = '<div style="padding:0.8rem;color:#64748b;">Tidak ditemukan</div>'; return; }
+      let html = '';
+      res.forEach(g => {
+        html += `<div style="padding:0.5rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.05);"><strong style="color:var(--accent);font-size:0.75rem;">${g.type}</strong>`;
+        g.items.forEach(i => html += `<div style="padding:0.3rem 0;font-size:0.8rem;color:#cbd5e1;">• ${i}</div>`);
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    } catch(e) { container.innerHTML = `<div style="padding:0.8rem;color:#ef4444;">❌ ${e.message}</div>`; }
+  }
+
+  window.exportReport = async function() {
+    const type = document.getElementById('report-type').value;
+    const start = document.getElementById('report-start').value;
+    const end = document.getElementById('report-end').value;
+    const statusEl = document.getElementById('report-status');
+    if (!start || !end) { if(window.showToast) window.showToast('⚠️ Pilih rentang tanggal!','warn'); return; }
+    statusEl.innerHTML = '<span style="color:#f59e0b;">⏳ Generating PDF...</span>';
+    try {
+      let data=[], title='Laporan';
+      if (type==='booking') { title='Booking'; const {data:d} = await window.supabaseClient.from('bookings').select('nama_peminjam,ruang,tanggal,jam_mulai,jam_selesai,status').gte('tanggal',start).lte('tanggal',end); data=d||[]; }
+      else if (type==='k3') { title='K3'; const {data:d} = await window.supabaseClient.from('k3_reports').select('tanggal,lokasi,jenis_laporan,pelapor,status').gte('tanggal',start).lte('tanggal',end); data=d||[]; }
+      else if (type==='dana') { title='Dana'; const {data:d} = await window.supabaseClient.from('dana_requests').select('created_at,judul,nominal,pemohon,status').gte('created_at',start+'T00:00:00').lte('created_at',end+'T23:59:59'); data=d||[]; }
+      
+      if (!window.jspdf) { statusEl.innerHTML='<span style="color:#ef4444;">❌ Library jsPDF belum dimuat.</span>'; return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16); doc.text(`Laporan ${title}`, 15, 20);
+      doc.setFontSize(10); doc.text(`Periode: ${start} s/d ${end}`, 15, 28);
+      let y=40;
+      data.forEach((r,i)=>{
+        const line = Object.values(r).join(' | ');
+        doc.text(`${i+1}. ${line.substring(0,90)}`, 15, y);
+        y+=8; if(y>270){ doc.addPage(); y=20; }
+      });
+      doc.save(`Laporan_${title}_${start}.pdf`);
+      statusEl.innerHTML='<span style="color:#10b981;">✅ PDF berhasil digenerate!</span>';
+      if(window.showToast) window.showToast('✅ Laporan PDF siap.','success');
+    } catch(e) { statusEl.innerHTML=`<span style="color:#ef4444;">❌ ${e.message}</span>`; }
+  };
+
+  window.loadFileManager = async function() {
+    const container = document.getElementById('file-list');
+    const bucket = document.getElementById('file-bucket')?.value || 'k3-foto';
+    if (!container || !window.supabaseClient) return;
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:1rem;">⏳ Memuat file...</div>';
+    try {
+      const { data: files, error } = await window.supabaseClient.storage.from(bucket).list('', { limit: 50, sortBy: { column:'created_at', order:'desc' } });
+      if (error) throw error;
+      if (!files?.length) { container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:1rem;">Tidak ada file.</div>'; return; }
+      container.innerHTML = files.map(f => {
+        const url = window.supabaseClient.storage.from(bucket).getPublicUrl(f.name).data.publicUrl;
+        return `<div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+          <a href="${url}" target="_blank" style="display:block;height:80px;background:#000;border-radius:6px;margin-bottom:0.3rem;overflow:hidden;"><img src="${url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"></a>
+          <p style="font-size:0.7rem;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</p>
+          <a href="${url}" download class="btn btn-sm btn-primary" style="margin-top:0.3rem;width:100%;text-decoration:none;">⬇️ Download</a>
+        </div>`;
+      }).join('');
+    } catch(e) { container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#ef4444;padding:1rem;">❌ ${e.message}</div>`; }
+  };
+  document.getElementById('file-bucket')?.addEventListener('change', window.loadFileManager);
 
   console.log('🏢 Command Center Pro Loaded | Role:', role);
 })();
