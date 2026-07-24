@@ -38,11 +38,11 @@
   <div class="glass no-print" style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <h2 style="color:var(--neon); margin:0; font-size:1.1rem;">🛡️ Security Ops Center Pro</h2>
-      <p style="color:#64748b; font-size:0.62rem;">ISO 27001 • Bank-Grade Security</p>
+      <p style="color:#64748b; font-size: 0.75rem;">ISO 27001 • Bank-Grade Security</p>
     </div>
     <div style="text-align:right;">
       <div style="font-weight:700; font-size:0.8rem;" id="user-display">🔒</div>
-      <div style="font-size:0.55rem; color:#64748b;" id="sec-live-clock">--:--:--</div>
+      <div style="font-size: 0.75rem; color:#64748b;" id="sec-live-clock">--:--:--</div>
     </div>
   </div>
 
@@ -72,12 +72,12 @@
           <input id="new-name" class="bk-input" placeholder="+ Tambah Nama Personil" style="margin:0;">
           <button data-act="add-name" class="btn btn-primary" style="white-space:nowrap;">➕ Tambah</button>
         </div>
-        <p style="font-size:0.6rem; color:#64748b;">Klik kotak: L (Libur) → P (Pagi) → M (Malam) → CT (Cuti) → Hapus</p>
+        <p style="font-size: 0.75rem; color:#64748b;">Klik kotak: L (Libur) → P (Pagi) → M (Malam) → CT (Cuti) → Hapus</p>
       </div>
     </div>
     <div class="glass" style="overflow-x:auto;">
       <div class="landscape-hint">📱 Putar HP ke landscape untuk melihat tabel lebih leluasa</div>
-<table style="width:100%; font-size:0.65rem; border-collapse:collapse; color:#cbd5e1; text-align:center; min-width:800px;">
+<table style="width:100%; font-size: 0.75rem; border-collapse:collapse; color:#cbd5e1; text-align:center; min-width:800px;">
         <thead><tr style="background:#0f172a;" id="matrix-head"></tr></thead>
         <tbody id="matrix-body"></tbody>
       </table>
@@ -142,7 +142,7 @@
   'use strict';
   let isDanru = false;
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
-  const role = user ? (user.role || 'staff') : 'staff';
+  const role = window.getUserRole ? window.getUserRole() : (user?.role || 'staff');
   document.getElementById('user-display').textContent = user ? (user.nama || 'User') : '🔒';
 
   function esc(s) {
@@ -303,7 +303,7 @@
     const filter = document.getElementById('filter-shift-report')?.value || 'all';
     const filtered = filter === 'all' ? logs : logs.filter(l => l.shift === filter);
     document.getElementById('lap-table').innerHTML = filtered.map((x, i) =>
-      '<tr><td>' + (filtered.length - i) + '</td><td>' + esc(x.tanggal) + '<br><b>' + esc(x.jam) + '</b></td><td>' + esc(x.shift) + '<br><i>' + esc(x.pos) + '</i></td><td><b>D:</b> ' + esc(x.petugas) + '<br><b>K:</b> ' + esc(x.penerima) + '</td><td style="font-size:0.65rem;">' + esc(x.teks) + '</td><td style="color:' + (x.stat === 'URGENT/KEJADIAN' ? 'red' : 'green') + ';font-weight:600;">' + esc(x.stat) + '</td><td style="font-size:0.6rem;">P: ' + esc(x.ttd_penyerah || '-') + '<br>K: ' + esc(x.ttd_penerima || '-') + '</td></tr>'
+      '<tr><td>' + (filtered.length - i) + '</td><td>' + esc(x.tanggal) + '<br><b>' + esc(x.jam) + '</b></td><td>' + esc(x.shift) + '<br><i>' + esc(x.pos) + '</i></td><td><b>D:</b> ' + esc(x.petugas) + '<br><b>K:</b> ' + esc(x.penerima) + '</td><td style="font-size: 0.75rem;">' + esc(x.teks) + '</td><td style="color:' + (x.stat === 'URGENT/KEJADIAN' ? 'red' : 'green') + ';font-weight:600;">' + esc(x.stat) + '</td><td style="font-size: 0.75rem;">P: ' + esc(x.ttd_penyerah || '-') + '<br>K: ' + esc(x.ttd_penerima || '-') + '</td></tr>'
     ).join('');
   }
 
@@ -349,8 +349,14 @@
       logs.unshift(entry);
       localStorage.setItem('dreamos_piket_logs', JSON.stringify(logs));
       if (window.supabaseClient) {
-        if (navigator.onLine) window.supabaseClient.from('security_logs').insert(entry).then(() => {}).catch(() => {});
-        else if (window.OfflineQueue) window.OfflineQueue.add('security_logs', 'insert', entry);
+        if (navigator.onLine) {
+          window.supabaseClient.from('security_logs').insert(entry).then(() => {}).catch(e => {
+            console.warn('Security log sync error:', e.message);
+            if (window.OfflineQueue) window.OfflineQueue.add('security_logs', 'insert', entry);
+          });
+        } else if (window.OfflineQueue) {
+          window.OfflineQueue.add('security_logs', 'insert', entry);
+        }
       }
       document.getElementById('lap-teks').value = '';
       updateStats();
