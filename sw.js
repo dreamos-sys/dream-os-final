@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dreamos-v1.3-offline';
+const CACHE_NAME = 'dreamos-v2-1784856110.3-offline';
 const ASSETS_TO_CACHE = [
   '/dream-os-final/',
   '/dream-os-final/index.html',
