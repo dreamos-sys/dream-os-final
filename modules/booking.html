@@ -42,7 +42,7 @@
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem;">📅 Booking Ruangan & Sarana</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Form Peminjaman Lengkap • Enterprise Grade</p>
+      <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Form Peminjaman Lengkap • Enterprise Grade</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
@@ -122,6 +122,7 @@
 
   <!-- DAFTAR BOOKING -->
   <div class="glass" style="overflow-x: auto;">
+    <div style="font-size:0.7rem; color:#64748b; margin-bottom:0.5rem;">📱 Putar HP ke landscape untuk tabel lebih leluasa</div>
     <div class="section-title" style="color: var(--neon);">📋 Daftar Booking (Live)</div>
     <div id="booking-list"></div>
   </div>
@@ -171,7 +172,7 @@
   const role = user.role || 'staff';
   document.getElementById('booking-peminjam').value = user.nama || user.email || '';
 
-  function isAdmin() { return ['dev', 'kabag_umum', 'koordinator_umum'].includes(role); }
+  function isAdmin() { return window.getUserRole && ['dev','kabag_umum','koordinator_umum'].includes(window.getUserRole()); }
 
   // ===== POPULATE DROPDOWN & ALAT =====
   const ruangSelect = document.getElementById('booking-ruang');
@@ -207,15 +208,15 @@
         '<td>' + esc(b.tgl) + '</td>' +
         '<td>' + esc(b.ruang) + '</td>' +
         '<td>' + esc(b.nama_peminjam) + '</td>' +
-        '<td><span style="background:rgba(139,92,246,0.2);color:#8b5cf6;padding:0.1rem 0.4rem;border-radius:8px;font-size:0.6rem;">' + esc(b.divisi || '-') + '</span></td>' +
+        '<td><span style="background:rgba(139,92,246,0.2);color:#8b5cf6;padding:0.1rem 0.4rem;border-radius:8px;font-size: 0.75rem;">' + esc(b.divisi || '-') + '</span></td>' +
         '<td style="font-size:0.65rem;">' + esc(b.no_hp || '-') + '</td>' +
         '<td>' + esc(b.jam_mulai) + '-' + esc(b.jam_selesai) + '</td>' +
-        '<td style="font-size:0.6rem;">' + esc(b.sarana_alat || '-') + '</td>' +
+        '<td style="font-size: 0.75rem;">' + esc(b.sarana_alat || '-') + '</td>' +
         '<td><span class="badge badge-' + (b.status === 'approved' ? 'approved' : b.status === 'rejected' ? 'rejected' : 'pending') + '">' + (b.status || 'pending') + '</span></td>' +
         '<td style="display:flex;gap:0.2rem;flex-wrap:wrap;">' +
-          '<button onclick="showQR(' + i + ')" class="btn btn-primary" style="font-size:0.5rem;padding:0.2rem 0.4rem;">QR</button>' +
-          (isAdmin() && b.status === 'pending' ? '<button onclick="approveBooking(\'' + b.id + '\')" class="btn btn-success" style="font-size:0.5rem;padding:0.2rem 0.4rem;">✅</button><button onclick="rejectBooking(\'' + b.id + '\')" class="btn btn-danger" style="font-size:0.5rem;padding:0.2rem 0.4rem;">❌</button>' : '') +
-          '<button onclick="deleteBooking(' + i + ')" class="btn btn-danger" style="font-size:0.5rem;padding:0.2rem 0.4rem;">🗑️</button>' +
+          '<button onclick="showQR(' + i + ')" class="btn btn-primary" style="font-size: 0.75rem;padding:0.2rem 0.4rem;">QR</button>' +
+          (isAdmin() && b.status === 'pending' ? '<button onclick="approveBooking(\'' + b.id + '\')" class="btn btn-success" style="font-size: 0.75rem;padding:0.2rem 0.4rem;">✅</button><button onclick="rejectBooking(\'' + b.id + '\')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.4rem;">❌</button>' : '') +
+          '<button onclick="deleteBooking(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.4rem;">🗑️</button>' +
         '</td></tr>';
     });
     html += '</table>';
@@ -339,7 +340,7 @@
 
     // Sync ke cloud
     if (window.supabaseClient) {
-      window.supabaseClient.from('bookings').insert(newBooking).then(() => {}).catch(() => {});
+      window.supabaseClient.from('bookings').insert(newBooking).then(() => {}).catch(e => { console.warn('Booking DB error:', e.message); });
     } else if (window.OfflineQueue) {
       window.OfflineQueue.add('bookings', 'insert', newBooking);
     }
@@ -373,7 +374,7 @@
       renderBookings(); 
     }
     if (window.supabaseClient) {
-      window.supabaseClient.from('bookings').update({ status: 'approved' }).eq('id', id).then(() => {}).catch(() => {});
+      window.supabaseClient.from('bookings').update({ status: 'approved' }).eq('id', id).then(() => {}).catch(e => { console.warn('Booking DB error:', e.message); });
     }
     if (window.BankAudit) BankAudit.log('BOOKING_APPROVE', { id });
     if (window.addNotification) window.addNotification('✅ Booking ' + b.ruang + ' disetujui');
@@ -391,7 +392,7 @@
       renderBookings(); 
     }
     if (window.supabaseClient) {
-      window.supabaseClient.from('bookings').update({ status: 'rejected', reject_reason: reason }).eq('id', id).then(() => {}).catch(() => {});
+      window.supabaseClient.from('bookings').update({ status: 'rejected', reject_reason: reason }).eq('id', id).then(() => {}).catch(e => { console.warn('Booking DB error:', e.message); });
     }
     if (window.BankAudit) BankAudit.log('BOOKING_REJECT', { id, reason });
   };
@@ -404,7 +405,7 @@
     saveBookings(bookings); 
     renderBookings();
     if (window.supabaseClient) {
-      window.supabaseClient.from('bookings').delete().eq('id', d.id).then(() => {}).catch(() => {});
+      window.supabaseClient.from('bookings').delete().eq('id', d.id).then(() => {}).catch(e => { console.warn('Booking DB error:', e.message); });
     }
     if (window.BankAudit) BankAudit.log('BOOKING_DELETE', { id: d.id });
   };
@@ -456,7 +457,7 @@
         await window.supabaseClient.from('bookings').upsert(b); 
         count++; 
       } catch(e) { 
-        console.error('Sync error:', e);
+        console.warn('Booking sync error:', e.message); if(window.OfflineQueue) window.OfflineQueue.add('bookings','upsert',b);
       } 
     }
     alert('✅ ' + count + '/' + bookings.length + ' tersync!');
