@@ -31,6 +31,7 @@
   <script src="phantom-alerter.js"></script>
   <script src="workflowEngine.js"></script>
   <script src="print-wifi.js"></script>
+  <script src="idb-store.js?v=1"></script>
   
   <style>
     :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.6); --glass-border: rgba(0, 255, 157, 0.2); }
@@ -711,6 +712,14 @@
       // Init
       initSupabase();
       
+      // 🗄️ STEP 1: Storage Hardening Init
+      if (window.DreamDB) {
+        window.DreamDB.init().then(() => {
+          window.DreamDB.migrate();
+          window.DreamDB.archiveOldLogs(90);
+        }).catch(e => console.warn('DreamDB init skipped:', e));
+      }
+
       if (localStorage.getItem('dreamos_session_active') === 'true') {
         const user = getStoredUser();
         if (user.role) {
