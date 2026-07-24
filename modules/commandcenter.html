@@ -533,7 +533,10 @@ if (!window.goHome) window.goHome = function() {
 
       renderUserList();
     } catch(e) {
-      msgEl.innerHTML = `<div class="alert alert-error">❌ Gagal: ${e.message}<br><small>Pastikan email belum terdaftar & server online.</small></div>`;
+      const isNetwork = e.message.includes('fetch') || e.message.includes('NetworkError');
+      msgEl.innerHTML = `<div class="alert alert-error">❌ Gagal menghubungi provisioning API.<br>
+        <small>${isNetwork ? '⚠️ Worker API tidak terjangkau. Buat user manual via: Supabase Dashboard → Authentication → Add User (centang Auto Confirm & isi user_metadata role).' : e.message}</small><br>
+        <small style="color:#94a3b8;">Panduan metadata: {"nama":"...","role":"kabag_umum|koordinator_umum|...","divisi":"..."}</small></div>`;
     }
   };
 
