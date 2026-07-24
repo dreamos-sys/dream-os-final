@@ -3,8 +3,8 @@
   * { box-sizing: border-box; }
   body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
   .glass { background: rgba(15,23,42,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(34,197,94,0.15); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
-  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--green); color: var(--green); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
-  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: 0.2s; }
+  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--green); color: var(--green); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; }
+  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-success { background: #10b981; color: #fff; }
   .btn-danger { background: var(--warning); color: #fff; }
@@ -69,7 +69,7 @@
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="color: var(--green); margin: 0; font-size: 1.1rem;">🌿 Janitor Outdoor</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Ceklis Harian & Tugas Mingguan • ISO 14001/45001/9001</p>
+      <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Ceklis Harian & Tugas Mingguan • ISO 14001/45001/9001</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-warning" onclick="showHistory()">📜 Riwayat</button>
@@ -110,9 +110,9 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="toggleExpand('daily', event)">
         <h4 style="color: var(--green); margin: 0;">📋 Ceklis Harian</h4>
-        <span style="font-size: 0.7rem; color: #94a3b8;" id="daily-count">0/0</span>
+        <span style="font-size: 0.75rem; color: #94a3b8;" id="daily-count">0/0</span>
       </div>
-      <button onclick="uploadPhoto('daily', event)" class="btn" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.2rem 0.5rem; font-size: 0.7rem;" id="btn-photo-daily">📸 Foto</button>
+      <button onclick="uploadPhoto('daily', event)" class="btn" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.2rem 0.5rem; font-size: 0.75rem;" id="btn-photo-daily">📸 Foto</button>
     </div>
     <div id="jo-daily-list"></div>
   </div>
@@ -121,9 +121,9 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="toggleExpand('weekly', event)">
         <h4 style="color: var(--gold); margin: 0;">🗓️ Tugas Mingguan</h4>
-        <span style="font-size: 0.7rem; color: #94a3b8;" id="weekly-count">0/0</span>
+        <span style="font-size: 0.75rem; color: #94a3b8;" id="weekly-count">0/0</span>
       </div>
-      <button onclick="uploadPhoto('weekly', event)" class="btn" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.2rem 0.5rem; font-size: 0.7rem;" id="btn-photo-weekly">📸 Foto</button>
+      <button onclick="uploadPhoto('weekly', event)" class="btn" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.2rem 0.5rem; font-size: 0.75rem;" id="btn-photo-weekly">📸 Foto</button>
     </div>
     <div id="jo-weekly-list"></div>
   </div>
@@ -253,10 +253,18 @@
       let reader = new FileReader();
       reader.onload = function(ev) {
         let key = state.shift + '-' + section;
-        state.data[state.date].photos[key] = ev.target.result;
-        state.photoData = state.data[state.date].photos;
-        safeSet('dreamos_janitor_outdoor', state.data);
-        renderAll();
+        try {
+          state.data[state.date].photos[key] = ev.target.result;
+          state.photoData = state.data[state.date].photos;
+          safeSet('dreamos_janitor_outdoor', state.data);
+          renderAll();
+        } catch(e) {
+          if(e.name === 'QuotaExceededError' || e.code === 22) {
+            alert('⚠️ Penyimpanan lokal penuh. Hapus riwayat lama atau gunakan foto resolusi lebih kecil.');
+          } else {
+            console.warn('Photo save error:', e);
+          }
+        }
       };
       reader.readAsDataURL(file);
     };
@@ -300,7 +308,7 @@
       let photoKey = state.shift + '-' + section;
       let photo = state.photoData[photoKey];
       if (photo) {
-        photoHTML += '<div style="margin-bottom:0.5rem;"><div style="font-size:0.7rem;color:#94a3b8;margin-bottom:0.3rem;">📸 Foto ' + (section === 'daily' ? 'Harian' : 'Mingguan') + '</div>';
+        photoHTML += '<div style="margin-bottom:0.5rem;"><div style="font-size: 0.75rem;color:#94a3b8;margin-bottom:0.3rem;">📸 Foto ' + (section === 'daily' ? 'Harian' : 'Mingguan') + '</div>';
         photoHTML += '<img src="' + photo + '" style="max-width:100%;max-height:150px;border-radius:8px;"></div>';
       }
       let btn = document.getElementById('btn-photo-' + section);
@@ -327,8 +335,8 @@
             let pct = total > 0 ? Math.round((checked / total) * 100) : 0;
             html += '<div class="glass" style="margin-bottom:0.5rem;">';
             html += '<h4 style="color:var(--green);margin:0;">📅 ' + new Date(date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + shift.toUpperCase() + '</h4>';
-            html += '<p style="font-size:0.7rem;color:#94a3b8;">👤 Petugas: ' + (dayData.petugas || '-') + ' | 🌳 Area: ' + (dayData.area || '-') + ' | 📍 Zona: ' + (dayData.zona || '-') + '</p>';
-            html += '<p style="font-size:0.7rem;">✅ Progress: ' + checked + '/' + total + ' (' + pct + '%)</p>';
+            html += '<p style="font-size: 0.75rem;color:#94a3b8;">👤 Petugas: ' + (dayData.petugas || '-') + ' | 🌳 Area: ' + (dayData.area || '-') + ' | 📍 Zona: ' + (dayData.zona || '-') + '</p>';
+            html += '<p style="font-size: 0.75rem;">✅ Progress: ' + checked + '/' + total + ' (' + pct + '%)</p>';
             html += '</div>';
           }
         }
@@ -406,7 +414,7 @@
         alert('✅ Data terkirim ke cloud!');
         if (window.BankAudit) BankAudit.log('JANITOR_OUTDOOR_SUBMIT', { petugas, area, shift: state.shift });
       } catch (e) {
-        console.warn('Gagal sync cloud:', e.message);
+        console.warn('Janitor Outdoor sync error:', e.message);
         if (window.OfflineQueue) {
           window.OfflineQueue.add('janitor_outdoor', 'insert', payload);
           alert('⚠️ Data masuk antrian offline. Akan terkirim saat online.');
@@ -426,7 +434,7 @@
 
   document.getElementById('jo-date').value = state.date;
   loadData();
-  if (window.BankAudit) BankAudit.log('ACCESS_JANITOR_OUTDOOR', { role: JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}').role || 'staff' });
+  if (window.BankAudit) BankAudit.log('ACCESS_JANITOR_OUTDOOR', { role: window.getUserRole ? window.getUserRole() : 'staff' });
   console.log('🌿 Janitor Outdoor Ready');
 })();
 </script>
