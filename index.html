@@ -120,7 +120,18 @@
     .notif-bell { position: relative; cursor: pointer; font-size: 1.4rem; margin-right: 0.8rem; }
     .notif-badge { position: absolute; top: -6px; right: -8px; background: #e11d48; color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.5rem; font-weight: 700; display: none; }
     .notif-panel { position: fixed; top: 60px; right: 10px; width: 320px; max-height: 400px; overflow-y: auto; background: rgba(15,23,42,0.95); border: 1px solid #00ff9d; border-radius: 12px; z-index: 10001; display: none; padding: 0.5rem; }
-  </style>
+  
+    /* 🎠 DASHBOARD SLIDER: 7 SLIDE 7 DETIK */
+    #dash-slider { position: relative; overflow: hidden; margin: 1rem 1.5rem; min-height: 85px; border-radius: 16px; }
+    .slide-track { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
+    .slide-item { min-width: 100%; padding: 1rem 1.2rem; text-align: center; font-size: 0.85rem; line-height: 1.5; color: #e2e8f0; }
+    .slide-item strong { color: var(--neon); }
+    .slide-indicators { display: flex; justify-content: center; gap: 6px; margin-top: 0.5rem; }
+    .slide-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: 0.3s; cursor: pointer; }
+    .slide-dot.active { background: var(--neon); transform: scale(1.3); }
+    @media (max-width: 600px) { #dash-slider { margin: 0.8rem; min-height: 75px; } .slide-item { font-size: 0.8rem; padding: 0.8rem; } }
+    
+</style>
 </head>
 <body>
 
@@ -322,6 +333,18 @@
             '<div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
             '<div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
           '</div>' +
+          '<div id="dash-slider" class="glass">' +
+            '<div class="slide-track" id="slide-track">' +
+              '<div class="slide-item" id="slide-1">⏳ Memuat Jadwal Security...</div>' +
+              '<div class="slide-item" id="slide-2">⏳ Memuat Booking...</div>' +
+              '<div class="slide-item" id="slide-3">⏳ Memuat Laporan K3...</div>' +
+              '<div class="slide-item" id="slide-4">⏳ Memuat Cuaca...</div>' +
+              '<div class="slide-item" id="slide-5">⏳ Memuat Info Manajemen...</div>' +
+              '<div class="slide-item" id="slide-6">⏳ Memuat Info Bagian Umum...</div>' +
+              '<div class="slide-item" id="slide-7">⏳ Memuat Ucapan...</div>' +
+            '</div>' +
+            '<div class="slide-indicators" id="slide-dots"></div>' +
+          '</div>' +
           '<div class="module-grid" id="module-grid"></div>' +
           '<div class="system-info-box glass">' +
             '<strong>Dream OS Enterprise RBAC v1.0 Beta</strong><br>' +
@@ -481,104 +504,7 @@
         if (c) { c.style.display = 'none'; c.innerHTML = ''; }
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
-        
-        // 🎠 UPDATE SLIDE DINAMIS (DATA REAL-TIME)
-        window.updateDashboardSlides = async function() {
-          try {
-            // Slide 1: Security Shift
-            const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
-            document.getElementById('slide-1').innerHTML = `<strong>🛡️ Security Shift Hari Ini</strong><br>${sec}`;
-
-            // Slide 2: Booking Hari Ini & Besok
-            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-            const today = new Date().toISOString().split('T')[0];
-            const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
-            const bToday = bookings.filter(b=>b.tgl&&b.tgl.includes(today));
-            const bTomor = bookings.filter(b=>b.tgl&&b.tgl.includes(tomorrow));
-            const htmlB = bToday.length ? bToday.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking hari ini.';
-            const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
-            document.getElementById('slide-2').innerHTML = `<strong>📅 Booking Ruangan</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
-
-            // Slide 3: K3 Reports
-            const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-            const pending = k3.filter(r=>r.status==='pending').length;
-            const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
-            document.getElementById('slide-3').innerHTML = `<strong>⚠️ K3 Safety Report</strong><br>Menunggu Tindak Lanjut: ${pending}<br>${latest}`;
-
-            // Slide 4: Cuaca (Open-Meteo API, Free & No Key)
-            const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
-            const now = Date.now();
-            if (!wCache.ts || now - wCache.ts > 1800000) {
-              try {
-                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
-                const d = await res.json();
-                const temp = d.current_weather.temperature;
-                const code = d.current_weather.weathercode;
-                const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
-                const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
-                wCache.data = `${icon} ${temp}°C - ${desc} (Jakarta)`;
-                wCache.ts = now;
-                localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
-              } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca. Periksa koneksi.'; }
-            }
-            document.getElementById('slide-4').innerHTML = `<strong>🌤️ Cuaca Terkini</strong><br>${wCache.data||'Memuat...'}<br><small>Sumber: Open-Meteo (Real-time)</small>`;
-
-            // Slide 5,6,7: Input Admin Command Center
-            const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
-            const mgmt = ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen.';
-            const umum = ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum.';
-            const ucapan = ann.find(a=>a.type==='ucapan')?.msg || 'Selamat bekerja! The Power Soul Of Shalawat.';
-            document.getElementById('slide-5').innerHTML = `<strong>📢 Info Manajemen</strong><br>${mgmt}`;
-            document.getElementById('slide-6').innerHTML = `<strong>🏢 Info Bagian Umum</strong><br>${umum}`;
-            document.getElementById('slide-7').innerHTML = `<strong>💌 Ucapan Bagian Umum</strong><br>${ucapan}`;
-          } catch(e) { console.warn('Slide update error:', e); }
-        };
-
-        // 🎠 CAROUSEL ENGINE (7 SLIDE, 7 DETIK, SWIPE, PAUSE)
-        setTimeout(() => {
-          window.updateDashboardSlides();
-          const track = document.getElementById('slide-track');
-          const dotsC = document.getElementById('slide-dots');
-          if (!track || !dotsC) return;
-          const slides = track.querySelectorAll('.slide-item');
-          let cur = 0, timer = null;
-          const INTV = 7000;
-
-          slides.forEach((_,i)=>{
-            const d = document.createElement('span');
-            d.className = 'slide-dot'+(i===0?' active':'');
-            d.onclick = ()=>goTo(i);
-            dotsC.appendChild(d);
-          });
-          const dots = dotsC.querySelectorAll('.slide-dot');
-
-          function goTo(i){
-            cur = (i+slides.length)%slides.length;
-            track.style.transform = `translateX(-${cur*100}%)`;
-            dots.forEach((d,x)=>d.classList.toggle('active',x===cur));
-          }
-          function next(){ goTo(cur+1); }
-          function start(){ stop(); timer=setInterval(next,INTV); }
-          function stop(){ if(timer) clearInterval(timer); }
-
-          const el = document.getElementById('dash-slider');
-          el.addEventListener('mouseenter',stop);
-          el.addEventListener('mouseleave',start);
-          el.addEventListener('touchstart',stop,{passive:true});
-          el.addEventListener('touchend',()=>setTimeout(start,3000));
-
-          let sx=0;
-          el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
-          el.addEventListener('touchend',e=>{
-            const diff=sx-e.changedTouches[0].clientX;
-            if(Math.abs(diff)>40) diff>0?goTo(cur+1):goTo(cur-1);
-          });
-
-          goTo(0); start();
-          // Auto refresh data tiap 5 menit
-          setInterval(()=>window.updateDashboardSlides(), 300000);
-        }, 400);
-
+        if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
         setActiveNav('home');
       };
 
@@ -593,7 +519,8 @@
           security_edit_jadwal:'security_edit_jadwal.html', k3:'k3.html',
           'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
           maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
-          dana:'commandcenter.html', // Dana terintegrasi di CMD Center profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
+          dana:'commandcenter.html', // Dana terintegrasi di CMD Center
+          profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
         };
         const file = map[moduleId];
         if (!file) return;
