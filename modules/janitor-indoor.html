@@ -64,7 +64,7 @@
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem;">🧹 Janitor Indoor</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Ceklis Harian • Bank-Grade Security</p>
+      <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Ceklis Harian • Bank-Grade Security</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-warning" onclick="showHistory()">📜 Riwayat</button>
@@ -215,9 +215,17 @@
       let reader = new FileReader();
       reader.onload = function(ev) {
         let key = state.shift + '-' + area;
-        state.data[state.date].photos[key] = ev.target.result;
-        state.photoData = state.data[state.date].photos;
-        safeSet('dreamos_janitor_indoor', state.data);
+        try {
+          state.data[state.date].photos[key] = ev.target.result;
+          state.photoData = state.data[state.date].photos;
+          safeSet('dreamos_janitor_indoor', state.data);
+        } catch(e) {
+          if(e.name === 'QuotaExceededError' || e.code === 22) {
+            alert('⚠️ Penyimpanan lokal penuh. Hapus riwayat lama atau gunakan foto resolusi lebih kecil.');
+          } else {
+            console.warn('Photo save error:', e);
+          }
+        }
         renderChecklist();
       };
       reader.readAsDataURL(file);
@@ -375,7 +383,7 @@
         alert('✅ Data terkirim ke cloud!');
         if (window.BankAudit) BankAudit.log('JANITOR_INDOOR_SUBMIT', { petugas, gedung, shift: state.shift });
       } catch (e) {
-        console.warn('Gagal sync cloud:', e.message);
+        console.warn('Janitor Indoor sync error:', e.message);
         if (window.OfflineQueue) {
           window.OfflineQueue.add('janitor_indoor', 'insert', payload);
           alert('⚠️ Data masuk antrian offline.');
@@ -395,7 +403,7 @@
 
   document.getElementById('ji-date').value = state.date;
   loadData();
-  if (window.BankAudit) BankAudit.log('ACCESS_JANITOR_INDOOR', { role: JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}').role || 'staff' });
+  if (window.BankAudit) BankAudit.log('ACCESS_JANITOR_INDOOR', { role: window.getUserRole ? window.getUserRole() : 'staff' });
   console.log('🧹 Janitor Indoor Ready');
 })();
 </script>
