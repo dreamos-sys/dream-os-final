@@ -295,6 +295,30 @@
       
       window.supabaseClient = null;
 
+    // 🔐 STEP 4: Session & Login Hardening State
+    window._loginAttempts = 0;
+    window._lastLoginTime = 0;
+    const LOGIN_BASE_COOLDOWN = 3000; // 3 detik
+
+    async function verifySession() {
+      if (!window.supabaseClient) return true;
+      try {
+        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+        if (error || !session) {
+          localStorage.removeItem('dreamos_bound_user');
+          localStorage.setItem('dreamos_session_active', 'false');
+          if (window.showToast) window.showToast('🔒 Sesi berakhir atau tidak valid. Silakan login ulang.', 'error');
+          if (window.announce) window.announce('Sesi berakhir. Mengalihkan ke halaman login.');
+          setTimeout(() => location.reload(), 2000);
+          return false;
+        }
+        return true;
+      } catch(e) { console.warn('Session verify error:', e); return true; }
+    }
+    // Cek sesi tiap 5 menit
+    setInterval(verifySession, 300000);
+
+
       function initSupabase() {
         if (window.supabaseClient) return true;
         try {
@@ -358,6 +382,21 @@
           if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; errorEl.classList.add('show'); window.announce('Error: Email dan password wajib diisi.'); }
           return;
         }
+        // 🔒 Password Policy (NIST Min 8 Char)
+        if (password.length < 8) {
+          if (errorEl) { errorEl.textContent = '⛔ Password minimal 8 karakter!'; errorEl.style.display = 'block'; errorEl.classList.add('show'); }
+          if (window.showToast) window.showToast('⛔ Password terlalu pendek. Minimal 8 karakter.', 'error');
+          if (window.announce) window.announce('Error: Password minimal 8 karakter.');
+          return;
+        }
+        // ⏱️ Debounce + Exponential Backoff
+        const now = Date.now();
+        const cooldown = LOGIN_BASE_COOLDOWN * Math.pow(2, Math.min(window._loginAttempts, 3));
+        if (now - window._lastLoginTime < cooldown) {
+          const wait = Math.ceil((cooldown - (now - window._lastLoginTime)) / 1000);
+          if (window.showToast) window.showToast(`⏳ Tunggu ${wait} detik sebelum mencoba lagi.`, 'warn');
+          return;
+        }
 
         loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
 
@@ -365,7 +404,7 @@
           await new Promise(r => setTimeout(r, 1500));
           if (!window.supabaseClient) {
             if (errorEl) { errorEl.textContent = '️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
+            window._loginAttempts++; window._lastLoginTime = Date.now(); loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
             return;
           }
         }
@@ -389,14 +428,14 @@
           if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: data.user.email });
           if (window.PhantomAlerter) PhantomAlerter.systemStartup();
 
-          loginBtn.textContent = '✅ Success!';
+          window._loginAttempts = 0; loginBtn.textContent = '✅ Success!';
           setTimeout(() => { 
             showDashboard(); 
             if (window.Presence && userData.id) window.Presence.track(userData.id);
           }, 500);
         } catch(e) {
           if (errorEl) { errorEl.textContent = '⛔ ' + e.message; errorEl.style.display = 'block'; }
-          loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
+          window._loginAttempts++; window._lastLoginTime = Date.now(); loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
         }
       });
 
@@ -986,26 +1025,31 @@
 
       // Service Worker
       
-      // ===== ISO 27001: IDLE TIMEOUT (30 Menit) =====
+      // ===== ISO 27001: IDLE TIMEOUT HARDENED (30 Menit + Warning) =====
       let idleTime = 0;
-      const MAX_IDLE_MINUTES = 30; 
-      function resetIdleTimer() { idleTime = 0; }
-      window.addEventListener('mousemove', resetIdleTimer);
-      window.addEventListener('keypress', resetIdleTimer);
-      window.addEventListener('click', resetIdleTimer);
-      window.addEventListener('scroll', resetIdleTimer);
-      window.addEventListener('touchstart', resetIdleTimer);
+      const MAX_IDLE_MINUTES = 30;
+      const WARN_IDLE_MINUTES = 28;
+      let idleWarnShown = false;
+      function resetIdleTimer() { idleTime = 0; idleWarnShown = false; }
+      ['mousemove','keypress','click','scroll','touchstart'].forEach(evt => window.addEventListener(evt, resetIdleTimer));
 
       setInterval(() => {
+        if (localStorage.getItem('dreamos_session_active') !== 'true') return;
         idleTime++;
-        if (idleTime >= MAX_IDLE_MINUTES && localStorage.getItem('dreamos_session_active') === 'true') {
-          alert('⚠️ Sesi berakhir karena tidak ada aktivitas (30 menit).');
+        if (idleTime >= WARN_IDLE_MINUTES && !idleWarnShown) {
+          if (window.showToast) window.showToast('⚠️ Sesi akan berakhir dalam 2 menit karena tidak ada aktivitas.', 'warn');
+          if (window.announce) window.announce('Peringatan: Sesi akan berakhir dalam 2 menit.');
+          idleWarnShown = true;
+        }
+        if (idleTime >= MAX_IDLE_MINUTES) {
           if (window.supabaseClient) window.supabaseClient.auth.signOut().catch(()=>{});
           localStorage.removeItem('dreamos_bound_user');
           localStorage.setItem('dreamos_session_active', 'false');
-          location.reload();
+          if (window.showToast) window.showToast('🔒 Sesi berakhir. Mengalihkan ke login...', 'error');
+          if (window.announce) window.announce('Sesi berakhir karena tidak ada aktivitas.');
+          setTimeout(() => location.reload(), 1500);
         }
-      }, 60000); // Cek setiap 1 menit
+      }, 60000);
 
       // Service Worker
       if ('serviceWorker' in navigator) {
