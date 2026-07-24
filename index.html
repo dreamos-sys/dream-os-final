@@ -397,7 +397,7 @@
           security_edit_jadwal:'security_edit_jadwal.html', k3:'k3.html',
           'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
           maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
-          dana:'dana.html', profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
+          dana:'commandcenter.html', // Dana terintegrasi di CMD Center profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
         };
         const file = map[moduleId];
         if (!file) return;
@@ -424,7 +424,13 @@
             });
           })
           .catch(err => {
-            c.innerHTML = '<div style="color:#ef4444;padding:4rem;text-align:center;"><h3>⚠️ Gagal Memuat Modul</h3><p>' + err.message + '</p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;">🏠 Kembali</button></div>';
+            console.warn('🚨 404/Load Error:', file, err.message);
+            const is404 = err.message.includes('404') || err.message.includes('Failed to fetch');
+            c.innerHTML = '<div style="color:#cbd5e1;padding:4rem;text-align:center;">' +
+              '<h3 style="color:#f59e0b;">🚧 Modul ' + (is404 ? 'Belum Tersedia' : 'Gagal Dimuat') + '</h3>' +
+              '<p style="margin:1rem 0;color:#94a3b8;">File: <code style="background:rgba(0,0,0,0.3);padding:0.2rem 0.5rem;border-radius:4px;">modules/' + file + '</code></p>' +
+              '<p style="font-size:0.8rem;color:#64748b;">' + (is404 ? 'Modul ini sedang dalam tahap pengembangan atau belum di-deploy.' : err.message) + '</p>' +
+              '<button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;cursor:pointer;">🏠 Kembali</button></div>';
           });
       }
 
