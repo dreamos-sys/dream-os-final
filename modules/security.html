@@ -190,19 +190,7 @@
       <button data-act="set-slide" class="btn btn-primary" style="width:100%; margin-top:0.5rem;">🚀 UPDATE SLIDE PUBLIK SEKARANG</button>
     </div>
   
-<!-- ✍️ MODAL TANDA TANGAN BASAH -->
-<div id="signature-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; padding:1rem;">
-  <div class="glass" style="max-width:420px; width:100%; padding:1.5rem; text-align:center;">
-    <h3 style="color:var(--neon); margin-bottom:1rem;" id="sig-modal-title">✍️ Tanda Tangan</h3>
-    <canvas id="sig-canvas" style="width:100%; height:200px; background:#fff; border-radius:12px; touch-action:none; border:2px solid rgba(0,255,157,0.2);"></canvas>
-    <p style="font-size:0.7rem; color:#94a3b8; margin:0.5rem 0;">Gambar tanda tangan di area putih. Jempol tidak akan scroll halaman.</p>
-    <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
-      <button class="btn btn-warning" onclick="clearSignature()" style="flex:1;">🗑️ Hapus</button>
-      <button class="btn btn-success" onclick="saveSignature()" style="flex:1;">✅ Simpan</button>
-      <button class="btn btn-danger" onclick="closeSignature()" style="flex:1;">✕ Batal</button>
-    </div>
-  </div>
-</div>
+
 </div>
 </div>
 
@@ -528,9 +516,46 @@
   }
 
   
-  // ===== ✍️ CANVAS TTD BASAH (ISO 27001 AUDIT READY) =====
-  let sigPad, currentSigTarget = null;
+  // ===== ✍️ CANVAS TTD BASAH (FIXED: DPI, TOUCH, VISIBILITY) =====
+  let sigPad = null;
+  let currentSigTarget = null;
   window.currentSignatures = { penyerah: null, penerima: null };
+
+  function initSignaturePad() {
+    const canvas = document.getElementById('sig-canvas');
+    if (!canvas || typeof SignaturePad === 'undefined') return;
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(ratio, ratio);
+    sigPad = new SignaturePad(canvas, {
+      backgroundColor: 'rgb(255,255,255)',
+      penColor: 'rgb(0,0,0)',
+      minWidth: 1.5, maxWidth: 2.5, throttle: 0
+    });
+  }
+
+  window.openSignature = function(target) {
+    currentSigTarget = target;
+    document.getElementById('sig-modal-title').textContent = target === 'penyerah' ? '✍️ TTD Penyerah' : '✍️ TTD Penerima';
+    const modal = document.getElementById('signature-modal');
+    modal.style.display = 'flex';
+    // Init SETELAH modal visible agar offsetWidth/Height tidak 0
+    setTimeout(() => { initSignaturePad(); if(sigPad) sigPad.clear(); }, 60);
+  };
+
+  window.clearSignature = function() { if (sigPad) sigPad.clear(); };
+  window.closeSignature = function() { document.getElementById('signature-modal').style.display = 'none'; };
+
+  window.saveSignature = function() {
+    if (!sigPad || sigPad.isEmpty()) return alert('⚠️ Tanda tangan masih kosong!');
+    const dataUrl = sigPad.toDataURL('image/png');
+    window.currentSignatures[currentSigTarget] = dataUrl;
+    const preview = document.getElementById('sig-preview-' + currentSigTarget);
+    if (preview) { preview.style.display = 'block'; preview.querySelector('img').src = dataUrl; }
+    closeSignature();
+  };
 
   function initSignaturePad() {
     const canvas = document.getElementById('sig-canvas');
