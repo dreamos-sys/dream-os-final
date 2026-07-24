@@ -3,8 +3,8 @@
   * { box-sizing: border-box; }
   body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
   .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,157,0.1); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
-  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
-  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; }
+  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-success { background: #10b981; color: #fff; }
   .btn-danger { background: var(--warning); color: #fff; }
@@ -35,7 +35,7 @@
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="color: var(--accent); margin: 0; font-size: 1.1rem;">🔧 Maintenance & Perawatan</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">ISO 55001 • Asset Bridge • Enterprise Grade</p>
+      <p style="color: #64748b; font-size: 0.75rem; margin: 0;">ISO 55001 • Asset Bridge • Enterprise Grade</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
@@ -111,10 +111,10 @@
         let statusBorder = t.status === 'Proses' ? 'proses' : '';
         html += '<div class="task-card ' + statusBorder + '">';
         html += '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.4rem;">';
-        html += '<div><strong style="font-size: 0.85rem;">' + esc(t.judul) + '</strong><br><span style="font-size: 0.7rem; color: #94a3b8;">📍 ' + esc(t.lokasi) + ' | 👷 ' + esc(t.petugas) + '</span></div>';
+        html += '<div><strong style="font-size: 0.85rem;">' + esc(t.judul) + '</strong><br><span style="font-size: 0.75rem; color: #94a3b8;">📍 ' + esc(t.lokasi) + ' | 👷 ' + esc(t.petugas) + '</span></div>';
         html += '<span class="prio-badge ' + prioClass + '">' + esc(t.prioritas || 'Sedang') + '</span></div>';
-        html += '<div style="font-size: 0.7rem; color: #cbd5e1; margin-bottom: 0.3rem;">🔧 ' + esc(t.jenis || '') + ' | ' + esc(t.deskripsi || '') + '</div>';
-        if (t.biaya) html += '<div style="font-size: 0.7rem; color: var(--gold); margin-bottom: 0.2rem;">💰 Biaya: Rp ' + parseInt(t.biaya).toLocaleString('id-ID') + '</div>';
+        html += '<div style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 0.3rem;">🔧 ' + esc(t.jenis || '') + ' | ' + esc(t.deskripsi || '') + '</div>';
+        if (t.biaya) html += '<div style="font-size: 0.75rem; color: var(--gold); margin-bottom: 0.2rem;">💰 Biaya: Rp ' + parseInt(t.biaya).toLocaleString('id-ID') + '</div>';
         html += '<div style="display: flex; gap: 0.3rem; margin-top: 0.5rem;">';
         if (t.status === 'Pending') {
           html += '<button class="btn btn-primary" onclick="changeStatus(\'' + t.id + '\', \'Proses\')" style="flex: 1;">🔵 Mulai Proses</button>';
@@ -138,7 +138,7 @@
       tasks.reverse().forEach(t => {
         html += '<div class="task-card selesai">';
         html += '<div style="display: flex; justify-content: space-between;">';
-        html += '<div><strong>' + esc(t.judul) + '</strong><br><span style="font-size: 0.7rem; color: #94a3b8;">📍 ' + esc(t.lokasi) + ' | 👷 ' + esc(t.petugas) + '</span></div>';
+        html += '<div><strong>' + esc(t.judul) + '</strong><br><span style="font-size: 0.75rem; color: #94a3b8;">📍 ' + esc(t.lokasi) + ' | 👷 ' + esc(t.petugas) + '</span></div>';
         html += '<span style="font-size: 0.75rem; color: #64748b;">' + (t.updatedAt ? new Date(t.updatedAt).toLocaleDateString('id-ID') : '-') + '</span></div>';
         html += '</div>';
       });
@@ -179,7 +179,7 @@
 
     // Sync ke Supabase
     if (window.supabaseClient) {
-      window.supabaseClient.from('maintenance_tasks').insert(task).then(() => console.log('✅ Synced')).catch(() => {});
+      window.supabaseClient.from('maintenance_tasks').insert(task).then(() => console.log('✅ Synced')).catch(e => { console.warn('Maintenance insert error:', e.message); if(window.OfflineQueue) window.OfflineQueue.add('maintenance_tasks','insert',task); });
     } else if (window.OfflineQueue) {
       window.OfflineQueue.add('maintenance_tasks', 'insert', task);
     }
@@ -205,7 +205,7 @@
     renderActive();
 
     if (window.supabaseClient) {
-      window.supabaseClient.from('maintenance_tasks').update({ status: newStatus, updatedAt: tasks[idx].updatedAt }).eq('id', id).then(() => {}).catch(() => {});
+      window.supabaseClient.from('maintenance_tasks').update({ status: newStatus, updatedAt: tasks[idx].updatedAt }).eq('id', id).then(() => {}).catch(e => { console.warn('Maintenance update error:', e.message); });
     }
     if (window.BankAudit) BankAudit.log('MAINT_STATUS', { id, newStatus });
   };
@@ -218,7 +218,7 @@
     renderActive();
 
     if (window.supabaseClient) {
-      window.supabaseClient.from('maintenance_tasks').delete().eq('id', id).then(() => {}).catch(() => {});
+      window.supabaseClient.from('maintenance_tasks').delete().eq('id', id).then(() => {}).catch(e => { console.warn('Maintenance delete error:', e.message); });
     }
     if (window.BankAudit) BankAudit.log('MAINT_DELETE', { id });
   };
@@ -243,7 +243,7 @@
     if (!tasks.length) return alert('⚠️ Tidak ada data untuk disync.');
     let count = 0;
     for (let t of tasks) {
-      try { await window.supabaseClient.from('maintenance_tasks').upsert(t); count++; } catch(e) { console.warn('Sync failed:', t.judul); }
+      try { await window.supabaseClient.from('maintenance_tasks').upsert(t); count++; } catch(e) { console.warn('Maintenance bulk sync error:', e.message); if(window.OfflineQueue) window.OfflineQueue.add('maintenance_tasks','upsert',t); }
     }
     alert('✅ ' + count + '/' + tasks.length + ' tugas tersync ke cloud!');
     if (window.BankAudit) BankAudit.log('MAINT_SYNC', { total: tasks.length, success: count });
@@ -257,7 +257,7 @@
   // Init
   renderActive();
   updateStats();
-  if (window.BankAudit) BankAudit.log('ACCESS_MAINT_MODULE');
+  if (window.BankAudit) BankAudit.log('ACCESS_MAINT_MODULE', { role: window.getUserRole ? window.getUserRole() : 'staff' });
   console.log('🔧 Maintenance Ready');
 })();
 </script>
