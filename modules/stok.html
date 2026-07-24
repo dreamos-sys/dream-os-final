@@ -27,7 +27,7 @@
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem;">📦 Stok Gudang</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">Manajemen Inventaris • Bank-Grade Security</p>
+      <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Manajemen Inventaris • Bank-Grade Security</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
@@ -54,7 +54,7 @@
 
   <div class="glass">
     <div class="section-title" style="color: var(--neon);">📋 Daftar Barang</div>
-    <div id="stok-list" style="max-height: 500px; overflow-y: auto;"></div>
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><div id="stok-list" style="max-height: 500px; overflow-y: auto;"></div></div>
   </div>
 
   <div class="glass" style="display: flex; gap: 0.5rem; justify-content: center;">
@@ -74,7 +74,7 @@
     document.getElementById('stok-list').innerHTML = s.length ? 
       ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>Aksi</th></tr>' + 
        s.map(function(x, i) {
-         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.qty + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size:0.55rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size:0.45rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
+         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.qty + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size: 0.75rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
        }).join('') + '</table>') : 
       '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada data barang.</p>';
     updateStats();
@@ -123,7 +123,7 @@
     if (window.supabaseClient) {
       window.supabaseClient.from('stok_gudang').upsert(exist || item).then(function() {
         console.log('✅ Stok synced to cloud');
-      }).catch(function() {});
+      }).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
     }
     if (window.BankAudit) BankAudit.log('STOK_ADD', { nama: nama, qty: qty });
   };
@@ -137,7 +137,7 @@
     renderList();
     
     if (window.supabaseClient && deleted.id) {
-      window.supabaseClient.from('stok_gudang').delete().eq('id', deleted.id).then(function() {}).catch(function() {});
+      window.supabaseClient.from('stok_gudang').delete().eq('id', deleted.id).then(function() {}).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
     }
     if (window.BankAudit) BankAudit.log('STOK_DELETE', { nama: deleted.nama });
   };

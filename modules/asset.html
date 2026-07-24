@@ -21,7 +21,7 @@
   table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
   th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; }
   td { padding: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-  .badge { padding: 0.15rem 0.4rem; border-radius: 10px; font-size: 0.55rem; font-weight: 600; }
+  .badge { padding: 0.15rem 0.4rem; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
   .badge-aman { background: rgba(16,185,129,0.1); color: #10b981; }
   .badge-kritis { background: rgba(239,68,68,0.1); color: #ef4444; }
   .badge-rusak { background: rgba(245,158,11,0.1); color: #f59e0b; }
@@ -34,7 +34,7 @@
   <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="color: var(--gold); margin: 0; font-size: 1.1rem;">🏛️ Manajemen Aset & Gudang ERP</h2>
-      <p style="color: #64748b; font-size: 0.62rem; margin: 0;">ISO 55001 • Auto-RAB • Enterprise Grade</p>
+      <p style="color: #64748b; font-size: 0.75rem; margin: 0;">ISO 55001 • Auto-RAB • Enterprise Grade</p>
     </div>
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-success" onclick="syncGudangToCloud()">☁️ Sync Gudang</button>
@@ -146,8 +146,7 @@
   function fmtRp(v) { return 'Rp ' + (parseInt(v) || 0).toLocaleString('id-ID'); }
 
   function isAdmin() {
-    let user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-    return ['dev', 'kabag_umum', 'koordinator_umum'].includes(user.role);
+    return window.getUserRole && ['dev','kabag_umum','koordinator_umum'].includes(window.getUserRole());
   }
 
   function logAudit(action, detail) {
@@ -168,7 +167,7 @@
       let statusBadge = isLow ? '<span class="badge badge-kritis">⚠️ Kritis</span>' : '<span class="badge badge-aman">✅ Aman</span>';
       if (g.kondisi && g.kondisi.includes('Rusak')) statusBadge = '<span class="badge badge-rusak">🔧 Rusak</span>';
       html += '<tr><td><b>' + esc(g.nama) + '</b></td><td>' + esc(g.kategori) + '</td><td style="color:' + (isLow ? '#ef4444' : '#e2e8f0') + ';font-weight:700;">' + qty + '</td><td>' + minQty + '</td><td>' + fmtRp(g.nilai) + '</td><td>' + statusBadge + '</td>';
-      html += '<td><button class="btn btn-primary" onclick="editGudang(\'' + g.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteGudang(\'' + g.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
+      html += '<td><button class="btn btn-primary" onclick="editGudang(\'' + g.id + '\')" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteGudang(\'' + g.id + '\')" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
     });
     document.getElementById('gudang-list').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data barang.</td></tr>';
   }
@@ -180,7 +179,7 @@
     data.forEach(a => {
       let statusBadge = a.status === 'Baik' ? '<span class="badge badge-aman">' + a.status + '</span>' : '<span class="badge badge-rusak">' + a.status + '</span>';
       html += '<tr><td><b>' + esc(a.nama) + '</b></td><td>' + esc(a.jenis) + '</td><td>' + esc(a.lokasi) + '</td><td>' + fmtRp(a.nilai) + '</td><td>' + esc(a.tahun) + '</td><td>' + statusBadge + '</td>';
-      html += '<td><button class="btn btn-primary" onclick="editAsset(\'' + a.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteAsset(\'' + a.id + '\')" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
+      html += '<td><button class="btn btn-primary" onclick="editAsset(\'' + a.id + '\')" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteAsset(\'' + a.id + '\')" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
     });
     document.getElementById('asset-list').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data aset.</td></tr>';
   }
@@ -262,7 +261,7 @@
     let editId = document.getElementById('gd-edit-id').value;
     if (editId) { let idx = data.findIndex(g => g.id === editId); if (idx > -1) data[idx] = item; } else { data.push(item); }
     safeSet('dreamos_gudang', data);
-    if (window.supabaseClient) window.supabaseClient.from('stok').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, jumlah: parseInt(item.jumlah) || 0, ambang_batas: parseInt(item.minimal) || 5, kondisi: item.kondisi }).then(() => {}).catch(() => {});
+    if (window.supabaseClient) window.supabaseClient.from('stok').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, jumlah: parseInt(item.jumlah) || 0, ambang_batas: parseInt(item.minimal) || 5, kondisi: item.kondisi }).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     if (window.OfflineQueue) window.OfflineQueue.add('stok', 'upsert', item);
     logAudit(editId ? 'UPDATE_GUDANG' : 'TAMBAH_GUDANG', item.nama);
     resetForm('gudang'); renderGudang();
@@ -286,7 +285,7 @@
     if (!confirm('Hapus barang ini?')) return;
     let data = safeGet('dreamos_gudang', []).filter(g => g.id !== id);
     safeSet('dreamos_gudang', data);
-    if (window.supabaseClient) window.supabaseClient.from('stok').delete().eq('id', id).then(() => {}).catch(() => {});
+    if (window.supabaseClient) window.supabaseClient.from('stok').delete().eq('id', id).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     logAudit('HAPUS_GUDANG', 'ID: ' + id);
     renderGudang();
   };
@@ -309,7 +308,7 @@
     let editId = document.getElementById('as-edit-id').value;
     if (editId) { let idx = data.findIndex(a => a.id === editId); if (idx > -1) data[idx] = item; } else { data.push(item); }
     safeSet('dreamos_assets', data);
-    if (window.supabaseClient) window.supabaseClient.from('assets').upsert(item).then(() => {}).catch(() => {});
+    if (window.supabaseClient) window.supabaseClient.from('assets').upsert(item).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     if (window.OfflineQueue) window.OfflineQueue.add('assets', 'upsert', item);
     logAudit(editId ? 'UPDATE_ASET' : 'TAMBAH_ASET', item.nama);
     resetForm('asset'); renderAsset();
@@ -333,7 +332,7 @@
     if (!confirm('Hapus aset ini?')) return;
     let data = safeGet('dreamos_assets', []).filter(a => a.id !== id);
     safeSet('dreamos_assets', data);
-    if (window.supabaseClient) window.supabaseClient.from('assets').delete().eq('id', id).then(() => {}).catch(() => {});
+    if (window.supabaseClient) window.supabaseClient.from('assets').delete().eq('id', id).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     logAudit('HAPUS_ASET', 'ID: ' + id);
     renderAsset();
   };
@@ -369,7 +368,7 @@
     safeSet('dreamos_dana', dana);
     if (window.OfflineQueue) window.OfflineQueue.add('dana', 'insert', dana[dana.length - 1]);
     logAudit('AJUKAN_RAB', 'Total: ' + fmtRp(total));
-    alert('✅ Draft RAB senilai ' + fmtRp(total) + ' telah dikirim ke Modul Dana!');
+    alert('✅ Draft RAB senilai ' + fmtRp(total) + ' tersimpan!\n📌 Buka CMD Center → Tab Dana untuk mengajukan.'); if(window.goHome) window.goHome();
   };
 
   // ===== SYNC TO CLOUD =====
