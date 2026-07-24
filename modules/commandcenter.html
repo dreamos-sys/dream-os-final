@@ -101,7 +101,17 @@
     <div class="kpi-grid" id="kpi-container"></div>
     <div class="glass">
       <div class="section-title" style="color: var(--neon);">📱 Modul Workspace</div>
-      <div class="module-grid" id="module-grid"></div>
+      
+    <div class="glass" id="admin-announcements-panel" style="display:none; margin-top:1rem;">
+      <div class="section-title" style="color: var(--gold);">📢 Update Info Dashboard (Slide 5-7)</div>
+      <div class="form-group"><label>Info Manajemen (Slide 5)</label><input type="text" id="ann-mgmt" placeholder="Contoh: Rapat evaluasi Jumat 10:00"></div>
+      <div class="form-group"><label>Info Bagian Umum (Slide 6)</label><input type="text" id="ann-umum" placeholder="Contoh: Pemeliharaan lift gedung A senin-kamis"></div>
+      <div class="form-group"><label>Ucapan / Motivasi (Slide 7)</label><input type="text" id="ann-ucapan" placeholder="Contoh: Selamat bertugas! The Power Soul Of Shalawat"></div>
+      <button class="btn btn-warning" onclick="saveAnnouncements()" style="width:100%;">💾 Update Slide Dashboard</button>
+      <div id="ann-msg" style="margin-top:0.5rem; font-size:0.8rem;"></div>
+    </div>
+
+    <div class="module-grid" id="module-grid"></div>
     </div>
   </div>
 
@@ -610,6 +620,36 @@ if (!window.goHome) window.goHome = function() {
     if (window.supabaseClient) { syncEl.innerHTML = '🟢 Online - Terhubung ke Supabase'; syncEl.style.color = '#10b981'; } 
     else { syncEl.innerHTML = '🟡 Offline Mode - Menggunakan Cache Lokal'; syncEl.style.color = '#f59e0b'; }
   }, 1000);
+  
+  // Tampilkan panel hanya untuk Kabag/Koordinator
+  if (permissions.canManageUsers || permissions.canApproveDana) {
+    document.getElementById('admin-announcements-panel').style.display = 'block';
+  }
+
+  window.saveAnnouncements = function() {
+    const mgmt = document.getElementById('ann-mgmt').value.trim();
+    const umum = document.getElementById('ann-umum').value.trim();
+    const ucapan = document.getElementById('ann-ucapan').value.trim();
+    const data = [
+      {type:'management', msg: mgmt || 'Belum ada info manajemen.'},
+      {type:'umum', msg: umum || 'Belum ada info bagian umum.'},
+      {type:'ucapan', msg: ucapan || 'Selamat bekerja! The Power Soul Of Shalawat.'}
+    ];
+    localStorage.setItem('dreamos_cmd_announcements', JSON.stringify(data));
+    document.getElementById('ann-msg').innerHTML = '<span style="color:#10b981;">✅ Tersimpan! Refresh dashboard untuk melihat perubahan.</span>';
+    if (window.BankAudit) window.BankAudit.log('UPDATE_DASH_ANNOUNCEMENTS', { mgmt, umum, ucapan });
+  };
+
+  // Load existing values
+  setTimeout(()=>{
+    const existing = JSON.parse(localStorage.getItem('dreamos_cmd_announcements')||'[]');
+    if(existing.length){
+      document.getElementById('ann-mgmt').value = existing.find(a=>a.type==='management')?.msg||'';
+      document.getElementById('ann-umum').value = existing.find(a=>a.type==='umum')?.msg||'';
+      document.getElementById('ann-ucapan').value = existing.find(a=>a.type==='ucapan')?.msg||'';
+    }
+  },300);
+
   console.log('🏢 Command Center Pro Loaded | Role:', role);
 })();
 </script>

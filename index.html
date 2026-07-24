@@ -356,6 +356,104 @@
           grid.appendChild(card);
         });
 
+        
+        // 🎠 UPDATE SLIDE DINAMIS (DATA REAL-TIME)
+        window.updateDashboardSlides = async function() {
+          try {
+            // Slide 1: Security Shift
+            const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
+            document.getElementById('slide-1').innerHTML = `<strong>🛡️ Security Shift Hari Ini</strong><br>${sec}`;
+
+            // Slide 2: Booking Hari Ini & Besok
+            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+            const bToday = bookings.filter(b=>b.tgl&&b.tgl.includes(today));
+            const bTomor = bookings.filter(b=>b.tgl&&b.tgl.includes(tomorrow));
+            const htmlB = bToday.length ? bToday.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking hari ini.';
+            const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
+            document.getElementById('slide-2').innerHTML = `<strong>📅 Booking Ruangan</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
+
+            // Slide 3: K3 Reports
+            const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+            const pending = k3.filter(r=>r.status==='pending').length;
+            const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
+            document.getElementById('slide-3').innerHTML = `<strong>⚠️ K3 Safety Report</strong><br>Menunggu Tindak Lanjut: ${pending}<br>${latest}`;
+
+            // Slide 4: Cuaca (Open-Meteo API, Free & No Key)
+            const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
+            const now = Date.now();
+            if (!wCache.ts || now - wCache.ts > 1800000) {
+              try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
+                const d = await res.json();
+                const temp = d.current_weather.temperature;
+                const code = d.current_weather.weathercode;
+                const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
+                const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
+                wCache.data = `${icon} ${temp}°C - ${desc} (Jakarta)`;
+                wCache.ts = now;
+                localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
+              } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca. Periksa koneksi.'; }
+            }
+            document.getElementById('slide-4').innerHTML = `<strong>🌤️ Cuaca Terkini</strong><br>${wCache.data||'Memuat...'}<br><small>Sumber: Open-Meteo (Real-time)</small>`;
+
+            // Slide 5,6,7: Input Admin Command Center
+            const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
+            const mgmt = ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen.';
+            const umum = ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum.';
+            const ucapan = ann.find(a=>a.type==='ucapan')?.msg || 'Selamat bekerja! The Power Soul Of Shalawat.';
+            document.getElementById('slide-5').innerHTML = `<strong>📢 Info Manajemen</strong><br>${mgmt}`;
+            document.getElementById('slide-6').innerHTML = `<strong>🏢 Info Bagian Umum</strong><br>${umum}`;
+            document.getElementById('slide-7').innerHTML = `<strong>💌 Ucapan Bagian Umum</strong><br>${ucapan}`;
+          } catch(e) { console.warn('Slide update error:', e); }
+        };
+
+        // 🎠 CAROUSEL ENGINE (7 SLIDE, 7 DETIK, SWIPE, PAUSE)
+        setTimeout(() => {
+          window.updateDashboardSlides();
+          const track = document.getElementById('slide-track');
+          const dotsC = document.getElementById('slide-dots');
+          if (!track || !dotsC) return;
+          const slides = track.querySelectorAll('.slide-item');
+          let cur = 0, timer = null;
+          const INTV = 7000;
+
+          slides.forEach((_,i)=>{
+            const d = document.createElement('span');
+            d.className = 'slide-dot'+(i===0?' active':'');
+            d.onclick = ()=>goTo(i);
+            dotsC.appendChild(d);
+          });
+          const dots = dotsC.querySelectorAll('.slide-dot');
+
+          function goTo(i){
+            cur = (i+slides.length)%slides.length;
+            track.style.transform = `translateX(-${cur*100}%)`;
+            dots.forEach((d,x)=>d.classList.toggle('active',x===cur));
+          }
+          function next(){ goTo(cur+1); }
+          function start(){ stop(); timer=setInterval(next,INTV); }
+          function stop(){ if(timer) clearInterval(timer); }
+
+          const el = document.getElementById('dash-slider');
+          el.addEventListener('mouseenter',stop);
+          el.addEventListener('mouseleave',start);
+          el.addEventListener('touchstart',stop,{passive:true});
+          el.addEventListener('touchend',()=>setTimeout(start,3000));
+
+          let sx=0;
+          el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+          el.addEventListener('touchend',e=>{
+            const diff=sx-e.changedTouches[0].clientX;
+            if(Math.abs(diff)>40) diff>0?goTo(cur+1):goTo(cur-1);
+          });
+
+          goTo(0); start();
+          // Auto refresh data tiap 5 menit
+          setInterval(()=>window.updateDashboardSlides(), 300000);
+        }, 400);
+
         setActiveNav('home');
       }
 
@@ -383,6 +481,104 @@
         if (c) { c.style.display = 'none'; c.innerHTML = ''; }
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
+        
+        // 🎠 UPDATE SLIDE DINAMIS (DATA REAL-TIME)
+        window.updateDashboardSlides = async function() {
+          try {
+            // Slide 1: Security Shift
+            const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
+            document.getElementById('slide-1').innerHTML = `<strong>🛡️ Security Shift Hari Ini</strong><br>${sec}`;
+
+            // Slide 2: Booking Hari Ini & Besok
+            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+            const bToday = bookings.filter(b=>b.tgl&&b.tgl.includes(today));
+            const bTomor = bookings.filter(b=>b.tgl&&b.tgl.includes(tomorrow));
+            const htmlB = bToday.length ? bToday.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking hari ini.';
+            const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
+            document.getElementById('slide-2').innerHTML = `<strong>📅 Booking Ruangan</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
+
+            // Slide 3: K3 Reports
+            const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+            const pending = k3.filter(r=>r.status==='pending').length;
+            const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
+            document.getElementById('slide-3').innerHTML = `<strong>⚠️ K3 Safety Report</strong><br>Menunggu Tindak Lanjut: ${pending}<br>${latest}`;
+
+            // Slide 4: Cuaca (Open-Meteo API, Free & No Key)
+            const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
+            const now = Date.now();
+            if (!wCache.ts || now - wCache.ts > 1800000) {
+              try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
+                const d = await res.json();
+                const temp = d.current_weather.temperature;
+                const code = d.current_weather.weathercode;
+                const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
+                const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
+                wCache.data = `${icon} ${temp}°C - ${desc} (Jakarta)`;
+                wCache.ts = now;
+                localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
+              } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca. Periksa koneksi.'; }
+            }
+            document.getElementById('slide-4').innerHTML = `<strong>🌤️ Cuaca Terkini</strong><br>${wCache.data||'Memuat...'}<br><small>Sumber: Open-Meteo (Real-time)</small>`;
+
+            // Slide 5,6,7: Input Admin Command Center
+            const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
+            const mgmt = ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen.';
+            const umum = ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum.';
+            const ucapan = ann.find(a=>a.type==='ucapan')?.msg || 'Selamat bekerja! The Power Soul Of Shalawat.';
+            document.getElementById('slide-5').innerHTML = `<strong>📢 Info Manajemen</strong><br>${mgmt}`;
+            document.getElementById('slide-6').innerHTML = `<strong>🏢 Info Bagian Umum</strong><br>${umum}`;
+            document.getElementById('slide-7').innerHTML = `<strong>💌 Ucapan Bagian Umum</strong><br>${ucapan}`;
+          } catch(e) { console.warn('Slide update error:', e); }
+        };
+
+        // 🎠 CAROUSEL ENGINE (7 SLIDE, 7 DETIK, SWIPE, PAUSE)
+        setTimeout(() => {
+          window.updateDashboardSlides();
+          const track = document.getElementById('slide-track');
+          const dotsC = document.getElementById('slide-dots');
+          if (!track || !dotsC) return;
+          const slides = track.querySelectorAll('.slide-item');
+          let cur = 0, timer = null;
+          const INTV = 7000;
+
+          slides.forEach((_,i)=>{
+            const d = document.createElement('span');
+            d.className = 'slide-dot'+(i===0?' active':'');
+            d.onclick = ()=>goTo(i);
+            dotsC.appendChild(d);
+          });
+          const dots = dotsC.querySelectorAll('.slide-dot');
+
+          function goTo(i){
+            cur = (i+slides.length)%slides.length;
+            track.style.transform = `translateX(-${cur*100}%)`;
+            dots.forEach((d,x)=>d.classList.toggle('active',x===cur));
+          }
+          function next(){ goTo(cur+1); }
+          function start(){ stop(); timer=setInterval(next,INTV); }
+          function stop(){ if(timer) clearInterval(timer); }
+
+          const el = document.getElementById('dash-slider');
+          el.addEventListener('mouseenter',stop);
+          el.addEventListener('mouseleave',start);
+          el.addEventListener('touchstart',stop,{passive:true});
+          el.addEventListener('touchend',()=>setTimeout(start,3000));
+
+          let sx=0;
+          el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+          el.addEventListener('touchend',e=>{
+            const diff=sx-e.changedTouches[0].clientX;
+            if(Math.abs(diff)>40) diff>0?goTo(cur+1):goTo(cur-1);
+          });
+
+          goTo(0); start();
+          // Auto refresh data tiap 5 menit
+          setInterval(()=>window.updateDashboardSlides(), 300000);
+        }, 400);
+
         setActiveNav('home');
       };
 
