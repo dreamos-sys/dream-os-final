@@ -176,9 +176,30 @@
     #cmd-palette, .cmd-box, .notif-item { transition: none !important; animation: none !important; }
   }
 
+
+  /* ♿ STEP 3: WCAG FORMS, FOCUS TRAP, SKELETON & EMPTY STATES */
+  .form-error { color: #ef4444; font-size: 0.8rem; margin-top: 0.3rem; display: none; }
+  .form-error.show { display: block; }
+  .input-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.2); }
+  .toast-container { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+  .toast { background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 0.8rem 1.2rem; border-radius: 12px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; animation: slideUp 0.3s ease; }
+  .toast.error { border-left: 4px solid #ef4444; }
+  .toast.success { border-left: 4px solid #10b981; }
+  .toast.info { border-left: 4px solid #0ea5e9; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .skeleton-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 1.5rem; }
+  .skeleton-card { height: 110px; background: rgba(255,255,255,0.05); border-radius: 16px; position: relative; overflow: hidden; }
+  .skeleton-card::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); animation:shimmer 1.5s infinite; }
+  @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+  .empty-state { text-align:center; padding:2.5rem 1rem; color:#94a3b8; }
+  .empty-state strong { color:#cbd5e1; display:block; font-size:1rem; margin-bottom:0.5rem; }
+  .empty-state p { font-size:0.85rem; margin:0; }
+  @media (max-width: 768px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); } }
+
 </style>
 </head>
 <body>
+  <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
 
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
@@ -235,6 +256,34 @@
 
   <script>
     // Global Error Handler
+    
+    // ♿ WCAG UTILITIES: Focus Trap, Toast, Announcer, Skeleton
+    window.announce = (msg) => { const el = document.getElementById('aria-announcer'); if(el) el.textContent = msg; };
+    window.renderEmptyState = (container, title, desc) => {
+      if(!container) return;
+      container.innerHTML = `<div class="empty-state"><strong>📭 ${title}</strong><p>${desc}</p></div>`;
+    };
+    window.showToast = (msg, type='info') => {
+      let c = document.getElementById('toast-container');
+      if(!c) { c = document.createElement('div'); c.id='toast-container'; c.className='toast-container'; document.body.appendChild(c); }
+      const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; t.setAttribute('role', 'alert');
+      c.appendChild(t); window.announce(msg);
+      setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3500);
+    };
+    window.trapFocus = (el) => {
+      const f = el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if(!f.length) return;
+      const first = f[0], last = f[f.length-1];
+      el._focusTrap = (e) => {
+        if(e.key!=='Tab') return;
+        if(e.shiftKey) { if(document.activeElement===first) { last.focus(); e.preventDefault(); } }
+        else { if(document.activeElement===last) { first.focus(); e.preventDefault(); } }
+      };
+      el.addEventListener('keydown', el._focusTrap);
+      first.focus();
+    };
+    window.releaseFocus = (el) => { if(el._focusTrap) el.removeEventListener('keydown', el._focusTrap); };
+
     window.onerror = function(msg, url, line) {
       console.error('🚨 Error:', msg, 'at line', line);
       return true;
@@ -306,7 +355,7 @@
         if (errorEl) errorEl.style.display = 'none';
 
         if (!email || !password) {
-          if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; }
+          if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; errorEl.classList.add('show'); window.announce('Error: Email dan password wajib diisi.'); }
           return;
         }
 
@@ -575,7 +624,7 @@
       // Open Module
       window.openMod = function(moduleId) {
         if (!canAccess(moduleId)) {
-          alert(' Akses Ditolak!');
+          window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error');
           return;
         }
         const map = {
@@ -596,7 +645,8 @@
           document.body.appendChild(c);
         }
         c.style.display = 'block';
-        c.innerHTML = '<div style="text-align:center;padding:3rem;color:#cbd5e1;"><div class="loading-spinner"></div><p style="margin-top:1rem;">Memuat modul...</p></div>';
+        c.innerHTML = '<div class="skeleton-grid">' + Array(6).fill('<div class="skeleton-card"></div>').join('') + '</div>';
+        window.announce('Memuat modul ' + moduleId + '...');
         
         if (window.BankAudit) BankAudit.log('OPEN_MODULE', { module: file });
         
@@ -830,8 +880,8 @@
         });
       }
 
-      function openCmd() { cmdPalette.classList.add('show'); cmdInput.value=''; cmdInput.focus(); renderCmdList(commands); }
-      function closeCmd() { cmdPalette.classList.remove('show'); cmdInput.blur(); }
+      function openCmd() { cmdPalette.classList.add('show'); cmdInput.value=''; renderCmdList(commands); setTimeout(()=>window.trapFocus(cmdPalette), 50); }
+      function closeCmd() { cmdPalette.classList.remove('show'); window.releaseFocus(cmdPalette); cmdInput.blur(); }
 
       cmdInput.addEventListener('input', () => renderCmdList(filterCmd(cmdInput.value)));
       cmdInput.addEventListener('keydown', e => {
@@ -920,8 +970,8 @@
       };
 
       // Cast Functions
-      window.openCastModal = function() { document.getElementById('cast-modal').classList.add('show'); };
-      window.closeCastModal = function() { document.getElementById('cast-modal').classList.remove('show'); };
+      window.openCastModal = function() { const m=document.getElementById('cast-modal'); m.classList.add('show'); setTimeout(()=>window.trapFocus(m), 50); };
+      window.closeCastModal = function() { const m=document.getElementById('cast-modal'); m.classList.remove('show'); window.releaseFocus(m); };
       window.shareToTV = function() {
         const url = window.location.origin + '/dream-os-final/presentation.html';
         if (navigator.share) navigator.share({ title: 'Dream OS Presentation', url: url }).catch(()=>{});
