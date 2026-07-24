@@ -64,10 +64,29 @@
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     body { padding: 0.5rem; padding-top: 4rem; }
   }
+
+  /* 🖨️ PRINT OPTIMIZATION & ENTERPRISE LAYOUT */
+  @media print {
+    body, html { background: #fff !important; color: #000 !important; }
+    .no-print, #bottom-nav, .back-btn, .cast-btn, .pwa-install-banner, #cmd-palette, .toast-container { display: none !important; }
+    .glass { background: #fff !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+    .btn, .tab, .nav-item { border: 1px solid #000 !important; color: #000 !important; background: #f5f5f5 !important; }
+    .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+    .print-header h2 { margin: 0; font-size: 16pt; }
+    .print-header p { margin: 4px 0; font-size: 10pt; color: #444; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    th, td { border: 1px solid #000 !important; padding: 6px !important; color: #000 !important; }
+    th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; }
+    .role-badge-print { display: inline-block; padding: 2px 8px; border: 1px solid #000; border-radius: 4px; font-size: 9pt; font-weight: 700; }
+  }
+  .print-header { display: none; }
+  .role-tag { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+
 </style>
 
 <button class="back-btn" onclick="window.goHome()">← HOME</button>
 
+<div class="print-header"><h2>🏢 DREAM OS COMMAND CENTER REPORT</h2><p>Enterprise RBAC • ISO 27001 • Generated: <span id="print-date"></span></p></div>
 <div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem;">
   <div class="glass">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
@@ -477,8 +496,8 @@ if (!window.goHome) window.goHome = function() {
           <td>${date}</td><td><span class="badge ${isDana ? 'badge-warning' : 'badge-purple'}">${item.type}</span></td>
           <td>${pengaju}</td><td>${detail}</td><td>${info}</td><td><span class="badge badge-warning">Pending</span></td>
           <td style="white-space: nowrap;">
-            <button class="btn btn-success btn-sm" onclick="processApproval('${item.type}', '${item.id}', 'approved')">✅</button>
-            <button class="btn btn-danger btn-sm" onclick="processApproval('${item.type}', '${item.id}', 'rejected')">❌</button>
+            <button class="btn btn-success btn-sm" onclick="handleApproval(\'${item.type}\',\'${item.id}\',\'approved\')">✅</button>
+            <button class="btn btn-danger btn-sm" onclick="handleApproval(\'${item.type}\',\'${item.id}\',\'rejected\')">❌</button>
           </td>
         </tr>`;
       }).join('');
@@ -776,6 +795,133 @@ if (!window.goHome) window.goHome = function() {
     } catch(e) { container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#ef4444;padding:1rem;">❌ ${e.message}</div>`; }
   };
   document.getElementById('file-bucket')?.addEventListener('change', window.loadFileManager);
+
+  
+  // 🏛️ PHASE 1-4: ROLE-ADAPTIVE WORKSPACE + ENTERPRISE PACK
+  const ROLE_WORKSPACE = {
+    kabag_umum: {
+      label: 'Kepala Bagian Umum',
+      tabs: ['dashboard','dana','approvals','users','uat','searchexport','audit'],
+      kpis: [
+        { id:'kpi-dana-pending', label:'Dana Pending', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length },
+        { id:'kpi-booking-today', label:'Booking Hari Ini', query:()=>JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.tgl&&b.tgl.includes(new Date().toISOString().split('T')[0])).length },
+        { id:'kpi-users-active', label:'User Aktif', query:()=>JSON.parse(localStorage.getItem('dreamos_users_db')||'[]').length },
+        { id:'kpi-approval-queue', label:'Antrean Final', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='recommended').length }
+      ],
+      actions: { approve: true, reject: true, override: true, export_compliance: true, manage_users: true }
+    },
+    koordinator_umum: {
+      label: 'Koordinator Umum',
+      tabs: ['dashboard','dana','approvals','uat','searchexport'],
+      kpis: [
+        { id:'kpi-my-submissions', label:'Pengajuan Saya', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.pemohon===JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email).length },
+        { id:'kpi-booking-active', label:'Booking Aktif', query:()=>JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.status==='pending').length },
+        { id:'kpi-team-tasks', label:'Tugas Tim Pending', query:()=>JSON.parse(localStorage.getItem('dreamos_maintenance_tasks')||'[]').filter(t=>t.status==='Pending').length },
+        { id:'kpi-recommend-queue', label:'Perlu Rekomendasi', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length }
+      ],
+      actions: { recommend: true, assign: true, verify_field: true, export_operational: true, manage_users: false }
+    }
+  };
+
+  window.renderRoleWorkspace = function() {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    const cfg = ROLE_WORKSPACE[role] || ROLE_WORKSPACE.koordinator_umum;
+    
+    // Scope Tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      const target = t.id?.replace('tab-','').replace('-btn','');
+      if (target && !cfg.tabs.includes(target)) t.style.display = 'none';
+    });
+
+    // Render KPI Strip (Role-Adaptive)
+    const kpiContainer = document.getElementById('kpi-strip');
+    if (kpiContainer) {
+      kpiContainer.innerHTML = cfg.kpis.map(k => 
+        `<div class="kpi-chip"><strong id="${k.id}">0</strong><span>${k.label}</span></div>`
+      ).join('');
+      cfg.kpis.forEach(k => {
+        const el = document.getElementById(k.id);
+        if (el) el.textContent = k.query();
+      });
+    }
+
+    // Update Role Context Badge
+    const roleBadge = document.getElementById('role-badge');
+    if (roleBadge) {
+      roleBadge.innerHTML = `${cfg.label} <span class="role-tag">${role.toUpperCase()}</span>`;
+    }
+
+    console.log(`🏛️ Workspace adapted for: ${cfg.label} (${role})`);
+  };
+
+  // 🔄 3-TIER APPROVAL ENGINE (PHASE 2)
+  window.handleApproval = async function(type, id, action) {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    const cfg = ROLE_WORKSPACE[role];
+    if (!cfg) return window.showToast('⛔ Role tidak dikenali.','error');
+
+    let newStatus = '';
+    let actionLevel = '';
+
+    if (role === 'koordinator_umum') {
+      if (action === 'recommend') { newStatus = 'recommended'; actionLevel = 'recommend'; }
+      else if (action === 'reject') { newStatus = 'rejected'; actionLevel = 'reject_coordinator'; }
+      else return window.showToast('⛔ Koordinator hanya bisa Recommend/Reject awal.','warn');
+    } else if (role === 'kabag_umum') {
+      if (action === 'approve') { newStatus = 'approved'; actionLevel = 'approve_final'; }
+      else if (action === 'reject') { newStatus = 'rejected'; actionLevel = 'reject_final'; }
+      else if (action === 'override') { newStatus = 'approved'; actionLevel = 'override_kabag'; }
+      else return window.showToast('⛔ Aksi tidak diizinkan untuk Kabag.','warn');
+    } else {
+      return window.showToast('⛔ Role tidak memiliki hak approval.','error');
+    }
+
+    try {
+      const table = type === 'Dana' ? 'dana_requests' : 'bookings';
+      if (window.supabaseClient) {
+        await window.supabaseClient.from(table).update({ status: newStatus, updated_by: role, updated_at: new Date().toISOString() }).eq('id', id);
+      }
+      // Local fallback
+      const key = type === 'Dana' ? 'dreamos_dana' : 'dreamos_bookings';
+      let local = JSON.parse(localStorage.getItem(key) || '[]');
+      const item = local.find(x => x.id === id);
+      if (item) { item.status = newStatus; item.updated_by = role; item.updated_at = new Date().toISOString(); localStorage.setItem(key, JSON.stringify(local)); }
+
+      // Audit with action level
+      if (window.logActivity) window.logActivity(`${type.toUpperCase()}_${actionLevel.toUpperCase()}`, { id, role, before: item?.status, after: newStatus });
+      window.showToast(`✅ ${type} berhasil ${newStatus === 'recommended' ? 'direkomendasikan' : newStatus === 'approved' ? 'disetujui' : 'ditolak'}.`, 'success');
+      
+      // Refresh views
+      if (typeof loadApprovals === 'function') loadApprovals();
+      if (typeof loadDanaRequests === 'function') loadDanaRequests();
+      window.renderRoleWorkspace();
+    } catch(e) {
+      window.showToast(`❌ Gagal: ${e.message}`, 'error');
+    }
+  };
+
+  // 🖨️ PRINT & EXPORT ENHANCEMENT (PHASE 4)
+  window.printReport = function() {
+    document.getElementById('print-date').textContent = new Date().toLocaleString('id-ID');
+    window.print();
+  };
+
+  // 🔍 ROLE-SCOPED SEARCH WRAPPER
+  window.performRoleScopedSearch = async function(query) {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    const scope = role === 'kabag_umum' ? 'all' : 'divisi';
+    // Client-side scoping fallback (RLS handles backend)
+    if (typeof performGlobalSearch === 'function') performGlobalSearch(query, document.getElementById('search-results'));
+  };
+
+  // 📡 MONITORING REFRESH LOOP
+  setInterval(() => {
+    if (typeof window.renderRoleWorkspace === 'function') window.renderRoleWorkspace();
+    if (typeof renderHealth === 'function') renderHealth();
+  }, 45000);
+
+  // Init on load
+  setTimeout(() => { if (typeof window.renderRoleWorkspace === 'function') window.renderRoleWorkspace(); }, 600);
 
   console.log('🏢 Command Center Pro Loaded | Role:', role);
 })();
