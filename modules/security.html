@@ -59,6 +59,7 @@
     <button class="sec-tab active" data-target="tab-jadwal">📅 Jadwal Matriks</button>
     <button class="sec-tab" data-target="tab-input-log">📝 Input Serah Terima</button>
     <button class="sec-tab" data-target="tab-report">📊 Buku Laporan (PDF)</button>
+    <button class="sec-tab" data-target="tab-patrol">🚶 Patroli</button>
     <button class="sec-tab" data-target="tab-bridge">🚨 Trigger & Slide</button>
   </div>
 
@@ -93,7 +94,14 @@
         <input id="lap-penerima" class="bk-input" placeholder="Petugas Penerima">
         <select id="lap-shift" class="bk-input"><option>Shift Pagi (07:00-19:00)</option><option>Shift Malam (19:00-07:00)</option></select>
         <select id="lap-pos" class="bk-input"><option>Pos Utama</option><option>Gedung SMP</option><option>Kantin SMP</option><option>Saung Besar & Kecil</option><option>Perpustakaan SD & SMP</option><option>Gedung SD</option><option>Playground SD</option><option>Labkom SD</option><option>Area Parkir</option><option>Lapangan Volley</option><option>Lapangan Futsal</option><option>Lapangan Basket</option><option>Gedung Serbaguna & Masjid</option><option>Gerbang Belakang</option><option>Koridor</option><option>Lapangan & Dapur</option><option>Parkiran Loby SMA</option><option>Gedung SMA</option><option>Kantin SMA</option><option>Patroli Menyeluruh</option></select>
-        <select id="lap-stat" class="bk-input" style="grid-column:span 2;"><option value="AMAN TERKENDALI">✅ Aman Terkendali</option><option value="URGENT/KEJADIAN">🚨 Urgent / Kejadian</option></select>
+        <input id="lap-aset" class="bk-input" placeholder="📦 Aset Diserahkan (HT, Kunci, Buku, dll)" style="grid-column:span 2;">
+        <select id="lap-severity" class="bk-input" style="grid-column:span 2;">
+          <option value="AMAN">✅ Aman Terkendali</option>
+          <option value="RINGAN">🟡 Ringan (Perlu Tindak Lanjut)</option>
+          <option value="SEDANG">🟠 Sedang (Koordinasi Kabag)</option>
+          <option value="BERAT">🔴 Berat (Eskalasi Manajemen)</option>
+          <option value="DARURAT">🚨 Darurat (Respon <15 Menit)</option>
+        </select>
       </div>
       <textarea id="lap-teks" class="bk-input" rows="4" placeholder="Kronologi & serah terima aset..." style="margin-top:0.5rem;"></textarea>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.5rem;">
@@ -114,6 +122,7 @@
           <option>Shift Pagi (07:00-19:00)</option>
           <option>Shift Malam (19:00-07:00)</option>
         </select>
+        <button onclick="exportAuditTrail()" class="btn btn-primary">📥 Export Audit Trail (ISO)</button>
         <button onclick="window.print()" class="btn btn-warning">🖨️ CETAK PDF</button>
       </div>
     </div>
@@ -126,7 +135,22 @@
     </div>
   </div>
 
-  <!-- TAB 4: BRIDGE SLIDE -->
+  <!-- TAB 4: PATROLI (ISO 18788 §7.4) -->
+  <div id="tab-patrol" class="sec-panel no-print" style="display:none;">
+    <div class="glass">
+      <div class="section-title" style="color:var(--accent);">📍 Checkpoint Patroli</div>
+      <p style="font-size:0.7rem; color:#94a3b8; margin-bottom:0.5rem;">Tap checkpoint untuk mencatat waktu & lokasi kehadiran.</p>
+      <select id="patrol-pos" class="bk-input">
+        <option>Gerbang Utama</option><option>Gedung SMP</option><option>Gedung SMA</option>
+        <option>Lapangan</option><option>Area Parkir</option><option>Pos Belakang</option>
+        <option>Koridor & Saung</option><option>Area Masjid</option>
+      </select>
+      <button class="btn btn-success" onclick="logPatrol()" style="width:100%; margin-top:0.5rem;">✅ TAP CHECKPOINT</button>
+      <div id="patrol-log" style="margin-top:0.8rem; font-size:0.75rem; color:#cbd5e1; max-height:200px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- TAB 5: BRIDGE SLIDE -->
   <div id="tab-bridge" class="sec-panel no-print" style="display:none;">
     <div class="glass">
       <div class="section-title" style="color:var(--accent);">📢 Update Slide Dashboard</div>
@@ -317,7 +341,7 @@
     });
   });
 
-  document.getElementById('security-app')?.parentElement?.addEventListener('click', function(e) {
+  document.getElementById('security-app')?.parentElement?.addEventListener('click', async function(e) {
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const act = btn.dataset.act;
@@ -334,18 +358,39 @@
     } else if (act === 'save-laporan-pro') {
       const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
       const now = new Date();
+      const logId = 'seclog_' + Date.now();
+      const severity = document.getElementById('lap-severity')?.value || 'AMAN';
+      const asetVal = document.getElementById('lap-aset')?.value.trim() || '-';
+      const ttdRaw = `${document.getElementById('ttd-penyerah')?.value || ''}|${document.getElementById('ttd-penerima')?.value || ''}|${logId}|${now.toISOString()}`;
+      let ttdHash = 'N/A';
+      try {
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ttdRaw));
+        ttdHash = Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
+      } catch(e) {}
+
       const entry = {
+        id: logId,
         tanggal: now.toLocaleDateString('id-ID'),
         jam: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         petugas: esc(document.getElementById('lap-petugas')?.value.substring(0,100) || 'Anonim'),
         penerima: esc(document.getElementById('lap-penerima')?.value.substring(0,100) || 'Regu'),
         shift: esc(document.getElementById('lap-shift')?.value.substring(0,50) || ''),
         pos: esc(document.getElementById('lap-pos')?.value.substring(0,50) || ''),
-        stat: esc(document.getElementById('lap-stat')?.value.substring(0,50) || ''),
+        stat: severity,
+        severity: severity,
+        aset_serah_terima: asetVal,
+        ttd_hash: ttdHash,
         teks: esc(document.getElementById('lap-teks')?.value.substring(0,500) || ''),
         ttd_penyerah: esc(document.getElementById('ttd-penyerah')?.value.substring(0,100) || ''),
-        ttd_penerima: esc(document.getElementById('ttd-penerima')?.value.substring(0,100) || '')
+        ttd_penerima: esc(document.getElementById('ttd-penerima')?.value.substring(0,100) || ''),
+        created_at: now.toISOString(),
+        sla_deadline: severity === 'DARURAT' ? new Date(Date.now()+15*60000).toISOString() : (severity === 'BERAT' ? new Date(Date.now()+2*3600000).toISOString() : null)
       };
+
+      // Auto-notify jika DARURAT/BERAT
+      if (['DARURAT','BERAT'].includes(severity) && window.PhantomAlerter) {
+        window.PhantomAlerter.securityAlert(entry.pos, severity, entry.teks);
+      }
       logs.unshift(entry);
       localStorage.setItem('dreamos_piket_logs', JSON.stringify(logs));
       if (window.supabaseClient) {
@@ -385,7 +430,52 @@
     window.SyncEngine.subscribe('security_logs', () => { renderLogs(); updateStats(); });
   }
 
+  // ===== ISO 18788: PATROL CHECKPOINT =====
+  window.logPatrol = async function() {
+    const pos = document.getElementById('patrol-pos').value;
+    const now = new Date();
+    let geo = 'N/A';
+    if (navigator.geolocation) {
+      try {
+        const p = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:5000, enableHighAccuracy:false}));
+        geo = `${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`;
+      } catch(e) { geo = 'GPS Unavailable'; }
+    }
+    const logs = JSON.parse(localStorage.getItem('dreamos_patrol_logs') || '[]');
+    logs.unshift({ pos, waktu: now.toISOString(), geo, petugas: user?.nama || 'Anonim' });
+    localStorage.setItem('dreamos_patrol_logs', JSON.stringify(logs.slice(0,100)));
+    document.getElementById('patrol-log').innerHTML = logs.slice(0,10).map(l =>
+      `✅ ${l.pos} • ${new Date(l.waktu).toLocaleTimeString('id-ID')} • 📍${l.geo}`
+    ).join('<br>');
+    if (window.supabaseClient) window.supabaseClient.from('security_patrol').insert(logs[0]).catch(e => console.warn('Patrol sync:', e.message));
+    if (window.BankAudit) BankAudit.log('PATROL_CHECKPOINT', { pos, geo });
+  };
+
+  // ===== ISO 27001: AUDIT TRAIL EXPORT =====
+  window.exportAuditTrail = function() {
+    const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
+    const header = `DREAM OS SECURITY AUDIT TRAIL\nISO 27001 • ISO 18788 • Generated: ${new Date().toISOString()}\nHash Verification: SHA-256 per entry\n${'='.repeat(60)}\n`;
+    const rows = logs.map(l =>
+      `${l.tanggal} ${l.jam} | ${l.shift} | ${l.pos} | ${l.petugas}→${l.penerima} | ${l.stat} | Aset: ${l.aset_serah_terima||'-'} | TTD:${l.ttd_hash||'N/A'}`
+    ).join('\n');
+    const blob = new Blob([header + rows], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `security_audit_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if (window.BankAudit) BankAudit.log('EXPORT_AUDIT_TRAIL');
+  };
+
+  // Render patrol log on load if exists
+  const initPatrolLogs = JSON.parse(localStorage.getItem('dreamos_patrol_logs') || '[]');
+  if (initPatrolLogs.length && document.getElementById('patrol-log')) {
+    document.getElementById('patrol-log').innerHTML = initPatrolLogs.slice(0,10).map(l =>
+      `✅ ${l.pos} • ${new Date(l.waktu).toLocaleTimeString('id-ID')} • 📍${l.geo}`
+    ).join('<br>');
+  }
+
   if (window.BankAudit) BankAudit.log('ACCESS_SECURITY', { role });
-  console.log('🛡️ Security Ops Center Pro Ready');
+  console.log('🛡️ Security Ops Center Pro Ready + ISO Enterprise Upgrades');
 })();
 </script>
