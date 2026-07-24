@@ -516,81 +516,40 @@
   }
 
   
-  // ===== ✍️ CANVAS TTD BASAH (FIXED: DPI, TOUCH, VISIBILITY) =====
+  // ===== ✍️ CANVAS TTD BASAH (ROBUST & SINGLE DEFINITION) =====
   let sigPad = null;
   let currentSigTarget = null;
   window.currentSignatures = { penyerah: null, penerima: null };
-
-  function initSignaturePad() {
-    const canvas = document.getElementById('sig-canvas');
-    if (!canvas || typeof SignaturePad === 'undefined') return;
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    canvas.width = canvas.offsetWidth * ratio;
-    canvas.height = canvas.offsetHeight * ratio;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(ratio, ratio);
-    sigPad = new SignaturePad(canvas, {
-      backgroundColor: 'rgb(255,255,255)',
-      penColor: 'rgb(0,0,0)',
-      minWidth: 1.5, maxWidth: 2.5, throttle: 0
-    });
-  }
 
   window.openSignature = function(target) {
     currentSigTarget = target;
     document.getElementById('sig-modal-title').textContent = target === 'penyerah' ? '✍️ TTD Penyerah' : '✍️ TTD Penerima';
     const modal = document.getElementById('signature-modal');
     modal.style.display = 'flex';
-    // Init SETELAH modal visible agar offsetWidth/Height tidak 0
-    setTimeout(() => { initSignaturePad(); if(sigPad) sigPad.clear(); }, 60);
+    // Init SETELAH modal visible & punya dimensi
+    setTimeout(() => {
+      const canvas = document.getElementById('sig-canvas');
+      if (!canvas || typeof SignaturePad === 'undefined') return;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width = canvas.offsetWidth * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(ratio, ratio);
+      sigPad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255,255,255)', penColor: 'rgb(0,0,0)',
+        minWidth: 1.5, maxWidth: 2.5, throttle: 0
+      });
+    }, 100);
   };
 
   window.clearSignature = function() { if (sigPad) sigPad.clear(); };
   window.closeSignature = function() { document.getElementById('signature-modal').style.display = 'none'; };
-
   window.saveSignature = function() {
     if (!sigPad || sigPad.isEmpty()) return alert('⚠️ Tanda tangan masih kosong!');
     const dataUrl = sigPad.toDataURL('image/png');
     window.currentSignatures[currentSigTarget] = dataUrl;
     const preview = document.getElementById('sig-preview-' + currentSigTarget);
     if (preview) { preview.style.display = 'block'; preview.querySelector('img').src = dataUrl; }
-    closeSignature();
-  };
-
-  function initSignaturePad() {
-    const canvas = document.getElementById('sig-canvas');
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    canvas.width = canvas.offsetWidth * ratio;
-    canvas.height = canvas.offsetHeight * ratio;
-    canvas.getContext('2d').scale(ratio, ratio);
-    sigPad = new SignaturePad(canvas, { backgroundColor: 'rgb(255,255,255)', penColor: 'rgb(0,0,0)', minWidth: 1.5, maxWidth: 2.5 });
-  }
-
-  window.openSignature = function(target) {
-    currentSigTarget = target;
-    document.getElementById('sig-modal-title').textContent = target === 'penyerah' ? '✍️ TTD Penyerah' : '✍️ TTD Penerima';
-    document.getElementById('signature-modal').style.display = 'flex';
-    if (!sigPad) initSignaturePad();
-    setTimeout(() => {
-      const canvas = document.getElementById('sig-canvas');
-      const ratio = Math.max(window.devicePixelRatio || 1, 1);
-      canvas.width = canvas.offsetWidth * ratio;
-      canvas.height = canvas.offsetHeight * ratio;
-      canvas.getContext('2d').scale(ratio, ratio);
-      sigPad.clear();
-    }, 100);
-  };
-
-  window.clearSignature = function() { if (sigPad) sigPad.clear(); };
-  window.closeSignature = function() { document.getElementById('signature-modal').style.display = 'none'; };
-
-  window.saveSignature = function() {
-    if (!sigPad || sigPad.isEmpty()) return alert('⚠️ Tanda tangan masih kosong!');
-    const dataUrl = sigPad.toDataURL('image/png');
-    window.currentSignatures[currentSigTarget] = dataUrl;
-    const preview = document.getElementById(`sig-preview-${currentSigTarget}`);
-    preview.style.display = 'block';
-    preview.querySelector('img').src = dataUrl;
     closeSignature();
   };
 
