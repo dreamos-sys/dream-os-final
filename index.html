@@ -222,7 +222,7 @@
       if (togglePinEl && passwordInput) {
         togglePinEl.addEventListener('click', function() {
           passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-          togglePinEl.textContent = passwordInput.type === 'password' ? '🔒' : '🔓';
+          togglePinEl.textContent = passwordInput.type === 'password' ? '🔒' : '🐵';
         });
       }
 
@@ -301,20 +301,14 @@
         const container = document.getElementById('dashboard-container');
         if (!container) return;
         
-        const user = getStoredUser();
-        
+        // UI Beranda Super Clean
         container.innerHTML = 
-          '<div class="header-main glass">' +
-            '<img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px;" onerror="this.style.display=\'none\'">' +
+          '<div class="header-main glass" style="position: relative;">' +
+            '<span class="notif-bell" onclick="toggleNotifPanel()" title="Notifikasi" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.4rem; cursor: pointer;">🔔<span class="notif-badge" id="notif-badge"></span></span>' +
+            '<img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px; margin-bottom: 1rem;" onerror="this.style.display=\'none\'">' +
             '<div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
             '<div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">' +
-              '<div class="user-role-badge">👤 ' + (user.nama || user.email || 'User') + ' | <strong>' + (user.role || 'staff').toUpperCase() + '</strong></div>' +
-              '<div style="display:flex; gap:0.5rem;">' +
-                '<span class="notif-bell" onclick="toggleNotifPanel()" title="Notifikasi" style="font-size:1.2rem; cursor:pointer;">🔔<span class="notif-badge" id="notif-badge"></span></span>' +
-                '<button class="logout-btn" id="logout-btn" style="margin:0; padding:0.4rem 1rem; font-size:0.7rem;">🚪 Logout</button>' +
-              '</div>' +
-            '</div>' +
+          '</div>' +
           '<div class="module-grid" id="module-grid"></div>' +
           '<div class="system-info-box glass">' +
             '<strong>Dream OS Enterprise RBAC v1.0 Beta</strong><br>' +
@@ -322,17 +316,6 @@
             'Engineered by Family Dream Team<br>' +
             '<span style="color:var(--accent);">The Power Soul Of Shalawat</span>' +
           '</div>';
-
-        document.getElementById('logout-btn')?.addEventListener('click', () => {
-          if (confirm('Yakin logout?')) {
-            window.SyncEngine?.unsubscribeAll();
-            window.BankSession?.destroy();
-            window.supabaseClient?.auth.signOut().catch(()=>{});
-            localStorage.removeItem('dreamos_bound_user');
-            localStorage.setItem('dreamos_session_active', 'false');
-            location.reload();
-          }
-        });
 
         // Render Modules based on RBAC
         const modules = [
