@@ -266,12 +266,23 @@
 // isDanru deprecated - using perms.canEditMatrix
   
   // ✅ FIX 1: Standardize RBAC with perms as single source of truth
-const perms = {
-    skipLogging: isDev,
-    canEditMatrix: isDanruHariyansyah || isKomandanRegu || isDev,
-    canApproveFinal: role === 'kabag_umum' || isDev,
-    canRecommend: role === 'koordinator_umum' || isDanruHariyansyah || isKomandanRegu || isDev
-  };
+const ROLE_PERMS = {
+  dev: { canViewAll: true, canEditMatrix: true, canApproveFinal: true, canRecommend: true, canManageUsers: true, skipLogging: true },
+  kabag_umum: { canViewAll: true, canEditMatrix: true, canApproveFinal: true, canRecommend: true, canManageUsers: true, skipLogging: false },
+  koordinator_umum: { canViewAll: true, canEditMatrix: false, canApproveFinal: false, canRecommend: true, canManageUsers: false, skipLogging: false },
+  komandan_regu: { canViewAll: false, canEditMatrix: true, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false },
+  guru: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false },
+  security: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false },
+  janitor_indoor: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false },
+  janitor_outdoor: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false },
+  maintenance: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false },
+  default: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, canManageUsers: false, skipLogging: false }
+};
+
+// Assign permissions untuk role user yang sedang login
+const perms = ROLE_PERMS[role] || ROLE_PERMS.default;
+
+console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, CanViewAll=${perms.canViewAll}`);
 
   console.log(`🔐 Security Permission: User=${user.nama}, Role=${role}, CanEdit=${perms.canEditMatrix}, Dev=${isDev}`);
 
