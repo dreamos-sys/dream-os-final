@@ -94,6 +94,7 @@
     <button class="sec-tab active" data-target="tab-jadwal">📅 Jadwal Matriks</button>
     <button class="sec-tab" data-target="tab-input-log">📝 Input Serah Terima</button>
     <button class="sec-tab" data-target="tab-report">📊 Buku Laporan (PDF)</button>
+    <button class="sec-tab" data-target="tab-logbook">📋 Logbook Kegiatan</button>
     <button class="sec-tab" data-target="tab-patrol">🚶 Patroli</button>
     <button class="sec-tab" data-target="tab-bridge">🚨 Trigger & Slide</button>
   </div>
@@ -189,6 +190,33 @@
       </div>
     </div>
   </div>
+  </div>
+
+
+  <!-- TAB LOGBOOK: KEGIATAN HARIAN 24/7 -->
+  <div id="tab-logbook" class="sec-panel no-print" style="display:none;">
+    <div class="glass">
+      <div class="section-title" style="color:var(--accent);">📝 Input Kegiatan Harian</div>
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:0.5rem;">
+        <input type="time" id="lb-jam" class="bk-input">
+        <select id="lb-jenis" class="bk-input">
+          <option value="Kedatangan">Kedatangan Petugas</option>
+          <option value="Aktivitas">Aktivitas Rutin</option>
+          <option value="Event">Event / Kegiatan</option>
+          <option value="Tamu">Kedatangan Tamu</option>
+          <option value="Insiden">Insiden / Kejadian</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+      <textarea id="lb-uraian" class="bk-input" rows="2" placeholder="Uraian kegiatan (contoh: Petugas jaga siang tiba di lokasi...)" style="margin-top:0.5rem;"></textarea>
+      <input type="text" id="lb-keterangan" class="bk-input" placeholder="Keterangan tambahan (opsional)" style="margin-top:0.5rem;">
+      <button class="btn btn-primary" onclick="addLogbookEntry()" style="width:100%; margin-top:0.5rem;">➕ Tambah ke Timeline</button>
+    </div>
+    <div class="glass">
+      <div class="section-title" style="color:var(--gold);">🕒 Timeline Kegiatan Hari Ini</div>
+      <div id="logbook-timeline" style="max-height:400px; overflow-y:auto;"></div>
+      <button class="btn btn-warning no-print" onclick="printLogbook()" style="width:100%; margin-top:1rem;">🖨️ Cetak Logbook 24/7</button>
+    </div>
   </div>
 
   <!-- TAB 4: PATROLI (ISO 18788 §7.4) -->
@@ -547,7 +575,7 @@
   if (periodEl) periodEl.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
   initMatrix();
-  checkDanruAccess().then(() => { renderMatrix(); renderLogs(); updateStats(); autoFillSlide(); });
+  checkDanruAccess().then(() => { renderMatrix(); renderLogs(); renderLogbook(); updateStats(); autoFillSlide(); });
   setInterval(updateStats, 30000);
 
   if (window.SyncEngine && window.supabaseClient) {
@@ -662,6 +690,109 @@
       });
     }
   }
+
+  
+  // ===== 📋 LOGBOOK KEGIATAN 24/7 =====
+  window.addLogbookEntry = function() {
+    const jam = document.getElementById('lb-jam').value;
+    const jenis = document.getElementById('lb-jenis').value;
+    const uraian = document.getElementById('lb-uraian').value.trim();
+    const keterangan = document.getElementById('lb-keterangan').value.trim();
+    if (!jam || !uraian) return alert('Jam dan Uraian wajib diisi!');
+    
+    const today = new Date().toLocaleDateString('id-ID');
+    const entry = {
+      id: 'lb_' + Date.now(),
+      tanggal: today,
+      jam: jam,
+      jenis: jenis,
+      uraian: uraian,
+      keterangan: keterangan,
+      petugas: user.nama || 'Anonim',
+      created_at: new Date().toISOString()
+    };
+    
+    let logbook = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]');
+    logbook.push(entry);
+    localStorage.setItem('dreamos_security_logbook', JSON.stringify(logbook));
+    
+    document.getElementById('lb-uraian').value = '';
+    document.getElementById('lb-keterangan').value = '';
+    renderLogbook();
+    alert('✅ Kegiatan berhasil ditambahkan!');
+  };
+
+  window.renderLogbook = function() {
+    const today = new Date().toLocaleDateString('id-ID');
+    let logbook = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]');
+    let todayLogs = logbook.filter(l => l.tanggal === today).sort((a, b) => a.jam.localeCompare(b.jam));
+    
+    const container = document.getElementById('logbook-timeline');
+    if (!container) return;
+    
+    if (todayLogs.length === 0) {
+      container.innerHTML = '<div style="text-align:center; color:#64748b; padding:2rem;">Belum ada kegiatan tercatat hari ini.</div>';
+      return;
+    }
+    
+    container.innerHTML = todayLogs.map(l => {
+      const icon = l.jenis === 'Insiden' ? '🚨' : (l.jenis === 'Event' ? '🎉' : (l.jenis === 'Tamu' ? '👤' : '📌'));
+      return `<div style="display:flex; gap:0.8rem; margin-bottom:1rem; padding:0.8rem; background:rgba(0,0,0,0.2); border-radius:8px; border-left:3px solid var(--accent);">
+        <div style="min-width:60px; font-weight:700; color:var(--neon); text-align:center;">${l.jam}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:0.85rem; margin-bottom:0.2rem;">${icon} ${l.jenis}</div>
+          <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.2rem;">${esc(l.uraian)}</div>
+          ${l.keterangan ? `<div style="font-size:0.75rem; color:#94a3b8; font-style:italic;">📝 ${esc(l.keterangan)}</div>` : ''}
+          <div style="font-size:0.7rem; color:#64748b; margin-top:0.3rem;">Oleh: ${esc(l.petugas)}</div>
+        </div>
+        <button class="btn btn-danger" onclick="deleteLogbookEntry('${l.id}')" style="min-height:36px; padding:0.2rem 0.6rem; font-size:0.7rem;">🗑️</button>
+      </div>`;
+    }).join('');
+  };
+
+  window.deleteLogbookEntry = function(id) {
+    if (!confirm('Hapus kegiatan ini?')) return;
+    let logbook = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]');
+    logbook = logbook.filter(l => l.id !== id);
+    localStorage.setItem('dreamos_security_logbook', JSON.stringify(logbook));
+    renderLogbook();
+  };
+
+  window.printLogbook = function() {
+    const today = new Date().toLocaleDateString('id-ID');
+    let logbook = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]');
+    let todayLogs = logbook.filter(l => l.tanggal === today).sort((a, b) => a.jam.localeCompare(b.jam));
+    
+    let html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title>
+    <style>body{font-family:'Times New Roman', serif; padding:20px; color:#000;}
+    h2{text-align:center; text-transform:uppercase; margin-bottom:5px;}
+    p{text-align:center; margin-top:0;}
+    table{width:100%; border-collapse:collapse; margin-top:20px; font-size:11pt;}
+    th, td{border:1px solid #000; padding:8px; text-align:left;}
+    th{background:#f0f0f0; font-weight:bold;}
+    .sig-box{display:flex; justify-content:space-between; margin-top:40px;}
+    .sig-item{text-align:center; width:30%;}
+    .sig-line{border-bottom:1px solid #000; height:60px; margin-bottom:5px;}</style></head><body>
+    <h2>Logbook Kegiatan Harian Keamanan 24 Jam</h2>
+    <p>Tanggal: ${today} | Petugas: ${user.nama || '-'}</p>
+    <table><tr><th width="10%">Jam</th><th width="15%">Jenis</th><th width="50%">Uraian Kegiatan</th><th width="25%">Keterangan</th></tr>`;
+    
+    todayLogs.forEach(l => {
+      html += `<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}<br><small style="color:#666;">Oleh: ${l.petugas}</small></td><td>${l.keterangan || '-'}</td></tr>`;
+    });
+    
+    html += `</table>
+    <div class="sig-box">
+      <div class="sig-item"><div class="sig-line"></div><p>Petugas Jaga</p></div>
+      <div class="sig-item"><div class="sig-line"></div><p>Koordinator Umum</p></div>
+      <div class="sig-item"><div class="sig-line"></div><p>Kabag Umum</p></div>
+    </div>
+    <script>window.print();<\/script></body></html>`;
+    
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  };
 
   console.log('🛡️ Security Ops Center Pro Ready + ISO Enterprise Upgrades');
 })();
