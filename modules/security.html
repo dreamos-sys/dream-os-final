@@ -197,10 +197,26 @@
 <script>
 (function() {
   'use strict';
-  let isDanru = false;
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
   const role = window.getUserRole ? window.getUserRole() : (user?.role || 'staff');
   document.getElementById('user-display').textContent = user ? (user.nama || 'User') : '🔒';
+
+  // 🔐 ENTERPRISE PERMISSION MATRIX (Identity + Role + SoD)
+  const isDev = role === 'dev';
+  const isDanruHariyansyah = user.nama?.toUpperCase().includes('HARIYANSAH') || user.email?.toLowerCase().includes('hariyansah');
+  const isKomandanRegu = role === 'komandan_regu';
+  
+  // Only Danru Hariyansyah, Komandan Regu, or Dev can edit schedule
+  let isDanru = isDev || isDanruHariyansyah || isKomandanRegu;
+  
+  const perms = {
+    skipLogging: isDev,
+    canEditMatrix: isDanru,
+    canApproveFinal: role === 'kabag_umum' || isDev,
+    canRecommend: role === 'koordinator_umum' || isDanruHariyansyah || isKomandanRegu || isDev
+  };
+
+  console.log(`🔐 Security Permission: User=${user.nama}, Role=${role}, CanEdit=${perms.canEditMatrix}, Dev=${isDev}`);
 
   function esc(s) {
     if (!s) return '';
@@ -223,42 +239,34 @@
     const statusEl = document.getElementById('sec-access-status');
     const adminControls = document.getElementById('admin-controls');
     if (!user) { statusEl.innerHTML = '🔒 Silakan login.'; return; }
-    if (['dev','kabag_umum','koordinator_umum'].includes(role)) {
-      isDanru = true;
-      statusEl.innerHTML = '🔓 Mode Admin (' + (user.nama || 'Admin') + '): Edit Penuh';
+    
+    if (isDev) {
+      statusEl.innerHTML = '🔓 Mode Developer: Full Access (No Logging)';
+      statusEl.style.color = '#8b5cf6'; statusEl.style.borderColor = '#8b5cf6';
+      if (adminControls) adminControls.style.display = 'flex';
+      return;
+    }
+    if (isDanruHariyansyah) {
+      statusEl.innerHTML = `🔓 Mode Danru: ${user.nama} (Edit Jadwal Penuh)`;
       statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
       if (adminControls) adminControls.style.display = 'flex';
       return;
     }
-    if (role === 'security' || role === 'komandan_regu') {
-      try {
-        const dna = await getDeviceDNA();
-        if (window.supabaseClient) {
-          const { data: db } = await window.supabaseClient.from('users').select('device_dna').eq('email', user.email).single();
-          if (db && db.device_dna === dna) {
-            isDanru = true;
-            statusEl.innerHTML = '🔓 Mode Danru (' + (user.nama || 'Security') + ')';
-            statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
-            if (adminControls) adminControls.style.display = 'flex';
-            return;
-          }
-        }
-        const localUsers = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-        const lu = localUsers.find(u => u.email === user.email);
-        if (lu && lu.device_dna === dna) {
-          isDanru = true;
-          statusEl.innerHTML = '🔓 Mode Danru (' + (user.nama || 'Security') + ') - Local';
-          statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
-          if (adminControls) adminControls.style.display = 'flex';
-          return;
-        }
-      } catch(e) {}
-      statusEl.innerHTML = '🔒 Device tidak terdaftar sebagai Danru.';
-      statusEl.style.color = '#f59e0b';
-    } else {
-      statusEl.innerHTML = '🔒 Mode Baca Saja (Role: ' + role + ')';
-      statusEl.style.color = '#ef4444';
+    if (isKomandanRegu) {
+      statusEl.innerHTML = '🔓 Mode Komandan Regu: Edit Jadwal Penuh';
+      statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
+      if (adminControls) adminControls.style.display = 'flex';
+      return;
     }
+    if (perms.canApproveFinal) {
+      statusEl.innerHTML = '🔓 Mode Kabag: Admin (Final Approval)';
+      statusEl.style.color = '#f59e0b'; statusEl.style.borderColor = '#f59e0b';
+      if (adminControls) adminControls.style.display = 'flex';
+      return;
+    }
+    
+    statusEl.innerHTML = '🔒 Mode Baca Saja (Role: ' + role + ')';
+    statusEl.style.color = '#ef4444';
   }
 
   function updateStats() {
@@ -428,8 +436,8 @@
         penerima: esc(document.getElementById('lap-penerima')?.value.substring(0,100) || 'Regu'),
         shift: esc(document.getElementById('lap-shift')?.value.substring(0,50) || ''),
         pos: esc(document.getElementById('lap-pos')?.value.substring(0,50) || ''),
-        status: userRole === 'kabag_umum' ? 'approved' : 'recommended',
-  action_level: userRole === 'kabag_umum' ? 'approve_final' : 'recommend',
+        status: perms.canApproveFinal ? 'approved' : (perms.canRecommend ? 'recommended' : 'pending'),
+        action_level: perms.canApproveFinal ? 'approve_final' : (perms.canRecommend ? 'recommend' : 'submit'),
         severity: severity,
         aset_serah_terima: asetVal,
         ttd_hash: ttdHash,
@@ -579,34 +587,28 @@
 
   if (window.BankAudit) BankAudit.log('ACCESS_SECURITY', { role });
   
-  // 🛡️ ROLE-ADAPTIVE SECURITY SCOPE
-  const ROLE_WORKSPACE = {
-    kabag_umum: {
-      can_edit_shift: true,
-      can_approve_final: true,
-      can_view_all: true,
-      can_export_compliance: true
-    },
-    koordinator_umum: {
-      can_edit_shift: false,
-      can_approve_final: false,
-      can_view_all: false,
-      can_export_compliance: false
-    }
-  };
-
+  // 🛡️ ROLE-ADAPTIVE SECURITY SCOPE (Cleaned up, using perms)
   function getSecurityRoleConfig() {
-    const role = window.getUserRole ? window.getUserRole() : 'staff';
-    return ROLE_WORKSPACE[role] || ROLE_WORKSPACE.koordinator_umum;
+    return {
+      can_edit_shift: perms.canEditMatrix,
+      can_approve_final: perms.canApproveFinal,
+      can_view_all: role === 'kabag_umum' || isDev,
+      can_export_compliance: perms.canApproveFinal || isDev
+    };
   }
 
   // Role-adaptive UI renderer
   function renderSecurityUI() {
     const cfg = getSecurityRoleConfig();
-    document.querySelectorAll('.role-adaptive').forEach(el => {
-      el.style.display = cfg.can_edit_shift ? 'flex' : 'none';
-    });
-    document.getElementById('admin-controls')?.classList.toggle('hidden', !cfg.can_edit_shift);
+    // Hide schedule edit controls for non-Danru
+    if (!cfg.can_edit_shift) {
+      document.getElementById('admin-controls')?.style.setProperty('display', 'none', 'important');
+      document.querySelectorAll('.cell-klik').forEach(el => {
+        el.classList.remove('cell-klik');
+        el.classList.add('cell-readonly');
+        el.removeAttribute('onclick');
+      });
+    }
   }
 
   console.log('🛡️ Security Ops Center Pro Ready + ISO Enterprise Upgrades');
