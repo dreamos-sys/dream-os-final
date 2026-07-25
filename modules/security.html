@@ -139,7 +139,7 @@
       </div>
       <div id="sig-preview-penyerah" style="display:none; margin-top:0.5rem; text-align:center;"><img style="max-height:60px; border:1px dashed rgba(0,255,157,0.3); border-radius:8px; background:#fff;"></div>
       <div id="sig-preview-penerima" style="display:none; margin-top:0.5rem; text-align:center;"><img style="max-height:60px; border:1px dashed rgba(0,255,157,0.3); border-radius:8px; background:#fff;"></div>
-      <button data-act="save-laporan-pro" class="btn btn-success" style="width:100%; margin-top:0.5rem;">💾 SIMPAN LOG SERAH TERIMA</button>
+      <button data-act="save-laporan-pro" class="btn btn-success" style="width:100%; margin-top:0.5rem;" id="save-btn">💾 SIMPAN LOG SERAH TERIMA</button>
     </div>
   </div>
 
@@ -295,7 +295,10 @@
   function autoFillSlide() {
     const now = new Date();
     const period = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]');
+    const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
+  const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : x.divisi === user.divisi;
+});
     const today = m.filter(x => x.periode === period && parseInt(x.tgl) === now.getDate());
     const pagi = today.filter(x => x.shift === 'P').map(x => "Sdr. " + x.nama);
     const malam = today.filter(x => x.shift === 'M').map(x => "Sdr. " + x.nama);
@@ -316,7 +319,10 @@
     let head = '<th class="sticky-name">Nama</th>';
     for (let i = 1; i <= daysInMonth; i++) head += '<th>' + i + '</th>';
     document.getElementById('matrix-head').innerHTML = head;
-    const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]');
+    const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
+  const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : x.divisi === user.divisi;
+});
     const b = document.getElementById('matrix-body'); b.innerHTML = '';
     const names = [...new Set(m.map(x => x.nama))];
     const cc = isDanru ? 'cell-klik' : 'cell-readonly';
@@ -336,9 +342,13 @@
   };
 
   window.toggleShift = function(el) {
-    if (!isDanru) return alert('⛔ Akses Ditolak!');
+    const cfg = getSecurityRoleConfig();
+  if (!cfg.can_edit_shift) return alert('⛔ Akses Ditolak!');
     const n = el.dataset.nama, t = parseInt(el.dataset.tgl), p = document.getElementById('m-period').value;
-    const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]');
+    const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
+  const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : x.divisi === user.divisi;
+});
     const idx = m.findIndex(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p);
     const cycle = ['L', 'P', 'M', 'CT'];
     if (idx > -1) {
@@ -365,6 +375,9 @@
   }
 
   document.querySelectorAll('.sec-tab').forEach(btn => {
+  const cfg = getSecurityRoleConfig();
+  if (btn.dataset.target === 'tab-input-log') btn.style.display = cfg.can_edit_shift ? 'flex' : 'none';
+
     btn.addEventListener('click', function() {
       document.querySelectorAll('.sec-tab').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.sec-panel').forEach(p => p.style.display = 'none');
@@ -379,10 +392,14 @@
     if (!btn) return;
     const act = btn.dataset.act;
     if (act === 'add-name') {
-      if (!isDanru) return alert('⛔ Akses Ditolak!');
+      const cfg = getSecurityRoleConfig();
+  if (!cfg.can_edit_shift) return alert('⛔ Akses Ditolak!');
       const name = document.getElementById('new-name')?.value.trim().toUpperCase();
       if (!name) return;
-      const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]');
+      const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
+  const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : x.divisi === user.divisi;
+});
       m.push({ nama: name, tgl: 1, shift: '', periode: document.getElementById('m-period')?.value || '' });
       localStorage.setItem('dreamos_matrix', JSON.stringify(m));
       document.getElementById('new-name').value = '';
@@ -411,7 +428,8 @@
         penerima: esc(document.getElementById('lap-penerima')?.value.substring(0,100) || 'Regu'),
         shift: esc(document.getElementById('lap-shift')?.value.substring(0,50) || ''),
         pos: esc(document.getElementById('lap-pos')?.value.substring(0,50) || ''),
-        stat: severity,
+        status: userRole === 'kabag_umum' ? 'approved' : 'recommended',
+  action_level: userRole === 'kabag_umum' ? 'approve_final' : 'recommend',
         severity: severity,
         aset_serah_terima: asetVal,
         ttd_hash: ttdHash,
@@ -456,6 +474,7 @@
   });
 
   document.getElementById('m-period')?.addEventListener('change', renderMatrix);
+  renderSecurityUI();
   document.getElementById('filter-shift-report')?.addEventListener('change', renderLogs);
 
   const now = new Date();
@@ -554,6 +573,37 @@
   };
 
   if (window.BankAudit) BankAudit.log('ACCESS_SECURITY', { role });
+  
+  // 🛡️ ROLE-ADAPTIVE SECURITY SCOPE
+  const ROLE_WORKSPACE = {
+    kabag_umum: {
+      can_edit_shift: true,
+      can_approve_final: true,
+      can_view_all: true,
+      can_export_compliance: true
+    },
+    koordinator_umum: {
+      can_edit_shift: false,
+      can_approve_final: false,
+      can_view_all: false,
+      can_export_compliance: false
+    }
+  };
+
+  function getSecurityRoleConfig() {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    return ROLE_WORKSPACE[role] || ROLE_WORKSPACE.koordinator_umum;
+  }
+
+  // Role-adaptive UI renderer
+  function renderSecurityUI() {
+    const cfg = getSecurityRoleConfig();
+    document.querySelectorAll('.role-adaptive').forEach(el => {
+      el.style.display = cfg.can_edit_shift ? 'flex' : 'none';
+    });
+    document.getElementById('admin-controls')?.classList.toggle('hidden', !cfg.can_edit_shift);
+  }
+
   console.log('🛡️ Security Ops Center Pro Ready + ISO Enterprise Upgrades');
 })();
 </script>
