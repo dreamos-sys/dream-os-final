@@ -390,8 +390,8 @@ const perms = {
 });
     const b = document.getElementById('matrix-body'); b.innerHTML = '';
     const names = [...new Set(m.map(x => x.nama))];
-    const cc = isDanru ? 'cell-klik' : 'cell-readonly';
-    const ca = isDanru ? 'onclick="toggleShift(this)"' : '';
+    const cc = perms.canEditMatrix ? 'cell-klik' : 'cell-readonly';
+    const ca = perms.canEditMatrix ? 'onclick="toggleShift(this)"' : '';
     names.forEach(n => {
       let row = '<tr><td class="sticky-name">' + esc(n) + '</td>';
       for (let i = 1; i <= daysInMonth; i++) {
@@ -451,7 +451,7 @@ const perms = {
     }
 
     tbody.innerHTML = filtered.map((x, i) => {
-      const statusColor = (x.stat === 'DARURAT' || x.stat === 'BERAT') ? '#ef4444' : (x.stat === 'AMAN' ? '#10b981' : '#f59e0b');
+      const statusColor = (x.severity === 'DARURAT' || x.severity === 'BERAT') ? '#ef4444' : (x.severity === 'AMAN' ? '#10b981' : '#f59e0b');
       const ttdDisplay = (x.ttd_img_penyerah || x.ttd_penyerah) ? '<span style="color:#10b981;">✅ TTD Lengkap</span>' : '<span style="color:#94a3b8;">-</span>';
       
       return `<tr>
@@ -460,7 +460,7 @@ const perms = {
         <td style="text-align:center;">${esc(x.shift)}<br><small style="color:#64748b;">${esc(x.pos)}</small></td>
         <td><b>D:</b> ${esc(x.petugas)}<br><b>K:</b> ${esc(x.penerima)}</td>
         <td>${esc(x.teks || '-')}<br><small style="color:#64748b; margin-top:4px; display:block;">📦 Aset: ${esc(x.aset_serah_terima || '-')}</small></td>
-        <td style="text-align:center; color:${statusColor}; font-weight:700;">${esc(x.stat)}</td>
+        <td style="text-align:center; color:${statusColor}; font-weight:700;">${esc(x.severity || x.stat)}</td>
         <td style="text-align:center;">${ttdDisplay}</td>
       </tr>`;
     }).join('');
