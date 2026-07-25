@@ -251,6 +251,8 @@
 (function() {
   'use strict';
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
+  // ✅ FIX 2: Ambil divisi dari user metadata
+  const userDivisi = user?.user_metadata?.divisi || 'UMUM';
   const role = window.getUserRole ? window.getUserRole() : (user?.role || 'staff');
   document.getElementById('user-display').textContent = user ? (user.nama || 'User') : '🔒';
 
@@ -260,9 +262,11 @@
   const isKomandanRegu = role === 'komandan_regu';
   
   // Only Danru Hariyansyah, Komandan Regu, or Dev can edit schedule
-  let isDanru = isDev || isDanruHariyansyah || isKomandanRegu;
+  // Hapus isDanru → ganti dengan perms.canEditMatrix
+let isDanru = false;
   
-  const perms = {
+  // ✅ FIX 1: Standardize RBAC with perms as single source of truth
+const perms = {
     skipLogging: isDev,
     canEditMatrix: isDanru,
     canApproveFinal: role === 'kabag_umum' || isDev,
@@ -358,7 +362,6 @@
     const period = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
-  return cfg.can_view_all ? true : x.divisi === user.divisi;
 });
     const today = m.filter(x => x.periode === period && parseInt(x.tgl) === now.getDate());
     const pagi = today.filter(x => x.shift === 'P').map(x => "Sdr. " + x.nama);
@@ -382,7 +385,6 @@
     document.getElementById('matrix-head').innerHTML = head;
     const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
-  return cfg.can_view_all ? true : x.divisi === user.divisi;
 });
     const b = document.getElementById('matrix-body'); b.innerHTML = '';
     const names = [...new Set(m.map(x => x.nama))];
@@ -408,7 +410,6 @@
     const n = el.dataset.nama, t = parseInt(el.dataset.tgl), p = document.getElementById('m-period').value;
     const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
-  return cfg.can_view_all ? true : x.divisi === user.divisi;
 });
     const idx = m.findIndex(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p);
     const cycle = ['L', 'P', 'M', 'CT'];
@@ -486,7 +487,6 @@
       if (!name) return;
       const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
-  return cfg.can_view_all ? true : x.divisi === user.divisi;
 });
       m.push({ nama: name, tgl: 1, shift: '', periode: document.getElementById('m-period')?.value || '' });
       localStorage.setItem('dreamos_matrix', JSON.stringify(m));
@@ -567,8 +567,24 @@
   });
 
   document.getElementById('m-period')?.addEventListener('change', renderMatrix);
-  renderSecurityUI();
   document.getElementById('filter-shift-report')?.addEventListener('change', renderLogs);
+  // ✅ FIX 3: Role-adaptive UI rendering
+  function renderSecurityUI() {
+    const isKabag = perms.canApproveFinal;
+    const isKomandan = perms.canEditMatrix && !isKabag;
+
+    document.getElementById('admin-controls').style.display = 
+      (isKabag || isKomandan) ? 'flex' : 'none';
+
+    const cc = perms.canEditMatrix ? 'cell-klik' : 'cell-readonly';
+    const ca = perms.canEditMatrix ? 'onclick="toggleShift(this)"' : '';
+    document.querySelectorAll('.matrix-table td').forEach(td => {
+      td.className = cc;
+      td.setAttribute('onclick', ca);
+    });
+  }
+
+  renderSecurityUI();
 
   const now = new Date();
   const periodEl = document.getElementById('m-period');
