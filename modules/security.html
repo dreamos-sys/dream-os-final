@@ -263,12 +263,12 @@
   
   // Only Danru Hariyansyah, Komandan Regu, or Dev can edit schedule
   // Hapus isDanru → ganti dengan perms.canEditMatrix
-let isDanru = false;
+// isDanru deprecated - using perms.canEditMatrix
   
   // ✅ FIX 1: Standardize RBAC with perms as single source of truth
 const perms = {
     skipLogging: isDev,
-    canEditMatrix: isDanru,
+    canEditMatrix: isDanruHariyansyah || isKomandanRegu || isDev,
     canApproveFinal: role === 'kabag_umum' || isDev,
     canRecommend: role === 'koordinator_umum' || isDanruHariyansyah || isKomandanRegu || isDev
   };
@@ -344,15 +344,15 @@ const perms = {
     let m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]');
     if (m.length === 0) {
       const seed = [
-        { n: "SUDARSONO", s: ["L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L"] },
-        { n: "MARHUSIN", s: ["M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M"] },
-        { n: "HERIYATNO", s: ["L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","P"] },
-        { n: "SUNARKO", s: ["P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P"] },
-        { n: "HARIYANSAHC", s: ["P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P"] },
-        { n: "AGUS SUTISNA", s: ["M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","CT","CT","CT","CT","CT","CT","P","P","M","M","L","L","P","P","M","M"] },
-        { n: "DONIH", s: ["P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P"] }
+        { n: "SUDARSONO", divisi: "SD", s: ["L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L"] },
+        { n: "MARHUSIN", divisi: "SD", s: ["M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M"] },
+        { n: "HERIYATNO", divisi: "SMP", s: ["L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","P"] },
+        { n: "SUNARKO", divisi: "SMP", s: ["P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P"] },
+        { n: "HARIYANSAHC", divisi: "SMA", s: ["P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P"] },
+        { n: "AGUS SUTISNA", divisi: "SMA", s: ["M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","CT","CT","CT","CT","CT","CT","P","P","M","M","L","L","P","P","M","M"] },
+        { n: "DONIH", divisi: "UMUM", s: ["P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P"] }
       ];
-      seed.forEach(r => r.s.forEach((sh, i) => m.push({ nama: r.n, tgl: i + 1, shift: sh, periode: '2026-07' })));
+      seed.forEach(r => r.s.forEach((sh, i) => m.push({ nama: r.n, divisi: r.divisi, tgl: i + 1, shift: sh, document.getElementById('m-period')?.value || '2026-07'e: document.getElementById('m-period')?.value || '2026-07' })));
       localStorage.setItem('dreamos_matrix', JSON.stringify(m));
     }
   }
@@ -362,6 +362,7 @@ const perms = {
     const period = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : (x.divisi === userDivisi);
 });
     const today = m.filter(x => x.periode === period && parseInt(x.tgl) === now.getDate());
     const pagi = today.filter(x => x.shift === 'P').map(x => "Sdr. " + x.nama);
@@ -385,6 +386,7 @@ const perms = {
     document.getElementById('matrix-head').innerHTML = head;
     const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : (x.divisi === userDivisi);
 });
     const b = document.getElementById('matrix-body'); b.innerHTML = '';
     const names = [...new Set(m.map(x => x.nama))];
@@ -410,6 +412,7 @@ const perms = {
     const n = el.dataset.nama, t = parseInt(el.dataset.tgl), p = document.getElementById('m-period').value;
     const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : (x.divisi === userDivisi);
 });
     const idx = m.findIndex(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p);
     const cycle = ['L', 'P', 'M', 'CT'];
@@ -487,6 +490,7 @@ const perms = {
       if (!name) return;
       const m = JSON.parse(localStorage.getItem('dreamos_matrix') || '[]').filter(x => {
   const cfg = getSecurityRoleConfig();
+  return cfg.can_view_all ? true : (x.divisi === userDivisi);
 });
       m.push({ nama: name, tgl: 1, shift: '', periode: document.getElementById('m-period')?.value || '' });
       localStorage.setItem('dreamos_matrix', JSON.stringify(m));
@@ -583,8 +587,6 @@ const perms = {
       td.setAttribute('onclick', ca);
     });
   }
-
-  renderSecurityUI();
 
   const now = new Date();
   const periodEl = document.getElementById('m-period');
