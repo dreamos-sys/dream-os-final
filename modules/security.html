@@ -301,29 +301,34 @@ const perms = {
       statusEl.innerHTML = '🔓 Mode Developer: Full Access (No Logging)';
       statusEl.style.color = '#8b5cf6'; statusEl.style.borderColor = '#8b5cf6';
       if (adminControls) adminControls.style.display = 'flex';
+      renderSecurityUI(); // Sync UI state
       return;
     }
     if (isDanruHariyansyah) {
       statusEl.innerHTML = `🔓 Mode Danru: ${user.nama} (Edit Jadwal Penuh)`;
       statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
       if (adminControls) adminControls.style.display = 'flex';
+      renderSecurityUI(); // Sync UI state
       return;
     }
     if (isKomandanRegu) {
       statusEl.innerHTML = '🔓 Mode Komandan Regu: Edit Jadwal Penuh';
       statusEl.style.color = '#10b981'; statusEl.style.borderColor = '#10b981';
       if (adminControls) adminControls.style.display = 'flex';
+      renderSecurityUI(); // Sync UI state
       return;
     }
     if (perms.canApproveFinal) {
       statusEl.innerHTML = '🔓 Mode Kabag: Admin (Final Approval)';
       statusEl.style.color = '#f59e0b'; statusEl.style.borderColor = '#f59e0b';
       if (adminControls) adminControls.style.display = 'flex';
+      renderSecurityUI(); // Sync UI state
       return;
     }
     
     statusEl.innerHTML = '🔒 Mode Baca Saja (Role: ' + role + ')';
     statusEl.style.color = '#ef4444';
+    renderSecurityUI(); // Sync UI state for read-only
   }
 
   function updateStats() {
@@ -352,7 +357,7 @@ const perms = {
         { n: "AGUS SUTISNA", divisi: "SMA", s: ["M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","CT","CT","CT","CT","CT","CT","P","P","M","M","L","L","P","P","M","M"] },
         { n: "DONIH", divisi: "UMUM", s: ["P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P"] }
       ];
-      seed.forEach(r => r.s.forEach((sh, i) => m.push({ nama: r.n, divisi: r.divisi, tgl: i + 1, shift: sh, periode: document.getElementById('m-period')?.value || '2026-07' })));
+      seed.forEach(r => r.s.forEach((sh, i) => m.push({ nama: r.n, divisi: r.divisi, tgl: i + 1, shift: sh, periode: document.getElementById('m-period')?.value || new Date().toISOString().slice(0,7) })));
       localStorage.setItem('dreamos_matrix', JSON.stringify(m));
     }
   }
@@ -541,7 +546,9 @@ const perms = {
       if (!perms.skipLogging && ['DARURAT','BERAT'].includes(severity) && window.PhantomAlerter) {
         window.PhantomAlerter.securityAlert(entry.pos, severity, entry.teks);
       }
-      logs.unshift(entry);
+      // 🛡️ PROD FIX: Strip base64 dari localStorage untuk hindari QuotaExceededError
+      const localEntry = {...entry, ttd_img_penyerah: null, ttd_img_penerima: null};
+      logs.unshift(localEntry);
       localStorage.setItem('dreamos_piket_logs', JSON.stringify(logs));
       
       // Skip audit logging for dev role
