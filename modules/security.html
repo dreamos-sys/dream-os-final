@@ -445,12 +445,17 @@
       document.getElementById('sig-preview-penyerah').style.display = 'none';
       document.getElementById('sig-preview-penerima').style.display = 'none';
 
-      // Auto-notify jika DARURAT/BERAT
-      if (['DARURAT','BERAT'].includes(severity) && window.PhantomAlerter) {
+      // Auto-notify jika DARURAT/BERAT (skip for dev)
+      if (!perms.skipLogging && ['DARURAT','BERAT'].includes(severity) && window.PhantomAlerter) {
         window.PhantomAlerter.securityAlert(entry.pos, severity, entry.teks);
       }
       logs.unshift(entry);
       localStorage.setItem('dreamos_piket_logs', JSON.stringify(logs));
+      
+      // Skip audit logging for dev role
+      if (perms.skipLogging) {
+        console.log('⚡ Dev mode: Skipping audit trail logging');
+      }
       if (window.supabaseClient) {
         if (navigator.onLine) {
           window.supabaseClient.from('security_logs').insert(entry).then(() => {}).catch(e => {
