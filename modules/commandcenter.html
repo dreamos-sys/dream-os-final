@@ -191,6 +191,7 @@
           show('tab-approvals-btn', permissions.canApproveDana || permissions.approvalLevel === 'recommend');
           show('tab-users-btn', permissions.canManageUsers);
           show('tab-audit-btn', role !== 'staff' && role !== 'guru');
+          show('tab-pengumuman-btn', role === 'kabag_umum' || role === 'koordinator_umum' || role === 'dev');
 
           // 3. RENDER MODULES LANGSUNG (AGAR GRID TIDAK KOSONG)
           const grid = document.getElementById('module-grid');
@@ -223,6 +224,7 @@
             if (tabName === 'approvals') loadApprovals();
             if (tabName === 'users') renderUserList();
             if (tabName === 'audit') renderAuditLog();
+            if (tabName === 'pengumuman') loadAnnouncements();
           };
 
           async function loadDanaRequests() {
@@ -324,6 +326,40 @@
               '<div class="audit-item"><span class="audit-time">['+new Date(log.timestamp).toLocaleString()+']</span> <strong>'+log.user+'</strong> ('+log.role+'): '+log.action+' <span style="color:#94a3b8;">'+JSON.stringify(log.details||{})+'</span></div>'
             ).join('') || '<div style="padding:1rem; color:var(--text-muted);">Belum ada aktivitas</div>';
           }
+
+          // ✅ PENGUMUMAN FUNCTIONS
+          window.saveAnnouncements = function() {
+            const mgmt = document.getElementById('ann-mgmt').value.trim();
+            const umum = document.getElementById('ann-umum').value.trim();
+            const ucapan = document.getElementById('ann-ucapan').value.trim();
+            
+            const announcements = [
+              { type: 'management', msg: mgmt || 'Belum ada info manajemen', updated_at: new Date().toISOString(), updated_by: user.email },
+              { type: 'umum', msg: umum || 'Belum ada info bagian umum', updated_at: new Date().toISOString(), updated_by: user.email },
+              { type: 'ucapan', msg: ucapan || 'The Power Soul Of Shalawat', updated_at: new Date().toISOString(), updated_by: user.email }
+            ];
+            
+            localStorage.setItem('dreamos_announcements', JSON.stringify(announcements));
+            
+            const msgEl = document.getElementById('ann-msg');
+            msgEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">✅ Pengumuman berhasil disimpan! Refresh dashboard untuk melihat perubahan.</span>';
+            
+            logAction('UPDATE_ANNOUNCEMENTS', { mgmt: mgmt ? 'set' : 'clear', umum: umum ? 'set' : 'clear', ucapan: ucapan ? 'set' : 'clear' });
+            
+            setTimeout(() => { msgEl.innerHTML = ''; }, 3000);
+          };
+
+          window.loadAnnouncements = function() {
+            const data = JSON.parse(localStorage.getItem('dreamos_announcements') || '[]');
+            
+            document.getElementById('ann-mgmt').value = data.find(a => a.type === 'management')?.msg || '';
+            document.getElementById('ann-umum').value = data.find(a => a.type === 'umum')?.msg || '';
+            document.getElementById('ann-ucapan').value = data.find(a => a.type === 'ucapan')?.msg || '';
+            
+            const msgEl = document.getElementById('ann-msg');
+            msgEl.innerHTML = '<span style="color: #0ea5e9;">🔄 Pengumuman dimuat dari storage</span>';
+            setTimeout(() => { msgEl.innerHTML = ''; }, 2000);
+          };
 
           function logAction(action, details) {
             const entry = { timestamp: new Date().toISOString(), user: user.email, role: role, action, details };
