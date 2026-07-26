@@ -403,7 +403,6 @@
               tbody.innerHTML = items.length ? items.map(i => {
                 const prio = i.priority || (i.nominal>5000000?'high':'medium');
                 const badgeCls = prio==='critical'?'badge-critical':prio==='high'?'badge-high':prio==='medium'?'badge-medium':'badge-low';
-                const bookingDate = i.tanggal || i.tgl || i.date || i.created_at;
                 const sla = calculateSLA(i.created_at, prio);
                 return `<tr><td><span class="badge ${badgeCls}">${prio.toUpperCase()}</span></td><td>${i.type}</td><td>${i.judul||i.ruang||i.description||'-'}</td><td class="sla-timer ${sla.cls}">${sla.text}</td><td><button class="btn btn-primary" style="padding:0.3rem 0.6rem;font-size:0.7rem;" onclick="handleFromInbox('${i.type}','${i.id}')">⚡ Aksi</button></td></tr>`;
               }).join('') : '<tr><td colspan="5">✅ Tidak ada antrean pending</td></tr>';
@@ -847,6 +846,17 @@
           // Auto-sync saat Command Center dibuka
           setTimeout(() => { if(window.syncBookings) window.syncBookings(); }, 1000);
 
+          // 📡 CROSS-MODULE SYNC LISTENER (Auto-refresh saat modul lain update data)
+          window.addEventListener('storage', (e) => {
+            if(!e.key) return;
+            const bookingKeys = ['dreamos_bookings','dreamos_booking','bookings'];
+            if(bookingKeys.includes(e.key)) {
+              console.log('🔄 Booking data changed in another tab/module. Syncing CC...');
+              if(window.calEngine) window.calEngine.render();
+              if(window.refreshInbox) window.refreshInbox();
+            }
+          });
+
 
 
           // 📅 CALENDAR ENGINE (DOMPurify-Safe + Timezone-Proof + Format-Agnostic)
@@ -873,15 +883,16 @@
             // ✅ Parser Tanggal Robust: Handle YYYY-MM-DD, DD/MM/YYYY, & ISO String
             parseDate(dateStr) {
               if(!dateStr) return null;
-              // Handle DD/MM/YYYY → Local Date
-              if(typeof dateStr === 'string' && dateStr.includes('/')) {
-                const p = dateStr.split('/');
-                if(p.length===3) return new Date(p[2], p[1]-1, p[0]);
+              const s = String(dateStr).trim();
+              // DD/MM/YYYY
+              if(s.includes('/')) {
+                const p = s.split('/');
+                if(p.length===3) return new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
               }
-              // Handle YYYY-MM-DD atau ISO → Ekstrak ke Local Date agar tidak geser UTC
-              const d = new Date(dateStr);
-              if(isNaN(d.getTime())) return null;
-              return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+              // YYYY-MM-DD atau ISO → Ekstrak manual via Regex (ZERO UTC SHIFT)
+              const m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+              if(m) return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]));
+              return null;
             }
             loadEvents() {
               this.events = [];
@@ -893,9 +904,10 @@
                 { key: 'dreamos_janitor_shifts', color: '#10b981', label: 'Janitor', field: 'nama' },
                 { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' }
               ];
+              const getStore = (k) => JSON.parse(localStorage.getItem(k) || localStorage.getItem(k.replace('dreamos_','')) || localStorage.getItem('dreamos_'+k) || '[]');
               sources.forEach(s => {
                 try {
-                  const data = JSON.parse(localStorage.getItem(s.key) || '[]');
+                  const data = getStore(s.key);
                   data.forEach(d => {
                     const dateField = d.tanggal || d.tgl || d.date || d.created_at;
                     const dDate = this.parseDate(dateField);
