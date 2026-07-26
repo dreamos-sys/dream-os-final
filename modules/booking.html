@@ -195,7 +195,7 @@
   document.getElementById('booking-tgl-selesai').min = minDate;
 
   // ===== RENDER LIST =====
-  function renderBookings() {
+  function renderBookings() { const bookings = getBookings(); console.log('📋 Rendering', bookings.length, 'bookings from localStorage');
     const bookings = getBookings();
     const el = document.getElementById('booking-list');
     if (!bookings.length) {
@@ -333,15 +333,22 @@
       if (!confirm('⚠️ Jadwal bentrok. Tetap simpan?')) return;
     }
 
+    // 💾 SIMPAN KE LOCALSTORAGE DULU (PERSISTEN!)
     const bookings = getBookings(); 
     bookings.push(newBooking); 
     saveBookings(bookings); 
     renderBookings();
+    console.log('✅ Booking saved to localStorage:', newBooking.id);
 
-    // Sync ke cloud
+    // ☁️ Sync ke cloud (async, tidak blocking)
     if (window.supabaseClient) {
-      window.supabaseClient.from('bookings').insert(newBooking).then(() => {}).catch(e => { console.warn('Booking DB error:', e.message); });
-    } else if (window.OfflineQueue) {
+      window.supabaseClient.from('bookings').insert(newBooking).then(() => {
+        console.log('☁️ Booking synced to Supabase');
+      }).catch(e => { 
+        console.warn('⚠️ Supabase sync failed, data tetap aman di localStorage:', e.message); 
+      });
+    }
+    if (window.OfflineQueue) {
       window.OfflineQueue.add('bookings', 'insert', newBooking);
     }
 
