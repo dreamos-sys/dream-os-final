@@ -310,10 +310,21 @@
     if(tabName==='archive' && window.archiveEngine) window.archiveEngine.render();
   };
   window.toggleNotif = function() {
+    const panel = document.getElementById('notif-panel');
     const count = document.getElementById('notif-count');
-    if(!count) return;
-    count.textContent = count.textContent==='0'?'3':'0';
-    if(count.textContent!=='0') alert('🔔 Notifikasi:\n• 2 Pengajuan Dana menunggu\n• 1 Maintenance HIGH priority\n• SLA K3 hampir expired');
+    if (!panel) return;
+    
+    // Toggle panel visibility
+    if (panel.style.display === 'block') {
+      panel.style.display = 'none';
+    } else {
+      panel.style.display = 'block';
+      if (window.renderNotifPanel) window.renderNotifPanel();
+    }
+    
+    // Update badge count dari data real
+    const notifs = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
+    if (count) count.textContent = notifs.length > 0 ? (notifs.length > 9 ? '9+' : notifs.length) : '0';
   };
 
       function safeInit() {
@@ -429,7 +440,9 @@
           window.exportPDF = function(module) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      const data = JSON.parse(localStorage.getItem('dreamos_'+module) || '[]');
+      const keyMap = { 'dana': 'dreamos_dana', 'booking': 'dreamos_bookings', 'k3': 'dreamos_k3_reports', 'maintenance': 'dreamos_maintenance_requests', 'audit': 'dreamos_activity_log' };
+            const key = keyMap[module] || 'dreamos_'+module;
+            const data = JSON.parse(localStorage.getItem(key) || '[]');
       if(!data.length) return alert('📭 Belum ada data untuk di-export');
       doc.setFontSize(16); doc.text(`Dream OS - Laporan ${module.toUpperCase()}`, 14, 20);
       doc.setFontSize(10); doc.text(`Generated: ${new Date().toLocaleString()} | By: ${JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'System'}`, 14, 30);
@@ -450,7 +463,9 @@
       logAction('EXPORT_PDF', { module, rows: data.length });
     };
     window.exportCSV = function(module) {
-            const data = JSON.parse(localStorage.getItem('dreamos_'+module) || '[]');
+            const keyMap = { 'dana': 'dreamos_dana', 'booking': 'dreamos_bookings', 'k3': 'dreamos_k3_reports', 'maintenance': 'dreamos_maintenance_requests', 'audit': 'dreamos_activity_log' };
+            const key = keyMap[module] || 'dreamos_'+module;
+            const data = JSON.parse(localStorage.getItem(key) || '[]');
             if(!data.length) return alert('📭 Belum ada data untuk di-export');
             const headers = Object.keys(data[0]).join(',');
             const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
@@ -516,7 +531,9 @@
                 const {data:b} = await window.supabaseClient.from('bookings').select('*').eq('status','pending');
                 items = [...(d||[]).map(x=>({...x,type:'Dana'})), ...(b||[]).map(x=>({...x,type:'Booking'}))];
               } else {
-                items = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
+                const danaItems = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
+                const bookingItems = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Booking'}));
+                items = [...danaItems, ...bookingItems];
               }
               tbody.innerHTML = items.length ? items.map(i => `<tr><td>${i.type}</td><td>${i.pemohon||i.nama_peminjam||'-'}</td><td>${i.judul||i.ruang||'-'}</td><td><span class="badge badge-warning">PENDING</span></td><td><button class="btn btn-success btn-sm" onclick="handleApproval('${i.type}','${i.id}','approved')">✅</button> <button class="btn btn-danger btn-sm" onclick="handleApproval('${i.type}','${i.id}','rejected')">❌</button></td></tr>`).join('') : '<tr><td colspan="5">🎉 Tidak ada antrean</td></tr>';
             } catch(e) { tbody.innerHTML = `<tr><td colspan="5">⚠️ ${e.message}</td></tr>`; }
