@@ -108,6 +108,7 @@
 // ========== PROFILE MODULE (ENTERPRISE) ==========
 (function() {
   'use strict';
+  if (!window.goHome) window.goHome = function() { window.location.href = 'index.html'; };
 
   function sanitize(str) { if(!str) return ''; var d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
   function getUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user')||'null'); } catch(e) { return null; } }
@@ -149,7 +150,6 @@
   document.getElementById('info-role').textContent = (user.role||'staff').toUpperCase();
   getDNA().then(function(d) { document.getElementById('info-dna').textContent = d; });
 
-  renderUserList();
   
   // 🔐 Enterprise Audit: catat akses modul profile
   if (window.BankAudit) {
@@ -180,12 +180,7 @@
     if(btn) btn.classList.add('active');
     var t = document.getElementById('tab-'+name);
     if(t) t.classList.add('active');
-    if (name === 'users') renderUserList();
   };
-
-  
-    });
-  }
 
   // ========== SAVE PROFILE (SUPABASE + AVATAR) ==========
   window.saveProfile = async function() {
@@ -202,15 +197,11 @@
         }
         var { error } = await window.supabaseClient
             .from('users')
-            .upsert({
-                id: user.id,
-                email: user.email,
+            .update({
                 nama: nama,
-                role: user.role,
                 phone: phone,
-                department: department,
-                avatar_url: user.avatar || null
-            });
+                department: department
+            }).eq('id', user.id);
             
         if (error) throw error;
         
@@ -302,45 +293,16 @@
     }
   };
 
-  window.showRegisterForm = function() { document.getElementById('register-panel').style.display='block'; };
-  window.hideRegisterForm = function() { document.getElementById('register-panel').style.display='none'; };
-
-  window.registerUser = async function() {
-    var n=document.getElementById('reg-nama').value.trim();
-    var e=document.getElementById('reg-email').value.trim();
-    var r=document.getElementById('reg-role').value;
-    var p=document.getElementById('reg-pass').value;
-    var c=document.getElementById('reg-confirm').value;
-    var msg = document.getElementById('reg-msg');
-    
-    if (!n||!e||!p) { msg.textContent = '⚠️ Semua field wajib diisi!'; msg.style.color = '#ef4444'; return; }
-    if (p.length<6) { msg.textContent = '⚠️ Password minimal 6 karakter!'; msg.style.color = '#ef4444'; return; }
-    if (p!==c) { msg.textContent = '⚠️ Password tidak cocok!'; msg.style.color = '#ef4444'; return; }
-
-    var users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
-    if (users.find(function(u){return u.email===e;})) { msg.textContent = '⚠️ Email sudah terdaftar!'; msg.style.color = '#ef4444'; return; }
-
-    try {
-      users.push({ nama:n, email:e, role:r, password_hash:await SEC.hashPassword(p), device_dna:'', created_at:new Date().toISOString() });
-      localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-    } catch(ex) {
-      msg.textContent = '⚠️ Penyimpanan penuh! Minta Admin membersihkan cache.'; msg.style.color = '#ef4444'; return;
-    }
-    
-    hideRegisterForm();
-    renderUserList();
-    notifyParent('REGISTER_USER', n+' ('+e+')');
-    msg.textContent = ''; 
-    alert('✅ '+n+' berhasil didaftarkan!');
-  };
+  // 🗑️ Register functions removed: UI not present in profile module. Use Command Center for user management.
 
   window.saveNotifications = function() { alert('✅ Disimpan!'); };
 
-  window.handleLogout = function() {
+  window.handleLogout = async function() {
     if (confirm('🚪 Yakin logout? Session akan dihapus dan harus login ulang.')) {
+      if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(()=>{});
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
-      window.location.reload();
+      window.location.href = 'index.html';
     }
   };
 })();
