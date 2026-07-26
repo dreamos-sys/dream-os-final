@@ -49,7 +49,7 @@
         <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">📊 Overview</button>
         <button class="tab-btn" data-tab="edit" onclick="switchTab('edit', this)">✏️ Edit</button>
         <button class="tab-btn" data-tab="security" onclick="switchTab('security', this)">🔒 Security</button>
-        <button class="tab-btn" data-tab="users" onclick="switchTab('users', this)" style="display:none;">👥 Users</button>
+        
         <button class="tab-btn" data-tab="settings" onclick="switchTab('settings', this)">⚙️ Settings</button>
     </div>
 
@@ -86,34 +86,6 @@
             <input class="input-field" id="new-pass" type="password" placeholder="Password baru" style="margin-bottom:0.5rem;">
             <input class="input-field" id="confirm-pass" type="password" placeholder="Konfirmasi" style="margin-bottom:0.5rem;">
             <button class="btn btn-warning" onclick="changePassword()" style="width:100%;">🔑 Ganti Password</button>
-        </div>
-    </div>
-
-    <!-- TAB: Users (Disabled: Centralized in Command Center for Zero Fraud) -->
-    <div id="tab-users" class="tab-content" style="display:none;">
-        <div class="glass">
-            <div class="section-title" style="color:var(--purple);">👥 Daftar Pengguna</div>
-            <div id="user-list" style="max-height:300px; overflow-y:auto;"></div>
-            <button class="btn btn-success" onclick="showRegisterForm()" style="width:100%; margin-top:0.8rem;">➕ Daftar Pengguna Baru</button>
-        </div>
-        <div id="register-panel" class="glass" style="display:none; border-color: var(--neon);">
-            <div class="section-title" style="color:var(--neon);">📝 Pendaftaran Pengguna Baru</div>
-            <input class="input-field" id="reg-nama" placeholder="Nama Lengkap" style="margin-bottom:0.4rem;">
-            <input class="input-field" id="reg-email" placeholder="Email" type="email" style="margin-bottom:0.4rem;">
-            <select class="input-field" id="reg-role" style="margin-bottom:0.4rem;">
-                <option value="guru">Guru</option>
-                <option value="security">Security</option>
-                <option value="janitor">Janitor</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="staff">Staff</option>
-            </select>
-            <input class="input-field" type="password" id="reg-pass" placeholder="Password (min 6 karakter)" style="margin-bottom:0.4rem;">
-            <input class="input-field" type="password" id="reg-confirm" placeholder="Konfirmasi Password">
-            <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
-                <button class="btn btn-primary" onclick="registerUser()">✅ Daftarkan</button>
-                <button class="btn btn-danger" onclick="hideRegisterForm()">❌ Batal</button>
-            </div>
-            <p id="reg-msg" style="font-size:0.7rem; margin-top:0.5rem;"></p>
         </div>
     </div>
 
@@ -211,18 +183,7 @@
     if (name === 'users') renderUserList();
   };
 
-  function renderUserList() {
-    var users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
-    var el = document.getElementById('user-list');
-    if (!el) return;
-    el.innerHTML = users.length ? '<table><tr><th>Nama</th><th>Email</th><th>Role</th></tr>'+users.map(function(u){ return '<tr><td>'+sanitize(u.nama)+'</td><td style="font-size:0.65rem;">'+sanitize(u.email)+'</td><td>'+sanitize(u.role)+'</td></tr>'; }).join('')+'</table>' : '<p style="color:#94a3b8;text-align:center;">Belum ada pengguna.</p>';
-  }
   
-  // 🔄 Real-Time Sync untuk user list (jika SyncEngine tersedia)
-  if (window.SyncEngine && window.supabaseClient) {
-    window.SyncEngine.subscribe('users', function() {
-      console.log('📡 User list updated via SyncEngine');
-      renderUserList();
     });
   }
 
