@@ -3,8 +3,10 @@
 <head>
 
 <script>
-  // 🛠️ AUTO-FIX LOCAL METADATA (ERWIN KOORDINATOR)
+  // 🛠️ AUTO-FIX LOCAL METADATA (ERWIN KOORDINATOR) - SAFE VERSION
   (function() {
+    if (sessionStorage.getItem('erwin_fixed')) return; // Prevent infinite loop
+    
     const stored = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
     if (stored.email === 'erwinsyah1679@gmail.com' && stored.role !== 'koordinator_umum') {
       console.log('🔄 Auto-fixing outdated local metadata for Erwin...');
@@ -13,7 +15,8 @@
       stored.user_metadata.role = 'koordinator_umum';
       stored.user_metadata.divisi = 'admin';
       localStorage.setItem('dreamos_bound_user', JSON.stringify(stored));
-      location.reload(); // Reload otomatis agar RBAC baru terbaca
+      sessionStorage.setItem('erwin_fixed', 'true');
+      location.reload(); 
     }
   })();
 </script>
@@ -350,15 +353,15 @@
 
       // RBAC Configuration
       const ROLE_PERMISSIONS = {
-        dev: ['admin_users','cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting'],
-        kabag_umum: ['cmd','security','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','profile','qr','about','setting','admin_users'],
-        koordinator_umum: ['dana'],
-        komandan_regu: ['security', 'security_edit_jadwal'],
-        guru: ['booking', 'k3'],
-        janitor_indoor: ['janitor-indoor'],
-        janitor_outdoor: ['janitor-outdoor'],
-        security: ['security'],
-        maintenance: ['maintenance'],
+        dev: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
+        kabag_umum: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
+        koordinator_umum: ['cmd','security','k3','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
+        komandan_regu: ['security','security_edit_jadwal','k3','booking','profile','qr','about','setting'],
+        guru: ['booking','k3','profile','qr','about','setting'],
+        janitor_indoor: ['janitor-indoor','k3','profile','qr','about','setting'],
+        janitor_outdoor: ['janitor-outdoor','k3','profile','qr','about','setting'],
+        security: ['security','k3','profile','qr','about','setting'],
+        maintenance: ['maintenance','k3','profile','qr','about','setting'],
         staff: ['profile','qr','about','setting']
       };
 
@@ -523,8 +526,23 @@
         grid.innerHTML = '';
         
         modules.forEach(m => {
-          if (!canAccess(m.id)) return;
           const card = document.createElement('div');
+          card.className = 'mod-card glass';
+          card.innerHTML = '<div class="mod-status"></div><div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
+          
+          if (!canAccess(m.id)) {
+            // Visible but restricted
+            card.style.opacity = '0.4';
+            card.style.cursor = 'not-allowed';
+            card.style.filter = 'grayscale(80%)';
+            card.addEventListener('click', () => {
+              window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan untuk modul ' + m.n + '.', 'error');
+            });
+          } else {
+            card.addEventListener('click', () => openMod(m.id));
+          }
+          grid.appendChild(card);
+        });
           card.className = 'mod-card glass';
           card.innerHTML = '<div class="mod-status"></div><div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
           card.addEventListener('click', () => openMod(m.id));
