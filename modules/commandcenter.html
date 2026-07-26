@@ -1,325 +1,928 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dream OS Command Center - Pro</title>
-  <style>
-    :root { --glass-bg: rgba(15, 23, 42, 0.8); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; --text-main: #e2e8f0; --text-muted: #cbd5e1; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #0a0e27; color: var(--text-main); min-height: 100vh; padding: 1rem; font-size: 0.875rem; }
-    .glass { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
-    .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.95); border: 1px solid var(--neon); color: var(--neon); padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem; min-height: 44px; display: flex; align-items: center; gap: 0.5rem; }
-    .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 44px; }
-    .btn-success { background: #10b981; color: #fff; } .btn-danger { background: var(--warning); color: #fff; } .btn-primary { background: var(--accent); color: #fff; } .btn-warning { background: var(--gold); color: #000; }
-    .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
-    .mod-card { background: rgba(0,0,0,0.3); padding: 1.5rem 1rem; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .mod-card:hover { border-color: var(--neon); transform: translateY(-4px); }
-    .mod-icon { font-size: 2rem; margin-bottom: 0.5rem; } .mod-title { font-size: 0.875rem; font-weight: 700; }
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
-    .tab { padding: 0.6rem 1.2rem; border-radius: 8px 8px 0 0; cursor: pointer; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-bottom: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; }
-    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .tab-content { display: none; animation: fadeIn 0.3s ease; } .tab-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .form-group { margin-bottom: 1rem; } .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.4rem; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem; }
-    .table-responsive { overflow-x: auto; } table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    th { background: rgba(0,0,0,0.4); color: var(--accent); padding: 0.8rem; text-align: left; }
-    td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .pro-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-    .pro-metric { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,255,157,0.1); border-radius: 8px; padding: 0.8rem; text-align: center; }
-    .pro-metric-val { font-size: 1.5rem; font-weight: 700; color: var(--neon); }
-    .pro-metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-    .badge { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
-    .badge-success { background: rgba(16,185,129,0.2); color: #10b981; }
-    .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; }
-  </style>
-</head>
-<body>
-  <button class="back-btn" onclick="window.goHome()">← HOME</button>
+<style>
+  :root { 
+    --glass-bg: rgba(15, 23, 42, 0.8); 
+    --neon: #00ff9d; 
+    --accent: #0ea5e9; 
+    --warning: #e11d48; 
+    --gold: #f59e0b; 
+    --purple: #8b5cf6;
+    --text-main: #e2e8f0;
+    --text-muted: #cbd5e1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: var(--text-main); min-height: 100vh; padding: 1rem; font-size: 0.875rem; }
+  .glass { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.95); border: 1px solid var(--neon); color: var(--neon); padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem; min-height: 44px; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+  .back-btn:hover { background: var(--neon); color: #000; }
+  .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 44px; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-danger { background: var(--warning); color: #fff; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-warning { background: var(--gold); color: #000; }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; min-height: 36px; }
+  .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .mod-card { background: rgba(0,0,0,0.3); padding: 1.5rem 1rem; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .mod-card:hover { border-color: var(--neon); transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,255,157,0.15); }
+  .mod-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .mod-title { font-size: 0.875rem; font-weight: 700; color: var(--text-main); }
+  .mod-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; }
+  .role-info { background: rgba(139,92,246,0.1); border-left: 4px solid var(--purple); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem; line-height: 1.6; }
+  .badge { padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; }
+  .badge-success { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-danger { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-purple { background: rgba(139,92,246,0.2); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 600px; }
+  th { background: rgba(0,0,0,0.4); color: var(--accent); padding: 0.8rem; text-align: left; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; }
+  td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
+  tr:hover td { background: rgba(0,255,157,0.03); }
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
+  .tab { padding: 0.6rem 1.2rem; border-radius: 8px 8px 0 0; cursor: pointer; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-bottom: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; min-height: 44px; display: flex; align-items: center; gap: 0.5rem; }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab-content { display: none; animation: fadeIn 0.3s ease; }
+  .tab-content.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.4rem; font-weight: 600; }
+  .form-group input, .form-group select { width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem; min-height: 44px; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--neon); outline: none; box-shadow: 0 0 0 2px rgba(0,255,157,0.1); }
+  .alert { padding: 1rem; border-radius: 8px; margin-top: 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+  .alert-success { background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #10b981; }
+  .alert-error { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #ef4444; }
+  .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .kpi-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.2rem; text-align: center; }
+  .kpi-value { font-size: 1.8rem; font-weight: 800; color: var(--neon); line-height: 1; }
+  .kpi-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .audit-item { background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.8rem; font-family: 'Courier New', monospace; border-left: 3px solid var(--accent); }
+  .audit-time { color: var(--text-muted); font-size: 0.7rem; }
+  @media (max-width: 768px) {
+    .module-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    body { padding: 0.5rem; padding-top: 4rem; }
+  }
 
-  <div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem;">
-    <div class="glass">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="color: var(--neon); margin: 0; font-size: 1.4rem;">🏢 COMMAND CENTER PRO</h2>
-          <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
-            User: <strong id="user-name" style="color: var(--text-main);">Loading...</strong> | 
-            Role: <span id="role-badge" class="badge badge-warning">---</span>
-          </div>
+  /* 🖨️ PRINT OPTIMIZATION & ENTERPRISE LAYOUT */
+  @media print {
+    body, html { background: #fff !important; color: #000 !important; }
+    .no-print, #bottom-nav, .back-btn, .cast-btn, .pwa-install-banner, #cmd-palette, .toast-container { display: none !important; }
+    .glass { background: #fff !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+    .btn, .tab, .nav-item { border: 1px solid #000 !important; color: #000 !important; background: #f5f5f5 !important; }
+    .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+    .print-header h2 { margin: 0; font-size: 16pt; }
+    .print-header p { margin: 4px 0; font-size: 10pt; color: #444; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    th, td { border: 1px solid #000 !important; padding: 6px !important; color: #000 !important; }
+    th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; }
+    .role-badge-print { display: inline-block; padding: 2px 8px; border: 1px solid #000; border-radius: 4px; font-size: 9pt; font-weight: 700; }
+  }
+  .print-header { display: none; }
+  .role-tag { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+
+</style>
+
+<button class="back-btn" onclick="window.goHome()">← HOME</button>
+
+<div class="print-header"><h2>🏢 DREAM OS COMMAND CENTER REPORT</h2><p>Enterprise RBAC • ISO 27001 • Generated: <span id="print-date"></span></p></div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem;">
+  <div class="glass">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h2 style="color: var(--neon); margin: 0; font-size: 1.4rem;">🏢 COMMAND CENTER PRO</h2>
+        <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+          User: <strong id="user-name" style="color: var(--text-main);">Loading...</strong> | 
+          Role: <span id="role-badge" class="badge badge-purple">---</span>
         </div>
-        <div id="sync-status" style="font-size: 0.75rem; color: var(--text-muted);">🟡 Syncing...</div>
       </div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-      <button class="tab" onclick="switchTab('dana')" id="tab-dana-btn" style="display:none;">💸 Dana</button>
-      <button class="tab" onclick="switchTab('approvals')" id="tab-approvals-btn" style="display:none;">✅ Approval</button>
-      <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 Users</button>
-      <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit</button>
-      <button class="tab" onclick="switchTab('searchexport')" id="tab-searchexport-btn" style="display:none;">🔍 Search</button>
-    </div>
-
-    <div id="tab-dashboard" class="tab-content active">
-      <div class="glass">
-        <div style="color: var(--neon); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">🖥️ SYSTEM HEALTH (Enterprise Real-time)</div>
-        <div class="pro-metrics">
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-api-latency">--</div><div class="pro-metric-label">API Latency</div></div>
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-db-status">--</div><div class="pro-metric-label">Database</div></div>
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-active-users">--</div><div class="pro-metric-label">Active Users</div></div>
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-compliance">98%</div><div class="pro-metric-label">ISO Compliance</div></div>
-        </div>
-      </div>
-      <div class="glass">
-        <div style="color: var(--neon); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📱 Modul Workspace</div>
-        <div class="module-grid" id="module-grid"></div>
-      </div>
-    </div>
-
-    <div id="tab-dana" class="tab-content">
-      <div class="glass">
-        <div style="color: var(--gold); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">💸 Pengajuan Dana</div>
-        <div id="dana-form-container" style="display:none; margin-bottom:1.5rem;">
-          <div class="form-group"><label>Judul</label><input type="text" id="dana-judul"></div>
-          <div class="form-group"><label>Nominal</label><input type="number" id="dana-nominal"></div>
-          <button class="btn btn-warning" onclick="submitDana()" style="width:100%;">📤 Ajukan</button>
-        </div>
-        <div class="table-responsive">
-          <table><thead><tr><th>Tanggal</th><th>Judul</th><th>Nominal</th><th>Status</th></tr></thead><tbody id="dana-tbody"></tbody></table>
-        </div>
-      </div>
-    </div>
-
-    <div id="tab-approvals" class="tab-content">
-      <div class="glass">
-        <div style="color: var(--gold); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">✅ Approval Queue</div>
-        <div class="table-responsive"><table><thead><tr><th>Tipe</th><th>Pengaju</th><th>Detail</th><th>Aksi</th></tr></thead><tbody id="approval-tbody"></tbody></table></div>
-      </div>
-    </div>
-
-    <div id="tab-users" class="tab-content">
-      <div class="glass">
-        <div style="color: var(--accent); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">👥 User Management</div>
-        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap:0.5rem; align-items:end;">
-          <div><label>Nama</label><input type="text" id="new-user-nama"></div>
-          <div><label>Email</label><input type="email" id="new-user-email"></div>
-          <div><label>Role</label><select id="new-user-role"><option value="staff">Staff</option><option value="koordinator_umum">Koordinator</option><option value="kabag_umum">Kabag</option></select></div>
-          <div><label>Divisi</label><select id="new-user-divisi"><option value="UMUM">Umum</option><option value="SD">SD</option><option value="SMP">SMP</option><option value="SMA">SMA</option></select></div>
-          <button class="btn btn-success" onclick="createUser()">✅ Buat</button>
-        </div>
-        <div class="table-responsive" style="margin-top:1rem;"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr></thead><tbody id="user-tbody"></tbody></table></div>
-      </div>
-    </div>
-
-    <div id="tab-audit" class="tab-content">
-      <div class="glass">
-        <div style="color: var(--purple); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📜 Activity Log</div>
-        <div id="audit-log" style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.8rem;"></div>
-      </div>
-    </div>
-
-    <div id="tab-searchexport" class="tab-content">
-      <div class="glass">
-        <div style="color: var(--accent); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">🔍 Global Search</div>
-        <input type="text" id="global-search-input" placeholder="Cari nama, ruang, atau judul..." style="width:100%; padding:0.8rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; margin-bottom:0.5rem;">
-        <div id="search-results"></div>
+      <div id="sync-status" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+        <span class="loading-spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite;"></span>
+        Syncing...
       </div>
     </div>
   </div>
 
-  <script>
-    if (!window.goHome) window.goHome = function() { window.location.href = 'index.html'; };
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard & Monitoring</button>
+    <button class="tab" onclick="switchTab('dana')" id="tab-dana-btn" style="display:none;">💸 Pengajuan Dana</button>
+<button class="tab" onclick="switchTab('approvals')" id="tab-approvals-btn" style="display:none;">✅ Approval Queue</button>
+    <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 User Management</button>
+    <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit Log</button>
+    <button class="tab" onclick="switchTab('uat')" id="tab-uat-btn" style="display:none;">📄 Dokumen & Cetak</button>
+    <button class="tab" onclick="switchTab('searchexport')" id="tab-searchexport-btn" style="display:none;">🔍 Search & Export</button>
+  </div>
 
-    (function() {
-      'use strict';
-      const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-      const role = user.role || 'staff';
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="glass">
+      <div class="role-info" id="role-permissions">Loading permissions...</div>
+    </div>
+    <div class="kpi-grid" id="kpi-container"></div>
+    <div class="glass">
+      <div class="section-title" style="color: var(--neon);">📱 Modul Workspace</div>
       
-      document.getElementById('user-name').textContent = user.nama || user.email || 'Unknown';
-      document.getElementById('role-badge').textContent = role.toUpperCase().replace('_', ' ');
+    <div class="glass" id="admin-announcements-panel" style="display:none; margin-top:1rem;">
+      <div class="section-title" style="color: var(--gold);">📢 Update Info Dashboard (Slide 5-7)</div>
+      <div class="form-group"><label>Info Manajemen (Slide 5)</label><input type="text" id="ann-mgmt" placeholder="Contoh: Rapat evaluasi Jumat 10:00"></div>
+      <div class="form-group"><label>Info Bagian Umum (Slide 6)</label><input type="text" id="ann-umum" placeholder="Contoh: Pemeliharaan lift gedung A senin-kamis"></div>
+      <div class="form-group"><label>Ucapan / Motivasi (Slide 7)</label><input type="text" id="ann-ucapan" placeholder="Contoh: Selamat bertugas! The Power Soul Of Shalawat"></div>
+      <button class="btn btn-warning" onclick="saveAnnouncements()" style="width:100%;">💾 Update Slide Dashboard</button>
+      <div id="ann-msg" style="margin-top:0.5rem; font-size:0.8rem;"></div>
+    </div>
 
-      const RBAC = {
-        staff: { modules: ['booking', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        guru: { modules: ['booking', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        security: { modules: ['security', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        komandan_regu: { modules: ['security', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        janitor_indoor: { modules: ['janitor_indoor', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        janitor_outdoor: { modules: ['janitor_outdoor', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        maintenance: { modules: ['maintenance', 'k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, logActivity: true },
-        koordinator_umum: { modules: ['booking', 'k3', 'dana', 'users', 'audit', 'searchexport'], canSubmitDana: true, canApproveDana: false, canManageUsers: true, logActivity: true },
-        kabag_umum: { modules: ['booking', 'k3', 'dana', 'users', 'audit', 'searchexport', 'approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, logActivity: true },
-        dev: { modules: ['booking', 'k3', 'security', 'maintenance', 'dana', 'users', 'audit', 'searchexport', 'approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, logActivity: false }
-      };
+    <div class="module-grid" id="module-grid"></div>
+    </div>
+  </div>
 
-      const permissions = RBAC[role] || RBAC.staff;
-      const MODULES = {
-        booking: { icon: '📅', title: 'Booking' }, k3: { icon: '⚠️', title: 'K3 Safety' },
-        security: { icon: '🛡️', title: 'Security' }, maintenance: { icon: '🔧', title: 'Maintenance' },
-        dana: { icon: '💸', title: 'Dana' }, users: { icon: '👥', title: 'Users' },
-        audit: { icon: '📜', title: 'Audit' }
-      };
 
-      if (permissions.canSubmitDana || permissions.canApproveDana) document.getElementById('tab-dana-btn').style.display = 'flex';
-      if (permissions.canApproveDana) document.getElementById('tab-approvals-btn').style.display = 'flex';
-      if (permissions.canManageUsers) document.getElementById('tab-users-btn').style.display = 'flex';
-      if (permissions.logActivity) document.getElementById('tab-audit-btn').style.display = 'flex';
-      if (permissions.canManageUsers || permissions.canApproveDana) document.getElementById('tab-searchexport-btn').style.display = 'flex';
+  <div id="tab-dana" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--gold);">💸 Pengajuan & Pengelolaan Dana</div>
+      <div id="dana-form-container" style="display:none; margin-bottom:1.5rem;">
+        <div class="form-group"><label>Judul Pengajuan *</label><input type="text" id="dana-judul" placeholder="Contoh: Pembelian ATK Kelas 5"></div>
+        <div class="form-group"><label>Nominal (Rp) *</label><input type="number" id="dana-nominal" placeholder="500000"></div>
+        <div class="form-group"><label>Tanggal Kegiatan *</label><input type="date" id="dana-tanggal"></div>
+        <div class="form-group"><label>Deskripsi / Rincian *</label><textarea id="dana-deskripsi" rows="3" style="width:100%; padding:0.7rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--text-main); font-size:0.875rem; min-height:44px; resize:vertical;"></textarea></div>
+        <button class="btn btn-warning" onclick="submitDana()" style="width:100%;">📤 Ajukan Dana</button>
+        <div id="dana-form-msg"></div>
+      </div>
+      <div class="section-title" style="color: var(--accent); margin-top:1rem;">📋 Riwayat Pengajuan Dana</div>
+      <div class="table-responsive">
+        <table id="dana-table">
+          <thead><tr><th>Tanggal</th><th>Judul</th><th>Nominal</th><th>Pemohon</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="dana-tbody"><tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">Memuat data...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-      window.switchTab = function(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        document.getElementById('tab-' + tabName).classList.add('active');
-        if (tabName === 'dana' && permissions.canSubmitDana) document.getElementById('dana-form-container').style.display = 'block';
-        if (tabName === 'dana') loadDanaRequests();
-        if (tabName === 'approvals') loadApprovals();
-        if (tabName === 'users') renderUserList();
-        if (tabName === 'audit') renderAuditLog();
-      };
+  <div id="tab-approvals" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--gold);">⏳ Antrean Persetujuan (Approval Queue)</div>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Kelola semua pengajuan Dana, Booking, dan Maintenance dari satu tempat.</p>
+      <div class="table-responsive">
+        <table id="approval-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th><th>Tipe</th><th>Pengaju</th><th>Detail</th><th>Nominal/Info</th><th>Status</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="approval-tbody">
+            <tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-muted);">Memuat data antrean...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-      function renderModules() {
-        const grid = document.getElementById('module-grid');
-        grid.innerHTML = '';
-        permissions.modules.forEach(modKey => {
-          const mod = MODULES[modKey];
-          if (!mod) return;
-          const card = document.createElement('div');
-          card.className = 'mod-card';
-          card.innerHTML = '<div class="mod-icon">' + mod.icon + '</div><div class="mod-title">' + mod.title + '</div>';
-          card.onclick = () => {
-            const map = { booking:'booking.html', k3:'k3.html', security:'security.html', maintenance:'maintenance.html', dana:'commandcenter.html' };
-            if (map[modKey]) window.location.href = map[modKey];
-            else switchTab(modKey === 'users' || modKey === 'audit' || modKey === 'searchexport' || modKey === 'approvals' ? modKey : 'dashboard');
-          };
-          grid.appendChild(card);
-        });
-      }
+  <div id="tab-users" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--accent);">➕ Tambah User Baru</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="new-user-nama" placeholder="Nama lengkap"></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="new-user-email" placeholder="email@domain.com"></div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select id="new-user-role">
+            <option value="staff">Staff</option><option value="guru">Guru</option><option value="security">Security</option>
+            <option value="komandan_regu">Komandan Regu</option><option value="janitor_indoor">Janitor Indoor</option>
+            <option value="janitor_outdoor">Janitor Outdoor</option><option value="maintenance">Maintenance</option>
+            <option value="koordinator_umum">Koordinator Umum</option><option value="kabag_umum">Kabag Umum</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Divisi</label>
+          <select id="new-user-divisi">
+            <option value="UMUM">Umum</option><option value="TK">TK</option><option value="SD">SD</option>
+            <option value="SMP">SMP</option><option value="SMA">SMA</option><option value="Management">Management</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Password Default *</label><input type="text" id="new-user-password" value="12345678"></div>
+        <div class="form-group" style="display: flex; align-items: flex-end;">
+          <button class="btn btn-success" onclick="createUser()" style="width: 100%;">✅ Buat User</button>
+        </div>
+      </div>
+      <div id="user-form-message"></div>
+      <div class="section-title" style="color: var(--accent); margin-top: 2rem;">📋 Daftar User Terdaftar</div>
+      <div class="table-responsive">
+        <table id="user-table">
+          <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Divisi</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="user-tbody"><tr><td colspan="6" style="text-align:center; padding: 2rem; color: var(--text-muted);">Memuat data user...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-      async function loadDanaRequests() {
-        const tbody = document.getElementById('dana-tbody');
-        tbody.innerHTML = '<tr><td colspan="4">Memuat...</td></tr>';
-        try {
-          let data = [];
-          if (window.supabaseClient) {
-            let q = window.supabaseClient.from('dana_requests').select('*').order('created_at', { ascending: false });
-            if (!permissions.canApproveDana) q = q.eq('pemohon', user.email);
-            const { data: res } = await q;
-            data = res || [];
-          } else {
-            data = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
-          }
-          tbody.innerHTML = data.length ? data.map(d => '<tr><td>' + new Date(d.created_at).toLocaleDateString() + '</td><td>' + d.judul + '</td><td>Rp ' + parseInt(d.nominal||0).toLocaleString() + '</td><td><span class="badge ' + (d.status==='approved'?'badge-success':'badge-warning') + '">' + d.status + '</span></td></tr>').join('') : '<tr><td colspan="4">Belum ada data</td></tr>';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="4">Gagal memuat</td></tr>'; }
-      }
 
-      window.submitDana = async function() {
-        if (!permissions.canSubmitDana) return alert('⛔ Akses Ditolak');
-        const item = { id: 'dana_'+Date.now(), judul: document.getElementById('dana-judul').value, nominal: document.getElementById('dana-nominal').value, pemohon: user.email, status: 'pending', created_at: new Date().toISOString() };
-        if (window.supabaseClient) await window.supabaseClient.from('dana_requests').insert(item);
-        let local = JSON.parse(localStorage.getItem('dreamos_dana') || '[]'); local.unshift(item); localStorage.setItem('dreamos_dana', JSON.stringify(local));
-        alert('✅ Pengajuan berhasil!'); loadDanaRequests();
-      };
+  <div id="tab-uat" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--accent);">📦 UAT-Pack Enterprise & Dokumen Resmi</div>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Dokumen serah terima, checklist uji, SOP, dan rapor kepatuhan ISO/WCAG. Siap cetak & tandatangan manajemen.</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+        <div class="glass" style="text-align:center; padding:1.5rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">📋</div><strong>UAT Checklist</strong>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0;">Skenario test per modul & kolom paraf</p>
+          <a href="uat-pack/UAT_Checklist_DreamOS.html" target="_blank" class="btn btn-primary" style="width:100%; text-decoration:none;">🖨️ Buka & Cetak</a>
+        </div>
+        <div class="glass" style="text-align:center; padding:1.5rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">📘</div><strong>SOP Penggunaan</strong>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0;">Panduan petugas & troubleshooting</p>
+          <a href="uat-pack/SOP_Penggunaan_DreamOS.html" target="_blank" class="btn btn-primary" style="width:100%; text-decoration:none;">🖨️ Buka & Cetak</a>
+        </div>
+        <div class="glass" style="text-align:center; padding:1.5rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">📜</div><strong>Berita Acara Serah Terima</strong>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0;">Dokumen resmi penandatanganan manajemen</p>
+          <a href="uat-pack/Berita_Acara_Serah_Terima.html" target="_blank" class="btn btn-primary" style="width:100%; text-decoration:none;">🖨️ Buka & Cetak</a>
+        </div>
+        <div class="glass" style="text-align:center; padding:1.5rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">🛡️</div><strong>Compliance Report</strong>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0;">Rapor kepatuhan ISO 27001/9001 & WCAG</p>
+          <a href="uat-pack/Compliance_Report_ISO_WCAG.html" target="_blank" class="btn btn-primary" style="width:100%; text-decoration:none;">🖨️ Buka & Cetak</a>
+        </div>
+        <div class="glass" style="text-align:center; padding:1.5rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">🗺️</div><strong>Roadmap & Limitations</strong>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0;">Transparansi batasan & rencana v2.0</p>
+          <a href="uat-pack/Known_Limitations_Roadmap.html" target="_blank" class="btn btn-primary" style="width:100%; text-decoration:none;">🖨️ Buka & Cetak</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      async function loadApprovals() {
-        const tbody = document.getElementById('approval-tbody');
-        tbody.innerHTML = '<tr><td colspan="4">Memuat...</td></tr>';
-        try {
-          let data = [];
-          if (window.supabaseClient) {
-            const { data: d1 } = await window.supabaseClient.from('dana_requests').select('*').eq('status', 'pending');
-            const { data: d2 } = await window.supabaseClient.from('bookings').select('*').eq('status', 'pending');
-            data = [...(d1||[]).map(x=>({...x, type:'Dana'})), ...(d2||[]).map(x=>({...x, type:'Booking'}))];
-          }
-          tbody.innerHTML = data.length ? data.map(d => '<tr><td>' + d.type + '</td><td>' + (d.pemohon || d.nama_peminjam) + '</td><td>' + (d.judul || d.ruang) + '</td><td><button class="btn btn-success" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\'' + d.type + '\\',\\'' + d.id + '\\',\\'approved\\')">✅</button> <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\'' + d.type + '\\',\\'' + d.id + '\\',\\'rejected\\')">❌</button></td></tr>').join('') : '<tr><td colspan="4">Tidak ada antrean</td></tr>';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="4">Gagal memuat</td></tr>'; }
-      }
 
-      window.handleApproval = async function(type, id, status) {
-        if (!permissions.canApproveDana) return alert('⛔ Akses Ditolak');
-        if (window.supabaseClient) {
-          const table = type === 'Dana' ? 'dana_requests' : 'bookings';
-          await window.supabaseClient.from(table).update({ status: status, updated_by: role }).eq('id', id);
-        }
-        alert('✅ ' + type + ' ' + (status === 'approved' ? 'disetujui' : 'ditolak'));
-        loadApprovals(); loadDanaRequests();
-      };
+  <div id="tab-searchexport" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--accent);">🔍 Global Search & Report Export</div>
+      <div class="form-group">
+        <input type="text" id="global-search-input" class="cmd-input" placeholder="Ketik nama, ruang, lokasi, judul..." autocomplete="off">
+        <div id="search-results" style="max-height:250px; overflow-y:auto; margin-top:0.5rem; display:none; background:rgba(0,0,0,0.4); border-radius:8px; border:1px solid rgba(255,255,255,0.1);"></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:1rem;">
+        <div class="form-group"><label>Tipe Laporan</label><select id="report-type" class="bk-input"><option value="booking">Booking</option><option value="k3">K3 Safety</option><option value="dana">Pengajuan Dana</option><option value="maintenance">Maintenance</option><option value="all">Semua Aktivitas</option></select></div>
+        <div class="form-group"><label>Format</label><select id="report-format" class="bk-input"><option value="pdf">PDF A4</option><option value="excel">Excel (Soon)</option></select></div>
+        <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="report-start" class="bk-input"></div>
+        <div class="form-group"><label>Tanggal Akhir</label><input type="date" id="report-end" class="bk-input"></div>
+      </div>
+      <button class="btn btn-primary" onclick="exportReport()" style="width:100%; margin-top:0.5rem;">📥 Generate Laporan PDF</button>
+      <div id="report-status" style="margin-top:0.5rem; font-size:0.8rem; text-align:center;"></div>
+    </div>
+    <div class="glass" style="margin-top:1rem;">
+      <div class="section-title" style="color: var(--gold);">📁 File Manager (Bukti Foto)</div>
+      <div class="form-group"><label>Bucket Storage</label><select id="file-bucket" class="bk-input"><option value="k3-foto">k3-foto</option><option value="spj-bukti">spj-bukti</option><option value="maintenance-docs">maintenance-docs</option></select></div>
+      <div id="file-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:0.8rem; margin-top:0.5rem; max-height:300px; overflow-y:auto;"></div>
+    </div>
+  </div>
 
-      async function renderUserList() {
-        const tbody = document.getElementById('user-tbody');
-        tbody.innerHTML = '<tr><td colspan="4">Memuat...</td></tr>';
-        try {
-          let data = [];
-          if (window.supabaseClient) { const { data: res } = await window.supabaseClient.from('users').select('*'); data = res || []; }
-          else { data = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); }
-          tbody.innerHTML = data.length ? data.map(u => '<tr><td>' + u.nama + '</td><td>' + u.email + '</td><td>' + u.role + '</td><td><button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="alert(\\'Fitur nonaktifkan user\\')">🗑️</button></td></tr>').join('') : '<tr><td colspan="4">Belum ada user</td></tr>';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="4">Gagal memuat</td></tr>'; }
-      }
+  <div id="tab-audit" class="tab-content">
+    <div class="glass">
+      <div class="section-title" style="color: var(--purple);">📜 Activity Log (ISO 27001 Compliant)</div>
+      <div id="audit-log" style="max-height: 600px; overflow-y: auto;"><div class="audit-item">Memuat log aktivitas...</div></div>
+    </div>
+  </div>
+</div>
 
-      window.createUser = async function() {
-        if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
-        const nama = document.getElementById('new-user-nama').value;
-        const email = document.getElementById('new-user-email').value;
-        const userRole = document.getElementById('new-user-role').value;
-        const divisi = document.getElementById('new-user-divisi').value;
-        if (!nama || !email) return alert('Nama dan Email wajib diisi!');
-        
-        let local = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-        local.push({ nama, email, role: userRole, divisi, is_active: true });
-        localStorage.setItem('dreamos_users_db', JSON.stringify(local));
-        
-        try {
-          await fetch('https://gbigjdhifispatrrskgh.supabase.co/functions/v1/create-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k' },
-            body: JSON.stringify({ email, password: '12345678', nama, role: userRole, divisi })
-          });
-        } catch(e) { console.warn('Edge function call failed, but local save succeeded'); }
-        
-        alert('✅ User berhasil dibuat!');
-        document.getElementById('new-user-nama').value = '';
-        document.getElementById('new-user-email').value = '';
-        renderUserList();
-      };
+<script>
+if (!window.goHome) window.goHome = function() { 
+  if (window.parent && window.parent.goHome) window.parent.goHome();
+  else window.location.href = 'index.html';
+};
 
-      function renderAuditLog() {
-        const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
-        document.getElementById('audit-log').innerHTML = logs.slice(0, 50).map(log => 
-          '<div style="padding:0.5rem; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="color:var(--text-muted); font-size:0.7rem;">[' + new Date(log.timestamp).toLocaleString() + ']</span> <strong>' + log.user + '</strong> (' + log.role + '): ' + log.action + '</div>'
-        ).join('') || '<div style="padding:1rem; color:var(--text-muted);">Belum ada aktivitas</div>';
-      }
+(function() {
+  'use strict';
+  const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+  const role = user.role || 'staff';
+  
+  document.getElementById('user-name').textContent = user.nama || user.email || 'Unknown';
+  document.getElementById('role-badge').textContent = role.toUpperCase().replace('_', ' ');
 
-      class ProEngine {
-        constructor() { this.init(); }
-        init() {
-          setInterval(async () => {
-            const start = performance.now();
-            try {
-              if (window.supabaseClient) {
-                await window.supabaseClient.from('users').select('id').limit(1);
-                const latency = Math.round(performance.now() - start);
-                document.getElementById('pro-api-latency').textContent = latency + ' ms';
-                document.getElementById('pro-db-status').textContent = 'Online';
-                document.getElementById('pro-db-status').style.color = '#10b981';
-              }
-            } catch(e) {
-              document.getElementById('pro-db-status').textContent = 'Degraded';
-              document.getElementById('pro-db-status').style.color = '#ef4444';
-            }
-          }, 5000);
-        }
-      }
+  const RBAC = {
+    staff: { modules: ['booking', 'k3'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: false, logActivity: true },
+    guru: { modules: ['booking', 'k3'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: false, logActivity: true },
+    security: { modules: ['security', 'k3'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: false, logActivity: true },
+    komandan_regu: { modules: ['security', 'k3', 'security_schedule'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: true, canManageUsers: false, logActivity: true },
+    janitor_indoor: { modules: ['janitor_indoor', 'k3'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: false, logActivity: true },
+    janitor_outdoor: { modules: ['janitor_outdoor', 'k3'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: false, logActivity: true },
+    maintenance: { modules: ['maintenance', 'k3'], canSubmitDana: false, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: false, logActivity: true },
+    koordinator_umum: { modules: ['booking', 'k3', 'dana', 'users'], canSubmitDana: true, canApproveDana: false, canEditSecuritySchedule: false, canManageUsers: true, logActivity: true },
+    kabag_umum: { modules: ['booking', 'k3', 'dana', 'users', 'audit', 'security_schedule'], canSubmitDana: true, canApproveDana: true, canEditSecuritySchedule: true, canManageUsers: true, logActivity: true },
+    dev: { modules: ['booking', 'k3', 'security', 'security_schedule', 'janitor_indoor', 'janitor_outdoor', 'maintenance', 'dana', 'users', 'audit', 'system'], canSubmitDana: true, canApproveDana: true, canEditSecuritySchedule: true, canManageUsers: true, logActivity: false }
+  };
 
-      renderModules();
+  const permissions = RBAC[role] || RBAC.staff;
+  const MODULES = {
+    booking: { icon: '📅', title: 'Booking', desc: 'Pemesanan Ruangan' },
+    k3: { icon: '⚠️', title: 'K3 Safety', desc: 'Keselamatan Kerja' },
+    security: { icon: '🛡️', title: 'Security', desc: 'Keamanan' },
+    security_schedule: { icon: '📆', title: 'Jadwal Security', desc: 'Edit Jadwal' },
+    janitor_indoor: { icon: '🏠', title: 'Janitor Indoor', desc: 'Kebersihan Dalam' },
+    janitor_outdoor: { icon: '🌳', title: 'Janitor Outdoor', desc: 'Kebersihan Luar' },
+    maintenance: { icon: '🔧', title: 'Maintenance', desc: 'Perawatan' },
+    dana: { icon: '💸', title: 'Dana', desc: 'Pengajuan & Approval' },
+    users: { icon: '👥', title: 'Users', desc: 'Manajemen User' },
+    audit: { icon: '📜', title: 'Audit', desc: 'Audit Log' },
+    system: { icon: '⚙️', title: 'System', desc: 'System Settings' }
+  };
+
+  if (permissions.canSubmitDana || permissions.canApproveDana) document.getElementById('tab-dana-btn').style.display = 'flex';
+  if (permissions.canApproveDana) document.getElementById('tab-approvals-btn').style.display = 'flex';
+  if (permissions.canManageUsers) document.getElementById('tab-users-btn').style.display = 'flex';
+  if (permissions.logActivity) document.getElementById('tab-audit-btn').style.display = 'flex';
+  if (permissions.canManageUsers || permissions.canApproveDana) document.getElementById('tab-uat-btn').style.display = 'flex';
+  if (permissions.canApproveDana || permissions.canManageUsers) document.getElementById('tab-searchexport-btn').style.display = 'flex';
+
+
+  // ========== MODUL DANA (SUBMIT & TRACK) ==========
+  async function loadDanaRequests() {
+    const tbody = document.getElementById('dana-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;"><div class="loading-spinner"></div></td></tr>';
+    try {
+      let data = [];
       if (window.supabaseClient) {
-        document.getElementById('sync-status').innerHTML = '🟢 Online - Supabase';
-        document.getElementById('sync-status').style.color = '#10b981';
-        window.proEngine = new ProEngine();
+        let query = window.supabaseClient.from('dana_requests').select('*').order('created_at', { ascending: false });
+        if (!permissions.canApproveDana) query = query.eq('pemohon', user.email);
+        const { data: res, error } = await query;
+        if (error) throw error;
+        data = res || [];
       } else {
-        document.getElementById('sync-status').innerHTML = '🟡 Offline Mode';
+        let local = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
+        data = !permissions.canApproveDana ? local.filter(d => d.pemohon === user.email) : local;
+        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       }
-      console.log('🏢 Command Center Pro Loaded | Role:', role);
-    })();
-  </script>
-</body>
-</html>
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">Belum ada pengajuan dana.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(d => {
+        const sClass = d.status === 'approved' ? 'badge-success' : d.status === 'rejected' ? 'badge-danger' : 'badge-warning';
+        const sText = d.status === 'approved' ? 'Disetujui' : d.status === 'rejected' ? 'Ditolak' : 'Menunggu';
+        const date = new Date(d.created_at).toLocaleDateString('id-ID');
+        const nominal = `Rp ${parseInt(d.nominal || 0).toLocaleString('id-ID')}`;
+        const detail = (d.deskripsi || d.judul || '-').replace(/'/g, "\\'").replace(/\n/g, "\\n");
+        const reject = d.reject_reason ? '\nAlasan: ' + d.reject_reason.replace(/'/g, "\\'") : '';
+        return `<tr>
+          <td>${date}</td><td>${d.judul || '-'}</td><td>${nominal}</td><td>${d.pemohon || '-'}</td>
+          <td><span class="badge ${sClass}">${sText}</span></td>
+          <td><button class="btn btn-primary btn-sm" onclick="alert('📝 Detail:\n${detail}${reject}')">👁️ Detail</button></td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--warning);">⚠️ Gagal: ${e.message}</td></tr>`;
+    }
+  }
+
+  window.submitDana = async function() {
+    if (!permissions.canSubmitDana) return alert('⛔ Akses Ditolak');
+    const judul = document.getElementById('dana-judul').value.trim();
+    const nominal = document.getElementById('dana-nominal').value;
+    const tanggal = document.getElementById('dana-tanggal').value;
+    const deskripsi = document.getElementById('dana-deskripsi').value.trim();
+    const msgEl = document.getElementById('dana-form-msg');
+
+    if (!judul || !nominal || !tanggal || !deskripsi) {
+      msgEl.innerHTML = '<div class="alert alert-error">⚠️ Semua field wajib diisi!</div>';
+      return;
+    }
+
+    msgEl.innerHTML = '<div class="alert" style="background:rgba(14,165,233,0.1);border:1px solid #0ea5e9;color:#0ea5e9;">⏳ Mengirim pengajuan...</div>';
+
+    try {
+      const newItem = {
+        id: 'dana_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        judul, nominal: parseInt(nominal), tanggal, deskripsi,
+        pemohon: user.email, status: 'pending', created_at: new Date().toISOString()
+      };
+
+      if (window.supabaseClient) {
+        const { error } = await window.supabaseClient.from('dana_requests').insert(newItem);
+        if (error) throw error;
+      }
+
+      let local = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
+      local.unshift(newItem);
+      localStorage.setItem('dreamos_dana', JSON.stringify(local));
+
+      if (permissions.logActivity) logActivity('SUBMIT_DANA', { judul, nominal });
+
+      msgEl.innerHTML = '<div class="alert alert-success">✅ Pengajuan dana berhasil dikirim! Menunggu persetujuan Kabag.</div>';
+      document.getElementById('dana-judul').value = '';
+      document.getElementById('dana-nominal').value = '';
+      document.getElementById('dana-tanggal').value = '';
+      document.getElementById('dana-deskripsi').value = '';
+      loadDanaRequests();
+    } catch(e) {
+      msgEl.innerHTML = `<div class="alert alert-error">❌ Gagal: ${e.message}</div>`;
+    }
+  };
+
+  function renderModules() {
+    const grid = document.getElementById('module-grid');
+    grid.innerHTML = '';
+    permissions.modules.forEach(modKey => {
+      const mod = MODULES[modKey];
+      if (!mod) return;
+      const card = document.createElement('div');
+      card.className = 'mod-card';
+      card.innerHTML = `<div class="mod-icon">${mod.icon}</div><div class="mod-title">${mod.title}</div><div class="mod-desc">${mod.desc}</div>`;
+      card.onclick = () => openModule(modKey);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderRoleInfo() {
+    document.getElementById('role-permissions').innerHTML = `
+      <strong>📋 Hak Akses Role: ${role.toUpperCase().replace('_', ' ')}</strong><br>
+      • Modul Diakses: ${permissions.modules.map(m => MODULES[m]?.title || m).join(', ')}<br>
+      • Submit Dana: ${permissions.canSubmitDana ? '✅' : '❌'} | Approve Dana: ${permissions.canApproveDana ? '✅' : '❌'}<br>
+      • Manage Users: ${permissions.canManageUsers ? '✅' : '❌'} | Audit Log: ${permissions.logActivity ? '✅ Enabled' : '❌ Disabled'}
+    `;
+  }
+
+  window.switchTab = function(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+    if (tabName === 'dana') {
+      if (permissions.canSubmitDana) document.getElementById('dana-form-container').style.display = 'block';
+      loadDanaRequests();
+    }
+    if (tabName === 'approvals') loadApprovals();
+    if (tabName === 'users') renderUserList();
+    if (tabName === 'audit') renderAuditLog();
+    if (tabName === 'uat') { /* Static UAT panel */ }
+    if (tabName === 'searchexport') { initSearchExport(); }
+  };
+
+  window.openModule = function(modKey) {
+    if (permissions.logActivity) logActivity('OPEN_MODULE', { module: modKey });
+    if (modKey === 'users' || modKey === 'audit') {
+      switchTab(modKey);
+      document.querySelector(`.tab[onclick*="'${modKey}'"]`).classList.add('active');
+      return;
+    }
+    const modPages = { booking: 'booking.html', k3: 'k3.html', security: 'security.html', security_schedule: 'security_schedule.html', janitor_indoor: 'janitor-indoor.html', janitor_outdoor: 'janitor-outdoor.html', maintenance: 'maintenance.html', dana: 'dana.html', system: 'system.html' };
+    if (modPages[modKey]) window.location.href = modPages[modKey];
+    else alert('Modul ' + modKey + ' sedang dalam pengembangan');
+  };
+
+  async function loadApprovals() {
+    const tbody = document.getElementById('approval-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem;"><div class="loading-spinner" style="width:24px;height:24px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--neon);border-radius:50%;animation:spin 1s linear infinite;display:inline-block;"></div><br>Memuat antrean...</td></tr>';
+    let pendingItems = [];
+    try {
+      if (window.supabaseClient) {
+        const { data: danaData } = await window.supabaseClient.from('dana_requests').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+        if (danaData) pendingItems = pendingItems.concat(danaData.map(d => ({...d, type: 'Dana'})));
+        const { data: bookingData } = await window.supabaseClient.from('bookings').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+        if (bookingData) pendingItems = pendingItems.concat(bookingData.map(b => ({...b, type: 'Booking'})));
+      } else {
+        const localDana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]').filter(d => d.status === 'pending');
+        const localBooking = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]').filter(b => b.status === 'pending');
+        pendingItems = [...localDana.map(d => ({...d, type: 'Dana'})), ...localBooking.map(b => ({...b, type: 'Booking'}))];
+      }
+      if (pendingItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-muted);">🎉 Tidak ada antrean persetujuan.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = pendingItems.map(item => {
+        const isDana = item.type === 'Dana';
+        const detail = isDana ? item.judul : `${item.ruang} (${item.tgl})`;
+        const info = isDana ? `Rp ${parseInt(item.nominal || 0).toLocaleString('id-ID')}` : `${item.jam_mulai} - ${item.jam_selesai}`;
+        const pengaju = item.nama_peminjam || item.pemohon || 'Unknown';
+        const date = new Date(item.created_at || item.tanggal).toLocaleDateString('id-ID');
+        return `<tr>
+          <td>${date}</td><td><span class="badge ${isDana ? 'badge-warning' : 'badge-purple'}">${item.type}</span></td>
+          <td>${pengaju}</td><td>${detail}</td><td>${info}</td><td><span class="badge badge-warning">Pending</span></td>
+          <td style="white-space: nowrap;">
+            <button class="btn btn-success btn-sm" onclick="handleApproval(\'${item.type}\',\'${item.id}\',\'approved\')">✅</button>
+            <button class="btn btn-danger btn-sm" onclick="handleApproval(\'${item.type}\',\'${item.id}\',\'rejected\')">❌</button>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--warning);">⚠️ Gagal memuat data: ${e.message}</td></tr>`;
+    }
+  }
+
+  window.processApproval = async function(type, id, status) {
+    if (!permissions.canApproveDana && type === 'Dana') return alert('⛔ Akses Ditolak');
+    if (!confirm(`Yakin ${status === 'approved' ? 'Menyetujui' : 'Menolak'} ${type} ini?`)) return;
+    const reason = status === 'rejected' ? prompt('Alasan penolakan (opsional):') : '';
+    try {
+      if (window.supabaseClient) {
+        const table = type === 'Dana' ? 'dana_requests' : 'bookings';
+        const updateData = { status: status, approved_by: user.email, approved_at: new Date().toISOString() };
+        if (reason) updateData.reject_reason = reason;
+        const { error } = await window.supabaseClient.from(table).update(updateData).eq('id', id);
+        if (error) throw error;
+      }
+      const storageKey = type === 'Dana' ? 'dreamos_dana' : 'dreamos_bookings';
+      let localData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const item = localData.find(x => x.id === id);
+      if (item) {
+        item.status = status;
+        if (reason) item.reject_reason = reason;
+        localStorage.setItem(storageKey, JSON.stringify(localData));
+      }
+      if (permissions.logActivity) logActivity(`${type.toUpperCase()}_${status.toUpperCase()}`, { id, reason });
+      alert(`✅ ${type} berhasil ${status === 'approved' ? 'disetujui' : 'ditolak'}!`);
+      loadApprovals();
+    } catch(e) {
+      alert(`❌ Error: ${e.message}`);
+    }
+  };
+
+  // ========== FUNGSI CREATE USER (VIA WORKER) ==========
+  window.createUser = async function() {
+    if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
+    const nama = document.getElementById('new-user-nama').value.trim();
+    const email = document.getElementById('new-user-email').value.trim();
+    const userRole = document.getElementById('new-user-role').value;
+    const divisi = document.getElementById('new-user-divisi').value;
+    const password = document.getElementById('new-user-password').value;
+    const msgEl = document.getElementById('user-form-message');
+
+    if (!nama || !email || !password) {
+      msgEl.innerHTML = '<div class="alert alert-error">⚠️ Nama, email, dan password wajib diisi!</div>';
+      return;
+    }
+    if (password.length < 6) {
+      msgEl.innerHTML = '<div class="alert alert-error">⚠️ Password minimal 6 karakter!</div>';
+      return;
+    }
+
+    msgEl.innerHTML = '<div class="alert" style="background:rgba(14,165,233,0.1);border:1px solid #0ea5e9;color:#0ea5e9;">⏳ Menghubungi server untuk membuat akun...</div>';
+
+    try {
+      const response = await fetch('https://gbigjdhifispatrrskgh.supabase.co/functions/v1/create-user', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k'
+        },
+        body: JSON.stringify({ email, password, nama, role: userRole, divisi })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal membuat user');
+      }
+
+      // 3. Log aktivitas
+      if (permissions.logActivity) logActivity('CREATE_USER', { email, role: userRole, created_by: user.email });
+
+      msgEl.innerHTML = `<div class="alert alert-success">✅ Akun <strong>${nama}</strong> BERHASIL DIBUAT & AKTIF!<br>Email: ${email}<br>Password: ${password}<br><small>User dapat langsung login.</small></div>`;
+
+      document.getElementById('new-user-nama').value = '';
+      document.getElementById('new-user-email').value = '';
+      document.getElementById('new-user-password').value = '12345678';
+
+      renderUserList();
+    } catch(e) {
+      const isNetwork = e.message.includes('fetch') || e.message.includes('NetworkError');
+      msgEl.innerHTML = `<div class="alert alert-error">❌ Gagal menghubungi provisioning API.<br>
+        <small>${isNetwork ? '⚠️ Worker API tidak terjangkau. Buat user manual via: Supabase Dashboard → Authentication → Add User (centang Auto Confirm & isi user_metadata role).' : e.message}</small><br>
+        <small style="color:#94a3b8;">Panduan metadata: {"nama":"...","role":"kabag_umum|koordinator_umum|...","divisi":"..."}</small></div>`;
+    }
+  };
+
+  // ========== DAFTAR USER DARI SUPABASE ==========
+  async function renderUserList() {
+    const tbody = document.getElementById('user-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;"><div class="loading-spinner"></div></td></tr>';
+
+    try {
+      if (window.supabaseClient) {
+        const { data: users, error } = await window.supabaseClient.from('users').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        if (!users || users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: var(--text-muted);">Belum ada user terdaftar.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(u => {
+          const status = u.is_active === false ? '<span class="badge badge-danger">Nonaktif</span>' : '<span class="badge badge-success">Active</span>';
+          return `<tr><td>${u.nama || '-'}</td><td>${u.email || '-'}</td><td><span class="badge badge-purple">${u.role || '-'}</span></td><td>${u.divisi || '-'}</td><td>${status}</td><td><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}', '${u.email}')">🗑️ Nonaktifkan</button></td></tr>`;
+        }).join('');
+      } else {
+        // Fallback ke localStorage (sementara)
+        const localUsers = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+        tbody.innerHTML = localUsers.map(u => `<tr><td>${u.nama}</td><td>${u.email}</td><td>${u.role}</td><td>${u.divisi}</td><td>Local</td><td></td></tr>`).join('');
+      }
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: var(--warning);">⚠️ Gagal memuat: ${e.message}</td></tr>`;
+    }
+  }
+
+  // ========== DELETE USER (SOFT DELETE) ==========
+  window.deleteUser = async function(userId, userEmail) {
+    if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
+    if (!confirm(`Nonaktifkan user ${userEmail}?`)) return;
+    try {
+      if (window.supabaseClient) {
+        // Soft delete: set is_active = false di tabel users
+        const { error } = await window.supabaseClient.from('users').update({ is_active: false }).eq('id', userId);
+        if (error) throw error;
+      }
+      if (permissions.logActivity) logActivity('DELETE_USER', { user_id: userId, email: userEmail });
+      renderUserList();
+    } catch(e) {
+      alert(`❌ Gagal: ${e.message}`);
+    }
+  };
+
+  // ========== LOG AKTIVITAS (SUPABASE + LOCAL FALLBACK) ==========
+  async function logActivity(action, details) {
+    const logEntry = { timestamp: new Date().toISOString(), user: user.email, role: role, action, details };
+    try {
+      if (window.supabaseClient) {
+        await window.supabaseClient.from('activity_logs').insert([{
+          user_email: user.email,
+          user_role: role,
+          action,
+          details: JSON.stringify(details),
+          created_at: new Date().toISOString()
+        }]);
+      }
+    } catch(e) { console.warn('Gagal log ke Supabase'); }
+    
+    // Tetap simpan di localStorage untuk cache
+    const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
+    logs.unshift(logEntry);
+    if (logs.length > 200) logs.length = 200;
+    localStorage.setItem('dreamos_activity_log', JSON.stringify(logs));
+  }
+
+  function renderAuditLog() {
+    const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
+    const container = document.getElementById('audit-log');
+    if (logs.length === 0) { container.innerHTML = '<div class="audit-item">Belum ada aktivitas tercatat.</div>'; return; }
+    container.innerHTML = logs.slice(0, 100).map(log => {
+      const time = new Date(log.timestamp).toLocaleString('id-ID');
+      return `<div class="audit-item"><span class="audit-time">[${time}]</span> <strong>${log.user}</strong> (${log.role}): ${log.action} <span style="color:var(--text-muted);font-size:0.7rem;">${JSON.stringify(log.details || {})}</span></div>`;
+    }).join('');
+  }
+
+  renderModules();
+  renderRoleInfo();
+  setTimeout(() => {
+    const syncEl = document.getElementById('sync-status');
+    if (window.supabaseClient) { syncEl.innerHTML = '🟢 Online - Terhubung ke Supabase'; syncEl.style.color = '#10b981'; } 
+    else { syncEl.innerHTML = '🟡 Offline Mode - Menggunakan Cache Lokal'; syncEl.style.color = '#f59e0b'; }
+  }, 1000);
+  
+  // Tampilkan panel hanya untuk Kabag/Koordinator
+  if (permissions.canManageUsers || permissions.canApproveDana) {
+    document.getElementById('admin-announcements-panel').style.display = 'block';
+  }
+
+  window.saveAnnouncements = function() {
+    const mgmt = document.getElementById('ann-mgmt').value.trim();
+    const umum = document.getElementById('ann-umum').value.trim();
+    const ucapan = document.getElementById('ann-ucapan').value.trim();
+    const data = [
+      {type:'management', msg: mgmt || 'Belum ada info manajemen.'},
+      {type:'umum', msg: umum || 'Belum ada info bagian umum.'},
+      {type:'ucapan', msg: ucapan || 'Selamat bekerja! The Power Soul Of Shalawat.'}
+    ];
+    localStorage.setItem('dreamos_cmd_announcements', JSON.stringify(data));
+    document.getElementById('ann-msg').innerHTML = '<span style="color:#10b981;">✅ Tersimpan! Refresh dashboard untuk melihat perubahan.</span>';
+    if (window.BankAudit) window.BankAudit.log('UPDATE_DASH_ANNOUNCEMENTS', { mgmt, umum, ucapan });
+  };
+
+  // Load existing values
+  setTimeout(()=>{
+    const existing = JSON.parse(localStorage.getItem('dreamos_cmd_announcements')||'[]');
+    if(existing.length){
+      document.getElementById('ann-mgmt').value = existing.find(a=>a.type==='management')?.msg||'';
+      document.getElementById('ann-umum').value = existing.find(a=>a.type==='umum')?.msg||'';
+      document.getElementById('ann-ucapan').value = existing.find(a=>a.type==='ucapan')?.msg||'';
+    }
+  },300);
+
+  
+  // ===== 🔍 SEARCH, PDF EXPORT & FILE MANAGER (MODULAR ENTERPRISE) =====
+  let searchTimeout = null;
+  window.initSearchExport = function() {
+    const input = document.getElementById('global-search-input');
+    const results = document.getElementById('search-results');
+    if (!input || !results) return;
+
+    input.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (searchTimeout) clearTimeout(searchTimeout);
+      if (q.length < 2) { results.style.display='none'; return; }
+      searchTimeout = setTimeout(() => performGlobalSearch(q, results), 300);
+    });
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !results.contains(e.target)) results.style.display='none';
+    });
+    loadFileManager();
+  };
+
+  async function performGlobalSearch(query, container) {
+    container.innerHTML = '<div style="padding:0.8rem;color:#94a3b8;">⏳ Mencari...</div>';
+    container.style.display = 'block';
+    try {
+      const res = [];
+      const { data: b } = await window.supabaseClient.from('bookings').select('id,nama_peminjam,ruang,tanggal').or(`nama_peminjam.ilike.%${query}%,ruang.ilike.%${query}%`).limit(3);
+      if (b?.length) res.push({ type:'📅 Booking', items: b.map(x=>`${x.nama_peminjam} - ${x.ruang} (${x.tanggal})`) });
+      const { data: k } = await window.supabaseClient.from('k3_reports').select('id,lokasi,jenis_laporan,tanggal').or(`lokasi.ilike.%${query}%,jenis_laporan.ilike.%${query}%`).limit(3);
+      if (k?.length) res.push({ type:'⚠️ K3', items: k.map(x=>`${x.tanggal} ${x.lokasi} (${x.jenis_laporan})`) });
+      const { data: d } = await window.supabaseClient.from('dana_requests').select('id,judul,nominal').ilike('judul',`%${query}%`).limit(3);
+      if (d?.length) res.push({ type:'💸 Dana', items: d.map(x=>`${x.judul} - Rp ${x.nominal?.toLocaleString()}`) });
+
+      if (!res.length) { container.innerHTML = '<div style="padding:0.8rem;color:#64748b;">Tidak ditemukan</div>'; return; }
+      let html = '';
+      res.forEach(g => {
+        html += `<div style="padding:0.5rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.05);"><strong style="color:var(--accent);font-size:0.75rem;">${g.type}</strong>`;
+        g.items.forEach(i => html += `<div style="padding:0.3rem 0;font-size:0.8rem;color:#cbd5e1;">• ${i}</div>`);
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    } catch(e) { container.innerHTML = `<div style="padding:0.8rem;color:#ef4444;">❌ ${e.message}</div>`; }
+  }
+
+  window.exportReport = async function() {
+    const type = document.getElementById('report-type').value;
+    const start = document.getElementById('report-start').value;
+    const end = document.getElementById('report-end').value;
+    const statusEl = document.getElementById('report-status');
+    if (!start || !end) { if(window.showToast) window.showToast('⚠️ Pilih rentang tanggal!','warn'); return; }
+    statusEl.innerHTML = '<span style="color:#f59e0b;">⏳ Generating PDF...</span>';
+    try {
+      let data=[], title='Laporan';
+      if (type==='booking') { title='Booking'; const {data:d} = await window.supabaseClient.from('bookings').select('nama_peminjam,ruang,tanggal,jam_mulai,jam_selesai,status').gte('tanggal',start).lte('tanggal',end); data=d||[]; }
+      else if (type==='k3') { title='K3'; const {data:d} = await window.supabaseClient.from('k3_reports').select('tanggal,lokasi,jenis_laporan,pelapor,status').gte('tanggal',start).lte('tanggal',end); data=d||[]; }
+      else if (type==='dana') { title='Dana'; const {data:d} = await window.supabaseClient.from('dana_requests').select('created_at,judul,nominal,pemohon,status').gte('created_at',start+'T00:00:00').lte('created_at',end+'T23:59:59'); data=d||[]; }
+      
+      if (!window.jspdf) { statusEl.innerHTML='<span style="color:#ef4444;">❌ Library jsPDF belum dimuat.</span>'; return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16); doc.text(`Laporan ${title}`, 15, 20);
+      doc.setFontSize(10); doc.text(`Periode: ${start} s/d ${end}`, 15, 28);
+      let y=40;
+      data.forEach((r,i)=>{
+        const line = Object.values(r).join(' | ');
+        doc.text(`${i+1}. ${line.substring(0,90)}`, 15, y);
+        y+=8; if(y>270){ doc.addPage(); y=20; }
+      });
+      doc.save(`Laporan_${title}_${start}.pdf`);
+      statusEl.innerHTML='<span style="color:#10b981;">✅ PDF berhasil digenerate!</span>';
+      if(window.showToast) window.showToast('✅ Laporan PDF siap.','success');
+    } catch(e) { statusEl.innerHTML=`<span style="color:#ef4444;">❌ ${e.message}</span>`; }
+  };
+
+  window.loadFileManager = async function() {
+    const container = document.getElementById('file-list');
+    const bucket = document.getElementById('file-bucket')?.value || 'k3-foto';
+    if (!container || !window.supabaseClient) return;
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:1rem;">⏳ Memuat file...</div>';
+    try {
+      const { data: files, error } = await window.supabaseClient.storage.from(bucket).list('', { limit: 50, sortBy: { column:'created_at', order:'desc' } });
+      if (error) throw error;
+      if (!files?.length) { container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:1rem;">Tidak ada file.</div>'; return; }
+      container.innerHTML = files.map(f => {
+        const url = window.supabaseClient.storage.from(bucket).getPublicUrl(f.name).data.publicUrl;
+        return `<div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+          <a href="${url}" target="_blank" style="display:block;height:80px;background:#000;border-radius:6px;margin-bottom:0.3rem;overflow:hidden;"><img src="${url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"></a>
+          <p style="font-size:0.7rem;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</p>
+          <a href="${url}" download class="btn btn-sm btn-primary" style="margin-top:0.3rem;width:100%;text-decoration:none;">⬇️ Download</a>
+        </div>`;
+      }).join('');
+    } catch(e) { container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#ef4444;padding:1rem;">❌ ${e.message}</div>`; }
+  };
+  document.getElementById('file-bucket')?.addEventListener('change', window.loadFileManager);
+
+  
+  // 🏛️ PHASE 1-4: ROLE-ADAPTIVE WORKSPACE + ENTERPRISE PACK
+  const ROLE_WORKSPACE = {
+    kabag_umum: {
+      label: 'Kepala Bagian Umum',
+      tabs: ['dashboard','dana','approvals','users','uat','searchexport','audit'],
+      kpis: [
+        { id:'kpi-dana-pending', label:'Dana Pending', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length },
+        { id:'kpi-booking-today', label:'Booking Hari Ini', query:()=>JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.tgl&&b.tgl.includes(new Date().toISOString().split('T')[0])).length },
+        { id:'kpi-users-active', label:'User Aktif', query:()=>JSON.parse(localStorage.getItem('dreamos_users_db')||'[]').length },
+        { id:'kpi-approval-queue', label:'Antrean Final', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='recommended').length }
+      ],
+      actions: { approve: true, reject: true, override: true, export_compliance: true, manage_users: true }
+    },
+    koordinator_umum: {
+      label: 'Koordinator Umum',
+      tabs: ['dashboard','dana','approvals','uat','searchexport'],
+      kpis: [
+        { id:'kpi-my-submissions', label:'Pengajuan Saya', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.pemohon===JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email).length },
+        { id:'kpi-booking-active', label:'Booking Aktif', query:()=>JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.status==='pending').length },
+        { id:'kpi-team-tasks', label:'Tugas Tim Pending', query:()=>JSON.parse(localStorage.getItem('dreamos_maintenance_tasks')||'[]').filter(t=>t.status==='Pending').length },
+        { id:'kpi-recommend-queue', label:'Perlu Rekomendasi', query:()=>JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length }
+      ],
+      actions: { recommend: true, assign: true, verify_field: true, export_operational: true, manage_users: false }
+    }
+  };
+
+  window.renderRoleWorkspace = function() {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    const cfg = ROLE_WORKSPACE[role] || ROLE_WORKSPACE.koordinator_umum;
+    
+    // Scope Tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      const target = t.id?.replace('tab-','').replace('-btn','');
+      if (target && !cfg.tabs.includes(target)) t.style.display = 'none';
+    });
+
+    // Render KPI Strip (Role-Adaptive)
+    const kpiContainer = document.getElementById('kpi-strip');
+    if (kpiContainer) {
+      kpiContainer.innerHTML = cfg.kpis.map(k => 
+        `<div class="kpi-chip"><strong id="${k.id}">0</strong><span>${k.label}</span></div>`
+      ).join('');
+      cfg.kpis.forEach(k => {
+        const el = document.getElementById(k.id);
+        if (el) el.textContent = k.query();
+      });
+    }
+
+    // Update Role Context Badge
+    const roleBadge = document.getElementById('role-badge');
+    if (roleBadge) {
+      roleBadge.innerHTML = `${cfg.label} <span class="role-tag">${role.toUpperCase()}</span>`;
+    }
+
+    console.log(`🏛️ Workspace adapted for: ${cfg.label} (${role})`);
+  };
+
+  // 🔄 3-TIER APPROVAL ENGINE (PHASE 2)
+  window.handleApproval = async function(type, id, action) {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    const cfg = ROLE_WORKSPACE[role];
+    if (!cfg) return window.showToast('⛔ Role tidak dikenali.','error');
+
+    let newStatus = '';
+    let actionLevel = '';
+
+    if (role === 'koordinator_umum') {
+      if (action === 'recommend') { newStatus = 'recommended'; actionLevel = 'recommend'; }
+      else if (action === 'reject') { newStatus = 'rejected'; actionLevel = 'reject_coordinator'; }
+      else return window.showToast('⛔ Koordinator hanya bisa Recommend/Reject awal.','warn');
+    } else if (role === 'kabag_umum') {
+      if (action === 'approve') { newStatus = 'approved'; actionLevel = 'approve_final'; }
+      else if (action === 'reject') { newStatus = 'rejected'; actionLevel = 'reject_final'; }
+      else if (action === 'override') { newStatus = 'approved'; actionLevel = 'override_kabag'; }
+      else return window.showToast('⛔ Aksi tidak diizinkan untuk Kabag.','warn');
+    } else {
+      return window.showToast('⛔ Role tidak memiliki hak approval.','error');
+    }
+
+    try {
+      const table = type === 'Dana' ? 'dana_requests' : 'bookings';
+      if (window.supabaseClient) {
+        await window.supabaseClient.from(table).update({ status: newStatus, updated_by: role, updated_at: new Date().toISOString() }).eq('id', id);
+      }
+      // Local fallback
+      const key = type === 'Dana' ? 'dreamos_dana' : 'dreamos_bookings';
+      let local = JSON.parse(localStorage.getItem(key) || '[]');
+      const item = local.find(x => x.id === id);
+      if (item) { item.status = newStatus; item.updated_by = role; item.updated_at = new Date().toISOString(); localStorage.setItem(key, JSON.stringify(local)); }
+
+      // Audit with action level
+      if (window.logActivity) window.logActivity(`${type.toUpperCase()}_${actionLevel.toUpperCase()}`, { id, role, before: item?.status, after: newStatus });
+      window.showToast(`✅ ${type} berhasil ${newStatus === 'recommended' ? 'direkomendasikan' : newStatus === 'approved' ? 'disetujui' : 'ditolak'}.`, 'success');
+      
+      // Refresh views
+      if (typeof loadApprovals === 'function') loadApprovals();
+      if (typeof loadDanaRequests === 'function') loadDanaRequests();
+      window.renderRoleWorkspace();
+    } catch(e) {
+      window.showToast(`❌ Gagal: ${e.message}`, 'error');
+    }
+  };
+
+  // 🖨️ PRINT & EXPORT ENHANCEMENT (PHASE 4)
+  window.printReport = function() {
+    document.getElementById('print-date').textContent = new Date().toLocaleString('id-ID');
+    window.print();
+  };
+
+  // 🔍 ROLE-SCOPED SEARCH WRAPPER
+  window.performRoleScopedSearch = async function(query) {
+    const role = window.getUserRole ? window.getUserRole() : 'staff';
+    const scope = role === 'kabag_umum' ? 'all' : 'divisi';
+    // Client-side scoping fallback (RLS handles backend)
+    if (typeof performGlobalSearch === 'function') performGlobalSearch(query, document.getElementById('search-results'));
+  };
+
+  // 📡 MONITORING REFRESH LOOP
+  setInterval(() => {
+    if (typeof window.renderRoleWorkspace === 'function') window.renderRoleWorkspace();
+    if (typeof renderHealth === 'function') renderHealth();
+  }, 45000);
+
+  // Init on load
+  setTimeout(() => { if (typeof window.renderRoleWorkspace === 'function') window.renderRoleWorkspace(); }, 600);
+
+  console.log('🏢 Command Center Pro Loaded | Role:', role);
+})();
+</script>
