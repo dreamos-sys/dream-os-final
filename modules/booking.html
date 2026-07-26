@@ -16,24 +16,44 @@
   .flex-row { display: flex; gap: 0.5rem; }
   .flex-row > div { flex: 1; }
   .alat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.8rem; max-height: 150px; overflow-y: auto; }
-  .alat-item { font-size: 0.7rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+  .alat-item { 
+    font-size: 0.75rem; 
+    color: #cbd5e1; 
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem; 
+    cursor: pointer; 
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .alat-item:hover { 
+    background: rgba(0,255,157,0.08); 
+    border-color: rgba(0,255,157,0.2);
+  }
+  .alat-item:focus-within { 
+    outline: 2px solid var(--neon); 
+    outline-offset: 2px; 
+    background: rgba(0,255,157,0.12);
+  }
   .alat-item input[type="checkbox"] { 
-  accent-color: var(--neon); 
-  width: 1.2rem; 
-  height: 1.2rem; 
-  margin-right: 0.4rem;
-  cursor: pointer;
-}
-.alat-item input[type="checkbox"]:checked + .alat-text {
-  background: rgba(0, 255, 157, 0.15);
-  border-radius: 4px;
-  padding: 0.1rem 0.3rem;
-  font-weight: 600;
-}
-.alat-item input[type="checkbox"]:focus + .alat-text {
-  outline: 2px solid var(--neon);
-  outline-offset: 2px;
-}
+    accent-color: var(--neon); 
+    width: 1.1rem; 
+    height: 1.1rem; 
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .alat-item input[type="checkbox"]:checked + .alat-text {
+    color: var(--neon);
+    font-weight: 700;
+  }
+  .alat-item:has(input[type="checkbox"]:checked) {
+    background: rgba(0, 255, 157, 0.15);
+    border-color: rgba(0, 255, 157, 0.5);
+  }
   .badge { padding: 0.2rem 0.5rem; border-radius: 10px; font-size: 0.75rem; font-weight: 700; }
   .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
   .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
@@ -221,7 +241,23 @@
 
   const alatContainer = document.getElementById('alat-container');
   [...new Set(ALAT_LIST)].forEach(alat => {
-    alatContainer.innerHTML += `<label class="alat-item"><input type="checkbox" class="cb-alat" value="${alat}"> ${alat}</label>`;
+    alatContainer.innerHTML += `
+      <label class="alat-item" tabindex="0">
+        <input type="checkbox" class="cb-alat" value="${alat}">
+        <span class="alat-text">${alat}</span>
+      </label>`;
+  });
+
+  // 🎹 Keyboard Navigation for Alat Grid (Enter/Space to toggle)
+  alatContainer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = e.target.closest('.alat-item');
+      if (target) {
+        e.preventDefault();
+        const cb = target.querySelector('input[type="checkbox"]');
+        if (cb) cb.checked = !cb.checked;
+      }
+    }
   });
 
   // Set min date H-1
