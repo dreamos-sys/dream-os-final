@@ -403,8 +403,21 @@
             const tbody = document.getElementById('inbox-tbody');
             tbody.innerHTML = '<tr><td colspan="5">Memuat antrean terpadu...</td></tr>';
             try {
-              let items = [];
-              if(window.supabaseClient) {
+              // 🛡️ PRIORITAS LOCALSTORAGE agar UI instan dan tidak bergantung delay Supabase
+              const danaItems = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending' || x.status==='recommended');
+              const bookingItems = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(x=>x.status==='pending');
+              const maintItems = JSON.parse(localStorage.getItem('dreamos_maintenance_requests')||'[]').filter(x=>x.status==='pending' || x.status==='in_progress');
+              const k3Items = JSON.parse(localStorage.getItem('dreamos_k3_reports')||'[]').filter(x=>x.status==='pending');
+              
+              let items = [
+                ...danaItems.map(x=>({...x,type:'Dana'})), 
+                ...bookingItems.map(x=>({...x,type:'Booking'})), 
+                ...maintItems.map(x=>({...x,type:'Maintenance'})), 
+                ...k3Items.map(x=>({...x,type:'K3'}))
+              ];
+
+              // Fallback ke Supabase hanya jika LocalStorage kosong
+              if(window.supabaseClient && items.length === 0) {
                 const {data:d1} = await window.supabaseClient.from('dana_requests').select('*').in('status',['pending','recommended']);
                 const {data:d2} = await window.supabaseClient.from('bookings').select('*').eq('status','pending');
                 const {data:d3} = await window.supabaseClient.from('maintenance_requests').select('*').in('status',['pending','in_progress']);
@@ -525,15 +538,16 @@
             if(!tbody) return;
             tbody.innerHTML = '<tr><td colspan="5">Memuat antrean...</td></tr>';
             try {
-              let items = [];
-              if(window.supabaseClient) {
+              // 🛡️ PRIORITAS LOCALSTORAGE agar UI instan
+              const danaItems = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
+              const bookingItems = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Booking'}));
+              let items = [...danaItems, ...bookingItems];
+
+              // Fallback ke Supabase hanya jika LocalStorage kosong
+              if(window.supabaseClient && items.length === 0) {
                 const {data:d} = await window.supabaseClient.from('dana_requests').select('*').eq('status','pending');
                 const {data:b} = await window.supabaseClient.from('bookings').select('*').eq('status','pending');
                 items = [...(d||[]).map(x=>({...x,type:'Dana'})), ...(b||[]).map(x=>({...x,type:'Booking'}))];
-              } else {
-                const danaItems = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
-                const bookingItems = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Booking'}));
-                items = [...danaItems, ...bookingItems];
               }
               tbody.innerHTML = items.length ? items.map(i => `<tr><td>${i.type}</td><td>${i.pemohon||i.nama_peminjam||'-'}</td><td>${i.judul||i.ruang||'-'}</td><td><span class="badge badge-warning">PENDING</span></td><td><button class="btn btn-success btn-sm" onclick="handleApproval('${i.type}','${i.id}','approved')">✅</button> <button class="btn btn-danger btn-sm" onclick="handleApproval('${i.type}','${i.id}','rejected')">❌</button></td></tr>`).join('') : '<tr><td colspan="5">🎉 Tidak ada antrean</td></tr>';
             } catch(e) { tbody.innerHTML = `<tr><td colspan="5">⚠️ ${e.message}</td></tr>`; }
