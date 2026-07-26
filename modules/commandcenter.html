@@ -63,13 +63,13 @@
       <button class="tab" onclick="switchTab('dana')" id="tab-dana-btn" style="display:none;">💸 Dana</button>
       <button class="tab" onclick="switchTab('approvals')" id="tab-approvals-btn" style="display:none;">✅ Approval</button>
       <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 Users</button>
-      <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;"> Audit</button>
-      <button class="tab" onclick="switchTab('pengumuman')" id="tab-pengumuman-btn" style="display:none;"> Pengumuman</button>
+      <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit</button>
+      <button class="tab" onclick="switchTab('pengumuman')" id="tab-pengumuman-btn" style="display:none;">📢 Pengumuman</button>
     </div>
 
     <!-- DASHBOARD -->
     <div id="tab-dashboard" class="tab-content active">
-      <!-- SYSTEM HEALTH (TECHNICAL METRICS) -->
+      <!-- SYSTEM HEALTH -->
       <div class="glass">
         <div style="color: var(--neon); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">🖥️ SYSTEM HEALTH (ISO 27001 A.12.4)</div>
         <div class="pro-metrics">
@@ -80,7 +80,7 @@
         </div>
       </div>
       
-      <!-- OPERATIONAL HEALTH (9 MODULES MONITORING) -->
+      <!-- OPERATIONAL HEALTH -->
       <div class="glass">
         <div style="color: var(--gold); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📊 OPERATIONAL HEALTH (Real-time)</div>
         <div class="pro-metrics">
@@ -95,6 +95,7 @@
           <div class="pro-metric" style="border: 1px solid #e11d48;"><div class="pro-metric-val" id="op-users">--</div><div class="pro-metric-label" style="color: #e11d48;">NEW USERS</div></div>
         </div>
       </div>
+      
       <div class="glass">
         <div style="color: var(--neon); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📱 Modul Workspace</div>
         <div class="module-grid" id="module-grid"></div>
@@ -142,7 +143,7 @@
     <!-- AUDIT -->
     <div id="tab-audit" class="tab-content">
       <div class="glass">
-        <div style="color: var(--purple); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;"> Activity Log (ISO 27001 A.12.4.1)</div>
+        <div style="color: var(--purple); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📜 Activity Log (ISO 27001 A.12.4.1)</div>
         <div id="audit-log" style="max-height: 400px; overflow-y: auto;"></div>
       </div>
     </div>
@@ -152,28 +153,23 @@
       <div class="glass">
         <div style="color: var(--gold); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📢 Kelola Pengumuman Dashboard</div>
         <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(245,158,11,0.1); border-left: 4px solid #f59e0b; border-radius: 8px;">
-          <strong style="color: #f59e0b;">️ Info:</strong>
+          <strong style="color: #f59e0b;">ℹ️ Info:</strong>
           <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">Pengumuman akan tampil di slide 5, 6, 7 pada dashboard utama (setiap 7 detik)</p>
         </div>
-        
         <div class="form-group">
           <label>📢 Info Manajemen (Slide 5)</label>
-          <textarea id="ann-mgmt" rows="2" placeholder="Contoh: Rapat evaluasi setiap Jumat pukul 10:00 WIB di Ruang A" style="width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem;"></textarea>
+          <textarea id="ann-mgmt" rows="2" placeholder="Contoh: Rapat evaluasi setiap Jumat pukul 10:00 WIB" style="width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem;"></textarea>
         </div>
-        
         <div class="form-group">
           <label>🏢 Info Bagian Umum (Slide 6)</label>
           <textarea id="ann-umum" rows="2" placeholder="Contoh: Pemeliharaan lift gedung A akan dilakukan Senin-Kamis" style="width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem;"></textarea>
         </div>
-        
         <div class="form-group">
           <label>💌 Ucapan / Motivasi (Slide 7)</label>
           <textarea id="ann-ucapan" rows="2" placeholder="Contoh: Selamat bertugas! The Power Soul Of Shalawat" style="width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem;"></textarea>
         </div>
-        
         <button class="btn btn-warning" onclick="saveAnnouncements()" style="width: 100%; margin-bottom: 0.5rem;">💾 Simpan Pengumuman</button>
         <button class="btn btn-primary" onclick="loadAnnouncements()" style="width: 100%;">🔄 Muat Ulang</button>
-        
         <div id="ann-msg" style="margin-top: 0.5rem; font-size: 0.85rem; text-align: center;"></div>
       </div>
     </div>
@@ -188,20 +184,17 @@
 
       function safeInit() {
         try {
-          // 1. AMBIL USER DENGAN FALLBACK AMAN
           let user = {};
           try { user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); } 
           catch(e) { console.warn('⚠️ User parse error:', e); }
           
           if (!user.email) {
-            console.warn('⚠️ User email not found. Defaulting to guest/staff.');
             user = { email: 'guest@local', nama: 'Guest', role: 'staff', divisi: 'UMUM' };
           }
 
           const role = user.role || 'staff';
           const divisi = user.divisi || 'UMUM';
 
-          // Update Header UI LANGSUNG
           const nameEl = document.getElementById('user-name');
           if(nameEl) nameEl.textContent = user.nama || user.email;
           const badge = document.getElementById('role-badge');
@@ -210,7 +203,6 @@
             badge.className = 'role-indicator ' + (role === 'kabag_umum' ? 'role-kabag' : role === 'koordinator_umum' ? 'role-koor' : '');
           }
 
-          // 2. RBAC MATRIX
           const RBAC = {
             staff: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
             guru: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
@@ -228,7 +220,6 @@
             dana: { icon: '💸', title: 'Dana' }, users: { icon: '👥', title: 'Users' }, audit: { icon: '📜', title: 'Audit' }
           };
 
-          // Tampilkan Tab Sesuai Role
           const show = (id, cond) => { const el = document.getElementById(id); if(el) el.style.display = cond ? 'flex' : 'none'; };
           show('tab-dana-btn', permissions.canSubmitDana || permissions.canApproveDana);
           show('tab-approvals-btn', permissions.canApproveDana || permissions.approvalLevel === 'recommend');
@@ -236,7 +227,6 @@
           show('tab-audit-btn', role !== 'staff' && role !== 'guru');
           show('tab-pengumuman-btn', role === 'kabag_umum' || role === 'koordinator_umum' || role === 'dev');
 
-          // 3. RENDER MODULES LANGSUNG (AGAR GRID TIDAK KOSONG)
           const grid = document.getElementById('module-grid');
           if(grid) {
             grid.innerHTML = '';
@@ -255,7 +245,6 @@
             });
           }
 
-          // 4. GLOBAL FUNCTIONS (TAB, DATA, AUDIT, DLL)
           window.switchTab = function(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -286,7 +275,7 @@
                 const cls = d.status==='approved'?'badge-success':d.status==='recommended'?'badge-warning':'';
                 return '<tr><td>'+new Date(d.created_at).toLocaleDateString()+'</td><td>'+d.judul+'</td><td>Rp '+parseInt(d.nominal||0).toLocaleString()+'</td><td><span class="badge '+cls+'">'+d.status+'</span></td><td>'+lvl+'</td></tr>';
               }).join('') : '<tr><td colspan="5">Belum ada data</td></tr>';
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; console.error(e); }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; }
           }
 
           window.submitDana = async function() {
@@ -313,11 +302,11 @@
                 const isKoor = role === 'koordinator_umum' && d.status === 'pending';
                 const isKabag = role === 'kabag_umum';
                 let actions = '';
-                if (isKoor) actions = '<button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\''+d.type+'\',\''+d.id+'\',\'recommended\')">🔍 Recommend</button>';
-                if (isKabag) actions = '<button class="btn btn-success" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\''+d.type+'\',\''+d.id+'\',\'approved\')">✅ Approve</button> <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\''+d.type+'\',\''+d.id+'\',\'rejected\')">❌ Reject</button>';
+                if (isKoor) actions = '<button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\''+d.type+'\\',\\''+d.id+'\\',\\'recommended\\')">🔍 Recommend</button>';
+                if (isKabag) actions = '<button class="btn btn-success" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\''+d.type+'\\',\\''+d.id+'\\',\\'approved\\')">✅ Approve</button> <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\''+d.type+'\\',\\''+d.id+'\\',\\'rejected\\')">❌ Reject</button>';
                 return '<tr><td>'+d.type+'</td><td>'+(d.pemohon||d.nama_peminjam)+'</td><td>'+(d.judul||d.ruang)+'</td><td>'+d.status+'</td><td>'+actions+'</td></tr>';
               }).join('') : '<tr><td colspan="5">Tidak ada antrean</td></tr>';
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; console.error(e); }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; }
           }
 
           window.handleApproval = async function(type, id, newStatus) {
@@ -341,7 +330,7 @@
               if (window.supabaseClient) { const { data: res } = await window.supabaseClient.from('users').select('*'); data = res || []; }
               else { data = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); }
               tbody.innerHTML = data.length ? data.map(u => '<tr><td>'+u.nama+'</td><td>'+u.email+'</td><td>'+u.role+'</td><td>'+(u.divisi||'-')+'</td><td><span class="badge badge-success">Active</span></td></tr>').join('') : '<tr><td colspan="5">Belum ada user</td></tr>';
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; console.error(e); }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; }
           }
 
           window.createUser = async function() {
@@ -370,37 +359,29 @@
             ).join('') || '<div style="padding:1rem; color:var(--text-muted);">Belum ada aktivitas</div>';
           }
 
-          // ✅ PENGUMUMAN FUNCTIONS
           window.saveAnnouncements = function() {
             const mgmt = document.getElementById('ann-mgmt').value.trim();
             const umum = document.getElementById('ann-umum').value.trim();
             const ucapan = document.getElementById('ann-ucapan').value.trim();
-            
             const announcements = [
               { type: 'management', msg: mgmt || 'Belum ada info manajemen', updated_at: new Date().toISOString(), updated_by: user.email },
               { type: 'umum', msg: umum || 'Belum ada info bagian umum', updated_at: new Date().toISOString(), updated_by: user.email },
               { type: 'ucapan', msg: ucapan || 'The Power Soul Of Shalawat', updated_at: new Date().toISOString(), updated_by: user.email }
             ];
-            
             localStorage.setItem('dreamos_announcements', JSON.stringify(announcements));
-            
             const msgEl = document.getElementById('ann-msg');
-            msgEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">✅ Pengumuman berhasil disimpan! Refresh dashboard untuk melihat perubahan.</span>';
-            
+            msgEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">✅ Pengumuman berhasil disimpan!</span>';
             logAction('UPDATE_ANNOUNCEMENTS', { mgmt: mgmt ? 'set' : 'clear', umum: umum ? 'set' : 'clear', ucapan: ucapan ? 'set' : 'clear' });
-            
             setTimeout(() => { msgEl.innerHTML = ''; }, 3000);
           };
 
           window.loadAnnouncements = function() {
             const data = JSON.parse(localStorage.getItem('dreamos_announcements') || '[]');
-            
             document.getElementById('ann-mgmt').value = data.find(a => a.type === 'management')?.msg || '';
             document.getElementById('ann-umum').value = data.find(a => a.type === 'umum')?.msg || '';
             document.getElementById('ann-ucapan').value = data.find(a => a.type === 'ucapan')?.msg || '';
-            
             const msgEl = document.getElementById('ann-msg');
-            msgEl.innerHTML = '<span style="color: #0ea5e9;">🔄 Pengumuman dimuat dari storage</span>';
+            msgEl.innerHTML = '<span style="color: #0ea5e9;">🔄 Pengumuman dimuat</span>';
             setTimeout(() => { msgEl.innerHTML = ''; }, 2000);
           };
 
@@ -412,12 +393,8 @@
             if (window.supabaseClient) window.supabaseClient.from('activity_logs').insert(entry).catch(()=>{});
           }
 
-                    // 5. REALTIME ENGINE + DYNAMIC COMPLIANCE (ISO 27001 A.18.2.3)
           class EnterpriseRealtimeEngine {
-            constructor() { 
-              this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }; 
-              this.init(); 
-            }
+            constructor() { this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }; this.init(); }
             init() {
               setInterval(async () => {
                 const start = performance.now();
@@ -454,17 +431,15 @@
             }
           }
 
-          // ✅ OPERATIONAL HEALTH ENGINE (ISO 27001 A.12.4.1)
           class OperationalHealthEngine {
             constructor() { this.init(); }
             init() {
               this.fetchAllMetrics();
-              setInterval(() => this.fetchAllMetrics(), 15000); // Update tiap 15 detik
+              setInterval(() => this.fetchAllMetrics(), 15000);
             }
             async fetchAllMetrics() {
               if (!window.supabaseClient) return;
               try {
-                // Helper function agar tidak crash jika tabel belum ada
                 const safeCount = async (table, queryFn) => {
                   try {
                     const { count, error } = await queryFn;
@@ -503,28 +478,23 @@
                 const users = await safeCount('users', window.supabaseClient.from('users').select('*', { count: 'exact', head: true }).gte('created_at', last7Days.toISOString()));
                 this.updateMetric('op-users', users, '#e11d48');
 
-              } catch(e) {
-                console.warn('⚠️ Operational metrics fetch error:', e);
-              }
+              } catch(e) { console.warn('⚠️ Operational metrics fetch error:', e); }
             }
             updateMetric(id, value, color) {
               const el = document.getElementById(id);
               if (el) {
                 el.textContent = value;
-                el.style.color = value > 0 ? color : '#10b981'; // Hijau jika 0, warna spesifik jika > 0
+                el.style.color = value > 0 ? color : '#10b981';
               }
             }
           }
 
-          
-          <!-- 🤖 FUTURE AI CORE INTEGRATION HOOK -->
-          <!-- Nanti di sini akan ada: 
-               1. AI Predictive Maintenance (Memprediksi kerusakan sebelum terjadi)
-               2. AI Auto-Scheduling (Menyelesaikan konflik booking otomatis)
-               3. AI Anomaly Detection (Mendeteksi pola aneh di Audit Log) 
-          -->
+          /* 🤖 FUTURE AI CORE INTEGRATION HOOK
+             1. AI Predictive Maintenance (Memprediksi kerusakan sebelum terjadi)
+             2. AI Auto-Scheduling (Menyelesaikan konflik booking otomatis)
+             3. AI Anomaly Detection (Mendeteksi pola aneh di Audit Log) 
+          */
 
-          // 6. WAIT FOR SUPABASE (POLLING AMAN)
           const syncEl = document.getElementById('sync-status');
           let retries = 0;
           const maxRetries = 8;
@@ -546,7 +516,6 @@
             }
           }
           setTimeout(waitForSupabase, 500);
-
           console.log('🏢 CC Fully Initialized | Role:', role, '| Divisi:', divisi);
         } catch(err) {
           console.error('❌ CC CRASH:', err);
@@ -555,7 +524,6 @@
         }
       }
 
-      // Jalankan setelah DOM injection selesai
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', safeInit);
       else setTimeout(safeInit, 400);
     })();
