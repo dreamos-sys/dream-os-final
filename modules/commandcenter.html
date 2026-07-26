@@ -85,6 +85,7 @@
       <button class="tab" onclick="switchTab('reports')" id="tab-reports-btn">📤 Reports</button>
       <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 Users</button>
       <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit</button>
+      <button class="tab" onclick="switchTab('archive')" id="tab-archive-btn">📂 Arsip</button>
       <button class="tab" onclick="switchTab('pengumuman')" id="tab-pengumuman-btn" style="display:none;">📢 Pengumuman</button>
     </div>
 
@@ -302,6 +303,7 @@
             if(tabName==='inbox') refreshInbox();
             if(tabName==='calendar' && window.calEngine) window.calEngine.render();
             if(tabName==='workforce' && window.wfEngine) window.wfEngine.render();
+            if(tabName==='archive' && window.archiveEngine) window.archiveEngine.render();
           };
 
           // UNIFIED INBOX ENGINE
@@ -451,6 +453,8 @@
                     <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','izin')">🟡</button>
                     <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','sakit')">🔴</button>
                     <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.logTask('${w.id}')">📝</button>
+                    <input type="file" id="file_${w.id}" accept="image/*,.pdf,.csv" style="display:none;" onchange="window.archiveEngine.uploadFile('workforce','${w.id}',this)">
+                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="document.getElementById('file_${w.id}').click()">📷</button>
                   </div>
                 </div>`;
               }).join('');
@@ -518,6 +522,87 @@
             refresh() { this.loadRoster(); }
           }
           window.wfEngine = new WorkforceEngine();
+
+
+          // 📂 ARCHIVE & UPLOAD ENGINE (Supabase Storage + Metadata)
+          class ArchiveEngine {
+            constructor() { this.files = []; this.init(); }
+            init() { this.render(); }
+            async refresh() {
+              if(!window.supabaseClient) return alert('⚠️ Supabase belum siap.');
+              try {
+                const { data, error } = await window.supabaseClient.from('file_attachments').select('*').order('created_at', { ascending: false });
+                if(!error) { this.files = data || []; localStorage.setItem('dreamos_file_archive', JSON.stringify(this.files)); }
+              } catch(e) { console.warn('⚠️ Archive fetch failed'); }
+              this.render();
+            }
+            render() {
+              const tbody = document.getElementById('archive-tbody');
+              if(!tbody) return;
+              const data = this.files.length ? this.files : JSON.parse(localStorage.getItem('dreamos_file_archive')||'[]');
+              tbody.innerHTML = data.length ? data.map(f => {
+                const isImg = f.file_type.startsWith('image/');
+                const preview = isImg ? `<a href="${f.file_url}" target="_blank" style="color:var(--accent);">🖼️ Preview</a>` : '📄 Dokumen';
+                return `<tr>
+                  <td>${new Date(f.created_at).toLocaleDateString()}</td>
+                  <td><span class="badge badge-warning">${f.record_type.toUpperCase()}</span></td>
+                  <td>${f.file_name}</td>
+                  <td>${f.uploaded_by}</td>
+                  <td style="display:flex;gap:0.3rem;">${preview} <a href="${f.file_url}" download style="color:#10b981;">⬇️</a></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="5">📭 Belum ada arsip file</td></tr>';
+            }
+            search() {
+              const type = document.getElementById('arch-type').value;
+              const from = document.getElementById('arch-from').value;
+              const to = document.getElementById('arch-to').value;
+              let filtered = this.files.length ? this.files : JSON.parse(localStorage.getItem('dreamos_file_archive')||'[]');
+              if(type!=='all') filtered = filtered.filter(f=>f.record_type===type);
+              if(from) filtered = filtered.filter(f=>new Date(f.created_at)>=new Date(from));
+              if(to) filtered = filtered.filter(f=>new Date(f.created_at)<=new Date(to+'T23:59:59'));
+              const tbody = document.getElementById('archive-tbody');
+              tbody.innerHTML = filtered.length ? filtered.map(f => {
+                const isImg = f.file_type.startsWith('image/');
+                const preview = isImg ? `<a href="${f.file_url}" target="_blank" style="color:var(--accent);">🖼️ Preview</a>` : '📄 Dokumen';
+                return `<tr><td>${new Date(f.created_at).toLocaleDateString()}</td><td><span class="badge badge-warning">${f.record_type.toUpperCase()}</span></td><td>${f.file_name}</td><td>${f.uploaded_by}</td><td style="display:flex;gap:0.3rem;">${preview} <a href="${f.file_url}" download style="color:#10b981;">⬇️</a></td></tr>`;
+              }).join('') : '<tr><td colspan="5">🔍 Tidak ada file sesuai filter</td></tr>';
+            }
+            async uploadFile(recordType, recordId, fileInput) {
+              if(!window.supabaseClient) return alert('⚠️ Supabase belum siap.');
+              const file = fileInput.files[0];
+              if(!file) return alert('📷 Pilih file dulu!');
+              const maxSize = 5 * 1024 * 1024; // 5MB
+              if(file.size > maxSize) return alert('⚠️ Maksimal 5MB per file.');
+              const bucket = recordType==='k3'?'k3-photos':recordType==='maintenance'?'maintenance-photos':recordType==='workforce'?'workforce-photos':'exports-archive';
+              const fileName = `${recordType}_${recordId}_${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
+              try {
+                const { data, error } = await window.supabaseClient.storage.from(bucket).upload(fileName, file, { upsert: false });
+                if(error) throw error;
+                const { data: urlData } = window.supabaseClient.storage.from(bucket).getPublicUrl(fileName);
+                const meta = {
+                  id: 'file_'+Date.now(),
+                  record_type: recordType,
+                  record_id: recordId,
+                  file_url: urlData.publicUrl,
+                  file_name: file.name,
+                  file_type: file.type,
+                  file_size_kb: Math.round(file.size/1024),
+                  uploaded_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system'
+                };
+                await window.supabaseClient.from('file_attachments').insert(meta);
+                this.files.unshift(meta);
+                localStorage.setItem('dreamos_file_archive', JSON.stringify(this.files));
+                logAction('FILE_UPLOAD', { recordType, recordId, fileName, sizeKB: meta.file_size_kb });
+                alert('✅ File berhasil diupload & terarsip!');
+                fileInput.value = '';
+                this.render();
+              } catch(e) {
+                console.error('❌ Upload failed:', e);
+                alert('⛔ Gagal upload. Cek koneksi atau permission Storage.');
+              }
+            }
+          }
+          window.archiveEngine = new ArchiveEngine();
 
           // 📅 CALENDAR ENGINE (Real-time Event Mapper)
           class CalendarEngine {
