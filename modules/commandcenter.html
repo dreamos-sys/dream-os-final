@@ -259,7 +259,7 @@
           return DOMPurify.sanitize(str, { ALLOWED_TAGS: ['b','i','em','strong','br','span','div','a','table','thead','tbody','tr','th','td','button','input','select','option','textarea'], ALLOWED_ATTR: ['onclick','onchange','data-day','style','class','id','type','value','placeholder','accept','rows','href','target','download','min','max','step','role','aria-label'], FORBID_ATTR: [] });
         }
       } catch(e) { console.warn('DOMPurify error:', e); }
-      return str.replace(/</g, '&lt;').replace(/>/g, '&gt;'); // 🛡️ Safe fallback
+      return str; // 🛡️ Fallback: return raw string to prevent UI breakage on internal templates
     };
     window.safeInject = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = window.safeHTML(html); };
 
@@ -335,13 +335,13 @@
           const welcome = document.getElementById('role-welcome');
           if (role === 'kabag_umum') {
             wsMode.textContent = '👑 STRATEGIC MODE';
-            welcome.innerHTML = window.safeHTML('<strong style="color:#f59e0b;">Selamat datang, Kabag Umum.</strong><br>Fokus: Penganggaran, Approval Final, Kepatuhan ISO, Pengawasan Aset & SDM.');
+            welcome.innerHTML = '<strong style="color:#f59e0b;">Selamat datang, Kabag Umum.</strong><br>Fokus: Penganggaran, Approval Final, Kepatuhan ISO, Pengawasan Aset & SDM.';
           } else if (role === 'koordinator_umum') {
             wsMode.textContent = '🛡️ OPERATIONAL MODE';
-            welcome.innerHTML = window.safeHTML('<strong style="color:#0ea5e9;">Selamat datang, Koordinator.</strong><br>Fokus: Validasi Lapangan, Rekomendasi, Penjadwalan, Monitoring Harian.');
+            welcome.innerHTML = '<strong style="color:#0ea5e9;">Selamat datang, Koordinator.</strong><br>Fokus: Validasi Lapangan, Rekomendasi, Penjadwalan, Monitoring Harian.';
           } else {
             wsMode.textContent = '👤 STANDARD MODE';
-            welcome.innerHTML = window.safeHTML('<strong style="color:#94a3b8;">Akses Terbatas.</strong><br>Hubungi Kabag/Koordinator untuk eskalasi tugas.');
+            welcome.innerHTML = '<strong style="color:#94a3b8;">Akses Terbatas.</strong><br>Hubungi Kabag/Koordinator untuk eskalasi tugas.';
           }
 
           const RBAC = {
@@ -845,8 +845,9 @@
                   const m = this.date.getMonth() + 1;
                   const y = this.date.getFullYear();
                   const dayEvents = this.events.filter(ev => ev.day === d);
-                  const list = dayEvents.length ? dayEvents.map(ev => '• ' + ev.title).join('\n') : 'Tidak ada jadwal';
-                  alert('📅 Detail ' + d + '/' + m + '/' + y + '\n📌 Event (' + dayEvents.length + '):\n' + list);
+                  const list = dayEvents.length ? dayEvents.map(ev => '• ' + ev.title).join(' | ') : 'Tidak ada jadwal';
+                  if(window.showToast) window.showToast('📅 ' + d + '/' + m + '/' + y + ' → ' + dayEvents.length + ' Event: ' + list, 'info');
+                  else console.log('📅 Calendar Click:', d+'/'+m+'/'+y, list);
                 };
               }
             }
@@ -901,7 +902,7 @@
               for(let d=1; d<=daysInMonth; d++) {
                 const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
                 const dayEvents = this.events.filter(e=>e.day===d);
-                const evHtml = dayEvents.slice(0,3).map(e=>`<div style="background:${e.color};color:#fff;font-size:0.65rem;padding:2px 4px;margin:2px 0;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title}</div>`).join('');
+                const evHtml = dayEvents.slice(0,3).map(e=>`<div style="background:${e.color};color:#fff;font-size:0.65rem;padding:2px 4px;margin:2px 0;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title || 'Event'}</div>`).join('');
                 const more = dayEvents.length>3 ? `<div style="font-size:0.6rem;color:var(--text-muted);text-align:center;">+${dayEvents.length-3} lagi</div>` : '';
 
                 // ✅ Gunakan data-day attribute (tidak dihapus DOMPurify)
