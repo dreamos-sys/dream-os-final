@@ -327,7 +327,7 @@
             if (window.supabaseClient) window.supabaseClient.from('activity_logs').insert(entry).catch(()=>{});
           }
 
-          // 5. REALTIME ENGINE
+          // 5. REALTIME ENGINE + DYNAMIC COMPLIANCE (ISO 27001 A.18.2.3)
           class EnterpriseRealtimeEngine {
             constructor() { this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }; this.init(); }
             init() {
@@ -339,11 +339,24 @@
                     this.metrics.apiLatency = Math.round(performance.now() - start);
                     this.metrics.dbStatus = 'Online';
                     this.metrics.activeUsers = Math.floor(Math.random() * 15) + 5;
-                    this.metrics.compliance = 98;
+                    this.metrics.compliance = this.calculateCompliance();
                     this.updateUI();
                   }
                 } catch(e) { this.metrics.dbStatus = 'Degraded'; this.updateUI(); }
               }, 5000);
+            }
+            calculateCompliance() {
+              let score = 100;
+              const u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+              if (!u.mfa_enabled) score -= 15; // A.9.2.2
+              const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
+              if (logs.length < 10) score -= 10; // A.12.4.1
+              if (!localStorage.getItem('dreamos_session_timeout')) score -= 10; // A.9.2.4
+              try {
+                const policies = JSON.parse(localStorage.getItem('supabase_rls_active') || 'false');
+                if (!policies) score -= 20; // A.9.2.3
+              } catch(e) { score -= 20; }
+              return Math.max(0, Math.min(100, score));
             }
             updateUI() {
               const el1 = document.getElementById('pro-api-latency'); if(el1) el1.textContent = this.metrics.apiLatency + ' ms';
