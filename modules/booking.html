@@ -192,6 +192,26 @@
 
   // ===== POPULATE DROPDOWN & ALAT =====
   const ruangSelect = document.getElementById('booking-ruang');
+
+  // 🎹 Keyboard Navigation for Alat Grid
+  document.getElementById('alat-container').addEventListener('keydown', e => {
+    const btns = Array.from(document.querySelectorAll('.alat-btn'));
+    const currentIndex = btns.findIndex(b => b === document.activeElement);
+    if (e.key === 'ArrowDown') {
+      const next = btns[(currentIndex + 1) % btns.length];
+      next.focus();
+      e.preventDefault();
+    }
+    else if (e.key === 'ArrowUp') {
+      const prev = btns[(currentIndex - 1 + btns.length) % btns.length];
+      prev.focus();
+      e.preventDefault();
+    }
+    else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      document.activeElement.click();
+    }
+  });
   SARANA_LIST.forEach(ruang => {
     if (ruang === "Masjid (Maintenance)") return;
     const opt = document.createElement('option');
@@ -273,8 +293,8 @@
     const keperluan = document.getElementById('booking-keperluan').value.trim();
     const errorEl = document.getElementById('booking-error');
     
-    const checkboxes = document.querySelectorAll('.cb-alat:checked');
-    const saranaStr = Array.from(checkboxes).map(cb => cb.value).join(', ') || 'Tidak ada alat';
+    const selectedAlats = Array.from(document.querySelectorAll('.alat-btn.selected')).map(b => b.dataset.value);
+    const saranaStr = selectedAlats.join(', ') || 'Tidak ada alat';
 
     errorEl.style.display = 'none';
 
@@ -390,7 +410,7 @@
     document.getElementById('booking-nohp').value = '';
     document.getElementById('booking-divisi').value = '';
     document.getElementById('booking-keperluan').value = '';
-    checkboxes.forEach(cb => cb.checked = false);
+    document.querySelectorAll('.alat-btn').forEach(btn => btn.classList.remove('selected'));
     
     alert('✅ Pengajuan booking berhasil dikirim!\n\n📱 No HP: ' + nohp + '\n🏢 Divisi: ' + divisi);
   };
