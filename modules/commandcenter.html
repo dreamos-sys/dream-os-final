@@ -135,231 +135,257 @@
 
     (function() {
       'use strict';
-      let user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-      if (!user.email) {
-        // Fallback: coba ambil dari session active
-        const sessionUser = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-        user = sessionUser;
-      }
-      const role = user.role || 'staff';
-      const divisi = user.divisi || 'UMUM';
-      
-      const nameEl = document.getElementById('user-name');
-      if(nameEl) nameEl.textContent = user.nama || user.email || 'Guest';
-      const badge = document.getElementById('role-badge');
-      badge.textContent = role.toUpperCase().replace('_', ' ');
-      badge.className = 'role-indicator ' + (role === 'kabag_umum' ? 'role-kabag' : role === 'koordinator_umum' ? 'role-koor' : '');
+      console.log('🔧 CC Module injected. Starting safe init...');
 
-      // ✅ ISO 27001 A.9.2.3: RBAC + SoD Matrix
-      const RBAC = {
-        staff: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-        guru: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-        security: { modules: ['security','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-        maintenance: { modules: ['maintenance','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-        koordinator_umum: { modules: ['booking','k3','dana','users','audit'], canSubmitDana: true, canApproveDana: false, canManageUsers: true, approvalLevel: 'recommend' },
-        kabag_umum: { modules: ['booking','k3','dana','users','audit','approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, approvalLevel: 'final' },
-        dev: { modules: ['booking','k3','security','maintenance','dana','users','audit','approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, approvalLevel: 'override' }
-      };
-
-      const permissions = RBAC[role] || RBAC.staff;
-      const MODULES = {
-        booking: { icon: '📅', title: 'Booking' }, k3: { icon: '⚠️', title: 'K3 Safety' },
-        security: { icon: '🛡️', title: 'Security' }, maintenance: { icon: '🔧', title: 'Maintenance' },
-        dana: { icon: '💸', title: 'Dana' }, users: { icon: '👥', title: 'Users' }, audit: { icon: '📜', title: 'Audit' }
-      };
-
-      if (permissions.canSubmitDana || permissions.canApproveDana) document.getElementById('tab-dana-btn').style.display = 'flex';
-      if (permissions.canApproveDana || permissions.approvalLevel === 'recommend') document.getElementById('tab-approvals-btn').style.display = 'flex';
-      if (permissions.canManageUsers) document.getElementById('tab-users-btn').style.display = 'flex';
-      if (role !== 'staff' && role !== 'guru') document.getElementById('tab-audit-btn').style.display = 'flex';
-
-      window.switchTab = function(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        document.getElementById('tab-' + tabName).classList.add('active');
-        if (tabName === 'dana' && permissions.canSubmitDana) document.getElementById('dana-form-container').style.display = 'block';
-        if (tabName === 'dana') loadDanaRequests();
-        if (tabName === 'approvals') loadApprovals();
-        if (tabName === 'users') renderUserList();
-        if (tabName === 'audit') renderAuditLog();
-      };
-
-      function renderModules() {
-        const grid = document.getElementById('module-grid');
-        grid.innerHTML = '';
-        permissions.modules.forEach(modKey => {
-          const mod = MODULES[modKey];
-          if (!mod) return;
-          const card = document.createElement('div');
-          card.className = 'mod-card';
-          card.innerHTML = '<div class="mod-icon">' + mod.icon + '</div><div class="mod-title">' + mod.title + '</div>';
-          card.onclick = () => {
-            const map = { booking:'booking.html', k3:'k3.html', security:'security.html', maintenance:'maintenance.html', dana:'commandcenter.html' };
-            if (map[modKey]) window.location.href = map[modKey];
-            else switchTab(['users','audit','approvals'].includes(modKey) ? modKey : 'dashboard');
-          };
-          grid.appendChild(card);
-        });
-      }
-
-      // ✅ DATA FUNCTIONS WITH AUDIT TRAIL
-      async function loadDanaRequests() {
-        const tbody = document.getElementById('dana-tbody');
-        tbody.innerHTML = '<tr><td colspan="5">Memuat...</td></tr>';
+      function safeInit() {
         try {
-          let data = [];
-          if (window.supabaseClient) {
-            let q = window.supabaseClient.from('dana_requests').select('*').order('created_at', { ascending: false });
-            if (!permissions.canApproveDana && role !== 'kabag_umum') q = q.eq('pemohon', user.email);
-            const { data: res } = await q; data = res || [];
-          } else { data = JSON.parse(localStorage.getItem('dreamos_dana') || '[]'); }
-          tbody.innerHTML = data.length ? data.map(d => {
-            const lvl = d.status === 'recommended' ? '🔍 Koor' : d.status === 'approved' ? '✅ Kabag' : '⏳ Pending';
-            return '<tr><td>' + new Date(d.created_at).toLocaleDateString() + '</td><td>' + d.judul + '</td><td>Rp ' + parseInt(d.nominal||0).toLocaleString() + '</td><td><span class="badge ' + (d.status==='approved'?'badge-success':d.status==='recommended'?'badge-warning':'') + '">' + d.status + '</span></td><td>' + lvl + '</td></tr>';
-          }).join('') : '<tr><td colspan="5">Belum ada data</td></tr>';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; }
-      }
-
-      window.submitDana = async function() {
-        if (!permissions.canSubmitDana) return alert('⛔ Akses Ditolak');
-        const item = { id: 'dana_'+Date.now(), judul: document.getElementById('dana-judul').value, nominal: document.getElementById('dana-nominal').value, pemohon: user.email, status: 'pending', created_at: new Date().toISOString() };
-        if (window.supabaseClient) await window.supabaseClient.from('dana_requests').insert(item);
-        let local = JSON.parse(localStorage.getItem('dreamos_dana') || '[]'); local.unshift(item); localStorage.setItem('dreamos_dana', JSON.stringify(local));
-        logAction('SUBMIT_DANA', { id: item.id, judul: item.judul });
-        alert('✅ Pengajuan berhasil!'); loadDanaRequests();
-      };
-
-      async function loadApprovals() {
-        const tbody = document.getElementById('approval-tbody');
-        tbody.innerHTML = '<tr><td colspan="5">Memuat...</td></tr>';
-        try {
-          let data = [];
-          if (window.supabaseClient) {
-            const { data: d1 } = await window.supabaseClient.from('dana_requests').select('*').in('status', ['pending','recommended']);
-            const { data: d2 } = await window.supabaseClient.from('bookings').select('*').eq('status', 'pending');
-            data = [...(d1||[]).map(x=>({...x, type:'Dana'})), ...(d2||[]).map(x=>({...x, type:'Booking'}))];
+          // 1. AMBIL USER DENGAN FALLBACK AMAN
+          let user = {};
+          try { user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); } 
+          catch(e) { console.warn('⚠️ User parse error:', e); }
+          
+          if (!user.email) {
+            console.warn('⚠️ User email not found. Defaulting to guest/staff.');
+            user = { email: 'guest@local', nama: 'Guest', role: 'staff', divisi: 'UMUM' };
           }
-          tbody.innerHTML = data.length ? data.map(d => {
-            const isKoor = role === 'koordinator_umum' && d.status === 'pending';
-            const isKabag = role === 'kabag_umum';
-            let actions = '';
-            if (isKoor) actions = '<button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\''+d.type+'\\',\\''+d.id+'\\',\\'recommended\\')">🔍 Recommend</button>';
-            if (isKabag) actions = '<button class="btn btn-success" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\''+d.type+'\\',\\''+d.id+'\\',\\'approved\\')">✅ Approve</button> <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\\''+d.type+'\\',\\''+d.id+'\\',\\'rejected\\')">❌ Reject</button>';
-            return '<tr><td>' + d.type + '</td><td>' + (d.pemohon || d.nama_peminjam) + '</td><td>' + (d.judul || d.ruang) + '</td><td>' + d.status + '</td><td>' + actions + '</td></tr>';
-          }).join('') : '<tr><td colspan="5">Tidak ada antrean</td></tr>';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; }
-      }
 
-      window.handleApproval = async function(type, id, newStatus) {
-        if (!permissions.canApproveDana && permissions.approvalLevel !== 'recommend') return alert('⛔ Akses Ditolak');
-        const actionLevel = newStatus === 'recommended' ? 'recommend' : newStatus === 'approved' ? 'approve_final' : 'reject_final';
-        if (window.supabaseClient) {
-          const table = type === 'Dana' ? 'dana_requests' : 'bookings';
-          await window.supabaseClient.from(table).update({ status: newStatus, updated_by: role, updated_at: new Date().toISOString() }).eq('id', id);
-        }
-        logAction(type.toUpperCase() + '_' + actionLevel.toUpperCase(), { id, before: 'pending/recommended', after: newStatus });
-        alert('✅ ' + type + ' berhasil ' + (newStatus === 'recommended' ? 'direkomendasikan' : newStatus === 'approved' ? 'disetujui' : 'ditolak'));
-        loadApprovals(); loadDanaRequests();
-      };
+          const role = user.role || 'staff';
+          const divisi = user.divisi || 'UMUM';
 
-      async function renderUserList() {
-        const tbody = document.getElementById('user-tbody');
-        tbody.innerHTML = '<tr><td colspan="5">Memuat...</td></tr>';
-        try {
-          let data = [];
-          if (window.supabaseClient) { const { data: res } = await window.supabaseClient.from('users').select('*'); data = res || []; }
-          else { data = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); }
-          tbody.innerHTML = data.length ? data.map(u => '<tr><td>' + u.nama + '</td><td>' + u.email + '</td><td>' + u.role + '</td><td>' + (u.divisi||'-') + '</td><td><span class="badge badge-success">Active</span></td></tr>').join('') : '<tr><td colspan="5">Belum ada user</td></tr>';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; }
-      }
+          // Update Header UI LANGSUNG
+          const nameEl = document.getElementById('user-name');
+          if(nameEl) nameEl.textContent = user.nama || user.email;
+          const badge = document.getElementById('role-badge');
+          if(badge) {
+            badge.textContent = role.toUpperCase().replace(/_/g, ' ');
+            badge.className = 'role-indicator ' + (role === 'kabag_umum' ? 'role-kabag' : role === 'koordinator_umum' ? 'role-koor' : '');
+          }
 
-      window.createUser = async function() {
-        if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
-        const nama = document.getElementById('new-user-nama').value;
-        const email = document.getElementById('new-user-email').value;
-        const userRole = document.getElementById('new-user-role').value;
-        const divisiVal = document.getElementById('new-user-divisi').value;
-        if (!nama || !email) return alert('Nama dan Email wajib diisi!');
-        let local = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-        local.push({ nama, email, role: userRole, divisi: divisiVal, is_active: true });
-        localStorage.setItem('dreamos_users_db', JSON.stringify(local));
-        logAction('CREATE_USER', { email, role: userRole, divisi: divisiVal });
-        alert('✅ User berhasil dibuat!');
-        document.getElementById('new-user-nama').value = '';
-        document.getElementById('new-user-email').value = '';
-        renderUserList();
-      };
+          // 2. RBAC MATRIX
+          const RBAC = {
+            staff: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
+            guru: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
+            security: { modules: ['security','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
+            maintenance: { modules: ['maintenance','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
+            koordinator_umum: { modules: ['booking','k3','dana','users','audit'], canSubmitDana: true, canApproveDana: false, canManageUsers: true, approvalLevel: 'recommend' },
+            kabag_umum: { modules: ['booking','k3','dana','users','audit','approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, approvalLevel: 'final' },
+            dev: { modules: ['booking','k3','security','maintenance','dana','users','audit','approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, approvalLevel: 'override' }
+          };
 
-      function renderAuditLog() {
-        const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
-        document.getElementById('audit-log').innerHTML = logs.slice(0, 100).map(log => 
-          '<div class="audit-item"><span class="audit-time">[' + new Date(log.timestamp).toLocaleString() + ']</span> <strong>' + log.user + '</strong> (' + log.role + '): ' + log.action + ' <span style="color:#94a3b8;">' + JSON.stringify(log.details||{}) + '</span></div>'
-        ).join('') || '<div style="padding:1rem; color:var(--text-muted);">Belum ada aktivitas</div>';
-      }
+          const permissions = RBAC[role] || RBAC.staff;
+          const MODULES = {
+            booking: { icon: '📅', title: 'Booking' }, k3: { icon: '⚠️', title: 'K3 Safety' },
+            security: { icon: '🛡️', title: 'Security' }, maintenance: { icon: '🔧', title: 'Maintenance' },
+            dana: { icon: '💸', title: 'Dana' }, users: { icon: '👥', title: 'Users' }, audit: { icon: '📜', title: 'Audit' }
+          };
 
-      function logAction(action, details) {
-        const entry = { timestamp: new Date().toISOString(), user: user.email, role: role, action, details };
-        const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
-        logs.unshift(entry); if (logs.length > 500) logs.pop();
-        localStorage.setItem('dreamos_activity_log', JSON.stringify(logs));
-        if (window.supabaseClient) window.supabaseClient.from('activity_logs').insert(entry).catch(()=>{});
-      }
+          // Tampilkan Tab Sesuai Role
+          const show = (id, cond) => { const el = document.getElementById(id); if(el) el.style.display = cond ? 'flex' : 'none'; };
+          show('tab-dana-btn', permissions.canSubmitDana || permissions.canApproveDana);
+          show('tab-approvals-btn', permissions.canApproveDana || permissions.approvalLevel === 'recommend');
+          show('tab-users-btn', permissions.canManageUsers);
+          show('tab-audit-btn', role !== 'staff' && role !== 'guru');
 
-      // ✅ ISO 27001 A.12.4: ENTERPRISE REALTIME ENGINE
-      class EnterpriseRealtimeEngine {
-        constructor() { this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }; this.init(); }
-        init() {
-          setInterval(async () => {
-            const start = performance.now();
+          // 3. RENDER MODULES LANGSUNG (AGAR GRID TIDAK KOSONG)
+          const grid = document.getElementById('module-grid');
+          if(grid) {
+            grid.innerHTML = '';
+            permissions.modules.forEach(modKey => {
+              const mod = MODULES[modKey];
+              if (!mod) return;
+              const card = document.createElement('div');
+              card.className = 'mod-card';
+              card.innerHTML = '<div class="mod-icon">' + mod.icon + '</div><div class="mod-title">' + mod.title + '</div>';
+              card.onclick = () => {
+                const map = { booking:'booking.html', k3:'k3.html', security:'security.html', maintenance:'maintenance.html', dana:'commandcenter.html' };
+                if (map[modKey]) window.location.href = map[modKey];
+                else window.switchTab(['users','audit','approvals'].includes(modKey) ? modKey : 'dashboard');
+              };
+              grid.appendChild(card);
+            });
+          }
+
+          // 4. GLOBAL FUNCTIONS (TAB, DATA, AUDIT, DLL)
+          window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if(event && event.currentTarget) event.currentTarget.classList.add('active');
+            const target = document.getElementById('tab-' + tabName);
+            if(target) target.classList.add('active');
+            if (tabName === 'dana' && permissions.canSubmitDana) { const f=document.getElementById('dana-form-container'); if(f) f.style.display='block'; }
+            if (tabName === 'dana') loadDanaRequests();
+            if (tabName === 'approvals') loadApprovals();
+            if (tabName === 'users') renderUserList();
+            if (tabName === 'audit') renderAuditLog();
+          };
+
+          async function loadDanaRequests() {
+            const tbody = document.getElementById('dana-tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5">Memuat...</td></tr>';
             try {
+              let data = [];
               if (window.supabaseClient) {
-                await window.supabaseClient.from('users').select('id').limit(1);
-                this.metrics.apiLatency = Math.round(performance.now() - start);
-                this.metrics.dbStatus = 'Online';
-                this.metrics.activeUsers = Math.floor(Math.random() * 15) + 5; // Fallback until presence API
-                this.metrics.compliance = 98; // Will be dynamic with control checks
-                this.updateUI();
+                let q = window.supabaseClient.from('dana_requests').select('*').order('created_at', { ascending: false });
+                if (!permissions.canApproveDana && role !== 'kabag_umum') q = q.eq('pemohon', user.email);
+                const { data: res } = await q; data = res || [];
+              } else { data = JSON.parse(localStorage.getItem('dreamos_dana') || '[]'); }
+              tbody.innerHTML = data.length ? data.map(d => {
+                const lvl = d.status === 'recommended' ? '🔍 Koor' : d.status === 'approved' ? '✅ Kabag' : '⏳ Pending';
+                const cls = d.status==='approved'?'badge-success':d.status==='recommended'?'badge-warning':'';
+                return '<tr><td>'+new Date(d.created_at).toLocaleDateString()+'</td><td>'+d.judul+'</td><td>Rp '+parseInt(d.nominal||0).toLocaleString()+'</td><td><span class="badge '+cls+'">'+d.status+'</span></td><td>'+lvl+'</td></tr>';
+              }).join('') : '<tr><td colspan="5">Belum ada data</td></tr>';
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; console.error(e); }
+          }
+
+          window.submitDana = async function() {
+            if (!permissions.canSubmitDana) return alert('⛔ Akses Ditolak');
+            const item = { id: 'dana_'+Date.now(), judul: document.getElementById('dana-judul').value, nominal: document.getElementById('dana-nominal').value, pemohon: user.email, status: 'pending', created_at: new Date().toISOString() };
+            if (window.supabaseClient) await window.supabaseClient.from('dana_requests').insert(item);
+            let local = JSON.parse(localStorage.getItem('dreamos_dana') || '[]'); local.unshift(item); localStorage.setItem('dreamos_dana', JSON.stringify(local));
+            logAction('SUBMIT_DANA', { id: item.id, judul: item.judul });
+            alert('✅ Pengajuan berhasil!'); loadDanaRequests();
+          };
+
+          async function loadApprovals() {
+            const tbody = document.getElementById('approval-tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5">Memuat...</td></tr>';
+            try {
+              let data = [];
+              if (window.supabaseClient) {
+                const { data: d1 } = await window.supabaseClient.from('dana_requests').select('*').in('status', ['pending','recommended']);
+                const { data: d2 } = await window.supabaseClient.from('bookings').select('*').eq('status', 'pending');
+                data = [...(d1||[]).map(x=>({...x, type:'Dana'})), ...(d2||[]).map(x=>({...x, type:'Booking'}))];
               }
-            } catch(e) {
-              this.metrics.dbStatus = 'Degraded';
-              this.updateUI();
+              tbody.innerHTML = data.length ? data.map(d => {
+                const isKoor = role === 'koordinator_umum' && d.status === 'pending';
+                const isKabag = role === 'kabag_umum';
+                let actions = '';
+                if (isKoor) actions = '<button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\''+d.type+'\',\''+d.id+'\',\'recommended\')">🔍 Recommend</button>';
+                if (isKabag) actions = '<button class="btn btn-success" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\''+d.type+'\',\''+d.id+'\',\'approved\')">✅ Approve</button> <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.7rem;" onclick="handleApproval(\''+d.type+'\',\''+d.id+'\',\'rejected\')">❌ Reject</button>';
+                return '<tr><td>'+d.type+'</td><td>'+(d.pemohon||d.nama_peminjam)+'</td><td>'+(d.judul||d.ruang)+'</td><td>'+d.status+'</td><td>'+actions+'</td></tr>';
+              }).join('') : '<tr><td colspan="5">Tidak ada antrean</td></tr>';
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; console.error(e); }
+          }
+
+          window.handleApproval = async function(type, id, newStatus) {
+            if (!permissions.canApproveDana && permissions.approvalLevel !== 'recommend') return alert('⛔ Akses Ditolak');
+            const actionLevel = newStatus === 'recommended' ? 'recommend' : newStatus === 'approved' ? 'approve_final' : 'reject_final';
+            if (window.supabaseClient) {
+              const table = type === 'Dana' ? 'dana_requests' : 'bookings';
+              await window.supabaseClient.from(table).update({ status: newStatus, updated_by: role, updated_at: new Date().toISOString() }).eq('id', id);
             }
-          }, 5000);
-        }
-        updateUI() {
-          document.getElementById('pro-api-latency').textContent = this.metrics.apiLatency + ' ms';
-          const dbEl = document.getElementById('pro-db-status');
-          dbEl.textContent = this.metrics.dbStatus;
-          dbEl.style.color = this.metrics.dbStatus === 'Online' ? '#10b981' : '#ef4444';
-          document.getElementById('pro-active-users').textContent = this.metrics.activeUsers;
-          document.getElementById('pro-compliance').textContent = this.metrics.compliance + '%';
+            logAction(type.toUpperCase() + '_' + actionLevel.toUpperCase(), { id, before: 'pending/recommended', after: newStatus });
+            alert('✅ ' + type + ' berhasil ' + (newStatus === 'recommended' ? 'direkomendasikan' : newStatus === 'approved' ? 'disetujui' : 'ditolak'));
+            loadApprovals(); loadDanaRequests();
+          };
+
+          async function renderUserList() {
+            const tbody = document.getElementById('user-tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5">Memuat...</td></tr>';
+            try {
+              let data = [];
+              if (window.supabaseClient) { const { data: res } = await window.supabaseClient.from('users').select('*'); data = res || []; }
+              else { data = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); }
+              tbody.innerHTML = data.length ? data.map(u => '<tr><td>'+u.nama+'</td><td>'+u.email+'</td><td>'+u.role+'</td><td>'+(u.divisi||'-')+'</td><td><span class="badge badge-success">Active</span></td></tr>').join('') : '<tr><td colspan="5">Belum ada user</td></tr>';
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat</td></tr>'; console.error(e); }
+          }
+
+          window.createUser = async function() {
+            if (!permissions.canManageUsers) return alert('⛔ Akses Ditolak');
+            const nama = document.getElementById('new-user-nama').value;
+            const email = document.getElementById('new-user-email').value;
+            const userRole = document.getElementById('new-user-role').value;
+            const divisiVal = document.getElementById('new-user-divisi').value;
+            if (!nama || !email) return alert('Nama dan Email wajib diisi!');
+            let local = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+            local.push({ nama, email, role: userRole, divisi: divisiVal, is_active: true });
+            localStorage.setItem('dreamos_users_db', JSON.stringify(local));
+            logAction('CREATE_USER', { email, role: userRole, divisi: divisiVal });
+            alert('✅ User berhasil dibuat!');
+            document.getElementById('new-user-nama').value = '';
+            document.getElementById('new-user-email').value = '';
+            renderUserList();
+          };
+
+          function renderAuditLog() {
+            const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
+            const el = document.getElementById('audit-log');
+            if(!el) return;
+            el.innerHTML = logs.slice(0, 100).map(log => 
+              '<div class="audit-item"><span class="audit-time">['+new Date(log.timestamp).toLocaleString()+']</span> <strong>'+log.user+'</strong> ('+log.role+'): '+log.action+' <span style="color:#94a3b8;">'+JSON.stringify(log.details||{})+'</span></div>'
+            ).join('') || '<div style="padding:1rem; color:var(--text-muted);">Belum ada aktivitas</div>';
+          }
+
+          function logAction(action, details) {
+            const entry = { timestamp: new Date().toISOString(), user: user.email, role: role, action, details };
+            const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
+            logs.unshift(entry); if (logs.length > 500) logs.pop();
+            localStorage.setItem('dreamos_activity_log', JSON.stringify(logs));
+            if (window.supabaseClient) window.supabaseClient.from('activity_logs').insert(entry).catch(()=>{});
+          }
+
+          // 5. REALTIME ENGINE
+          class EnterpriseRealtimeEngine {
+            constructor() { this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }; this.init(); }
+            init() {
+              setInterval(async () => {
+                const start = performance.now();
+                try {
+                  if (window.supabaseClient) {
+                    await window.supabaseClient.from('users').select('id').limit(1);
+                    this.metrics.apiLatency = Math.round(performance.now() - start);
+                    this.metrics.dbStatus = 'Online';
+                    this.metrics.activeUsers = Math.floor(Math.random() * 15) + 5;
+                    this.metrics.compliance = 98;
+                    this.updateUI();
+                  }
+                } catch(e) { this.metrics.dbStatus = 'Degraded'; this.updateUI(); }
+              }, 5000);
+            }
+            updateUI() {
+              const el1 = document.getElementById('pro-api-latency'); if(el1) el1.textContent = this.metrics.apiLatency + ' ms';
+              const el2 = document.getElementById('pro-db-status'); if(el2) { el2.textContent = this.metrics.dbStatus; el2.style.color = this.metrics.dbStatus === 'Online' ? '#10b981' : '#ef4444'; }
+              const el3 = document.getElementById('pro-active-users'); if(el3) el3.textContent = this.metrics.activeUsers;
+              const el4 = document.getElementById('pro-compliance'); if(el4) el4.textContent = this.metrics.compliance + '%';
+            }
+          }
+
+          // 6. WAIT FOR SUPABASE (POLLING AMAN)
+          const syncEl = document.getElementById('sync-status');
+          let retries = 0;
+          const maxRetries = 8;
+          function waitForSupabase() {
+            if (window.supabaseClient) {
+              console.log('✅ Supabase ready. Engine started.');
+              if(syncEl) { syncEl.innerHTML = '🟢 Online - Supabase'; syncEl.style.color = '#10b981'; }
+              if (!window.entEngine) window.entEngine = new EnterpriseRealtimeEngine();
+              return;
+            }
+            retries++;
+            if (retries <= maxRetries) {
+              if(syncEl) syncEl.innerHTML = '🟡 Waiting Core... ('+retries+'/'+maxRetries+')';
+              setTimeout(waitForSupabase, 1000);
+            } else {
+              console.warn('⏳ Supabase timeout. Offline mode active.');
+              if(syncEl) { syncEl.innerHTML = '🟡 Offline Mode'; syncEl.style.color = '#f59e0b'; }
+            }
+          }
+          setTimeout(waitForSupabase, 500);
+
+          console.log('🏢 CC Fully Initialized | Role:', role, '| Divisi:', divisi);
+        } catch(err) {
+          console.error('❌ CC CRASH:', err);
+          const s = document.getElementById('sync-status');
+          if(s) { s.innerHTML = '🔴 JS Error'; s.style.color = '#ef4444'; }
         }
       }
 
-      // INIT WITH SAFE RETRY
-      function initCommandCenter() {
-        renderModules();
-        if (window.supabaseClient) {
-          const syncEl = document.getElementById('sync-status');
-          if(syncEl) { syncEl.innerHTML = '🟢 Online - Supabase'; syncEl.style.color = '#10b981'; }
-          window.entEngine = new EnterpriseRealtimeEngine();
-        } else {
-          // Retry 3x tiap 1 detik jika supabaseClient belum inject dari index.html
-          let retries = 0;
-          const waitSupabase = setInterval(() => {
-            retries++;
-            if (window.supabaseClient || retries >= 3) {
-              clearInterval(waitSupabase);
-              initCommandCenter();
-            }
-          }, 1000);
-          const syncEl = document.getElementById('sync-status');
-          if(syncEl) { syncEl.innerHTML = '🟡 Waiting for Core...'; syncEl.style.color = '#f59e0b'; }
-        }
-      }
-      setTimeout(initCommandCenter, 300);
-      console.log('🏢 Command Center Pro Loaded | Role:', role, '| Divisi:', divisi);
+      // Jalankan setelah DOM injection selesai
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', safeInit);
+      else setTimeout(safeInit, 400);
     })();
   </script>
 </body>
