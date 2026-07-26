@@ -146,8 +146,6 @@
     <!-- CALENDAR -->
     <div id="tab-calendar" class="tab-content">
       <div class="glass">
-        <div style="color: var(--accent); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📅 Jadwal & Roster</div>
-              <div class="glass">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <div style="color:var(--accent);font-weight:700;font-size:1.1rem;">📅 Jadwal & Roster</div>
           <div style="display:flex;gap:0.5rem;">
@@ -175,7 +173,6 @@
         </div>
       </div>
     </div>
-  </div>
 
     <!-- WORKFORCE ROSTER & LAPORAN -->
     <div id="tab-workforce" class="tab-content">
@@ -303,8 +300,8 @@
             if(tabName==='audit') renderAuditLog();
             if(tabName==='pengumuman') loadAnnouncements();
             if(tabName==='inbox') refreshInbox();
-            if(tabName==='calendar') window.calEngine.render();
-            if(tabName==='workforce') window.wfEngine.render();
+            if(tabName==='calendar' && window.calEngine) window.calEngine.render();
+            if(tabName==='workforce' && window.wfEngine) window.wfEngine.render();
           };
 
           // UNIFIED INBOX ENGINE
@@ -501,10 +498,8 @@
               });
               if(!data.length) return alert('📭 Tidak ada data tukang harian.');
               const headers = Object.keys(data[0]).join(',');
-              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('
-');
-              const csv = headers+'
-'+rows;
+              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
+              const csv = headers+'\n'+rows;
               const blob = new Blob([csv], {type:'text/csv'});
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a'); a.href=url; a.download=`DreamOS_Payroll_Harian_${new Date().toISOString().split('T')[0]}.csv`; a.click();
@@ -513,10 +508,8 @@
             exportAttendance() {
               const data = this.roster.map(w => ({ Nama: w.name, Role: w.role, Zona: w.zone, Status: w.status, Tipe: w.type }));
               const headers = Object.keys(data[0]).join(',');
-              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('
-');
-              const csv = headers+'
-'+rows;
+              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
+              const csv = headers+'\n'+rows;
               const blob = new Blob([csv], {type:'text/csv'});
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a'); a.href=url; a.download=`DreamOS_Absensi_SDM_${new Date().toISOString().split('T')[0]}.csv`; a.click();
