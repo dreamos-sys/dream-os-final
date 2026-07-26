@@ -600,45 +600,32 @@
             constructor() { this.roster = []; this.logs = []; this.init(); }
             init() { this.loadRoster(); this.render(); }
             async loadRoster() {
-              if (window.supabaseClient) {
-                try {
-                  const { data, error } = await window.supabaseClient.from('workforce_roster').select('*');
-                  if (!error && data && data.length > 0) {
-                    this.roster = data;
-                    localStorage.setItem('dreamos_workforce_roster', JSON.stringify(data));
-                    this.render(); return;
-                  }
-                } catch(e) { console.warn('⚠️ Supabase roster fetch failed, using local'); }
+              // 🌐 DYNAMIC ROSTER: Baca dari database user nyata, HAPUS DATA DUMMY
+              const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+              const roleLabels = {
+                'janitor_indoor': 'Janitor Indoor',
+                'janitor_outdoor': 'Janitor Outdoor',
+                'maintenance': 'Maintenance',
+                'security': 'Security'
+              };
+
+              // Filter user yang punya role operasional dan map ke format roster
+              this.roster = users.filter(u => roleLabels[u.role]).map(u => ({
+                id: u.id || 'usr_' + Math.random().toString(36).substr(2, 5),
+                name: u.nama || u.email,
+                role: roleLabels[u.role],
+                zone: u.divisi || 'Umum',
+                status: 'active',
+                type: 'tetap'
+              }));
+
+              // Fallback: Jika belum ada user di database, tampilkan state kosong (NO DUMMY DATA)
+              if (this.roster.length === 0) {
+                console.log('ℹ️ Belum ada data roster nyata. Silakan tambah user di menu User Management.');
               }
-              const saved = localStorage.getItem('dreamos_workforce_roster');
-              if(saved) { this.roster = JSON.parse(saved); this.render(); return; }
-              this.roster = [
-                {id:'j_sd_1',name:'Janitor SD Lt.1',role:'Janitor Indoor',zone:'SD Lt.1',status:'active',type:'tetap'},
-                {id:'j_sd_2',name:'Janitor SD Lt.2',role:'Janitor Indoor',zone:'SD Lt.2',status:'active',type:'tetap'},
-                {id:'j_sd_3',name:'Janitor SD Lt.3',role:'Janitor Indoor',zone:'SD Lt.3',status:'active',type:'tetap'},
-                {id:'j_smp_1',name:'Janitor SMP Lt.1',role:'Janitor Indoor',zone:'SMP Lt.1',status:'active',type:'tetap'},
-                {id:'j_smp_2',name:'Janitor SMP Lt.2',role:'Janitor Indoor',zone:'SMP Lt.2',status:'active',type:'tetap'},
-                {id:'j_smp_3',name:'Janitor SMP Lt.3',role:'Janitor Indoor',zone:'SMP Lt.3',status:'active',type:'tetap'},
-                {id:'j_smp_new',name:'Janitor SMP Gedung Baru',role:'Janitor Indoor',zone:'SMP Baru',status:'active',type:'tetap'},
-                {id:'j_sma_1',name:'Janitor SMA Lt.1-2',role:'Janitor Indoor',zone:'SMA Lt.1-2',status:'active',type:'tetap'},
-                {id:'j_sma_2',name:'Janitor SMA Lt.3-4',role:'Janitor Indoor',zone:'SMA Lt.3-4',status:'active',type:'tetap'},
-                {id:'j_sg',name:'Janitor Gedung Serbaguna',role:'Janitor Indoor',zone:'Gedung Serbaguna',status:'active',type:'tetap'},
-                {id:'j_out_s',name:'Janitor Outdoor Selatan',role:'Janitor Outdoor',zone:'Taman Selatan',status:'active',type:'tetap'},
-                {id:'j_out_u',name:'Janitor Outdoor Utara',role:'Janitor Outdoor',zone:'Taman Utara',status:'active',type:'tetap'},
-                {id:'m_1',name:'Teknisi Maintenance',role:'Maintenance',zone:'All Area',status:'active',type:'tetap'},
-                {id:'t_tetap',name:'Tukang Bangunan Tetap',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'tetap'},
-                {id:'t_h1',name:'Tukang Harian 1',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'harian'},
-                {id:'t_h2',name:'Tukang Harian 2',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'harian'},
-                {id:'t_h3',name:'Tukang Harian 3',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'harian'},
-                {id:'s_1',name:'Security 1',role:'Security',zone:'Pos Utama',status:'active',type:'tetap'},
-                {id:'s_2',name:'Security 2',role:'Security',zone:'Pos Gerbang',status:'active',type:'tetap'},
-                {id:'s_3',name:'Security 3',role:'Security',zone:'Patrol',status:'active',type:'tetap'},
-                {id:'s_4',name:'Security 4',role:'Security',zone:'Patrol',status:'active',type:'tetap'},
-                {id:'s_5',name:'Security 5',role:'Security',zone:'Malam',status:'active',type:'tetap'},
-                {id:'s_6',name:'Security 6',role:'Security',zone:'Malam',status:'active',type:'tetap'},
-                {id:'s_7',name:'Security 7',role:'Security',zone:'Cadangan',status:'active',type:'tetap'}
-              ];
-              this.saveRoster(); this.render();
+
+              this.saveRoster(); 
+              this.render();
             }
             async saveRoster() {
               localStorage.setItem('dreamos_workforce_roster', JSON.stringify(this.roster));
@@ -832,9 +819,10 @@
           // ☁️ FORCE SYNC HELPER (Menyelaraskan Supabase & LocalStorage)
           window.syncBookings = async function() {
             try {
-              if(!window.supabaseClient) { console.warn('Supabase belum siap'); return; }
+              if(!window.supabaseClient) return;
               const { data, error } = await window.supabaseClient.from('bookings').select('*').order('created_at', { ascending: false });
-              if(!error && data) {
+              // 🛡️ SAFE SYNC: Hanya timpa LocalStorage jika Supabase BENAR-BENAR punya data
+              if(!error && data && data.length > 0) {
                 localStorage.setItem('dreamos_bookings', JSON.stringify(data));
                 console.log('✅ Bookings synced to localStorage:', data.length, 'items');
                 if(window.updateDashboardSlides) window.updateDashboardSlides();
