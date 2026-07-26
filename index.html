@@ -58,7 +58,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
     canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
-    .glass { background: rgba(15, 23, 42, 0.7) !important; backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 24px; }
+    .glass { position: relative; z-index: 1; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 24px; transform: translate3d(0,0,0); }
     #login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 14, 39, 0.95); z-index: 10000; transition: opacity 0.5s; }
     .login-container { text-align: center; max-width: 400px; width: 100%; padding: 2rem; }
     .login-logo { width: 100px; height: 100px; border-radius: 24px; margin-bottom: 2rem; }
@@ -80,7 +80,7 @@
     .badge.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
     #prayer-times-dash { font-size: 0.8125rem; color: #cbd5e1; margin-top: 1rem; padding: 0.6rem 1.2rem; background: rgba(0,0,0,0.3); border-radius: 20px; display: inline-block; }
     .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 1.5rem; margin-bottom: 2rem; }
-    .mod-card { text-align: center; cursor: pointer; padding: 1.5rem 0.5rem; transition: all 0.3s; position: relative; overflow: hidden; }
+    .mod-card { text-align: center; cursor: pointer; padding: 1.5rem 0.5rem; transition: all 0.3s; position: relative; z-index: 2; isolation: isolate; overflow: hidden; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); transform: translate3d(0,0,0); }
     .mod-card:hover { transform: translateY(-5px); border-color: var(--neon); box-shadow: 0 12px 40px rgba(0,255,157,0.3); }
     .mod-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
     .mod-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--neon); }
@@ -749,54 +749,66 @@
         setActiveNav('home');
       };
 
-      // Open Module
+      // Open Module (Smart Path Resolver + Anti-404)
       window.openMod = function(moduleId) {
-        if (!canAccess(moduleId)) {
-          window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error');
-          return;
-        }
+        if (!canAccess(moduleId)) { window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error'); return; }
         const map = {
           admin_users:'admin_users.html', cmd:'commandcenter.html', security:'security.html',
           security_edit_jadwal:'security_edit_jadwal.html', k3:'k3.html',
           'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
           maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
-          dana:'commandcenter.html', users:'commandcenter.html', audit:'commandcenter.html', // Fallback aman ke CMD Center
+          dana:'commandcenter.html', users:'commandcenter.html', audit:'commandcenter.html',
           profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
         };
         const file = map[moduleId];
         if (!file) return;
-        
+
+        // 🌐 Auto-detect base path (GitHub Pages subfolder support)
+        const basePath = window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/';
+        const pathsToTry = [
+          `${basePath}modules/${file}`,
+          `${basePath}${file}`,
+          `modules/${file}`,
+          file
+        ];
+
         let c = document.getElementById('mod-container');
         if (!c) {
           c = document.createElement('div'); c.id = 'mod-container';
-          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.95);padding-bottom:5rem;';
+          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.98);padding-bottom:5rem;';
           document.body.appendChild(c);
         }
         c.style.display = 'block';
         c.innerHTML = '<div class="skeleton-grid">' + Array(6).fill('<div class="skeleton-card"></div>').join('') + '</div>';
         window.announce('Memuat modul ' + moduleId + '...');
-        
         if (window.BankAudit) BankAudit.log('OPEN_MODULE', { module: file });
-        
-        fetch('modules/' + file + '?v=' + Date.now())
-          .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
-          .then(html => {
+
+        async function tryFetch(paths, idx) {
+          if (idx >= paths.length) {
+            c.innerHTML = `<div style="color:#cbd5e1;padding:4rem;text-align:center;">
+              <h3 style="color:#f59e0b;">🚧 Modul Tidak Ditemukan (404)</h3>
+              <p style="margin:1rem 0;color:#94a3b8;">File: <code style="background:rgba(0,0,0,0.3);padding:0.2rem 0.5rem;border-radius:4px;">${file}</code></p>
+              <p style="font-size:0.8rem;color:#64748b;">Pastikan file ada di folder <code>modules/</code> repository & nama file case-sensitive.</p>
+              <button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;cursor:pointer;">🏠 Kembali</button></div>`;
+            return;
+          }
+          try {
+            const res = await fetch(paths[idx] + '?v=' + Date.now());
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const html = await res.text();
             c.innerHTML = html;
             c.querySelectorAll('script').forEach(s => {
               const ns = document.createElement('script');
               if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
               document.body.appendChild(ns);
             });
-          })
-          .catch(err => {
-            console.warn('🚨 404/Load Error:', file, err.message);
-            const is404 = err.message.includes('404') || err.message.includes('Failed to fetch');
-            c.innerHTML = '<div style="color:#cbd5e1;padding:4rem;text-align:center;">' +
-              '<h3 style="color:#f59e0b;">🚧 Modul ' + (is404 ? 'Belum Tersedia' : 'Gagal Dimuat') + '</h3>' +
-              '<p style="margin:1rem 0;color:#94a3b8;">File: <code style="background:rgba(0,0,0,0.3);padding:0.2rem 0.5rem;border-radius:4px;">modules/' + file + '</code></p>' +
-              '<p style="font-size:0.8rem;color:#64748b;">' + (is404 ? 'Modul ini sedang dalam tahap pengembangan atau belum di-deploy.' : err.message) + '</p>' +
-              '<button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;cursor:pointer;">🏠 Kembali</button></div>';
-          });
+            console.log('✅ Module loaded via:', paths[idx]);
+          } catch(err) {
+            console.warn(`⚠️ Path failed: ${paths[idx]} → ${err.message}`);
+            tryFetch(paths, idx + 1);
+          }
+        }
+        tryFetch(pathsToTry, 0);
       }
 
       // Live Services
