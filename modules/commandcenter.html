@@ -821,10 +821,39 @@
           };
           window.archiveEngine = new ArchiveEngine();
 
-          // 📅 CALENDAR ENGINE (Real-time Event Mapper)
+          // 📅 CALENDAR ENGINE (DOMPurify-Safe + Timezone-Proof + Format-Agnostic)
           class CalendarEngine {
             constructor() { this.date = new Date(); this.events = []; this.init(); }
-            init() { this.render(); }
+            init() {
+              this.render();
+              // ✅ Event Delegation: Aman dari DOMPurify yang menghapus inline onclick
+              const grid = document.getElementById('cal-grid');
+              if(grid) {
+                grid.onclick = (e) => {
+                  const dayEl = e.target.closest('[data-day]');
+                  if(!dayEl) return;
+                  const d = parseInt(dayEl.dataset.day);
+                  const m = this.date.getMonth() + 1;
+                  const y = this.date.getFullYear();
+                  const dayEvents = this.events.filter(ev => ev.day === d);
+                  const list = dayEvents.length ? dayEvents.map(ev => `• ${ev.title}`).join('
+') : 'Tidak ada jadwal';
+                  alert(`📅 Detail ${d}/${m}/${y}
+📌 Event (${dayEvents.length}):
+${list}`);
+                };
+              }
+            }
+            // ✅ Parser Tanggal Robust: Handle YYYY-MM-DD, DD/MM/YYYY, & ISO String
+            parseDate(dateStr) {
+              if(!dateStr) return null;
+              if(typeof dateStr === 'string' && dateStr.includes('/')) {
+                const p = dateStr.split('/');
+                if(p.length===3) return new Date(`${p[2]}-${p[1]}-${p[0]}T00:00:00`);
+              }
+              const d = new Date(dateStr);
+              return isNaN(d.getTime()) ? null : d;
+            }
             loadEvents() {
               this.events = [];
               const y = this.date.getFullYear(), m = this.date.getMonth();
@@ -839,8 +868,9 @@
                 try {
                   const data = JSON.parse(localStorage.getItem(s.key) || '[]');
                   data.forEach(d => {
-                    const dDate = new Date(d.tanggal || d.created_at);
-                    if(dDate.getFullYear()===y && dDate.getMonth()===m) {
+                    const dDate = this.parseDate(d.tanggal || d.created_at);
+                    // ✅ Bandingkan menggunakan Local Date string agar tidak geser timezone
+                    if(dDate && dDate.getFullYear()===y && dDate.getMonth()===m) {
                       this.events.push({ day: dDate.getDate(), title: `${s.label}: ${d[s.field]||d.judul||'-'}`, color: s.color });
                     }
                   });
@@ -850,25 +880,32 @@
             render() {
               const y = this.date.getFullYear(), m = this.date.getMonth();
               const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-              document.getElementById('cal-month-label').textContent = `${months[m]} ${y}`;
+              const labelEl = document.getElementById('cal-month-label');
+              if(labelEl) labelEl.textContent = `${months[m]} ${y}`;
+
               this.loadEvents();
               const firstDay = new Date(y, m, 1).getDay();
               const daysInMonth = new Date(y, m + 1, 0).getDate();
-              const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+              const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Senin=0
+
               let html = '';
               for(let i=0; i<startOffset; i++) html += '<div style="background:rgba(0,0,0,0.1);min-height:80px;"></div>';
+
               const today = new Date();
               for(let d=1; d<=daysInMonth; d++) {
                 const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
                 const dayEvents = this.events.filter(e=>e.day===d);
                 const evHtml = dayEvents.slice(0,3).map(e=>`<div style="background:${e.color};color:#fff;font-size:0.65rem;padding:2px 4px;margin:2px 0;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title}</div>`).join('');
                 const more = dayEvents.length>3 ? `<div style="font-size:0.6rem;color:var(--text-muted);text-align:center;">+${dayEvents.length-3} lagi</div>` : '';
-                html += `<div style="background:${isToday?'rgba(14,165,233,0.15)':'rgba(0,0,0,0.2)'};min-height:80px;padding:4px;cursor:pointer;border:1px solid rgba(255,255,255,0.05);" onclick="alert('📅 Detail ${d}/${m+1}/${y}\n📌 Event: ${dayEvents.length}')">
+
+                // ✅ Gunakan data-day attribute (tidak dihapus DOMPurify)
+                html += `<div data-day="${d}" style="background:${isToday?'rgba(14,165,233,0.15)':'rgba(0,0,0,0.2)'};min-height:80px;padding:4px;cursor:pointer;border:1px solid rgba(255,255,255,0.05);">
                   <div style="text-align:right;font-weight:700;font-size:0.8rem;color:${isToday?'#0ea5e9':'var(--text-muted)'};">${d}</div>
                   ${evHtml}${more}
                 </div>`;
               }
-              document.getElementById('cal-grid').innerHTML = window.safeHTML(html);
+              const gridEl = document.getElementById('cal-grid');
+              if(gridEl) gridEl.innerHTML = window.safeHTML(html);
             }
             prevMonth() { this.date.setMonth(this.date.getMonth()-1); this.render(); }
             nextMonth() { this.date.setMonth(this.date.getMonth()+1); this.render(); }
