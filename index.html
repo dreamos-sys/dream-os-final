@@ -322,7 +322,7 @@
 
     // 4. MFA / OTP Hook (Siap integrasi TOTP / Email OTP)
     window.MFA = {
-      enabled: false,
+      enabled: false, // 🔒 Disabled for UX. Enable only when OTP API is production-ready.
       async verify(email) {
         if (!this.enabled) return true;
         const code = prompt(`🔐 Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
@@ -421,7 +421,7 @@
       };
 
       function getStoredUser() {
-        try { return window.SecureStore?.get('dreamos_bound_user') || JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
+        try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
         catch(e) { return {}; }
       }
 
@@ -496,10 +496,8 @@
             role: data.user.user_metadata?.role || 'staff'
           };
 
-          // 🔐 ISO Hardening: Secure Store + MFA Hook + Audit Hash
-          const mfaOk = await window.MFA.verify(userData.email);
-          if (!mfaOk) throw new Error('Verifikasi MFA gagal.');
-          window.SecureStore.set('dreamos_bound_user', userData);
+          // 🔐 Session Storage (Standardized for cross-module compatibility)
+          localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
           localStorage.setItem('dreamos_session_active', 'true');
           const auditHash = await window.hashAudit({ event:'LOGIN', user:userData.email, ts:new Date().toISOString() });
           if(window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, hash: auditHash });
