@@ -81,6 +81,7 @@
       <button class="tab" onclick="switchTab('dana')" id="tab-dana-btn" style="display:none;">💸 Dana</button>
       <button class="tab" onclick="switchTab('approvals')" id="tab-approvals-btn" style="display:none;">✅ Approval</button>
       <button class="tab" onclick="switchTab('calendar')" id="tab-calendar-btn">📅 Calendar</button>
+      <button class="tab" onclick="switchTab('workforce')" id="tab-workforce-btn">👷 Workforce</button>
       <button class="tab" onclick="switchTab('reports')" id="tab-reports-btn">📤 Reports</button>
       <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 Users</button>
       <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit</button>
@@ -176,7 +177,23 @@
     </div>
   </div>
 
-    <!-- REPORTS -->
+    <!-- WORKFORCE ROSTER & LAPORAN -->
+    <div id="tab-workforce" class="tab-content">
+      <div class="glass">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="color:var(--gold);font-weight:700;font-size:1.1rem;">👷 Roster & Laporan Lapangan</div>
+          <button class="btn btn-outline" onclick="window.wfEngine.refresh()">🔄 Refresh</button>
+        </div>
+        <div id="wf-grid" class="module-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));"></div>
+        <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="window.wfEngine.openReportModal()">📝 Laporan Harian</button>
+          <button class="btn btn-warning" onclick="window.wfEngine.exportPayroll()">💰 Export Payroll (Mingguan)</button>
+          <button class="btn btn-success" onclick="window.wfEngine.exportAttendance()">📅 Export Absensi</button>
+        </div>
+      </div>
+    </div>
+
+        <!-- REPORTS -->
     <div id="tab-reports" class="tab-content">
       <div class="glass">
         <div style="color: var(--purple); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📤 Export & Reporting Hub</div>
@@ -287,6 +304,7 @@
             if(tabName==='pengumuman') loadAnnouncements();
             if(tabName==='inbox') refreshInbox();
             if(tabName==='calendar') window.calEngine.render();
+            if(tabName==='workforce') window.wfEngine.render();
           };
 
           // UNIFIED INBOX ENGINE
@@ -364,6 +382,131 @@
           class OperationalHealthEngine { constructor(){this.init();} init(){this.fetch();setInterval(()=>this.fetch(),15000);} async fetch(){if(!window.supabaseClient)return;try{const c=async(t,q)=>{try{const{count,error}=await q;if(error)return 0;return count||0;}catch(e){return 0;}};this.upd('op-k3',await c('k3_reports',window.supabaseClient.from('k3_reports').select('*',{count:'exact',head:true}).eq('status','pending')),'#ef4444');this.upd('op-booking',await c('bookings',window.supabaseClient.from('bookings').select('*',{count:'exact',head:true}).eq('status','pending')),'#f59e0b');this.upd('op-janitor',await c('janitorial_requests',window.supabaseClient.from('janitorial_requests').select('*',{count:'exact',head:true}).eq('status','pending')),'#10b981');this.upd('op-maint',await c('maintenance_requests',window.supabaseClient.from('maintenance_requests').select('*',{count:'exact',head:true}).eq('priority','high')),'#8b5cf6');this.upd('op-stock',await c('inventory',window.supabaseClient.from('inventory').select('*',{count:'exact',head:true}).lt('quantity',10)),'#f59e0b');this.upd('op-dana',await c('dana_requests',window.supabaseClient.from('dana_requests').select('*',{count:'exact',head:true}).eq('status','pending')),'#0ea5e9');this.upd('op-security',await c('security_logs',window.supabaseClient.from('security_logs').select('*',{count:'exact',head:true}).gte('created_at',new Date().toISOString().split('T')[0])),'#00ff9d');this.upd('op-asset',await c('asset_reports',window.supabaseClient.from('asset_reports').select('*',{count:'exact',head:true}).eq('status','pending')),'#cbd5e1');this.upd('op-users',await c('users',window.supabaseClient.from('users').select('*',{count:'exact',head:true}).gte('created_at',new Date(Date.now()-7*86400000).toISOString())),'#e11d48');}catch(e){}} upd(id,v,c){const e=document.getElementById(id);if(e){e.textContent=v;e.style.color=v>0?c:'#10b981';}} }
 
           
+
+          // 👷 WORKFORCE ENGINE (Roster, Status, Laporan, Payroll-Ready)
+          class WorkforceEngine {
+            constructor() { this.roster = []; this.logs = []; this.init(); }
+            init() { this.loadRoster(); this.render(); }
+            loadRoster() {
+              const saved = localStorage.getItem('dreamos_workforce_roster');
+              if(saved) { this.roster = JSON.parse(saved); return; }
+              // Default structure based on your layout
+              this.roster = [
+                {id:'j_sd_1',name:'Janitor SD Lt.1',role:'Janitor Indoor',zone:'SD Lt.1',status:'active',type:'tetap'},
+                {id:'j_sd_2',name:'Janitor SD Lt.2',role:'Janitor Indoor',zone:'SD Lt.2',status:'active',type:'tetap'},
+                {id:'j_sd_3',name:'Janitor SD Lt.3',role:'Janitor Indoor',zone:'SD Lt.3',status:'active',type:'tetap'},
+                {id:'j_smp_1',name:'Janitor SMP Lt.1',role:'Janitor Indoor',zone:'SMP Lt.1',status:'active',type:'tetap'},
+                {id:'j_smp_2',name:'Janitor SMP Lt.2',role:'Janitor Indoor',zone:'SMP Lt.2',status:'active',type:'tetap'},
+                {id:'j_smp_3',name:'Janitor SMP Lt.3',role:'Janitor Indoor',zone:'SMP Lt.3',status:'active',type:'tetap'},
+                {id:'j_smp_new',name:'Janitor SMP Gedung Baru',role:'Janitor Indoor',zone:'SMP Baru',status:'active',type:'tetap'},
+                {id:'j_sma_1',name:'Janitor SMA Lt.1-2',role:'Janitor Indoor',zone:'SMA Lt.1-2',status:'active',type:'tetap'},
+                {id:'j_sma_2',name:'Janitor SMA Lt.3-4',role:'Janitor Indoor',zone:'SMA Lt.3-4',status:'active',type:'tetap'},
+                {id:'j_sg',name:'Janitor Gedung Serbaguna',role:'Janitor Indoor',zone:'Gedung Serbaguna',status:'active',type:'tetap'},
+                {id:'j_out_s',name:'Janitor Outdoor Selatan',role:'Janitor Outdoor',zone:'Taman Selatan',status:'active',type:'tetap'},
+                {id:'j_out_u',name:'Janitor Outdoor Utara',role:'Janitor Outdoor',zone:'Taman Utara',status:'active',type:'tetap'},
+                {id:'m_1',name:'Teknisi Maintenance',role:'Maintenance',zone:'All Area',status:'active',type:'tetap'},
+                {id:'t_tetap',name:'Tukang Bangunan Tetap',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'tetap'},
+                {id:'t_h1',name:'Tukang Harian 1',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'harian'},
+                {id:'t_h2',name:'Tukang Harian 2',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'harian'},
+                {id:'t_h3',name:'Tukang Harian 3',role:'Tukang Bangunan',zone:'Proyek',status:'active',type:'harian'},
+                {id:'s_1',name:'Security 1',role:'Security',zone:'Pos Utama',status:'active',type:'tetap'},
+                {id:'s_2',name:'Security 2',role:'Security',zone:'Pos Gerbang',status:'active',type:'tetap'},
+                {id:'s_3',name:'Security 3',role:'Security',zone:'Patrol',status:'active',type:'tetap'},
+                {id:'s_4',name:'Security 4',role:'Security',zone:'Patrol',status:'active',type:'tetap'},
+                {id:'s_5',name:'Security 5',role:'Security',zone:'Malam',status:'active',type:'tetap'},
+                {id:'s_6',name:'Security 6',role:'Security',zone:'Malam',status:'active',type:'tetap'},
+                {id:'s_7',name:'Security 7',role:'Security',zone:'Cadangan',status:'active',type:'tetap'}
+              ];
+              this.saveRoster();
+            }
+            saveRoster() { localStorage.setItem('dreamos_workforce_roster', JSON.stringify(this.roster)); }
+            render() {
+              const grid = document.getElementById('wf-grid');
+              if(!grid) return;
+              grid.innerHTML = this.roster.map(w => {
+                const statusColor = w.status==='active'?'#10b981':w.status==='izin'?'#f59e0b':w.status==='sakit'?'#ef4444':'#64748b';
+                const statusLabel = w.status==='active'?'🟢 Aktif':w.status==='izin'?'🟡 Izin':w.status==='sakit'?'🔴 Sakit':'⚫ Off';
+                const typeBadge = w.type==='harian'?'<span class="badge badge-warning">Harian</span>':'<span class="badge badge-success">Tetap</span>';
+                return `<div class="mod-card" style="text-align:left;padding:1rem;min-height:auto;border-left:4px solid ${statusColor};">
+                  <div style="font-weight:700;margin-bottom:0.3rem;">${w.name}</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem;">${w.role} • ${w.zone}</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                    <span style="font-size:0.8rem;font-weight:600;">${statusLabel}</span>
+                    ${typeBadge}
+                  </div>
+                  <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','active')">🟢</button>
+                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','izin')">🟡</button>
+                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','sakit')">🔴</button>
+                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.logTask('${w.id}')">📝</button>
+                  </div>
+                </div>`;
+              }).join('');
+            }
+            setStatus(id, status) {
+              const w = this.roster.find(x=>x.id===id);
+              if(!w) return;
+              const old = w.status;
+              w.status = status;
+              this.saveRoster();
+              this.render();
+              logAction('WORKFORCE_STATUS_CHANGE', { worker: w.name, zone: w.zone, from: old, to: status });
+            }
+            logTask(id) {
+              const w = this.roster.find(x=>x.id===id);
+              if(!w) return;
+              const note = prompt(`📝 Laporan/Tugas untuk ${w.name} (${w.zone}):`);
+              if(!note) return;
+              const entry = { id: 'wf_'+Date.now(), worker_id: id, name: w.name, zone: w.zone, note, timestamp: new Date().toISOString(), reported_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system' };
+              const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
+              logs.unshift(entry);
+              if(logs.length>500) logs.pop();
+              localStorage.setItem('dreamos_workforce_logs', JSON.stringify(logs));
+              logAction('WORKFORCE_DAILY_REPORT', { worker: w.name, zone: w.zone, note_length: note.length });
+              alert('✅ Laporan harian tercatat!');
+            }
+            openReportModal() {
+              const zone = prompt('📍 Zona/Gedung (contoh: SMP Lt.2 / Taman Selatan / Pos Security):');
+              if(!zone) return;
+              const note = prompt(`📝 Laporan harian untuk ${zone}:`);
+              if(!note) return;
+              const entry = { id: 'wf_zone_'+Date.now(), zone, note, timestamp: new Date().toISOString(), reported_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system' };
+              const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
+              logs.unshift(entry);
+              localStorage.setItem('dreamos_workforce_logs', JSON.stringify(logs));
+              logAction('WORKFORCE_ZONE_REPORT', { zone, note_length: note.length });
+              alert('✅ Laporan zona tercatat!');
+            }
+            exportPayroll() {
+              const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
+              const harian = this.roster.filter(w=>w.type==='harian');
+              const data = harian.map(w => {
+                const present = logs.filter(l=>l.worker_id===w.id && l.note && l.note.toLowerCase().includes('hadir')).length;
+                return { Nama: w.name, Zona: w.zone, Tipe: 'Harian', Hari_Kerja: present, Status_Terakhir: w.status };
+              });
+              if(!data.length) return alert('📭 Tidak ada data tukang harian.');
+              const headers = Object.keys(data[0]).join(',');
+              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
+              const csv = headers+'\n'+rows;
+              const blob = new Blob([csv], {type:'text/csv'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href=url; a.download=`DreamOS_Payroll_Harian_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+              logAction('EXPORT_PAYROLL_HARIAN', { rows: data.length });
+            }
+            exportAttendance() {
+              const data = this.roster.map(w => ({ Nama: w.name, Role: w.role, Zona: w.zone, Status: w.status, Tipe: w.type }));
+              const headers = Object.keys(data[0]).join(',');
+              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
+              const csv = headers+'\n'+rows;
+              const blob = new Blob([csv], {type:'text/csv'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href=url; a.download=`DreamOS_Absensi_SDM_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+              logAction('EXPORT_ATTENDANCE', { rows: data.length });
+            }
+            refresh() { this.loadRoster(); this.render(); }
+          }
+          window.wfEngine = new WorkforceEngine();
+
           // 📅 CALENDAR ENGINE (Real-time Event Mapper)
           class CalendarEngine {
             constructor() { this.date = new Date(); this.events = []; this.init(); }
