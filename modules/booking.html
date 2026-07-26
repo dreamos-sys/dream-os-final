@@ -345,10 +345,18 @@
       window.OfflineQueue.add('bookings', 'insert', newBooking);
     }
 
-    // Notification
+    // 📡 NOTIFICATION & DASHBOARD SYNC
+    try {
+      const notifs = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
+      notifs.unshift({ type:'info', msg:`📅 Booking ${ruang} oleh ${peminjam} (${tglDisplay})`, time: new Date().toISOString() });
+      if(notifs.length > 50) notifs.pop();
+      localStorage.setItem('dreamos_notifications', JSON.stringify(notifs));
+    } catch(e){}
     if (window.PhantomAlerter) window.PhantomAlerter.newBooking(ruang, peminjam, tglDisplay);
-    if (window.addNotification) window.addNotification('Booking: ' + ruang + ' oleh ' + peminjam);
     if (window.BankAudit) BankAudit.log('BOOKING_ADD', { ruang, tgl: tglDisplay, divisi, no_hp: nohp });
+    
+    // 🔄 SAME-TAB SYNC TRIGGER (Agar CC & Slider refresh instan tanpa pindah tab)
+    window.dispatchEvent(new CustomEvent('booking-updated'));
 
     // Reset form
     document.getElementById('booking-tgl').value = '';
@@ -454,7 +462,7 @@
     let count = 0;
     for (const b of bookings) { 
       try { 
-        await window.supabaseClient.from('bookings').upsert(b); 
+        await window.supabaseClient.from('bookings').upsert(b, { onConflict: 'id' }); 
         count++; 
       } catch(e) { 
         console.warn('Booking sync error:', e.message); if(window.OfflineQueue) window.OfflineQueue.add('bookings','upsert',b);
