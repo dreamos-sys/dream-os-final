@@ -333,112 +333,13 @@
             if (window.supabaseClient) window.supabaseClient.from('activity_logs').insert(entry).catch(()=>{});
           }
 
-          // 5. REALTIME ENGINE + DYNAMIC COMPLIANCE (ISO 27001 A.18.2.3)
+                    // 5. REALTIME ENGINE + DYNAMIC COMPLIANCE (ISO 27001 A.18.2.3)
           class EnterpriseRealtimeEngine {
-            constructor() { this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }
-
-// ✅ OPERATIONAL HEALTH ENGINE (ISO 27001 A.12.4.1)
-class OperationalHealthEngine {
-  constructor() {
-    this.metrics = {
-      k3Pending: 0,
-      bookingNew: 0,
-      janitorPending: 0,
-      maintenanceHigh: 0,
-      stokLow: 0
-    };
-    this.init();
-  }
-
-  init() {
-    setInterval(() => {
-      this.fetchK3Reports();
-      this.fetchBookings();
-      this.fetchJanitorial();
-      this.fetchMaintenance();
-      this.fetchStock();
-    }, 10000);
-  }
-
-  async fetchK3Reports() {
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('k3_reports')
-        .select('id')
-        .eq('status', 'pending');
-      
-      this.metrics.k3Pending = data?.length || 0;
-      document.getElementById('k3-pending').textContent = this.metrics.k3Pending;
-      document.getElementById('k3-pending').style.color = this.metrics.k3Pending > 0 ? '#ef4444' : '#10b981';
-    } catch(e) {
-      document.getElementById('k3-pending').textContent = 'ERR';
-    }
-  }
-
-  async fetchBookings() {
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('bookings')
-        .select('id')
-        .eq('status', 'pending');
-      
-      this.metrics.bookingNew = data?.length || 0;
-      document.getElementById('booking-new').textContent = this.metrics.bookingNew;
-      document.getElementById('booking-new').style.color = this.metrics.bookingNew > 0 ? '#f59e0b' : '#10b981';
-    } catch(e) {
-      document.getElementById('booking-new').textContent = 'ERR';
-    }
-  }
-
-  async fetchJanitorial() {
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('janitorial_requests')
-        .select('id')
-        .eq('status', 'pending');
-      
-      this.metrics.janitorPending = data?.length || 0;
-      document.getElementById('janitor-pending').textContent = this.metrics.janitorPending;
-      document.getElementById('janitor-pending').style.color = this.metrics.janitorPending > 0 ? '#f59e0b' : '#10b981';
-    } catch(e) {
-      document.getElementById('janitor-pending').textContent = 'ERR';
-    }
-  }
-
-  async fetchMaintenance() {
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('maintenance_requests')
-        .select('id')
-        .eq('priority', 'high');
-      
-      this.metrics.maintenanceHigh = data?.length || 0;
-      document.getElementById('maintenance-high').textContent = this.metrics.maintenanceHigh;
-      document.getElementById('maintenance-high').style.color = this.metrics.maintenanceHigh > 0 ? '#8b5cf6' : '#10b981';
-    } catch(e) {
-      document.getElementById('maintenance-high').textContent = 'ERR';
-    }
-  }
-
-  async fetchStock() {
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('inventory')
-        .select('id')
-        .lt('quantity', 10);
-      
-      this.metrics.stokLow = data?.length || 0;
-      document.getElementById('stok-low').textContent = this.metrics.stokLow;
-      document.getElementById('stok-low').style.color = this.metrics.stokLow > 0 ? '#f59e0b' : '#10b981';
-    } catch(e) {
-      document.getElementById('stok-low').textContent = 'ERR';
-    }
-  }
-}
-; this.init();
-    this.updateModuleMetrics(); // Tambahkan ini di constructor }
+            constructor() { 
+              this.metrics = { apiLatency: 0, dbStatus: 'unknown', activeUsers: 0, compliance: 0 }; 
+              this.init(); 
+            }
             init() {
-    this.updateModuleMetrics(); // Tambahkan di init
               setInterval(async () => {
                 const start = performance.now();
                 try {
@@ -456,37 +357,83 @@ class OperationalHealthEngine {
             calculateCompliance() {
               let score = 100;
               const u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-              if (!u.mfa_enabled) score -= 15; // A.9.2.2
+              if (!u.mfa_enabled) score -= 15; 
               const logs = JSON.parse(localStorage.getItem('dreamos_activity_log') || '[]');
-              if (logs.length < 10) score -= 10; // A.12.4.1
-              if (!localStorage.getItem('dreamos_session_timeout')) score -= 10; // A.9.2.4
+              if (logs.length < 10) score -= 10; 
+              if (!localStorage.getItem('dreamos_session_timeout')) score -= 10; 
               try {
                 const policies = JSON.parse(localStorage.getItem('supabase_rls_active') || 'false');
-                if (!policies) score -= 20; // A.9.2.3
+                if (!policies) score -= 20; 
               } catch(e) { score -= 20; }
               return Math.max(0, Math.min(100, score));
             }
             updateUI() {
-    // Tambahkan update untuk 9 modul
-    document.getElementById('k3-pending').textContent = this.metrics.k3Pending;
-    document.getElementById('k3-status').textContent = `Pending: ${this.metrics.k3Pending}`;
-    document.getElementById('jan-indoor-active').textContent = this.metrics.janIndoorActive;
-    document.getElementById('jan-indoor-status').textContent = `Active: ${this.metrics.janIndoorActive}`;
-    document.getElementById('jan-outdoor-active').textContent = this.metrics.janOutdoorActive;
-    document.getElementById('jan-outdoor-status').textContent = `Active: ${this.metrics.janOutdoorActive}`;
-    document.getElementById('booking-today').textContent = this.metrics.bookingToday;
-    document.getElementById('booking-status').textContent = `Today: ${this.metrics.bookingToday}`;
-    document.getElementById('asset-critical').textContent = this.metrics.assetCritical;
-    document.getElementById('asset-status').textContent = `Critical: ${this.metrics.assetCritical}`;
-    document.getElementById('stock-low').textContent = this.metrics.stockLow;
-    document.getElementById('stock-status').textContent = `Low: ${this.metrics.stockLow}`;
-    document.getElementById('maintenance-pending').textContent = this.metrics.maintenancePending;
-    document.getElementById('maintenance-status').textContent = `Pending: ${this.metrics.maintenancePending}`;
-
               const el1 = document.getElementById('pro-api-latency'); if(el1) el1.textContent = this.metrics.apiLatency + ' ms';
               const el2 = document.getElementById('pro-db-status'); if(el2) { el2.textContent = this.metrics.dbStatus; el2.style.color = this.metrics.dbStatus === 'Online' ? '#10b981' : '#ef4444'; }
               const el3 = document.getElementById('pro-active-users'); if(el3) el3.textContent = this.metrics.activeUsers;
               const el4 = document.getElementById('pro-compliance'); if(el4) el4.textContent = this.metrics.compliance + '%';
+            }
+          }
+
+          // ✅ OPERATIONAL HEALTH ENGINE (ISO 27001 A.12.4.1)
+          class OperationalHealthEngine {
+            constructor() { this.init(); }
+            init() {
+              this.fetchAllMetrics();
+              setInterval(() => this.fetchAllMetrics(), 15000); // Update tiap 15 detik
+            }
+            async fetchAllMetrics() {
+              if (!window.supabaseClient) return;
+              try {
+                // Helper function agar tidak crash jika tabel belum ada
+                const safeCount = async (table, queryFn) => {
+                  try {
+                    const { count, error } = await queryFn;
+                    if (error) return 0;
+                    return count || 0;
+                  } catch(e) { return 0; }
+                };
+
+                const k3 = await safeCount('k3_reports', window.supabaseClient.from('k3_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'));
+                this.updateMetric('op-k3', k3, '#ef4444');
+
+                const book = await safeCount('bookings', window.supabaseClient.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'pending'));
+                this.updateMetric('op-booking', book, '#f59e0b');
+
+                const jan = await safeCount('janitorial_requests', window.supabaseClient.from('janitorial_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'));
+                this.updateMetric('op-janitor', jan, '#10b981');
+
+                const maint = await safeCount('maintenance_requests', window.supabaseClient.from('maintenance_requests').select('*', { count: 'exact', head: true }).eq('priority', 'high'));
+                this.updateMetric('op-maint', maint, '#8b5cf6');
+
+                const stock = await safeCount('inventory', window.supabaseClient.from('inventory').select('*', { count: 'exact', head: true }).lt('quantity', 10));
+                this.updateMetric('op-stock', stock, '#f59e0b');
+
+                const dana = await safeCount('dana_requests', window.supabaseClient.from('dana_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'));
+                this.updateMetric('op-dana', dana, '#0ea5e9');
+
+                const today = new Date().toISOString().split('T')[0];
+                const sec = await safeCount('security_logs', window.supabaseClient.from('security_logs').select('*', { count: 'exact', head: true }).gte('created_at', today));
+                this.updateMetric('op-security', sec, '#00ff9d');
+
+                const asset = await safeCount('asset_reports', window.supabaseClient.from('asset_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'));
+                this.updateMetric('op-asset', asset, '#cbd5e1');
+
+                const last7Days = new Date();
+                last7Days.setDate(last7Days.getDate() - 7);
+                const users = await safeCount('users', window.supabaseClient.from('users').select('*', { count: 'exact', head: true }).gte('created_at', last7Days.toISOString()));
+                this.updateMetric('op-users', users, '#e11d48');
+
+              } catch(e) {
+                console.warn('⚠️ Operational metrics fetch error:', e);
+              }
+            }
+            updateMetric(id, value, color) {
+              const el = document.getElementById(id);
+              if (el) {
+                el.textContent = value;
+                el.style.color = value > 0 ? color : '#10b981'; // Hijau jika 0, warna spesifik jika > 0
+              }
             }
           }
 
@@ -499,6 +446,7 @@ class OperationalHealthEngine {
               console.log('✅ Supabase ready. Engine started.');
               if(syncEl) { syncEl.innerHTML = '🟢 Online - Supabase'; syncEl.style.color = '#10b981'; }
               if (!window.entEngine) window.entEngine = new EnterpriseRealtimeEngine();
+              if (!window.opHealthEngine) window.opHealthEngine = new OperationalHealthEngine();
 if (window.supabaseClient) {
   if (!window.opHealthEngine) window.opHealthEngine = new OperationalHealthEngine();
 }
