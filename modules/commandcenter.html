@@ -53,7 +53,7 @@
     .quick-val { font-size: 1.4rem; font-weight: 800; }
     .quick-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" integrity="sha512-H+rglffZ6f5gF7UJgvH4Nj0iN9kO8T7J9y1vF5y1b6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6vX1f5y6v......" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -252,8 +252,12 @@
   <script>
     // 🛡️ ENTERPRISE SECURITY WRAPPER (XSS Protection + Session Timeout)
     window.safeHTML = (str) => {
-      if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(str, { ALLOWED_TAGS: ['b','i','em','strong','br','span','div','a','table','thead','tbody','tr','th','td','button','input','select','option','textarea'] });
-      return str.replace(/</g, '&lt;').replace(/>/g, '&gt;'); // Fallback aman
+      try {
+        if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
+          return DOMPurify.sanitize(str, { ALLOWED_TAGS: ['b','i','em','strong','br','span','div','a','table','thead','tbody','tr','th','td','button','input','select','option','textarea'], ADD_ATTR: ['onclick','onchange','data-day'] });
+        }
+      } catch(e) { console.warn('DOMPurify error:', e); }
+      return str.replace(/</g, '&lt;').replace(/>/g, '&gt;'); // 🛡️ Safe fallback
     };
     window.safeInject = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = window.safeHTML(html); };
 
@@ -451,6 +455,7 @@
           // NOTIFICATION ENGINE
           window.toggleNotif = function() {
             const count = document.getElementById('notif-count');
+            if(!count) return; // 🛡️ Prevent crash if element not ready
             count.textContent = count.textContent==='0'?'3':'0';
             if(count.textContent!=='0') alert('🔔 Notifikasi:\n• 2 Pengajuan Dana menunggu\n• 1 Maintenance HIGH priority\n• SLA K3 hampir expired');
           };
@@ -836,11 +841,8 @@
                   const m = this.date.getMonth() + 1;
                   const y = this.date.getFullYear();
                   const dayEvents = this.events.filter(ev => ev.day === d);
-                  const list = dayEvents.length ? dayEvents.map(ev => `• ${ev.title}`).join('
-') : 'Tidak ada jadwal';
-                  alert(`📅 Detail ${d}/${m}/${y}
-📌 Event (${dayEvents.length}):
-${list}`);
+                  const list = dayEvents.length ? dayEvents.map(ev => '• ' + ev.title).join('\n') : 'Tidak ada jadwal';
+                  alert('📅 Detail ' + d + '/' + m + '/' + y + '\n📌 Event (' + dayEvents.length + '):\n' + list);
                 };
               }
             }
