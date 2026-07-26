@@ -531,12 +531,13 @@
           card.innerHTML = '<div class="mod-status"></div><div class="mod-icon">' + m.i + '</div><div class="mod-title">' + m.n + '</div>';
           
           if (!canAccess(m.id)) {
-            // Visible but restricted
-            card.style.opacity = '0.4';
+            // Tampilan "Locked" yang Jelas (Bukan bug transparan, tapi fitur keamanan)
+            card.style.opacity = '0.5';
             card.style.cursor = 'not-allowed';
-            card.style.filter = 'grayscale(80%)';
+            card.style.filter = 'grayscale(100%)';
+            card.innerHTML = '<div class="mod-status" style="background:#ef4444;"></div><div class="mod-icon">🔒</div><div class="mod-title">' + m.n + '</div><div style="font-size:0.65rem; color:#ef4444; margin-top:4px; font-weight:700;">Dibatasi</div>';
             card.addEventListener('click', () => {
-              window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan untuk modul ' + m.n + '.', 'error');
+              window.showToast('⛔ Akses Ditolak! Role ' + (user.role || 'Anda') + ' tidak diizinkan membuka ' + m.n + '.', 'error');
             });
           } else {
             card.addEventListener('click', () => openMod(m.id));
@@ -701,7 +702,7 @@
           security_edit_jadwal:'security_edit_jadwal.html', k3:'k3.html',
           'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
           maintenance:'maintenance.html', booking:'booking.html', stok:'stok.html', asset:'asset.html',
-          dana:'commandcenter.html', // Dana terintegrasi di CMD Center
+          dana:'commandcenter.html', users:'commandcenter.html', audit:'commandcenter.html', // Fallback aman ke CMD Center
           profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
         };
         const file = map[moduleId];
@@ -1004,8 +1005,22 @@
       console.log('🏆 Enterprise UX Layer active: KPI, Health, CmdPalette, PriorityNotif');
     })();
 
+
+    // 🚪 GLOBAL LOGOUT HANDLER (Dipanggil oleh Profile & Command Palette)
+    window.handleLogout = async function() {
+      if (confirm('🚪 Yakin ingin logout? Session akan dihapus dan harus login ulang.')) {
+        if (window.supabaseClient) {
+          await window.supabaseClient.auth.signOut().catch(()=>{});
+        }
+        localStorage.removeItem('dreamos_bound_user');
+        localStorage.removeItem('dreamos_session_active');
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+      }
+    };
+
     // 🌐 SW Debug Helper
-      window.forceSWUpdate = function() {
+    window.forceSWUpdate = function() {
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistration().then(reg => {
             if (reg && reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
