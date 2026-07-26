@@ -146,12 +146,35 @@
     <div id="tab-calendar" class="tab-content">
       <div class="glass">
         <div style="color: var(--accent); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📅 Jadwal & Roster</div>
-        <div id="calendar-view" style="min-height:300px; background:rgba(0,0,0,0.2); border-radius:12px; padding:1rem; text-align:center; color:var(--text-muted);">
-          📅 Kalender interaktif akan menampilkan: Booking Ruangan, Jadwal Maintenance, Shift Security & Janitor<br>
-          <span style="font-size:0.8rem;">(Terintegrasi dengan tabel bookings, maintenance_requests, shift_roster)</span>
+              <div class="glass">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="color:var(--accent);font-weight:700;font-size:1.1rem;">📅 Jadwal & Roster</div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-outline" onclick="window.calEngine.prevMonth()">◀</button>
+            <div id="cal-month-label" style="font-weight:700;min-width:140px;text-align:center;padding:0.4rem 0;">-</div>
+            <button class="btn btn-outline" onclick="window.calEngine.nextMonth()">▶</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;">
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Sen</div>
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Sel</div>
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Rab</div>
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Kam</div>
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Jum</div>
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Sab</div>
+          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Min</div>
+        </div>
+        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:rgba(255,255,255,0.05);border-radius:0 0 12px 12px;overflow:hidden;min-height:350px;"></div>
+        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:0.8rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:8px;">
+          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#0ea5e9;border-radius:50%;"></span>Booking</span>
+          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#8b5cf6;border-radius:50%;"></span>Maintenance</span>
+          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#f59e0b;border-radius:50%;"></span>Security</span>
+          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#10b981;border-radius:50%;"></span>Janitor</span>
+          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#ef4444;border-radius:50%;"></span>K3</span>
         </div>
       </div>
     </div>
+  </div>
 
     <!-- REPORTS -->
     <div id="tab-reports" class="tab-content">
@@ -263,6 +286,7 @@
             if(tabName==='audit') renderAuditLog();
             if(tabName==='pengumuman') loadAnnouncements();
             if(tabName==='inbox') refreshInbox();
+            if(tabName==='calendar') window.calEngine.render();
           };
 
           // UNIFIED INBOX ENGINE
@@ -338,6 +362,61 @@
 
           class EnterpriseRealtimeEngine { constructor(){this.metrics={apiLatency:0,dbStatus:'unknown',activeUsers:0,compliance:0};this.init();} init(){setInterval(async()=>{const s=performance.now();try{if(window.supabaseClient){await window.supabaseClient.from('users').select('id').limit(1);this.metrics.apiLatency=Math.round(performance.now()-s);this.metrics.dbStatus='Online';this.metrics.activeUsers=Math.floor(Math.random()*15)+5;this.metrics.compliance=this.calc();this.update();}}catch(e){this.metrics.dbStatus='Degraded';this.update();}},5000);} calc(){let s=100;const u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');if(!u.mfa_enabled)s-=15;const l=JSON.parse(localStorage.getItem('dreamos_activity_log')||'[]');if(l.length<10)s-=10;return Math.max(0,Math.min(100,s));} update(){const e1=document.getElementById('pro-api-latency');if(e1)e1.textContent=this.metrics.apiLatency+' ms';const e2=document.getElementById('pro-db-status');if(e2){e2.textContent=this.metrics.dbStatus;e2.style.color=this.metrics.dbStatus==='Online'?'#10b981':'#ef4444';}const e3=document.getElementById('pro-active-users');if(e3)e3.textContent=this.metrics.activeUsers;const e4=document.getElementById('pro-compliance');if(e4)e4.textContent=this.metrics.compliance+'%';} }
           class OperationalHealthEngine { constructor(){this.init();} init(){this.fetch();setInterval(()=>this.fetch(),15000);} async fetch(){if(!window.supabaseClient)return;try{const c=async(t,q)=>{try{const{count,error}=await q;if(error)return 0;return count||0;}catch(e){return 0;}};this.upd('op-k3',await c('k3_reports',window.supabaseClient.from('k3_reports').select('*',{count:'exact',head:true}).eq('status','pending')),'#ef4444');this.upd('op-booking',await c('bookings',window.supabaseClient.from('bookings').select('*',{count:'exact',head:true}).eq('status','pending')),'#f59e0b');this.upd('op-janitor',await c('janitorial_requests',window.supabaseClient.from('janitorial_requests').select('*',{count:'exact',head:true}).eq('status','pending')),'#10b981');this.upd('op-maint',await c('maintenance_requests',window.supabaseClient.from('maintenance_requests').select('*',{count:'exact',head:true}).eq('priority','high')),'#8b5cf6');this.upd('op-stock',await c('inventory',window.supabaseClient.from('inventory').select('*',{count:'exact',head:true}).lt('quantity',10)),'#f59e0b');this.upd('op-dana',await c('dana_requests',window.supabaseClient.from('dana_requests').select('*',{count:'exact',head:true}).eq('status','pending')),'#0ea5e9');this.upd('op-security',await c('security_logs',window.supabaseClient.from('security_logs').select('*',{count:'exact',head:true}).gte('created_at',new Date().toISOString().split('T')[0])),'#00ff9d');this.upd('op-asset',await c('asset_reports',window.supabaseClient.from('asset_reports').select('*',{count:'exact',head:true}).eq('status','pending')),'#cbd5e1');this.upd('op-users',await c('users',window.supabaseClient.from('users').select('*',{count:'exact',head:true}).gte('created_at',new Date(Date.now()-7*86400000).toISOString())),'#e11d48');}catch(e){}} upd(id,v,c){const e=document.getElementById(id);if(e){e.textContent=v;e.style.color=v>0?c:'#10b981';}} }
+
+          
+          // 📅 CALENDAR ENGINE (Real-time Event Mapper)
+          class CalendarEngine {
+            constructor() { this.date = new Date(); this.events = []; this.init(); }
+            init() { this.render(); }
+            loadEvents() {
+              this.events = [];
+              const y = this.date.getFullYear(), m = this.date.getMonth();
+              const sources = [
+                { key: 'dreamos_bookings', color: '#0ea5e9', label: 'Booking', field: 'ruang' },
+                { key: 'dreamos_maintenance', color: '#8b5cf6', label: 'Maint', field: 'deskripsi' },
+                { key: 'dreamos_security_shifts', color: '#f59e0b', label: 'Security', field: 'pengawas' },
+                { key: 'dreamos_janitor_shifts', color: '#10b981', label: 'Janitor', field: 'nama' },
+                { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' }
+              ];
+              sources.forEach(s => {
+                try {
+                  const data = JSON.parse(localStorage.getItem(s.key) || '[]');
+                  data.forEach(d => {
+                    const dDate = new Date(d.tanggal || d.created_at);
+                    if(dDate.getFullYear()===y && dDate.getMonth()===m) {
+                      this.events.push({ day: dDate.getDate(), title: `${s.label}: ${d[s.field]||d.judul||'-'}`, color: s.color });
+                    }
+                  });
+                } catch(e){}
+              });
+            }
+            render() {
+              const y = this.date.getFullYear(), m = this.date.getMonth();
+              const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+              document.getElementById('cal-month-label').textContent = `${months[m]} ${y}`;
+              this.loadEvents();
+              const firstDay = new Date(y, m, 1).getDay();
+              const daysInMonth = new Date(y, m + 1, 0).getDate();
+              const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+              let html = '';
+              for(let i=0; i<startOffset; i++) html += '<div style="background:rgba(0,0,0,0.1);min-height:80px;"></div>';
+              const today = new Date();
+              for(let d=1; d<=daysInMonth; d++) {
+                const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
+                const dayEvents = this.events.filter(e=>e.day===d);
+                const evHtml = dayEvents.slice(0,3).map(e=>`<div style="background:${e.color};color:#fff;font-size:0.65rem;padding:2px 4px;margin:2px 0;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title}</div>`).join('');
+                const more = dayEvents.length>3 ? `<div style="font-size:0.6rem;color:var(--text-muted);text-align:center;">+${dayEvents.length-3} lagi</div>` : '';
+                html += `<div style="background:${isToday?'rgba(14,165,233,0.15)':'rgba(0,0,0,0.2)'};min-height:80px;padding:4px;cursor:pointer;border:1px solid rgba(255,255,255,0.05);" onclick="alert('📅 Detail ${d}/${m+1}/${y}\n📌 Event: ${dayEvents.length}')">
+                  <div style="text-align:right;font-weight:700;font-size:0.8rem;color:${isToday?'#0ea5e9':'var(--text-muted)'};">${d}</div>
+                  ${evHtml}${more}
+                </div>`;
+              }
+              document.getElementById('cal-grid').innerHTML = html;
+            }
+            prevMonth() { this.date.setMonth(this.date.getMonth()-1); this.render(); }
+            nextMonth() { this.date.setMonth(this.date.getMonth()+1); this.render(); }
+          }
+          window.calEngine = new CalendarEngine();
 
           const syncEl = document.getElementById('sync-status');
           let retries = 0;
