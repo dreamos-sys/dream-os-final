@@ -135,11 +135,17 @@
 
     (function() {
       'use strict';
-      const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+      let user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+      if (!user.email) {
+        // Fallback: coba ambil dari session active
+        const sessionUser = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+        user = sessionUser;
+      }
       const role = user.role || 'staff';
       const divisi = user.divisi || 'UMUM';
       
-      document.getElementById('user-name').textContent = user.nama || user.email || 'Unknown';
+      const nameEl = document.getElementById('user-name');
+      if(nameEl) nameEl.textContent = user.nama || user.email || 'Guest';
       const badge = document.getElementById('role-badge');
       badge.textContent = role.toUpperCase().replace('_', ' ');
       badge.className = 'role-indicator ' + (role === 'kabag_umum' ? 'role-kabag' : role === 'koordinator_umum' ? 'role-koor' : '');
@@ -331,15 +337,28 @@
         }
       }
 
-      // INIT
-      renderModules();
-      if (window.supabaseClient) {
-        document.getElementById('sync-status').innerHTML = '🟢 Online - Supabase';
-        document.getElementById('sync-status').style.color = '#10b981';
-        window.entEngine = new EnterpriseRealtimeEngine();
-      } else {
-        document.getElementById('sync-status').innerHTML = '🟡 Offline Mode';
+      // INIT WITH SAFE RETRY
+      function initCommandCenter() {
+        renderModules();
+        if (window.supabaseClient) {
+          const syncEl = document.getElementById('sync-status');
+          if(syncEl) { syncEl.innerHTML = '🟢 Online - Supabase'; syncEl.style.color = '#10b981'; }
+          window.entEngine = new EnterpriseRealtimeEngine();
+        } else {
+          // Retry 3x tiap 1 detik jika supabaseClient belum inject dari index.html
+          let retries = 0;
+          const waitSupabase = setInterval(() => {
+            retries++;
+            if (window.supabaseClient || retries >= 3) {
+              clearInterval(waitSupabase);
+              initCommandCenter();
+            }
+          }, 1000);
+          const syncEl = document.getElementById('sync-status');
+          if(syncEl) { syncEl.innerHTML = '🟡 Waiting for Core...'; syncEl.style.color = '#f59e0b'; }
+        }
       }
+      setTimeout(initCommandCenter, 300);
       console.log('🏢 Command Center Pro Loaded | Role:', role, '| Divisi:', divisi);
     })();
   </script>
