@@ -111,7 +111,7 @@
         <button class="btn btn-outline btn-sm" onclick="refreshAll()">🔄 Refresh</button>
       </div>
       <div class="filters">
-        <select id="filter-type" onchange="renderInbox()"><option value="all">Semua Tipe</option><option value="dana">Dana</option><option value="booking">Booking</option><option value="k3">K3</option><option value="maintenance">Maintenance</option></select>
+        <select id="filter-type" onchange="renderInbox()"><option value="all">Semua Tipe</option><option value="dana">Dana</option><option value="booking">Booking</option><option value="k3">K3</option><option value="maintenance">Maintenance</option><option value="janitor_indoor">Janitor Indoor</option><option value="janitor_outdoor">Janitor Outdoor</option><option value="security">Security</option><option value="asset">Asset</option><option value="stok">Stok Gudang</option></select>
         <select id="filter-priority" onchange="renderInbox()"><option value="all">Semua Prioritas</option><option value="high">Tinggi</option><option value="medium">Sedang</option><option value="low">Rendah</option></select>
         <select id="filter-status" onchange="renderInbox()"><option value="all">Semua Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
       </div>
@@ -150,7 +150,19 @@
     setTimeout(() => t.remove(), 3500);
   }
   
+  // Cek apakah sudah login dalam 5 menit terakhir
+  let lastLoginTime = sessionStorage.getItem('cc_last_login') || '0';
+  
   async function logActivity(action, detail, meta = {}) {
+    // Jangan log LOGIN_CC jika sudah login dalam 5 menit terakhir
+    if (action === 'LOGIN_CC') {
+      const now = Date.now();
+      if (now - parseInt(lastLoginTime) < 300000) { // 5 menit
+        return; // Skip duplicate login log
+      }
+      sessionStorage.setItem('cc_last_login', now.toString());
+    }
+    
     const logs = safeJSON('dreamos_activity_feed', []);
     logs.unshift({ id: 'act_' + Date.now(), action, detail, user: currentUser.nama || currentUser.email || 'System', time: new Date().toISOString(), meta });
     if (logs.length > 200) logs.length = 200;
@@ -188,35 +200,85 @@
     searchTimeout = setTimeout(() => {
       q = (q || '').toLowerCase().trim();
       const box = document.getElementById('search-results');
-      if (!q) { box.innerHTML = '<p style="color:var(--muted);">Ketik di kotak pencarian di atas...</p>'; return; }
-    const sources = [
-      { key: 'dreamos_dana', type: 'Dana', title: d => d.judul, extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
-      { key: 'dreamos_bookings', type: 'Booking', title: d => (d.ruang || '') + ' - ' + (d.nama_peminjam || ''), extra: d => d.tgl || '' },
-      { key: 'dreamos_k3_reports', type: 'K3', title: d => d.judul || d.lokasi, extra: d => d.status || '' },
-      { key: 'dreamos_maintenance_tasks', type: 'Maint', title: d => d.judul || d.deskripsi, extra: d => d.status || '' }
-    ];
-    let hits = [];
-    sources.forEach(s => {
-      safeJSON(s.key).forEach(item => {
-        if (JSON.stringify(item).toLowerCase().includes(q)) {
-          hits.push({ type: s.type, title: s.title(item) || '-', extra: s.extra(item), status: item.status || '-' });
+      if (!q) { 
+        box.innerHTML = '<p style="color:var(--muted);">Ketik minimal 2 karakter...</p>'; 
+        return; 
+      }
+      if (q.length < 2) {
+        box.innerHTML = '<p style="color:var(--muted);">Minimal 2 karakter...</p>';
+        return;
+      }
+      
+      const sources = [
+        { key: 'dreamos_dana', type: 'Dana', title: d => d.judul || 'Pengajuan Dana', extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
+        { key: 'dreamos_bookings', type: 'Booking', title: d => (d.ruang || 'Ruang') + ' - ' + (d.nama_peminjam || 'Unknown'), extra: d => (d.tgl || '') + ' ' + (d.jam_mulai || '') },
+        { key: 'dreamos_k3_reports', type: 'K3', title: d => d.judul || d.lokasi || 'Laporan K3', extra: d => d.status || 'pending' },
+        { key: 'dreamos_maintenance_tasks', type: 'Maintenance', title: d => d.judul || d.deskripsi || 'Maintenance', extra: d => d.status || 'pending' },
+        { key: 'dreamos_janitor_indoor', type: 'Janitor Indoor', title: d => d.lokasi || 'Janitor Indoor', extra: d => d.status || '-' },
+        { key: 'dreamos_janitor_outdoor', type: 'Janitor Outdoor', title: d => d.lokasi || 'Janitor Outdoor', extra: d => d.status || '-' },
+        { key: 'dreamos_security_logs', type: 'Security', title: d => d.kejadian || d.lokasi || 'Security Log', extra: d => d.status || '-' },
+        { key: 'dreamos_asset_reports', type: 'Asset', title: d => d.nama_aset || d.judul || 'Asset', extra: d => d.status || '-' }
+      ];
+      
+      let hits = [];
+      sources.forEach(s => {
+        const data = safeJSON(s.key);
+        if (data && data.length > 0) {
+          data.forEach(item => {
+            const searchText = JSON.stringify(item).toLowerCase();
+            if (searchText.includes(q)) {
+              hits.push({ 
+                type: s.type, 
+                title: s.title(item) || '-', 
+                extra: s.extra(item), 
+                status: item.status || 'pending' 
+              });
+            }
+          });
         }
       });
-    });
-    box.innerHTML = hits.slice(0, 30).map(h => `
-      <div style="padding:0.6rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
-        <div><span class="badge badge-pending" style="margin-right:0.4rem;">${h.type}</span><strong>${h.title}</strong><div style="font-size:0.75rem;color:var(--muted);">${h.extra}</div></div>
-        <span class="badge ${h.status==='approved'?'badge-approved':h.status==='rejected'?'badge-rejected':'badge-pending'}">${h.status}</span>
-      </div>`).join('') || '<p style="color:var(--muted);">Tidak ditemukan hasil.</p>';
-    }, 150); // Delay 150ms untuk mobile
+      
+      if (hits.length === 0) {
+        box.innerHTML = '<p style="color:var(--muted);padding:1rem;text-align:center;">🔍 Tidak ditemukan hasil untuk "' + q + '"</p>';
+      } else {
+        box.innerHTML = '<div style="padding:0.5rem;background:rgba(0,255,157,0.1);border-radius:8px;margin-bottom:0.5rem;font-size:0.75rem;color:var(--neon);">📊 Ditemukan ' + hits.length + ' hasil</div>' + 
+          hits.slice(0, 30).map(h => `
+            <div style="padding:0.75rem 0.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+              <div style="flex:1;min-width:0;">
+                <span class="badge badge-pending" style="margin-right:0.4rem;">${h.type}</span>
+                <strong style="display:block;margin:0.25rem 0;">${h.title}</strong>
+                <div style="font-size:0.75rem;color:var(--muted);">${h.extra}</div>
+              </div>
+              <span class="badge ${h.status==='approved'?'badge-approved':h.status==='rejected'?'badge-rejected':'badge-pending'}">${h.status}</span>
+            </div>`).join('');
+      }
+    }, 200); // Delay 200ms
   };
 
   function collectTasks() {
     const tasks = [];
+    // Dana
     safeJSON('dreamos_dana').forEach(d => tasks.push({ id: d.id, type: 'dana', title: d.judul || 'Pengajuan Dana', detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'), status: (d.status || 'pending').toLowerCase(), priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low', raw: d }));
+    // Booking
     safeJSON('dreamos_bookings').forEach(b => tasks.push({ id: b.id, type: 'booking', title: (b.ruang || 'Ruang') + ' • ' + (b.nama_peminjam || '-'), detail: (b.tgl || '') + ' ' + (b.jam_mulai || ''), status: (b.status || 'pending').toLowerCase(), priority: 'medium', raw: b }));
+    // K3
     safeJSON('dreamos_k3_reports').forEach(k => tasks.push({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'Laporan K3', detail: k.pelapor || '', status: (k.status || 'pending').toLowerCase(), priority: 'high', raw: k }));
+    // Maintenance
     safeJSON('dreamos_maintenance_tasks').forEach(m => tasks.push({ id: m.id, type: 'maintenance', title: m.judul || m.deskripsi || 'Maintenance', detail: m.lokasi || '', status: (m.status || 'pending').toLowerCase(), priority: (m.priority || 'medium').toLowerCase(), raw: m }));
+    // Janitor Indoor
+    safeJSON('dreamos_janitor_indoor').forEach(j => tasks.push({ id: j.id, type: 'janitor_indoor', title: j.lokasi || 'Janitor Indoor', detail: j.catatan || '-', status: (j.status || 'pending').toLowerCase(), priority: 'low', raw: j }));
+    // Janitor Outdoor
+    safeJSON('dreamos_janitor_outdoor').forEach(j => tasks.push({ id: j.id, type: 'janitor_outdoor', title: j.lokasi || 'Janitor Outdoor', detail: j.catatan || '-', status: (j.status || 'pending').toLowerCase(), priority: 'low', raw: j }));
+    // Security
+    safeJSON('dreamos_security_logs').forEach(s => tasks.push({ id: s.id, type: 'security', title: s.kejadian || s.lokasi || 'Security Log', detail: s.petugas || '-', status: (s.status || 'pending').toLowerCase(), priority: s.priority === 'URGENT' ? 'high' : 'medium', raw: s }));
+    // Asset
+    safeJSON('dreamos_asset_reports').forEach(a => tasks.push({ id: a.id, type: 'asset', title: a.nama_aset || a.judul || 'Asset', detail: a.lokasi || '-', status: (a.status || 'pending').toLowerCase(), priority: 'medium', raw: a }));
+    // Stok Gudang
+    safeJSON('dreamos_stok_gudang').forEach(s => {
+      if (s.quantity < (s.min_stock || 10)) {
+        tasks.push({ id: s.id, type: 'stok', title: s.nama_barang || 'Stok Rendah', detail: 'Sisa: ' + s.quantity, status: 'pending', priority: 'high', raw: s });
+      }
+    });
     return tasks;
   }
 
