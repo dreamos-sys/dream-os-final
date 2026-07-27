@@ -327,6 +327,20 @@
     if (count) count.textContent = notifs.length > 0 ? (notifs.length > 9 ? '9+' : notifs.length) : '0';
   };
 
+
+          // 🌐 REAL-TIME SYNC HELPER: Supabase First, LocalStorage Fallback
+          async function getRealData(table, localKey) {
+            if (window.supabaseClient) {
+              try {
+                const { data, error } = await window.supabaseClient.from(table).select('*').order('created_at', { ascending: false });
+                if (!error && data) {
+                  localStorage.setItem(localKey, JSON.stringify(data));
+                  return data;
+                }
+              } catch (e) { console.warn('Supabase fetch failed for', table, e); }
+            }
+            return JSON.parse(localStorage.getItem(localKey) || '[]');
+          }
       function safeInit() {
         try {
           let user = {};
@@ -398,16 +412,21 @@
 
           
 
-          // UNIFIED INBOX ENGINE
+          // UNIFIED INBOX ENGINE (REAL-TIME SYNC)
           window.refreshInbox = async function() {
             const tbody = document.getElementById('inbox-tbody');
             tbody.innerHTML = '<tr><td colspan="5">Memuat antrean terpadu...</td></tr>';
             try {
-              // 🛡️ PRIORITAS LOCALSTORAGE agar UI instan dan tidak bergantung delay Supabase
-              const danaItems = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending' || x.status==='recommended');
-              const bookingItems = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(x=>x.status==='pending');
-              const maintItems = JSON.parse(localStorage.getItem('dreamos_maintenance_requests')||'[]').filter(x=>x.status==='pending' || x.status==='in_progress');
-              const k3Items = JSON.parse(localStorage.getItem('dreamos_k3_reports')||'[]').filter(x=>x.status==='pending');
+              // 🌐 SUPABASE FIRST: Ambil data real-time, update localStorage
+              const danaData = await getRealData('dana_requests', 'dreamos_dana');
+              const bookingData = await getRealData('bookings', 'dreamos_bookings');
+              const maintData = await getRealData('maintenance_requests', 'dreamos_maintenance_requests');
+              const k3Data = await getRealData('k3_reports', 'dreamos_k3_reports');
+
+              const danaItems = danaData.filter(x=>x.status==='pending' || x.status==='recommended');
+              const bookingItems = bookingData.filter(x=>x.status==='pending');
+              const maintItems = maintData.filter(x=>x.status==='pending' || x.status==='in_progress');
+              const k3Items = k3Data.filter(x=>x.status==='pending');
               
               let items = [
                 ...danaItems.map(x=>({...x,type:'Dana'})), 
@@ -415,15 +434,6 @@
                 ...maintItems.map(x=>({...x,type:'Maintenance'})), 
                 ...k3Items.map(x=>({...x,type:'K3'}))
               ];
-
-              // Fallback ke Supabase hanya jika LocalStorage kosong
-              if(window.supabaseClient && items.length === 0) {
-                const {data:d1} = await window.supabaseClient.from('dana_requests').select('*').in('status',['pending','recommended']);
-                const {data:d2} = await window.supabaseClient.from('bookings').select('*').eq('status','pending');
-                const {data:d3} = await window.supabaseClient.from('maintenance_requests').select('*').in('status',['pending','in_progress']);
-                const {data:d4} = await window.supabaseClient.from('k3_reports').select('*').eq('status','pending');
-                items = [...(d1||[]).map(x=>({...x,type:'Dana'})), ...(d2||[]).map(x=>({...x,type:'Booking'})), ...(d3||[]).map(x=>({...x,type:'Maintenance'})), ...(d4||[]).map(x=>({...x,type:'K3'}))];
-              }
               tbody.innerHTML = items.length ? items.map(i => {
                 const prio = i.priority || (i.nominal>5000000?'high':'medium');
                 const badgeCls = prio==='critical'?'badge-critical':prio==='high'?'badge-high':prio==='medium'?'badge-medium':'badge-low';
@@ -538,17 +548,13 @@
             if(!tbody) return;
             tbody.innerHTML = '<tr><td colspan="5">Memuat antrean...</td></tr>';
             try {
-              // 🛡️ PRIORITAS LOCALSTORAGE agar UI instan
-              const danaItems = JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
-              const bookingItems = JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(x=>x.status==='pending').map(x=>({...x,type:'Booking'}));
+              // 🌐 SUPABASE FIRST: Ambil data real-time
+              const danaData = await getRealData('dana_requests', 'dreamos_dana');
+              const bookingData = await getRealData('bookings', 'dreamos_bookings');
+              
+              const danaItems = danaData.filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
+              const bookingItems = bookingData.filter(x=>x.status==='pending').map(x=>({...x,type:'Booking'}));
               let items = [...danaItems, ...bookingItems];
-
-              // Fallback ke Supabase hanya jika LocalStorage kosong
-              if(window.supabaseClient && items.length === 0) {
-                const {data:d} = await window.supabaseClient.from('dana_requests').select('*').eq('status','pending');
-                const {data:b} = await window.supabaseClient.from('bookings').select('*').eq('status','pending');
-                items = [...(d||[]).map(x=>({...x,type:'Dana'})), ...(b||[]).map(x=>({...x,type:'Booking'}))];
-              }
               tbody.innerHTML = items.length ? items.map(i => `<tr><td>${i.type}</td><td>${i.pemohon||i.nama_peminjam||'-'}</td><td>${i.judul||i.ruang||'-'}</td><td><span class="badge badge-warning">PENDING</span></td><td><button class="btn btn-success btn-sm" onclick="handleApproval('${i.type}','${i.id}','approved')">✅</button> <button class="btn btn-danger btn-sm" onclick="handleApproval('${i.type}','${i.id}','rejected')">❌</button></td></tr>`).join('') : '<tr><td colspan="5">🎉 Tidak ada antrean</td></tr>';
             } catch(e) { tbody.innerHTML = `<tr><td colspan="5">⚠️ ${e.message}</td></tr>`; }
           }
@@ -587,12 +593,26 @@
             const role = document.getElementById('new-user-role')?.value;
             const divisi = document.getElementById('new-user-divisi')?.value;
             if(!nama||!email) return alert('⚠️ Nama & Email wajib diisi!');
+            
             const entry = { id:'usr_'+Date.now(), nama, email, role, divisi, created_at:new Date().toISOString() };
-            if(window.supabaseClient) await window.supabaseClient.from('users').insert(entry).catch(()=>{});
-            const local = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); local.unshift(entry); localStorage.setItem('dreamos_users_db', JSON.stringify(local));
+            
+            // 🌐 SUPABASE FIRST: Insert ke cloud, lalu update local
+            if(window.supabaseClient) {
+              try {
+                await window.supabaseClient.from('users').insert(entry);
+                console.log('✅ User synced to Supabase');
+              } catch(e) { console.warn('Supabase insert failed', e); }
+            }
+            
+            const local = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); 
+            local.unshift(entry); 
+            localStorage.setItem('dreamos_users_db', JSON.stringify(local));
+            
             logAction('CREATE_USER', { email, role });
             alert('✅ User berhasil dibuat!');
             renderUserList();
+            // Refresh roster jika ada
+            if(window.wfEngine) window.wfEngine.loadRoster();
           };
 
           window.renderAuditLog = function() {
@@ -631,8 +651,20 @@
             constructor() { this.roster = []; this.logs = []; this.init(); }
             init() { this.loadRoster(); this.render(); }
             async loadRoster() {
-              // 🌐 DYNAMIC ROSTER: Baca dari database user nyata, HAPUS DATA DUMMY
-              const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+              // 🌐 DYNAMIC ROSTER: Fetch real users from Supabase first
+              let users = [];
+              if (window.supabaseClient) {
+                try {
+                  const { data, error } = await window.supabaseClient.from('users').select('*');
+                  if (!error && data) {
+                    users = data;
+                    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+                  }
+                } catch(e) { console.warn('Failed to fetch users', e); }
+              }
+              if (users.length === 0) {
+                users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+              }
               const roleLabels = {
                 'janitor_indoor': 'Janitor Indoor',
                 'janitor_outdoor': 'Janitor Outdoor',
