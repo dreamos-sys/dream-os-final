@@ -2,1174 +2,327 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dream OS Command Center - Enterprise Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Command Center Pro • Dream OS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <style>
-    :root { --glass-bg: rgba(15,23,42,0.85); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; --text-main: #e2e8f0; --text-muted: #cbd5e1; --critical: #ef4444; --high: #f97316; --medium: #eab308; --low: #22c55e; }
+    :root {
+      --bg: #0a0e27; --panel: rgba(15,23,42,0.92); --border: rgba(255,255,255,0.08);
+      --neon: #00ff9d; --accent: #0ea5e9; --gold: #f59e0b; --danger: #ef4444; --success: #10b981;
+      --text: #e2e8f0; --muted: #94a3b8;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #0a0e27; color: var(--text-main); min-height: 100vh; padding: 1rem; font-size: 0.875rem; }
-    .glass { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
-    .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.95); border: 1px solid var(--neon); color: var(--neon); padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem; min-height: 44px; display: flex; align-items: center; gap: 0.5rem; }
-    .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 44px; }
-    .btn-success { background: #10b981; color: #fff; } .btn-danger { background: var(--warning); color: #fff; } .btn-primary { background: var(--accent); color: #fff; } .btn-warning { background: var(--gold); color: #000; } .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); }
-    .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
-    .mod-card { background: rgba(0,0,0,0.3); padding: 1.5rem 1rem; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .mod-card:hover { border-color: var(--neon); transform: translateY(-4px); }
-    .mod-icon { font-size: 2rem; margin-bottom: 0.5rem; } .mod-title { font-size: 0.875rem; font-weight: 700; }
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
-    .tab { padding: 0.6rem 1.2rem; border-radius: 8px 8px 0 0; cursor: pointer; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-bottom: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 0.875rem; padding-bottom: 90px; }
+    .glass { background: var(--panel); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
+    .topbar { position: sticky; top: 0; z-index: 100; background: rgba(10,14,39,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .search-box { flex: 1; min-width: 200px; position: relative; }
+    .search-box input { width: 100%; padding: 0.7rem 1rem 0.7rem 2.5rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 0.9rem; }
+    .search-box::before { content: "🔍"; position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; }
+    .user-info { font-size: 0.8rem; color: var(--muted); }
+    .user-info strong { color: var(--text); }
+    .tabs { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+    .tab { padding: 0.55rem 1rem; border-radius: 8px; white-space: nowrap; background: transparent; border: 1px solid transparent; color: var(--muted); font-weight: 600; cursor: pointer; font-size: 0.8rem; }
     .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .tab-content { display: none; animation: fadeIn 0.3s ease; } .tab-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .form-group { margin-bottom: 1rem; } .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.4rem; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.875rem; }
-    .table-responsive { overflow-x: auto; } table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    th { background: rgba(0,0,0,0.4); color: var(--accent); padding: 0.8rem; text-align: left; }
-    td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .pro-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-    .pro-metric { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,255,157,0.15); border-radius: 12px; padding: 1.2rem 0.8rem; text-align: center; transition: all 0.2s ease; }
-    .pro-metric-val { font-size: 1.6rem; font-weight: 800; color: var(--neon); }
-    .pro-metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
-    .badge-success { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-    .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
-    .badge-danger { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-    .badge-critical { background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px solid #ef4444; }
-    .badge-high { background: rgba(249,115,22,0.3); color: #fdba74; border: 1px solid #f97316; }
-    .badge-medium { background: rgba(234,179,8,0.3); color: #fde047; border: 1px solid #eab308; }
-    .badge-low { background: rgba(34,197,94,0.3); color: #86efac; border: 1px solid #22c55e; }
-    .audit-item { padding: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 0.75rem; }
-    .audit-time { color: var(--text-muted); font-size: 0.65rem; }
-    .role-indicator { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-left: 0.5rem; }
-    .role-kabag { background: rgba(139,92,246,0.2); color: var(--purple); border: 1px solid rgba(139,92,246,0.4); }
-    .role-koor { background: rgba(14,165,233,0.2); color: var(--accent); border: 1px solid rgba(14,165,233,0.4); }
-    .sla-timer { font-family: monospace; font-weight: 700; font-size: 0.75rem; }
-    .sla-ok { color: #10b981; } .sla-warn { color: #f59e0b; } .sla-critical { color: #ef4444; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-    .notif-bell { position: relative; cursor: pointer; font-size: 1.2rem; }
-    .notif-count { position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; font-size: 0.6rem; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-    .quick-card { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 0.8rem; border-left: 3px solid var(--accent); }
-    .quick-val { font-size: 1.4rem; font-weight: 800; }
-    .quick-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .tab-content { display: none; padding: 1rem; max-width: 1200px; margin: 0 auto; }
+    .tab-content.active { display: block; animation: fade .25s ease; }
+    @keyframes fade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .metric { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+    .metric:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,255,157,0.12); }
+    .metric-val { font-size: 1.5rem; font-weight: 800; color: var(--neon); }
+    .metric-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 0.25rem; }
+    .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .filters select, .filters input { padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.8rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th { background: rgba(0,0,0,0.35); color: var(--accent); padding: 0.7rem; text-align: left; }
+    td { padding: 0.7rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+    .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
+    .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
+    .badge-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .badge-high { background: rgba(239,68,68,0.25); color: #fca5a5; }
+    .badge-medium { background: rgba(245,158,11,0.25); color: #fcd34d; }
+    .badge-low { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+    .activity-list { max-height: 420px; overflow-y: auto; }
+    .activity-item { padding: 0.75rem; border-bottom: 1px solid var(--border); display: flex; gap: 0.75rem; font-size: 0.8rem; }
+    .activity-time { color: var(--muted); font-size: 0.7rem; min-width: 70px; }
+    .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
+    .back-btn { position: fixed; bottom: 1.5rem; left: 1rem; z-index: 200; background: rgba(15,23,42,0.95); border: 1px solid var(--neon); color: var(--neon); padding: 0.65rem 1.1rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+    .toast-container { position: fixed; bottom: 5rem; right: 1rem; z-index: 9999; }
+    .toast { background: var(--panel); border-left: 4px solid var(--success); padding: 0.85rem 1.1rem; border-radius: 8px; margin-top: 0.5rem; animation: slideIn .3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:none;opacity:1} }
+    @media (max-width: 640px) { .metrics { grid-template-columns: repeat(2,1fr); } .topbar { padding: 0.6rem; } .tab { padding: 0.45rem 0.75rem; font-size: 0.75rem; } }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body style="background: #0a0e27 !important;">
-  <button class="back-btn" onclick="try { if(window.goHome) window.goHome(); else window.location.href='index.html'; } catch(e) { window.location.href='index.html'; }" aria-label="Kembali ke Dashboard Utama">← HOME</button>
+<body>
+  <button class="back-btn" onclick="try { if(window.parent && window.parent.goHome) window.parent.goHome(); else window.location.href='index.html'; } catch(e) { window.location.href='index.html'; }">← HOME</button>
 
-  <div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem;">
-    <div class="glass">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="color: var(--neon); margin: 0; font-size: 1.4rem;">🏢 COMMAND CENTER PRO</h2>
-          <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
-            User: <strong id="user-name" style="color: var(--text-main);">Loading...</strong>
-            <span id="role-badge" class="role-indicator">---</span>
-            <span id="workspace-mode" style="margin-left:0.5rem; font-size:0.75rem; color:#94a3b8;"></span>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:1rem;">
-          <div id="sync-status" style="font-size: 0.75rem; color: var(--text-muted);">🟡 Initializing...</div>
-          <div class="notif-bell" onclick="toggleNotif()">🔔<span class="notif-count" id="notif-count">0</span></div>
-        </div>
-      </div>
+  <div class="topbar">
+    <div>
+      <div style="font-weight:800;color:var(--neon);font-size:1.05rem;">🏢 Command Center Pro</div>
+      <div class="user-info"><strong id="user-name">Loading...</strong><span id="role-badge" style="margin-left:0.4rem;font-size:0.75rem;"></span></div>
     </div>
-
-    
-    <!-- 🚀 GLOBAL APP LAUNCHER & SMART SEARCH -->
-    <div class="glass" style="padding: 0.8rem 1.2rem; display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; position: relative;">
-      <span style="color: var(--neon); font-size: 1.2rem;">🚀</span>
-      <input type="text" id="global-app-launcher" placeholder="Ketik modul (booking/k3), tiket, atau user... (Ctrl+K)" 
-             style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:0.9rem; outline:none;"
-             oninput="window.handleGlobalLauncher(this.value)" onkeydown="if(event.key==='Enter') window.executeTopLauncherResult()">
-      <span style="background:rgba(0,255,157,0.1); color:var(--neon); padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem; font-weight:700;">⌘K</span>
+    <div class="search-box">
+      <input type="search" id="global-search" placeholder="Cari tugas, dana, booking, K3..." oninput="runGlobalSearch(this.value)">
     </div>
-    <div id="launcher-results" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:200; background:#1e293b; border:1px solid rgba(0,255,157,0.2); border-radius:12px; margin-top:0.5rem; max-height:400px; overflow-y:auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5);"></div>
-
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-      <button class="tab" onclick="switchTab('inbox')" id="tab-inbox-btn">📥 Inbox</button>
-      <button class="tab" onclick="switchTab('dana')" id="tab-dana-btn" style="display:none;">💸 Dana</button>
-      <button class="tab" onclick="switchTab('approvals')" id="tab-approvals-btn" style="display:none;">✅ Approval</button>
-      <button class="tab" onclick="switchTab('calendar')" id="tab-calendar-btn">📅 Calendar</button>
-      <button class="tab" onclick="switchTab('workforce')" id="tab-workforce-btn">👷 Workforce</button>
-      <button class="tab" onclick="switchTab('reports')" id="tab-reports-btn">📤 Reports</button>
-      <button class="tab" onclick="switchTab('users')" id="tab-users-btn" style="display:none;">👥 Users</button>
-      <button class="tab" onclick="switchTab('audit')" id="tab-audit-btn" style="display:none;">📜 Audit</button>
-      <button class="tab" onclick="switchTab('archive')" id="tab-archive-btn">📂 Arsip</button>
-      <button class="tab" onclick="switchTab('pengumuman')" id="tab-pengumuman-btn" style="display:none;">📢 Pengumuman</button>
-    </div>
-
-    <!-- DASHBOARD -->
-    <div id="tab-dashboard" class="tab-content active">
-      <div id="role-welcome" class="glass" style="border-left:4px solid var(--gold);"></div>
-      
-      <div class="quick-stats">
-        <div class="quick-card" style="border-color:#ef4444;"><div class="quick-val" id="qs-overdue">0</div><div class="quick-label">Overdue Tasks</div></div>
-        <div class="quick-card" style="border-color:#f59e0b;"><div class="quick-val" id="qs-pending">0</div><div class="quick-label">Pending Approval</div></div>
-        <div class="quick-card" style="border-color:#0ea5e9;"><div class="quick-val" id="qs-budget">Rp 0</div><div class="quick-label">Budget Used (MTD)</div></div>
-        <div class="quick-card" style="border-color:#10b981;"><div class="quick-val" id="qs-sla">0%</div><div class="quick-label">SLA Compliance</div></div>
-      </div>
-
-      <div class="glass">
-        <div style="color: var(--neon); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">🖥️ SYSTEM HEALTH (ISO 27001 A.12.4)</div>
-        <div class="pro-metrics">
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-api-latency">--</div><div class="pro-metric-label">API Latency</div></div>
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-db-status">--</div><div class="pro-metric-label">Database</div></div>
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-active-users">--</div><div class="pro-metric-label">Active Users</div></div>
-          <div class="pro-metric"><div class="pro-metric-val" id="pro-compliance">--%</div><div class="pro-metric-label">ISO Coverage</div></div>
-        </div>
-      </div>
-      
-      <div class="glass">
-        <div style="color: var(--gold); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📊 OPERATIONAL HEALTH (Real-time)</div>
-        <div class="pro-metrics">
-          <div class="pro-metric" style="border: 1px solid #ef4444;"><div class="pro-metric-val" id="op-k3">--</div><div class="pro-metric-label" style="color: #ef4444;">K3 PENDING</div></div>
-          <div class="pro-metric" style="border: 1px solid #f59e0b;"><div class="pro-metric-val" id="op-booking">--</div><div class="pro-metric-label" style="color: #f59e0b;">BOOKING NEW</div></div>
-          <div class="pro-metric" style="border: 1px solid #10b981;"><div class="pro-metric-val" id="op-janitor">--</div><div class="pro-metric-label" style="color: #10b981;">JANITOR PEND</div></div>
-          <div class="pro-metric" style="border: 1px solid #8b5cf6;"><div class="pro-metric-val" id="op-maint">--</div><div class="pro-metric-label" style="color: #8b5cf6;">MAINT HIGH</div></div>
-          <div class="pro-metric" style="border: 1px solid #f59e0b;"><div class="pro-metric-val" id="op-stock">--</div><div class="pro-metric-label" style="color: #f59e0b;">STOK LOW</div></div>
-          <div class="pro-metric" style="border: 1px solid #0ea5e9;"><div class="pro-metric-val" id="op-dana">--</div><div class="pro-metric-label" style="color: #0ea5e9;">DANA PEND</div></div>
-          <div class="pro-metric" style="border: 1px solid #00ff9d;"><div class="pro-metric-val" id="op-security">--</div><div class="pro-metric-label" style="color: #00ff9d;">SEC LOGS</div></div>
-          <div class="pro-metric" style="border: 1px solid #cbd5e1;"><div class="pro-metric-val" id="op-asset">--</div><div class="pro-metric-label" style="color: #cbd5e1;">ASSET ISSUES</div></div>
-          <div class="pro-metric" style="border: 1px solid #e11d48;"><div class="pro-metric-val" id="op-users">--</div><div class="pro-metric-label" style="color: #e11d48;">NEW USERS</div></div>
-        </div>
-      </div>
-      
-      <div class="glass">
-        <div style="color: var(--neon); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📱 Modul Workspace</div>
-        <div class="module-grid" id="module-grid"></div>
-      </div>
-    </div>
-
-    <!-- INBOX (UNIFIED TASK CENTER) -->
-    <div id="tab-inbox" class="tab-content">
-      <div class="glass">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <div style="color: var(--gold); font-weight: 700; font-size: 1rem;">📥 Unified Task Inbox</div>
-          <button class="btn btn-outline" onclick="refreshInbox()" aria-label="Refresh Inbox">🔄 Refresh</button>
-        </div>
-        <div class="table-responsive">
-          <table><thead><tr><th>Prioritas</th><th>Tipe</th><th>Detail</th><th>SLA</th><th>Aksi</th></tr></thead><tbody id="inbox-tbody"></tbody></table>
-        </div>
-      </div>
-    </div>
-
-    <!-- CALENDAR -->
-    <div id="tab-calendar" class="tab-content">
-      <div class="glass">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <div style="color:var(--accent);font-weight:700;font-size:1.1rem;">📅 Jadwal & Roster</div>
-          <div style="display:flex;gap:0.5rem;">
-            <button class="btn btn-outline" onclick="if(window.calEngine) window.calEngine.prevMonth()">◀</button>
-            <div id="cal-month-label" style="font-weight:700;min-width:140px;text-align:center;padding:0.4rem 0;">-</div>
-            <button class="btn btn-outline" onclick="if(window.calEngine) window.calEngine.nextMonth()">▶</button>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;">
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Sen</div>
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Sel</div>
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Rab</div>
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Kam</div>
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Jum</div>
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Sab</div>
-          <div style="text-align:center;padding:0.6rem;font-weight:700;background:rgba(0,0,0,0.3);color:var(--text-muted);">Min</div>
-        </div>
-        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:rgba(255,255,255,0.05);border-radius:0 0 12px 12px;overflow:hidden;min-height:350px;"></div>
-        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:0.8rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:8px;">
-          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#0ea5e9;border-radius:50%;"></span>Booking</span>
-          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#8b5cf6;border-radius:50%;"></span>Maintenance</span>
-          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#f59e0b;border-radius:50%;"></span>Security</span>
-          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#10b981;border-radius:50%;"></span>Janitor</span>
-          <span style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;"><span style="width:10px;height:10px;background:#ef4444;border-radius:50%;"></span>K3</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- WORKFORCE ROSTER & LAPORAN -->
-    <div id="tab-workforce" class="tab-content">
-      <div class="glass">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <div style="color:var(--gold);font-weight:700;font-size:1.1rem;">👷 Roster & Laporan Lapangan</div>
-          <button class="btn btn-outline" onclick="if(window.wfEngine) window.wfEngine.refresh()" aria-label="Refresh Workforce Roster">🔄 Refresh</button>
-        </div>
-        <!-- 📸 ZONA LAPORAN CEPAT (SECURITY & JANITOR) -->
-        <div style="margin-bottom:1.2rem;padding:1rem;background:rgba(0,0,0,0.2);border-radius:12px;border-left:4px solid var(--accent);">
-          <div style="font-weight:700;margin-bottom:0.6rem;color:var(--accent);">📍 Laporan Cepat per Zona</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;">
-            <div class="mod-card" style="text-align:left;padding:0.8rem;min-height:auto;border-left:3px solid #f59e0b;">
-              <div style="font-weight:700;font-size:0.85rem;">🛡️ Security</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);margin:0.3rem 0;">Patrol, Insiden, Bukti Foto</div>
-              <div style="display:flex;gap:0.3rem;margin-top:0.4rem;">
-                <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="if(window.zoneReport) window.zoneReport('security')">📝 Laporan</button>
-                <input type="file" id="file_security_zone" accept="image/*,.pdf" style="display:none;" onchange="window.archiveEngine.uploadFile('security','zone_security',this)">
-                <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="document.getElementById('file_security_zone').click()">📷 Foto</button>
-              </div>
-            </div>
-            <div class="mod-card" style="text-align:left;padding:0.8rem;min-height:auto;border-left:3px solid #10b981;">
-              <div style="font-weight:700;font-size:0.85rem;">🏢 Janitor Indoor</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);margin:0.3rem 0;">SD, SMP, SMA, Gedung Serbaguna</div>
-              <div style="display:flex;gap:0.3rem;margin-top:0.4rem;">
-                <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="if(window.zoneReport) window.zoneReport('janitor_indoor')">📝 Laporan</button>
-                <input type="file" id="file_janitor_indoor" accept="image/*,.pdf" style="display:none;" onchange="window.archiveEngine.uploadFile('janitor_indoor','zone_janitor_indoor',this)">
-                <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="document.getElementById('file_janitor_indoor').click()">📷 Foto</button>
-              </div>
-            </div>
-            <div class="mod-card" style="text-align:left;padding:0.8rem;min-height:auto;border-left:3px solid #22c55e;">
-              <div style="font-weight:700;font-size:0.85rem;">🌳 Janitor Outdoor</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);margin:0.3rem 0;">Taman Selatan & Utara</div>
-              <div style="display:flex;gap:0.3rem;margin-top:0.4rem;">
-                <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="if(window.zoneReport) window.zoneReport('janitor_outdoor')">📝 Laporan</button>
-                <input type="file" id="file_janitor_outdoor" accept="image/*,.pdf" style="display:none;" onchange="window.archiveEngine.uploadFile('janitor_outdoor','zone_janitor_outdoor',this)">
-                <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="document.getElementById('file_janitor_outdoor').click()">📷 Foto</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="wf-grid" class="module-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));"></div>
-        <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="if(window.wfEngine) window.wfEngine.openReportModal()">📝 Laporan Harian</button>
-          <button class="btn btn-warning" onclick="if(window.wfEngine) window.wfEngine.exportPayroll()">💰 Export Payroll (Mingguan)</button>
-          <button class="btn btn-success" onclick="if(window.wfEngine) window.wfEngine.exportAttendance()">📅 Export Absensi</button>
-        </div>
-      </div>
-    </div>
-
-        <!-- REPORTS -->
-    <div id="tab-reports" class="tab-content">
-      <div class="glass">
-        <div style="color: var(--purple); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📤 Export & Reporting Hub</div>
-        <div class="module-grid">
-          <div class="mod-card" onclick="exportCSV('dana')"><div class="mod-icon">💸</div><div class="mod-title">Laporan Dana</div></div>
-          <div class="mod-card" onclick="exportCSV('booking')"><div class="mod-icon">📅</div><div class="mod-title">Riwayat Booking</div></div>
-          <div class="mod-card" onclick="exportCSV('maintenance')"><div class="mod-icon">🔧</div><div class="mod-title">Log Maintenance</div></div>
-          <div class="mod-card" onclick="exportCSV('audit')"><div class="mod-icon">📜</div><div class="mod-title">Audit Trail</div></div>
-          <div class="mod-card" onclick="exportCSV('k3')"><div class="mod-icon">⚠️</div><div class="mod-title">Laporan K3</div></div>
-          <div class="mod-card" onclick="exportCSV('inventory')"><div class="mod-icon">📦</div><div class="mod-title">Stok Gudang</div></div>
-        </div>
-      </div>
-    </div>
-
-    
-    <!-- 💬 ACTIVITY FEED TEMPLATE (Hidden, used by JS) -->
-    <template id="activity-feed-template">
-      <div class="glass" style="margin-top:1rem; padding:1rem;">
-        <div style="font-weight:700; font-size:0.85rem; margin-bottom:0.8rem; color:var(--accent);">💬 Aktivitas & Komentar</div>
-        <div id="activity-list" style="max-height:200px; overflow-y:auto; margin-bottom:1rem;"></div>
-        <div style="display:flex; gap:0.5rem;">
-          <input type="text" id="new-activity-comment" placeholder="Tulis update atau komentar..." class="input-field" style="margin-bottom:0; flex:1;">
-          <button class="btn btn-primary" onclick="window.postActivityComment()">Kirim</button>
-        </div>
-      </div>
-    </template>
-
-    <!-- DANA, APPROVALS, USERS, AUDIT, PENGUMUMAN (TETAP SAMA, DIPENDEKKAN UNTUK BASH LIMIT) -->
-    <div id="tab-dana" class="tab-content"><div class="glass"><div style="color:var(--gold);margin-bottom:1rem;font-weight:700;">💸 Pengajuan Dana</div><div id="dana-form-container" style="display:none;margin-bottom:1.5rem;"><div class="form-group"><label>Judul</label><input type="text" id="dana-judul"></div><div class="form-group"><label>Nominal</label><input type="number" id="dana-nominal"></div><button class="btn btn-warning" onclick="submitDana()" style="width:100%;">📤 Ajukan</button></div><div class="table-responsive"><table><thead><tr><th>Tanggal</th><th>Judul</th><th>Nominal</th><th>Status</th><th>Level</th></tr></thead><tbody id="dana-tbody"></tbody></table></div></div></div>
-    <div id="tab-approvals" class="tab-content"><div class="glass"><div style="color:var(--gold);margin-bottom:1rem;font-weight:700;">✅ Approval Queue</div><div class="table-responsive"><table><thead><tr><th>Tipe</th><th>Pengaju</th><th>Detail</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="approval-tbody"></tbody></table></div></div></div>
-    <div id="tab-users" class="tab-content"><div class="glass"><div style="color:var(--accent);margin-bottom:1rem;font-weight:700;">👥 User Management</div><div class="form-group" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:end;"><div><label>Nama</label><input type="text" id="new-user-nama"></div><div><label>Email</label><input type="email" id="new-user-email"></div><div><label>Role</label><select id="new-user-role"><option value="guru">Guru</option><option value="staff">Staff</option><option value="koordinator_umum">Koordinator</option><option value="kabag_umum">Kabag</option></select></div><div><label>Divisi</label><select id="new-user-divisi"><option value="UMUM">Umum</option><option value="SD">SD</option><option value="SMP">SMP</option><option value="SMA">SMA</option></select></div><button class="btn btn-success" onclick="createUser()">✅ Buat</button></div><div class="table-responsive" style="margin-top:1rem;"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Divisi</th><th>Status</th></tr></thead><tbody id="user-tbody"></tbody></table></div></div></div>
-    <div id="tab-audit" class="tab-content"><div class="glass"><div style="color:var(--purple);margin-bottom:1rem;font-weight:700;">📜 Activity Log</div><div id="audit-log" style="max-height:400px;overflow-y:auto;"></div></div></div>
-    
-    <div id="tab-archive" class="tab-content"><div class="glass"><div style="color:var(--accent);margin-bottom:1rem;font-weight:700;">📂 Arsip File & Dokumen</div><div class="table-responsive"><table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Nama File</th><th>Uploader</th><th>Aksi</th></tr></thead><tbody id="archive-tbody"></tbody></table></div></div></div>
-    <div id="tab-pengumuman" class="tab-content"><div class="glass"><div style="color:var(--gold);margin-bottom:1rem;font-weight:700;">📢 Kelola Pengumuman</div><div class="form-group"><label>Info Manajemen</label><textarea id="ann-mgmt" rows="2" style="width:100%;padding:0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-main);"></textarea></div><div class="form-group"><label>Info Bagian Umum</label><textarea id="ann-umum" rows="2" style="width:100%;padding:0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-main);"></textarea></div><div class="form-group"><label>Ucapan/Motivasi</label><textarea id="ann-ucapan" rows="2" style="width:100%;padding:0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-main);"></textarea></div><button class="btn btn-warning" onclick="saveAnnouncements()" style="width:100%;">💾 Simpan</button><div id="ann-msg" style="margin-top:0.5rem;text-align:center;"></div></div></div>
+    <div style="font-size:0.75rem;color:var(--muted);" id="sync-status">🟡 Init</div>
   </div>
 
-  <script>
-    // 🛡️ ENTERPRISE SECURITY WRAPPER (XSS Protection + Session Timeout)
-    window.safeHTML = (str) => {
-      try {
-        if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
-          return DOMPurify.sanitize(str, { ALLOWED_TAGS: ['b','i','em','strong','br','span','div','a','table','thead','tbody','tr','th','td','button','input','select','option','textarea'], ALLOWED_ATTR: ['onclick','onchange','data-day','style','class','id','type','value','placeholder','accept','rows','href','target','download','min','max','step','role','aria-label'], FORBID_ATTR: [] });
+  <div class="tabs" id="main-tabs">
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">📥 Inbox</button>
+    <button class="tab" data-tab="approvals" onclick="switchTab('approvals')">✅ Approval</button>
+    <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
+  </div>
+
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="metrics" id="quick-metrics">
+      <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending</div></div>
+      <div class="metric" onclick="switchTab('approvals')"><div class="metric-val" id="m-approval">0</div><div class="metric-label">Butuh ACC</div></div>
+      <div class="metric"><div class="metric-val" id="m-overdue">0</div><div class="metric-label">Overdue</div></div>
+      <div class="metric"><div class="metric-val" id="m-dana">Rp 0</div><div class="metric-label">Dana Pending</div></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:700;color:var(--neon);margin-bottom:0.75rem;">📈 Status Operasional</div>
+      <div class="metrics" id="op-metrics">
+        <div class="metric"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3</div></div>
+        <div class="metric"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking</div></div>
+        <div class="metric"><div class="metric-val" id="op-maint">0</div><div class="metric-label">Maintenance</div></div>
+        <div class="metric"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana</div></div>
+      </div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:700;margin-bottom:0.75rem;">🔍 Hasil Pencarian Global</div>
+      <div id="search-results"><p style="color:var(--muted);">Ketik di kotak pencarian di atas...</p></div>
+    </div>
+  </div>
+
+  <div id="tab-inbox" class="tab-content">
+    <div class="glass">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <div style="font-weight:700;color:var(--gold);">📥 Unified Task Inbox</div>
+        <button class="btn btn-outline btn-sm" onclick="refreshAll()">🔄 Refresh</button>
+      </div>
+      <div class="filters">
+        <select id="filter-type" onchange="renderInbox()"><option value="all">Semua Tipe</option><option value="dana">Dana</option><option value="booking">Booking</option><option value="k3">K3</option><option value="maintenance">Maintenance</option></select>
+        <select id="filter-priority" onchange="renderInbox()"><option value="all">Semua Prioritas</option><option value="high">Tinggi</option><option value="medium">Sedang</option><option value="low">Rendah</option></select>
+        <select id="filter-status" onchange="renderInbox()"><option value="all">Semua Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+      </div>
+      <div style="overflow-x:auto;"><table><thead><tr><th>Prioritas</th><th>Tipe</th><th>Judul / Detail</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="inbox-body"></tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-approvals" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;">✅ Antrian Approval</div>
+      <div id="approval-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-activity" class="tab-content">
+    <div class="glass">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <div style="font-weight:700;">📜 Activity Feed</div>
+        <button class="btn btn-outline btn-sm" onclick="renderActivity()">🔄</button>
+      </div>
+      <div class="activity-list" id="activity-list"></div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+<script>
+(function() {
+  function safeJSON(key, fallback = []) { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; } }
+  function saveJSON(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function showToast(msg, type = 'success') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div'); t.className = 'toast';
+    t.style.borderLeftColor = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+    t.textContent = msg; c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+  
+  async function logActivity(action, detail, meta = {}) {
+    const logs = safeJSON('dreamos_activity_feed', []);
+    logs.unshift({ id: 'act_' + Date.now(), action, detail, user: currentUser.nama || currentUser.email || 'System', time: new Date().toISOString(), meta });
+    if (logs.length > 200) logs.length = 200;
+    saveJSON('dreamos_activity_feed', logs);
+    
+    // 🌐 SYNC TO SUPABASE
+    if (window.supabaseClient) {
+      window.supabaseClient.from('activity_logs').insert({
+        action, details: detail, user_email: currentUser.email, created_at: new Date().toISOString()
+      }).catch(e => console.warn('Activity log sync failed:', e));
+    }
+  }
+
+  const bound = safeJSON('dreamos_bound_user', null);
+  const currentUser = bound || { nama: 'Guest', role: 'staff', email: 'guest' };
+  document.getElementById('user-name').textContent = currentUser.nama || currentUser.email || 'User';
+  document.getElementById('role-badge').textContent = (currentUser.role || '').toUpperCase();
+
+  window.switchTab = function(id) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    const pane = document.getElementById('tab-' + id);
+    if (pane) pane.classList.add('active');
+    const btn = document.querySelector(`.tab[data-tab="${id}"]`);
+    if (btn) btn.classList.add('active');
+    if (id === 'inbox') renderInbox();
+    if (id === 'approvals') renderApprovals();
+    if (id === 'activity') renderActivity();
+  };
+
+  window.runGlobalSearch = function(q) {
+    q = (q || '').toLowerCase().trim();
+    const box = document.getElementById('search-results');
+    if (!q) { box.innerHTML = '<p style="color:var(--muted);">Ketik di kotak pencarian di atas...</p>'; return; }
+    const sources = [
+      { key: 'dreamos_dana', type: 'Dana', title: d => d.judul, extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
+      { key: 'dreamos_bookings', type: 'Booking', title: d => (d.ruang || '') + ' - ' + (d.nama_peminjam || ''), extra: d => d.tgl || '' },
+      { key: 'dreamos_k3_reports', type: 'K3', title: d => d.judul || d.lokasi, extra: d => d.status || '' },
+      { key: 'dreamos_maintenance_tasks', type: 'Maint', title: d => d.judul || d.deskripsi, extra: d => d.status || '' }
+    ];
+    let hits = [];
+    sources.forEach(s => {
+      safeJSON(s.key).forEach(item => {
+        if (JSON.stringify(item).toLowerCase().includes(q)) {
+          hits.push({ type: s.type, title: s.title(item) || '-', extra: s.extra(item), status: item.status || '-' });
         }
-      } catch(e) { console.warn('DOMPurify error:', e); }
-      return str; // 🛡️ Fallback: return raw string to prevent UI breakage on internal templates
-    };
-    window.safeInject = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = window.safeHTML(html); };
-
-    class SessionManager {
-      constructor(timeoutMin = 15) {
-        this.timeout = timeoutMin * 60 * 1000;
-        this.timer = null;
-        this.init();
-      }
-      init() {
-        ['mousemove','keydown','click','scroll','touchstart'].forEach(evt => document.addEventListener(evt, () => this.reset()));
-        this.reset();
-      }
-      reset() {
-        clearTimeout(this.timer);
-        this.timer = setTimeout(() => {
-          alert('⏱️ Sesi berakhir karena tidak aktif selama 15 menit (ISO 27001 A.9.2.4). Silakan login ulang.');
-          localStorage.removeItem('dreamos_bound_user');
-          localStorage.removeItem('dreamos_session_token');
-          window.location.href = 'index.html';
-        }, this.timeout);
-      }
-    }
-    window.sessionMgr = new SessionManager(15);
-
-    // ✅ Gunakan window.goHome dari parent (index.html)
-    // Jika tidak ada, buat fallback yang aman
-    if (typeof window.parent.goHome === 'function' && window.parent !== window) {
-      window.goHome = window.parent.goHome;
-    } else if (!window.goHome) {
-      window.goHome = function() {
-        // Fallback: reload index.html
-        window.location.href = window.location.origin + (window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/') + 'index.html';
-      };
-    }
-
-    (function() {
-      'use strict';
-      console.log('🔧 CC Pro Workspace injected. Starting safe init...');
-
-  // 🛡️ Core UI Functions (Defined FIRST to guarantee click responsiveness)
-  let _permissions = {};
-  window.switchTab = function(tabName, evt) {
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-    else { const btn = document.querySelector(`.tab[onclick*="'${tabName}'"]`); if(btn) btn.classList.add('active'); }
-    const target = document.getElementById('tab-'+tabName); if(target) target.classList.add('active');
-    if(tabName==='dana') { const f=document.getElementById('dana-form-container'); if(f && _permissions.canSubmitDana) f.style.display='block'; if(window.loadDanaRequests) window.loadDanaRequests(); }
-    if(tabName==='approvals' && window.loadApprovals) window.loadApprovals();
-    if(tabName==='users' && window.renderUserList) window.renderUserList();
-    if(tabName==='audit' && window.renderAuditLog) window.renderAuditLog();
-    if(tabName==='pengumuman' && window.loadAnnouncements) window.loadAnnouncements();
-    if(tabName==='inbox' && window.refreshInbox) window.refreshInbox();
-    if(tabName==='calendar' && window.calEngine) window.calEngine.render();
-    if(tabName==='workforce' && window.wfEngine) window.wfEngine.render();
-    if(tabName==='archive' && window.archiveEngine) window.archiveEngine.render();
-  };
-  window.toggleNotif = function() {
-    const panel = document.getElementById('notif-panel');
-    const count = document.getElementById('notif-count');
-    if (!panel) return;
-    
-    // Toggle panel visibility
-    if (panel.style.display === 'block') {
-      panel.style.display = 'none';
-    } else {
-      panel.style.display = 'block';
-      if (window.renderNotifPanel) window.renderNotifPanel();
-    }
-    
-    // Update badge count dari data real
-    const notifs = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
-    if (count) count.textContent = notifs.length > 0 ? (notifs.length > 9 ? '9+' : notifs.length) : '0';
-  };
-
-
-          // 🌐 REAL-TIME SYNC HELPER: Supabase First, LocalStorage as Cache
-          async function getRealData(table, localKey, filter = null) {
-            if (window.supabaseClient) {
-              try {
-                let query = window.supabaseClient.from(table).select('*');
-                if (filter) {
-                  if (filter.field && filter.op && filter.value) {
-                    query = query[filter.op](filter.field, filter.value);
-                  }
-                }
-                const { data, error } = await query.order('created_at', { ascending: false });
-                if (!error && data) {
-                  localStorage.setItem(localKey, JSON.stringify(data));
-                  return data;
-                }
-              } catch (e) { console.warn('Supabase fetch failed for', table, e); }
-            }
-            // Fallback: baca dari localStorage cache
-            return JSON.parse(localStorage.getItem(localKey) || '[]');
-          }
-      function safeInit() {
-        try {
-          let user = {};
-          try { user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); } catch(e) {}
-          if (!user.email) user = { email: 'guest@local', nama: 'Guest', role: 'staff', divisi: 'UMUM' };
-
-          const role = user.role || 'staff';
-          const divisi = user.divisi || 'UMUM';
-
-          document.getElementById('user-name').textContent = user.nama || user.email;
-          const badge = document.getElementById('role-badge');
-          badge.textContent = role.toUpperCase().replace(/_/g, ' ');
-          badge.className = 'role-indicator ' + (role === 'kabag_umum' ? 'role-kabag' : role === 'koordinator_umum' ? 'role-koor' : '');
-
-          // ROLE-SPECIFIC WORKSPACE MODE
-          const wsMode = document.getElementById('workspace-mode');
-          const welcome = document.getElementById('role-welcome');
-          if (role === 'kabag_umum') {
-            wsMode.textContent = '👑 STRATEGIC MODE';
-            welcome.innerHTML = '<strong style="color:#f59e0b;">Selamat datang, Kabag Umum.</strong><br>Fokus: Penganggaran, Approval Final, Kepatuhan ISO, Pengawasan Aset & SDM.';
-          } else if (role === 'koordinator_umum') {
-            wsMode.textContent = '🛡️ OPERATIONAL MODE';
-            welcome.innerHTML = '<strong style="color:#0ea5e9;">Selamat datang, Koordinator.</strong><br>Fokus: Validasi Lapangan, Rekomendasi, Penjadwalan, Monitoring Harian.';
-          } else {
-            wsMode.textContent = '👤 STANDARD MODE';
-            welcome.innerHTML = '<strong style="color:#94a3b8;">Akses Terbatas.</strong><br>Hubungi Kabag/Koordinator untuk eskalasi tugas.';
-          }
-
-          const RBAC = {
-            staff: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-            guru: { modules: ['booking','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-            security: { modules: ['security','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-            maintenance: { modules: ['maintenance','k3'], canSubmitDana: false, canApproveDana: false, canManageUsers: false, approvalLevel: 'none' },
-            koordinator_umum: { modules: ['booking','k3','dana','users','audit'], canSubmitDana: true, canApproveDana: false, canManageUsers: true, approvalLevel: 'recommend' },
-            kabag_umum: { modules: ['booking','k3','dana','users','audit','approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, approvalLevel: 'final' },
-            dev: { modules: ['booking','k3','security','maintenance','dana','users','audit','approvals'], canSubmitDana: true, canApproveDana: true, canManageUsers: true, approvalLevel: 'override' }
-          };
-
-          const permissions = RBAC[role] || RBAC.staff;
-          _permissions = permissions;
-          const MODULES = {
-            booking: { icon: '📅', title: 'Booking' }, k3: { icon: '⚠️', title: 'K3 Safety' },
-            security: { icon: '🛡️', title: 'Security' }, maintenance: { icon: '🔧', title: 'Maintenance' },
-            dana: { icon: '💸', title: 'Dana' }, users: { icon: '👥', title: 'Users' }, audit: { icon: '📜', title: 'Audit' }
-          };
-
-          const show = (id, cond) => { const el = document.getElementById(id); if(el) el.style.display = cond ? 'flex' : 'none'; };
-          show('tab-dana-btn', permissions.canSubmitDana || permissions.canApproveDana);
-          show('tab-approvals-btn', permissions.canApproveDana || permissions.approvalLevel === 'recommend');
-          show('tab-users-btn', permissions.canManageUsers);
-          show('tab-audit-btn', role !== 'staff' && role !== 'guru');
-          show('tab-pengumuman-btn', role === 'kabag_umum' || role === 'koordinator_umum' || role === 'dev');
-
-          const grid = document.getElementById('module-grid');
-          if(grid) {
-            grid.innerHTML = '';
-            permissions.modules.forEach(modKey => {
-              const mod = MODULES[modKey]; if(!mod) return;
-              const card = document.createElement('div'); card.className = 'mod-card';
-              card.innerHTML = '<div class="mod-icon">'+mod.icon+'</div><div class="mod-title">'+mod.title+'</div>';
-              card.onclick = () => {
-                // Gunakan window.openMod dari parent (index.html) agar tidak 404
-                if (typeof window.openMod === 'function') {
-                  window.openMod(modKey);
-                } else {
-                  // Fallback jika dibuka standalone (meski seharusnya lewat index.html)
-                  const map = { booking:'modules/booking.html', k3:'modules/k3.html', security:'modules/security.html', maintenance:'modules/maintenance.html', dana:'modules/commandcenter.html' };
-                  if(map[modKey]) window.location.href = map[modKey];
-                  else window.switchTab(['users','audit','approvals'].includes(modKey)?modKey:'dashboard');
-                }
-              };
-              grid.appendChild(card);
-            });
-          }
-
-          
-
-          // UNIFIED INBOX ENGINE (REAL-TIME SYNC)
-          window.refreshInbox = async function() {
-            const tbody = document.getElementById('inbox-tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Memuat antrean terpadu...</td></tr>';
-            try {
-              // 🌐 SUPABASE FIRST: Ambil data real-time, update localStorage
-              const danaData = await getRealData('dana_requests', 'dreamos_dana');
-              const bookingData = await getRealData('bookings', 'dreamos_bookings');
-              const maintData = await getRealData('maintenance_requests', 'dreamos_maintenance_requests');
-              const k3Data = await getRealData('k3_reports', 'dreamos_k3_reports');
-
-              const danaItems = danaData.filter(x=>x.status==='pending' || x.status==='recommended');
-              const bookingItems = bookingData.filter(x=>x.status==='pending');
-              const maintItems = maintData.filter(x=>x.status==='pending' || x.status==='in_progress');
-              const k3Items = k3Data.filter(x=>x.status==='pending');
-              
-              let items = [
-                ...danaItems.map(x=>({...x,type:'Dana'})), 
-                ...bookingItems.map(x=>({...x,type:'Booking'})), 
-                ...maintItems.map(x=>({...x,type:'Maintenance'})), 
-                ...k3Items.map(x=>({...x,type:'K3'}))
-              ];
-              tbody.innerHTML = items.length ? items.map(i => {
-                const prio = i.priority || (i.nominal>5000000?'high':'medium');
-                const badgeCls = prio==='critical'?'badge-critical':prio==='high'?'badge-high':prio==='medium'?'badge-medium':'badge-low';
-                const sla = calculateSLA(i.created_at, prio);
-                return `<tr><td><span class="badge ${badgeCls}">${prio.toUpperCase()}</span></td><td>${i.type}</td><td>${i.judul||i.ruang||i.description||'-'}</td><td class="sla-timer ${sla.cls}">${sla.text}</td><td><button class="btn btn-primary" style="padding:0.3rem 0.6rem;font-size:0.7rem;" onclick="handleFromInbox('${i.type}','${i.id}')">⚡ Aksi</button></td></tr>`;
-              }).join('') : '<tr><td colspan="5">✅ Tidak ada antrean pending</td></tr>';
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="5">Gagal memuat inbox</td></tr>'; }
-          };
-
-          window.calculateSLA = function(created, priority) {
-            const start = new Date(created).getTime();
-            const now = Date.now();
-            const hours = (now - start) / 3600000;
-            const limit = priority==='critical'?2:priority==='high'?8:priority==='medium'?24:72;
-            const remaining = limit - hours;
-            if(remaining <= 0) return { text: 'OVERDUE', cls: 'sla-critical' };
-            if(remaining < limit*0.3) return { text: Math.round(remaining)+'h left', cls: 'sla-warn' };
-            return { text: Math.round(remaining)+'h left', cls: 'sla-ok' };
-          }
-
-          window.handleFromInbox = function(type, id) {
-            if(type==='Dana'||type==='Booking') switchTab('approvals');
-            else alert('⚡ Buka modul '+type+' untuk menangani tiket #'+id);
-          };
-
-          // EXPORT ENGINE
-          window.exportPDF = function(module) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const keyMap = { 'dana': 'dreamos_dana', 'booking': 'dreamos_bookings', 'k3': 'dreamos_k3_reports', 'maintenance': 'dreamos_maintenance_requests', 'audit': 'dreamos_activity_log' };
-            const key = keyMap[module] || 'dreamos_'+module;
-            const data = JSON.parse(localStorage.getItem(key) || '[]');
-      if(!data.length) return alert('📭 Belum ada data untuk di-export');
-      doc.setFontSize(16); doc.text(`Dream OS - Laporan ${module.toUpperCase()}`, 14, 20);
-      doc.setFontSize(10); doc.text(`Generated: ${new Date().toLocaleString()} | By: ${JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'System'}`, 14, 30);
-      doc.setLineWidth(0.5); doc.line(14, 35, 196, 35);
-      let y = 45;
-      const headers = Object.keys(data[0]);
-      doc.setFont(undefined, 'bold');
-      headers.forEach((h, i) => doc.text(h.toUpperCase(), 14 + (i*35), y));
-      doc.setFont(undefined, 'normal');
-      y += 8;
-      data.slice(0, 50).forEach(row => {
-        headers.forEach((h, i) => doc.text(String(row[h]||'-').substring(0,20), 14 + (i*35), y));
-        y += 7;
-        if(y > 280) { doc.addPage(); y = 20; }
       });
-      doc.setFontSize(8); doc.text(`Digital Audit Hash: ${btoa(JSON.stringify(data)).substring(0,32)}... | ISO 27001 A.12.4.1 Compliant`, 14, 290);
-      doc.save(`DreamOS_${module}_${new Date().toISOString().split('T')[0]}.pdf`);
-      logAction('EXPORT_PDF', { module, rows: data.length });
-    };
-    window.exportCSV = function(module) {
-            const keyMap = { 'dana': 'dreamos_dana', 'booking': 'dreamos_bookings', 'k3': 'dreamos_k3_reports', 'maintenance': 'dreamos_maintenance_requests', 'audit': 'dreamos_activity_log' };
-            const key = keyMap[module] || 'dreamos_'+module;
-            const data = JSON.parse(localStorage.getItem(key) || '[]');
-            if(!data.length) return alert('📭 Belum ada data untuk di-export');
-            const headers = Object.keys(data[0]).join(',');
-            const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
-            const csv = headers+'\n'+rows;
-            const blob = new Blob([csv], {type:'text/csv'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href=url; a.download=`DreamOS_${module}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-            logAction('EXPORT_CSV', { module, rows: data.length });
-          };
+    });
+    box.innerHTML = hits.slice(0, 30).map(h => `
+      <div style="padding:0.6rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+        <div><span class="badge badge-pending" style="margin-right:0.4rem;">${h.type}</span><strong>${h.title}</strong><div style="font-size:0.75rem;color:var(--muted);">${h.extra}</div></div>
+        <span class="badge ${h.status==='approved'?'badge-approved':h.status==='rejected'?'badge-rejected':'badge-pending'}">${h.status}</span>
+      </div>`).join('') || '<p style="color:var(--muted);">Tidak ditemukan hasil.</p>';
+  };
 
-          // NOTIFICATION ENGINE
-          
+  function collectTasks() {
+    const tasks = [];
+    safeJSON('dreamos_dana').forEach(d => tasks.push({ id: d.id, type: 'dana', title: d.judul || 'Pengajuan Dana', detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'), status: (d.status || 'pending').toLowerCase(), priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low', raw: d }));
+    safeJSON('dreamos_bookings').forEach(b => tasks.push({ id: b.id, type: 'booking', title: (b.ruang || 'Ruang') + ' • ' + (b.nama_peminjam || '-'), detail: (b.tgl || '') + ' ' + (b.jam_mulai || ''), status: (b.status || 'pending').toLowerCase(), priority: 'medium', raw: b }));
+    safeJSON('dreamos_k3_reports').forEach(k => tasks.push({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'Laporan K3', detail: k.pelapor || '', status: (k.status || 'pending').toLowerCase(), priority: 'high', raw: k }));
+    safeJSON('dreamos_maintenance_tasks').forEach(m => tasks.push({ id: m.id, type: 'maintenance', title: m.judul || m.deskripsi || 'Maintenance', detail: m.lokasi || '', status: (m.status || 'pending').toLowerCase(), priority: (m.priority || 'medium').toLowerCase(), raw: m }));
+    return tasks;
+  }
 
-          // ✅ IMPLEMENTASI FUNGSI YANG SEBELUMNYA PLACEHOLDER
-          window.logAction = function(action, details) {
-            const log = { timestamp: new Date().toISOString(), user: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email||'system', action, details };
-            const logs = JSON.parse(localStorage.getItem('dreamos_activity_log')||'[]');
-            logs.unshift(log); if(logs.length>200) logs.pop();
-            localStorage.setItem('dreamos_activity_log', JSON.stringify(logs));
-            if(window.supabaseClient) window.supabaseClient.from('activity_logs').insert(log).catch(()=>{});
-          }
+  window.renderInbox = function() {
+    const typeF = document.getElementById('filter-type')?.value || 'all';
+    const prioF = document.getElementById('filter-priority')?.value || 'all';
+    const statF = document.getElementById('filter-status')?.value || 'all';
+    let tasks = collectTasks();
+    if (typeF !== 'all') tasks = tasks.filter(t => t.type === typeF);
+    if (prioF !== 'all') tasks = tasks.filter(t => t.priority === prioF);
+    if (statF !== 'all') tasks = tasks.filter(t => t.status === statF);
 
-          window.loadDanaRequests = async function() {
-            const tbody = document.getElementById('dana-tbody');
-            if(!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="5">Memuat data...</td></tr>';
-            try {
-              let data = [];
-              if(window.supabaseClient) {
-                const {data:res} = await window.supabaseClient.from('dana_requests').select('*').order('created_at',{ascending:false});
-                data = res || [];
-              } else {
-                data = JSON.parse(localStorage.getItem('dreamos_dana')||'[]');
-              }
-              tbody.innerHTML = data.length ? data.map(d => {
-                const cls = d.status==='approved'?'badge-success':d.status==='rejected'?'badge-danger':'badge-warning';
-                const lvl = d.approval_level || 'pending';
-                return `<tr><td>${new Date(d.created_at).toLocaleDateString()}</td><td>${d.judul||'-'}</td><td>Rp ${parseInt(d.nominal||0).toLocaleString()}</td><td><span class="badge ${cls}">${d.status.toUpperCase()}</span></td><td>${lvl}</td></tr>`;
-              }).join('') : '<tr><td colspan="5">📭 Belum ada pengajuan</td></tr>';
-            } catch(e) { tbody.innerHTML = `<tr><td colspan="5">⚠️ ${e.message}</td></tr>`; }
-          }
+    const tbody = document.getElementById('inbox-body');
+    if (!tasks.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Tidak ada tugas sesuai filter</td></tr>'; return; }
+    tbody.innerHTML = tasks.map(t => {
+      const prioClass = t.priority === 'high' ? 'badge-high' : t.priority === 'medium' ? 'badge-medium' : 'badge-low';
+      const statClass = t.status === 'approved' ? 'badge-approved' : t.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
+      return `<tr>
+        <td><span class="badge ${prioClass}">${t.priority}</span></td><td>${t.type}</td>
+        <td><strong>${t.title}</strong><div style="font-size:0.75rem;color:var(--muted);">${t.detail}</div></td>
+        <td><span class="badge ${statClass}">${t.status}</span></td>
+        <td>${t.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="doApprove('${t.type}','${t.id}',true)">✅</button><button class="btn btn-danger btn-sm" onclick="doApprove('${t.type}','${t.id}',false)">❌</button>` : '-'}</td>
+      </tr>`;
+    }).join('');
+  };
 
-          window.submitDana = async function() {
-            const judul = document.getElementById('dana-judul')?.value.trim();
-            const nominal = document.getElementById('dana-nominal')?.value;
-            if(!judul || !nominal) return alert('⚠️ Judul & Nominal wajib diisi!');
-            const entry = { id:'dana_'+Date.now(), judul, nominal:parseInt(nominal), status:'pending', approval_level:'recommend', created_at:new Date().toISOString(), pemohon: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email };
-            if(window.supabaseClient) await window.supabaseClient.from('dana_requests').insert(entry).catch(()=>{});
-            const local = JSON.parse(localStorage.getItem('dreamos_dana')||'[]'); local.unshift(entry); localStorage.setItem('dreamos_dana', JSON.stringify(local));
-            logAction('SUBMIT_DANA', { judul, nominal });
-            alert('✅ Pengajuan dana berhasil dikirim!');
-            loadDanaRequests();
-          };
+  window.doApprove = async function(type, id, isApprove) {
+    const reason = isApprove ? null : prompt('Alasan penolakan (wajib):');
+    if (!isApprove && !reason) return;
 
-          window.loadApprovals = async function() {
-            const tbody = document.getElementById('approval-tbody');
-            if(!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="5">Memuat antrean...</td></tr>';
-            try {
-              // 🌐 SUPABASE FIRST: Ambil data real-time
-              const danaData = await getRealData('dana_requests', 'dreamos_dana');
-              const bookingData = await getRealData('bookings', 'dreamos_bookings');
-              
-              const danaItems = danaData.filter(x=>x.status==='pending').map(x=>({...x,type:'Dana'}));
-              const bookingItems = bookingData.filter(x=>x.status==='pending').map(x=>({...x,type:'Booking'}));
-              let items = [...danaItems, ...bookingItems];
-              tbody.innerHTML = items.length ? items.map(i => `<tr><td>${i.type}</td><td>${i.pemohon||i.nama_peminjam||'-'}</td><td>${i.judul||i.ruang||'-'}</td><td><span class="badge badge-warning">PENDING</span></td><td><button class="btn btn-success btn-sm" onclick="handleApproval('${i.type}','${i.id}','approved')">✅</button> <button class="btn btn-danger btn-sm" onclick="handleApproval('${i.type}','${i.id}','rejected')">❌</button></td></tr>`).join('') : '<tr><td colspan="5">🎉 Tidak ada antrean</td></tr>';
-            } catch(e) { tbody.innerHTML = `<tr><td colspan="5">⚠️ ${e.message}</td></tr>`; }
-          }
+    const keyMap = { dana: 'dreamos_dana', booking: 'dreamos_bookings', k3: 'dreamos_k3_reports', maintenance: 'dreamos_maintenance_tasks' };
+    const tableMap = { dana: 'dana_requests', booking: 'bookings', k3: 'k3_reports', maintenance: 'maintenance_requests' };
+    const key = keyMap[type], table = tableMap[type];
+    if (!key || !table) return;
 
-          window.handleApproval = async function(type, id, action) {
-            if(!confirm(`Yakin ${action==='approved'?'menyetujui':'menolak'} ${type} ini?`)) return;
-            const newStatus = action;
-            if(window.supabaseClient) {
-              const tbl = type==='Dana'?'dana_requests':'bookings';
-              await window.supabaseClient.from(tbl).update({status:newStatus, updated_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email}).eq('id',id).catch(()=>{});
-            }
-            logAction('APPROVAL_ACTION', { type, id, action });
-            alert(`✅ ${type} berhasil ${action==='approved'?'disetujui':'ditolak'}!`);
-            loadApprovals();
-          };
+    const list = safeJSON(key);
+    const item = list.find(x => x.id === id);
+    if (!item) return showToast('Data tidak ditemukan', 'danger');
 
-          window.renderUserList = async function() {
-            const tbody = document.getElementById('user-tbody');
-            if(!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="5">Memuat user...</td></tr>';
-            try {
-              let users = [];
-              if(window.supabaseClient) {
-                const {data:res} = await window.supabaseClient.from('users').select('*').order('created_at',{ascending:false});
-                users = res || [];
-              } else {
-                users = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
-              }
-              tbody.innerHTML = users.length ? users.map(u => `<tr><td>${u.nama||'-'}</td><td>${u.email||'-'}</td><td>${u.role||'-'}</td><td>${u.divisi||'-'}</td><td><span class="badge badge-success">Active</span></td></tr>`).join('') : '<tr><td colspan="5">📭 Belum ada user</td></tr>';
-            } catch(e) { tbody.innerHTML = `<tr><td colspan="5">⚠️ ${e.message}</td></tr>`; }
-          }
+    item.status = isApprove ? 'approved' : 'rejected';
+    item.approved_by = currentUser.email || currentUser.nama;
+    item.approved_at = new Date().toISOString();
+    if (reason) item.reject_reason = reason;
+    saveJSON(key, list);
 
-          window.createUser = async function() {
-            const nama = document.getElementById('new-user-nama')?.value.trim();
-            const email = document.getElementById('new-user-email')?.value.trim();
-            const role = document.getElementById('new-user-role')?.value;
-            const divisi = document.getElementById('new-user-divisi')?.value;
-            if(!nama||!email) return alert('⚠️ Nama & Email wajib diisi!');
-            
-            const entry = { id:'usr_'+Date.now(), nama, email, role, divisi, created_at:new Date().toISOString() };
-            
-            // 🌐 SUPABASE FIRST: Insert ke cloud, lalu update local
-            if(window.supabaseClient) {
-              try {
-                await window.supabaseClient.from('users').insert(entry);
-                console.log('✅ User synced to Supabase');
-              } catch(e) { console.warn('Supabase insert failed', e); }
-            }
-            
-            const local = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); 
-            local.unshift(entry); 
-            localStorage.setItem('dreamos_users_db', JSON.stringify(local));
-            
-            logAction('CREATE_USER', { email, role });
-            alert('✅ User berhasil dibuat!');
-            renderUserList();
-            // Refresh roster jika ada
-            if(window.wfEngine) window.wfEngine.loadRoster();
-          };
+    // 🌐 SYNC TO SUPABASE
+    if (window.supabaseClient) {
+      try {
+        await window.supabaseClient.from(table).update({
+          status: item.status, approved_by: item.approved_by, approved_at: item.approved_at, reject_reason: item.reject_reason || null
+        }).eq('id', id);
+      } catch (e) { console.warn('Supabase sync failed:', e); }
+    }
 
-          window.renderAuditLog = function() {
-            const container = document.getElementById('audit-log');
-            if(!container) return;
-            const logs = JSON.parse(localStorage.getItem('dreamos_activity_log')||'[]');
-            container.innerHTML = logs.length ? logs.slice(0,100).map(l => `<div class="audit-item"><span class="audit-time">[${new Date(l.timestamp).toLocaleString()}]</span> <strong>${l.user}</strong>: ${l.action} <span style="color:#94a3b8;">${JSON.stringify(l.details||{})}</span></div>`).join('') : '<div class="audit-item">📭 Belum ada aktivitas</div>';
-          }
+    logActivity(isApprove ? 'APPROVE' : 'REJECT', `${type.toUpperCase()}: ${item.judul || item.ruang || id}`, { type, id });
+    showToast(isApprove ? '✅ Disetujui & Tersinkronisasi' : '❌ Ditolak & Tersinkronisasi');
+    refreshAll();
+  };
 
-          window.saveAnnouncements = function() {
-            const data = {
-              mgmt: document.getElementById('ann-mgmt')?.value || '',
-              umum: document.getElementById('ann-umum')?.value || '',
-              ucapan: document.getElementById('ann-ucapan')?.value || ''
-            };
-            localStorage.setItem('dreamos_cmd_announcements', JSON.stringify(data));
-            logAction('UPDATE_ANNOUNCEMENTS', data);
-            const msg = document.getElementById('ann-msg');
-            if(msg) { msg.textContent = '✅ Tersimpan! Refresh dashboard untuk melihat perubahan.'; msg.style.color = '#10b981'; }
-          };
+  window.renderApprovals = function() {
+    const tasks = collectTasks().filter(t => t.status === 'pending');
+    const box = document.getElementById('approval-list');
+    if (!tasks.length) { box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem;">Tidak ada yang menunggu approval</p>'; return; }
+    box.innerHTML = tasks.map(t => `
+      <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;">
+        <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+          <div><span class="badge badge-pending">${t.type}</span><strong style="margin-left:0.4rem;">${t.title}</strong><div style="font-size:0.8rem;color:var(--muted);margin-top:0.3rem;">${t.detail}</div></div>
+          <div style="display:flex;gap:0.4rem;">
+            <button class="btn btn-success btn-sm" onclick="doApprove('${t.type}','${t.id}',true)">Setujui</button>
+            <button class="btn btn-danger btn-sm" onclick="doApprove('${t.type}','${t.id}',false)">Tolak</button>
+          </div>
+        </div>
+      </div>`).join('');
+  };
 
-          window.loadAnnouncements = function() {
-            const data = JSON.parse(localStorage.getItem('dreamos_cmd_announcements')||'{}');
-            if(document.getElementById('ann-mgmt')) document.getElementById('ann-mgmt').value = data.mgmt || '';
-            if(document.getElementById('ann-umum')) document.getElementById('ann-umum').value = data.umum || '';
-            if(document.getElementById('ann-ucapan')) document.getElementById('ann-ucapan').value = data.ucapan || '';
-          };
+  window.renderActivity = function() {
+    const logs = safeJSON('dreamos_activity_feed', []);
+    const box = document.getElementById('activity-list');
+    if (!logs.length) { box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem;">Belum ada aktivitas</p>'; return; }
+    box.innerHTML = logs.slice(0, 50).map(l => `
+      <div class="activity-item">
+        <div class="activity-time">${new Date(l.time).toLocaleString('id-ID', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</div>
+        <div><strong>${l.user}</strong> — ${l.action}<br><span style="color:var(--muted);">${l.detail}</span></div>
+      </div>`).join('');
+  };
 
-          class EnterpriseRealtimeEngine { constructor(){this.metrics={apiLatency:0,dbStatus:'unknown',activeUsers:0,compliance:0};this.init();} init(){setInterval(async()=>{const s=performance.now();try{if(window.supabaseClient){await window.supabaseClient.from('users').select('id').limit(1);this.metrics.apiLatency=Math.round(performance.now()-s);this.metrics.dbStatus='Online';this.metrics.activeUsers=Math.floor(Math.random()*15)+5;this.metrics.compliance=this.calc();this.update();}}catch(e){this.metrics.dbStatus='Degraded';this.update();}},5000);} calc(){let s=100;const u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');if(!u.mfa_enabled)s-=15;const l=JSON.parse(localStorage.getItem('dreamos_activity_log')||'[]');if(l.length<10)s-=10;return Math.max(0,Math.min(100,s));} update(){const e1=document.getElementById('pro-api-latency');if(e1)e1.textContent=this.metrics.apiLatency+' ms';const e2=document.getElementById('pro-db-status');if(e2){e2.textContent=this.metrics.dbStatus;e2.style.color=this.metrics.dbStatus==='Online'?'#10b981':'#ef4444';}const e3=document.getElementById('pro-active-users');if(e3)e3.textContent=this.metrics.activeUsers;const e4=document.getElementById('pro-compliance');if(e4)e4.textContent=this.metrics.compliance+'%';} }
-          class OperationalHealthEngine { constructor(){this.init();} init(){this.fetch();setInterval(()=>this.fetch(),15000);} async fetch(){if(!window.supabaseClient)return;try{const c=async(t,q)=>{try{const{count,error}=await q;if(error)return 0;return count||0;}catch(e){return 0;}};this.upd('op-k3',await c('k3_reports',window.supabaseClient.from('k3_reports').select('*',{count:'exact',head:true}).eq('status','pending')),'#ef4444');this.upd('op-booking',await c('bookings',window.supabaseClient.from('bookings').select('*',{count:'exact',head:true}).eq('status','pending')),'#f59e0b');this.upd('op-janitor',await c('janitorial_requests',window.supabaseClient.from('janitorial_requests').select('*',{count:'exact',head:true}).eq('status','pending')),'#10b981');this.upd('op-maint',await c('maintenance_requests',window.supabaseClient.from('maintenance_requests').select('*',{count:'exact',head:true}).eq('priority','high')),'#8b5cf6');this.upd('op-stock',await c('inventory',window.supabaseClient.from('inventory').select('*',{count:'exact',head:true}).lt('quantity',10)),'#f59e0b');this.upd('op-dana',await c('dana_requests',window.supabaseClient.from('dana_requests').select('*',{count:'exact',head:true}).eq('status','pending')),'#0ea5e9');this.upd('op-security',await c('security_logs',window.supabaseClient.from('security_logs').select('*',{count:'exact',head:true}).gte('created_at',new Date().toISOString().split('T')[0])),'#00ff9d');this.upd('op-asset',await c('asset_reports',window.supabaseClient.from('asset_reports').select('*',{count:'exact',head:true}).eq('status','pending')),'#cbd5e1');this.upd('op-users',await c('users',window.supabaseClient.from('users').select('*',{count:'exact',head:true}).gte('created_at',new Date(Date.now()-7*86400000).toISOString())),'#e11d48');}catch(e){}} upd(id,v,c){const e=document.getElementById(id);if(e){e.textContent=v;e.style.color=v>0?c:'#10b981';}} }
+  function updateMetrics() {
+    const tasks = collectTasks();
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const danaPending = safeJSON('dreamos_dana').filter(d => (d.status||'').toLowerCase() === 'pending');
+    const danaSum = danaPending.reduce((s,d) => s + Number(d.nominal||0), 0);
 
-          
+    document.getElementById('m-pending').textContent = pending;
+    document.getElementById('m-approval').textContent = pending;
+    document.getElementById('m-dana').textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
+    document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status||'') === 'pending').length;
+    document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status||'') === 'pending').length;
+    document.getElementById('op-maint').textContent = safeJSON('dreamos_maintenance_tasks').filter(m => !['selesai','disetujui','approved'].includes((m.status||'').toLowerCase())).length;
+    document.getElementById('op-dana').textContent = danaPending.length;
+  }
 
-          // 👷 WORKFORCE ENGINE (Roster, Status, Laporan, Payroll-Ready)
-          class WorkforceEngine {
-            constructor() { this.roster = []; this.logs = []; this.init(); }
-            init() { this.loadRoster(); this.render(); }
-            async loadRoster() {
-              // 🌐 DYNAMIC ROSTER: Fetch real users from Supabase first
-              let users = [];
-              if (window.supabaseClient) {
-                try {
-                  const { data, error } = await window.supabaseClient.from('users').select('*');
-                  if (!error && data) {
-                    users = data;
-                    localStorage.setItem('dreamos_users_db', JSON.stringify(users));
-                  }
-                } catch(e) { console.warn('Failed to fetch users', e); }
-              }
-              if (users.length === 0) {
-                users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-              }
-              const roleLabels = {
-                'janitor_indoor': 'Janitor Indoor',
-                'janitor_outdoor': 'Janitor Outdoor',
-                'maintenance': 'Maintenance',
-                'security': 'Security'
-              };
+  window.refreshAll = function() {
+    updateMetrics(); renderInbox(); renderApprovals(); renderActivity();
+    showToast('Data diperbarui');
+  }
 
-              // Filter user yang punya role operasional dan map ke format roster
-              this.roster = users.filter(u => roleLabels[u.role]).map(u => ({
-                id: u.id || 'usr_' + Math.random().toString(36).substr(2, 5),
-                name: u.nama || u.email,
-                role: roleLabels[u.role],
-                zone: u.divisi || 'Umum',
-                status: 'active',
-                type: 'tetap'
-              }));
-
-              // Fallback: Jika belum ada user di database, tampilkan state kosong (NO DUMMY DATA)
-              if (this.roster.length === 0) {
-                console.log('ℹ️ Belum ada data roster nyata. Silakan tambah user di menu User Management.');
-              }
-
-              this.saveRoster(); 
-              this.render();
-            }
-            async saveRoster() {
-              localStorage.setItem('dreamos_workforce_roster', JSON.stringify(this.roster));
-              if (window.supabaseClient) {
-                try { await window.supabaseClient.from('workforce_roster').upsert(this.roster); }
-                catch(e) { console.warn('⚠️ Supabase roster sync failed'); }
-              }
-            }
-            render() {
-              const grid = document.getElementById('wf-grid');
-              if(!grid) return;
-              grid.innerHTML = this.roster.map(w => {
-                const statusColor = w.status==='active'?'#10b981':w.status==='izin'?'#f59e0b':w.status==='sakit'?'#ef4444':'#64748b';
-                const statusLabel = w.status==='active'?'🟢 Aktif':w.status==='izin'?'🟡 Izin':w.status==='sakit'?'🔴 Sakit':'⚫ Off';
-                const typeBadge = w.type==='harian'?'<span class="badge badge-warning">Harian</span>':'<span class="badge badge-success">Tetap</span>';
-                return `<div class="mod-card" style="text-align:left;padding:1rem;min-height:auto;border-left:4px solid ${statusColor};">
-                  <div style="font-weight:700;margin-bottom:0.3rem;">${w.name}</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem;">${w.role} • ${w.zone}</div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-                    <span style="font-size:0.8rem;font-weight:600;">${statusLabel}</span>
-                    ${typeBadge}
-                  </div>
-                  <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
-                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','active')">🟢</button>
-                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','izin')">🟡</button>
-                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.setStatus('${w.id}','sakit')">🔴</button>
-                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="window.wfEngine.logTask('${w.id}')">📝</button>
-                    <input type="file" id="file_${w.id}" accept="image/*,.pdf,.csv" style="display:none;" onchange="window.archiveEngine.uploadFile('workforce','${w.id}',this)">
-                    <button class="btn btn-outline" style="padding:0.3rem 0.5rem;font-size:0.65rem;" onclick="document.getElementById('file_${w.id}').click()">📷</button>
-                  </div>
-                </div>`;
-              }).join('');
-            }
-            async setStatus(id, status) {
-              const w = this.roster.find(x=>x.id===id);
-              if(!w) return;
-              const old = w.status; w.status = status;
-              await this.saveRoster(); this.render();
-              logAction('WORKFORCE_STATUS_CHANGE', { worker: w.name, zone: w.zone, from: old, to: status });
-            }
-            async logTask(id) {
-              const w = this.roster.find(x=>x.id===id);
-              if(!w) return;
-              const note = prompt(`📝 Laporan/Tugas untuk ${w.name} (${w.zone}):`);
-              if(!note) return;
-              const entry = { id: 'wf_'+Date.now(), worker_id: id, name: w.name, zone: w.zone, note, timestamp: new Date().toISOString(), reported_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system' };
-              const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
-              logs.unshift(entry); if(logs.length>500) logs.pop();
-              localStorage.setItem('dreamos_workforce_logs', JSON.stringify(logs));
-              if(window.supabaseClient) {
-                try { await window.supabaseClient.from('workforce_logs').insert(entry); } catch(e){}
-              }
-              logAction('WORKFORCE_DAILY_REPORT', { worker: w.name, zone: w.zone, note_length: note.length });
-              alert('✅ Laporan harian tercatat & tersinkronisasi!');
-            }
-            async openReportModal() {
-              const zone = prompt('📍 Zona/Gedung (contoh: SMP Lt.2 / Taman Selatan / Pos Security):');
-              if(!zone) return;
-              const note = prompt(`📝 Laporan harian untuk ${zone}:`);
-              if(!note) return;
-              const entry = { id: 'wf_zone_'+Date.now(), zone, note, timestamp: new Date().toISOString(), reported_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system' };
-              const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
-              logs.unshift(entry); localStorage.setItem('dreamos_workforce_logs', JSON.stringify(logs));
-              if(window.supabaseClient) { try { await window.supabaseClient.from('workforce_logs').insert(entry); } catch(e){} }
-              logAction('WORKFORCE_ZONE_REPORT', { zone, note_length: note.length });
-              alert('✅ Laporan zona tercatat & tersinkronisasi!');
-            }
-            exportPayroll() {
-              const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
-              const harian = this.roster.filter(w=>w.type==='harian');
-              const data = harian.map(w => {
-                const present = logs.filter(l=>l.worker_id===w.id && l.note && l.note.toLowerCase().includes('hadir')).length;
-                return { Nama: w.name, Zona: w.zone, Tipe: 'Harian', Hari_Kerja: present, Status_Terakhir: w.status };
-              });
-              if(!data.length) return alert('📭 Tidak ada data tukang harian.');
-              const headers = Object.keys(data[0]).join(',');
-              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
-              const csv = headers+'\n'+rows;
-              const blob = new Blob([csv], {type:'text/csv'});
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a'); a.href=url; a.download=`DreamOS_Payroll_Harian_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-              logAction('EXPORT_PAYROLL_HARIAN', { rows: data.length });
-            }
-            exportAttendance() {
-              const data = this.roster.map(w => ({ Nama: w.name, Role: w.role, Zona: w.zone, Status: w.status, Tipe: w.type }));
-              const headers = Object.keys(data[0]).join(',');
-              const rows = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n');
-              const csv = headers+'\n'+rows;
-              const blob = new Blob([csv], {type:'text/csv'});
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a'); a.href=url; a.download=`DreamOS_Absensi_SDM_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-              logAction('EXPORT_ATTENDANCE', { rows: data.length });
-            }
-            refresh() { this.loadRoster(); }
-          }
-          window.wfEngine = new WorkforceEngine();
-
-
-          // 📂 ARCHIVE & UPLOAD ENGINE (Supabase Storage + Metadata)
-          class ArchiveEngine {
-            constructor() { this.files = []; this.init(); }
-            init() { this.render(); }
-            async refresh() {
-              if(!window.supabaseClient) return alert('⚠️ Supabase belum siap.');
-              try {
-                const { data, error } = await window.supabaseClient.from('file_attachments').select('*').order('created_at', { ascending: false });
-                if(!error) { this.files = data || []; localStorage.setItem('dreamos_file_archive', JSON.stringify(this.files)); }
-              } catch(e) { console.warn('⚠️ Archive fetch failed'); }
-              this.render();
-            }
-            render() {
-              const tbody = document.getElementById('archive-tbody');
-              if(!tbody) return;
-              const data = this.files.length ? this.files : JSON.parse(localStorage.getItem('dreamos_file_archive')||'[]');
-              tbody.innerHTML = data.length ? data.map(f => {
-                const isImg = f.file_type.startsWith('image/');
-                const preview = isImg ? `<a href="${f.file_url}" target="_blank" style="color:var(--accent);">🖼️ Preview</a>` : '📄 Dokumen';
-                return `<tr>
-                  <td>${new Date(f.created_at).toLocaleDateString()}</td>
-                  <td><span class="badge badge-warning">${f.record_type.toUpperCase()}</span></td>
-                  <td>${f.file_name}</td>
-                  <td>${f.uploaded_by}</td>
-                  <td style="display:flex;gap:0.3rem;">${preview} <a href="${f.file_url}" download style="color:#10b981;">⬇️</a></td>
-                </tr>`;
-              }).join('') : '<tr><td colspan="5">📭 Belum ada arsip file</td></tr>';
-            }
-            search() {
-              const type = document.getElementById('arch-type').value;
-              const from = document.getElementById('arch-from').value;
-              const to = document.getElementById('arch-to').value;
-              let filtered = this.files.length ? this.files : JSON.parse(localStorage.getItem('dreamos_file_archive')||'[]');
-              if(type!=='all') filtered = filtered.filter(f=>f.record_type===type);
-              if(from) filtered = filtered.filter(f=>new Date(f.created_at)>=new Date(from));
-              if(to) filtered = filtered.filter(f=>new Date(f.created_at)<=new Date(to+'T23:59:59'));
-              const tbody = document.getElementById('archive-tbody');
-              tbody.innerHTML = filtered.length ? filtered.map(f => {
-                const isImg = f.file_type.startsWith('image/');
-                const preview = isImg ? `<a href="${f.file_url}" target="_blank" style="color:var(--accent);">🖼️ Preview</a>` : '📄 Dokumen';
-                return `<tr><td>${new Date(f.created_at).toLocaleDateString()}</td><td><span class="badge badge-warning">${f.record_type.toUpperCase()}</span></td><td>${f.file_name}</td><td>${f.uploaded_by}</td><td style="display:flex;gap:0.3rem;">${preview} <a href="${f.file_url}" download style="color:#10b981;">⬇️</a></td></tr>`;
-              }).join('') : '<tr><td colspan="5">🔍 Tidak ada file sesuai filter</td></tr>';
-            }
-            async uploadFile(recordType, recordId, fileInput) {
-              if(!window.supabaseClient) return alert('⚠️ Supabase belum siap.');
-              const file = fileInput.files[0];
-              if(!file) return alert('📷 Pilih file dulu!');
-              const maxSize = 5 * 1024 * 1024; // 5MB
-              if(file.size > maxSize) return alert('⚠️ Maksimal 5MB per file.');
-              const bucketMap = { 'k3':'k3-photos', 'maintenance':'maintenance-photos', 'workforce':'workforce-photos', 'security':'security-photos', 'janitor_indoor':'janitor-photos', 'janitor_outdoor':'janitor-photos', 'export':'exports-archive' };
-              const bucket = bucketMap[recordType] || 'exports-archive';
-              const fileName = `${recordType}_${recordId}_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-              try {
-                const { data, error } = await window.supabaseClient.storage.from(bucket).upload(fileName, file, { upsert: false });
-                if(error) throw error;
-                const { data: urlData } = window.supabaseClient.storage.from(bucket).getPublicUrl(fileName);
-                const meta = {
-                  id: 'file_'+Date.now(),
-                  record_type: recordType,
-                  record_id: recordId,
-                  file_url: urlData.publicUrl,
-                  file_name: file.name,
-                  file_type: file.type,
-                  file_size_kb: Math.round(file.size/1024),
-                  uploaded_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system'
-                };
-                await window.supabaseClient.from('file_attachments').insert(meta);
-                this.files.unshift(meta);
-                localStorage.setItem('dreamos_file_archive', JSON.stringify(this.files));
-                logAction('FILE_UPLOAD', { recordType, recordId, fileName, sizeKB: meta.file_size_kb });
-                alert('✅ File berhasil diupload & terarsip!');
-                fileInput.value = '';
-                this.render();
-              } catch(e) {
-                console.error('❌ Upload failed:', e);
-                alert('⛔ Gagal upload. Cek koneksi atau permission Storage.');
-              }
-            }
-          }
-          // 📍 ZONA LAPORAN CEPAT (Security & Janitor)
-          window.zoneReport = function(zone) {
-            const zoneNames = { security:'Security Patrol/Insiden', janitor_indoor:'Janitor Indoor (Gedung)', janitor_outdoor:'Janitor Outdoor (Taman)' };
-            const detail = prompt(`📝 Laporan ${zoneNames[zone] || zone}:\n(Sertakan lokasi, kondisi, & tindak lanjut)`);
-            if(!detail) return;
-            const entry = { id: 'zone_'+Date.now(), zone, note: detail, timestamp: new Date().toISOString(), reported_by: JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').email || 'system' };
-            const logs = JSON.parse(localStorage.getItem('dreamos_workforce_logs')||'[]');
-            logs.unshift(entry); localStorage.setItem('dreamos_workforce_logs', JSON.stringify(logs));
-            if(window.supabaseClient) { try { window.supabaseClient.from('workforce_logs').insert(entry).catch(()=>{}); } catch(e){} }
-            logAction('ZONE_QUICK_REPORT', { zone, length: detail.length });
-            alert(`✅ Laporan ${zoneNames[zone]} tercatat & tersinkronisasi!`);
-          };
-          window.archiveEngine = new ArchiveEngine();
-          // ☁️ FORCE SYNC HELPER (Menyelaraskan Supabase & LocalStorage)
-          window.syncBookings = async function() {
-            try {
-              if(!window.supabaseClient) return;
-              const { data, error } = await window.supabaseClient.from('bookings').select('*').order('created_at', { ascending: false });
-              // 🛡️ SAFE SYNC: Hanya timpa LocalStorage jika Supabase BENAR-BENAR punya data
-              if(!error && data && data.length > 0) {
-                localStorage.setItem('dreamos_bookings', JSON.stringify(data));
-                console.log('✅ Bookings synced to localStorage:', data.length, 'items');
-                if(window.updateDashboardSlides) window.updateDashboardSlides();
-                if(window.calEngine) window.calEngine.render();
-                if(window.refreshInbox) window.refreshInbox();
-              }
-            } catch(e) { console.warn('Sync bookings failed:', e); }
-          };
-          // Auto-sync saat Command Center dibuka
-          setTimeout(() => { if(window.syncBookings) window.syncBookings(); }, 1000);
-
-          // 📡 CROSS-MODULE SYNC LISTENER (Auto-refresh saat modul lain update data)
-          window.addEventListener('storage', (e) => {
-            if(!e.key) return;
-            const bookingKeys = ['dreamos_bookings','dreamos_booking','bookings'];
-            if(bookingKeys.includes(e.key)) {
-              console.log('🔄 Booking data changed in another tab/module. Syncing CC...');
-              if(window.calEngine) window.calEngine.render();
-              if(window.refreshInbox) window.refreshInbox();
-            }
-          });
-
-
-
-          // 📅 CALENDAR ENGINE (DOMPurify-Safe + Timezone-Proof + Format-Agnostic)
-          class CalendarEngine {
-            constructor() { this.date = new Date(); this.events = []; this.init(); }
-            init() {
-              this.render();
-              // ✅ Event Delegation: Aman dari DOMPurify yang menghapus inline onclick
-              const grid = document.getElementById('cal-grid');
-              if(grid) {
-                grid.onclick = (e) => {
-                  const dayEl = e.target.closest('[data-day]');
-                  if(!dayEl) return;
-                  const d = parseInt(dayEl.dataset.day);
-                  const m = this.date.getMonth() + 1;
-                  const y = this.date.getFullYear();
-                  const dayEvents = this.events.filter(ev => ev.day === d);
-                  const list = dayEvents.length ? dayEvents.map(ev => '• ' + ev.title).join(' | ') : 'Tidak ada jadwal';
-                  if(window.showToast) window.showToast('📅 ' + d + '/' + m + '/' + y + ' → ' + dayEvents.length + ' Event: ' + list, 'info');
-                  else console.log('📅 Calendar Click:', d+'/'+m+'/'+y, list);
-                };
-              }
-            }
-            // ✅ Parser Tanggal Robust: Handle YYYY-MM-DD, DD/MM/YYYY, & ISO String
-            parseDate(dateStr) {
-              if(!dateStr) return null;
-              const s = String(dateStr).trim();
-              // DD/MM/YYYY
-              if(s.includes('/')) {
-                const p = s.split('/');
-                if(p.length===3) return new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
-              }
-              // YYYY-MM-DD atau ISO → Ekstrak manual via Regex (ZERO UTC SHIFT)
-              const m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-              if(m) return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]));
-              return null;
-            }
-            loadEvents() {
-              this.events = [];
-              const y = this.date.getFullYear(), m = this.date.getMonth();
-              const sources = [
-                { key: 'dreamos_bookings', color: '#0ea5e9', label: 'Booking', field: 'ruang' },
-                { key: 'dreamos_maintenance', color: '#8b5cf6', label: 'Maint', field: 'deskripsi' },
-                { key: 'dreamos_security_shifts', color: '#f59e0b', label: 'Security', field: 'pengawas' },
-                { key: 'dreamos_janitor_shifts', color: '#10b981', label: 'Janitor', field: 'nama' },
-                { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' }
-              ];
-              const getStore = (k) => JSON.parse(localStorage.getItem(k) || localStorage.getItem(k.replace('dreamos_','')) || localStorage.getItem('dreamos_'+k) || '[]');
-              sources.forEach(s => {
-                try {
-                  const data = getStore(s.key);
-                  data.forEach(d => {
-                    const dateField = d.tanggal || d.tgl || d.date || d.created_at;
-                    const dDate = this.parseDate(dateField);
-                    // ✅ Bandingkan menggunakan Local Date string agar tidak geser timezone
-                    if(dDate && dDate.getFullYear()===y && dDate.getMonth()===m) {
-                      this.events.push({ day: dDate.getDate(), title: `${s.label}: ${d[s.field]||d.judul||'-'}`, color: s.color });
-                    }
-                  });
-                } catch(e){}
-              });
-            }
-            render() {
-              const y = this.date.getFullYear(), m = this.date.getMonth();
-              const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-              const labelEl = document.getElementById('cal-month-label');
-              if(labelEl) labelEl.textContent = `${months[m]} ${y}`;
-
-              this.loadEvents();
-              const firstDay = new Date(y, m, 1).getDay();
-              const daysInMonth = new Date(y, m + 1, 0).getDate();
-              const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Senin=0
-
-              let html = '';
-              for(let i=0; i<startOffset; i++) html += '<div style="background:rgba(0,0,0,0.1);min-height:80px;"></div>';
-
-              const today = new Date();
-              for(let d=1; d<=daysInMonth; d++) {
-                const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
-                const dayEvents = this.events.filter(e=>e.day===d);
-                const evHtml = dayEvents.slice(0,3).map(e=>`<div style="background:${e.color};color:#fff;font-size:0.65rem;padding:2px 4px;margin:2px 0;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title || 'Event'}</div>`).join('');
-                const more = dayEvents.length>3 ? `<div style="font-size:0.6rem;color:var(--text-muted);text-align:center;">+${dayEvents.length-3} lagi</div>` : '';
-
-                // ✅ Gunakan data-day attribute (tidak dihapus DOMPurify)
-                html += `<div data-day="${d}" style="background:${isToday?'rgba(14,165,233,0.15)':'rgba(0,0,0,0.2)'};min-height:80px;padding:4px;cursor:pointer;border:1px solid rgba(255,255,255,0.05);">
-                  <div style="text-align:right;font-weight:700;font-size:0.8rem;color:${isToday?'#0ea5e9':'var(--text-muted)'};">${d}</div>
-                  ${evHtml}${more}
-                </div>`;
-              }
-              const gridEl = document.getElementById('cal-grid');
-              if(gridEl) gridEl.innerHTML = window.safeHTML(html);
-            }
-            prevMonth() { this.date.setMonth(this.date.getMonth()-1); this.render(); }
-            nextMonth() { this.date.setMonth(this.date.getMonth()+1); this.render(); }
-          }
-          window.calEngine = new CalendarEngine();
-
-          const syncEl = document.getElementById('sync-status');
-          let retries = 0;
-          function waitSB() {
-            if(window.supabaseClient) {
-              if(syncEl){syncEl.innerHTML='🟢 Online - Supabase';syncEl.style.color='#10b981';}
-              if(!window.entEngine) window.entEngine = new EnterpriseRealtimeEngine();
-              if(!window.opEngine) window.opEngine = new OperationalHealthEngine();
-              return;
-            }
-            retries++;
-            if(retries<=8){if(syncEl)syncEl.innerHTML='🟡 Waiting...('+retries+'/8)';setTimeout(waitSB,1000);}
-            else{if(syncEl){syncEl.innerHTML='🟡 Offline';syncEl.style.color='#f59e0b';}}
-          }
-          setTimeout(waitSB, 500);
-
-          //  AUTO-SYNC INTERVAL: Update data setiap 30 detik
-          setInterval(async () => {
-            if (window.supabaseClient) {
-              console.log('🔄 Auto-syncing data from Supabase...');
-              if (window.refreshInbox) await window.refreshInbox();
-              if (window.calEngine) window.calEngine.render();
-            }
-          }, 30000);
-
-          // 📊 CHART.JS: Render SLA & Budget Chart di Dashboard
-          function renderExecutiveCharts() {
-            if (typeof Chart === 'undefined') {
-              console.warn('Chart.js not loaded');
-              return;
-            }
-            
-            // Cek apakah chart sudah ada
-            if (document.getElementById('slaChart')) return;
-            
-            const quickStats = document.querySelector('.quick-stats');
-            if (!quickStats) return;
-            
-            const chartContainer = document.createElement('div');
-            chartContainer.className = 'glass';
-            chartContainer.style.marginTop = '1rem';
-            chartContainer.innerHTML = `
-              <div style="color: var(--accent); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📈 Kinerja Operasional & SLA (Live)</div>
-              <div style="position:relative; height:220px; width:100%;">
-                <canvas id="slaChart"></canvas>
-              </div>
-            `;
-            quickStats.parentNode.insertBefore(chartContainer, quickStats.nextSibling);
-            
-            // Ambil data real untuk chart
-            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-            const completed = bookings.filter(b => b.status === 'approved').length;
-            const pending = bookings.filter(b => b.status === 'pending').length;
-            const rejected = bookings.filter(b => b.status === 'rejected').length;
-            
-            new Chart(document.getElementById('slaChart'), {
-              type: 'doughnut',
-              data: {
-                labels: ['Selesai (Approved)', 'Pending', 'Ditolak'],
-                datasets: [{
-                  data: [completed, pending, rejected],
-                  backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                  borderWidth: 0,
-                  hoverOffset: 4
-                }]
-              },
-              options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                  legend: { position: 'right', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } } 
-                },
-                cutout: '70%'
-              }
-            });
-          }
-          
-          // Render chart setelah DOM siap
-          setTimeout(renderExecutiveCharts, 2000);
-
-          // 🎯 SMART CLICK: Metric Cards jadi shortcut ke Inbox
-          const metricMap = {
-            'op-k3': 'K3',
-            'op-booking': 'Booking',
-            'op-maint': 'Maintenance',
-            'op-dana': 'Dana'
-          };
-          
-          for (const [id, type] of Object.entries(metricMap)) {
-            const el = document.getElementById(id);
-            if (el && el.parentNode) {
-              el.parentNode.style.cursor = 'pointer';
-              el.parentNode.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-              el.parentNode.title = 'Klik untuk meluncur ke antrean ' + type;
-              
-              // Hover effect
-              el.parentNode.onmouseover = function() { 
-                this.style.transform = 'scale(1.05)'; 
-                this.style.boxShadow = '0 0 20px rgba(0,255,157,0.3)'; 
-              };
-              el.parentNode.onmouseout = function() { 
-                this.style.transform = 'scale(1)'; 
-                this.style.boxShadow = 'none'; 
-              };
-              
-              // Click to navigate
-              el.parentNode.onclick = function() {
-                if (window.switchTab) window.switchTab('inbox');
-                console.log('🎯 Navigated to inbox for:', type);
-              };
-            }
-          }
-          console.log(' CC Pro Workspace Ready | Role:', role);
-        } catch(err) { console.error('❌ CC CRASH:', err); }
-      }
-
-      if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', safeInit);
-      else setTimeout(safeInit, 400);
-    })();
-  </script>
+  document.getElementById('sync-status').textContent = window.supabaseClient ? '🟢 Online' : '🟡 Local';
+  document.getElementById('sync-status').style.color = window.supabaseClient ? '#10b981' : '#f59e0b';
+  updateMetrics();
+  logActivity('LOGIN_CC', 'User membuka Command Center');
+})();
+</script>
 </body>
 </html>
