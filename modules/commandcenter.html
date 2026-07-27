@@ -58,8 +58,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body style="background: #0a0e27 !important;">
-  <div style="background: #0a0e27; min-height: 100vh; position: relative;">
-  <button class="back-btn" onclick="window.goHome()" aria-label="Kembali ke Dashboard Utama">← HOME</button>
+  <button class="back-btn" onclick="try { if(window.goHome) window.goHome(); else window.location.href='index.html'; } catch(e) { window.location.href='index.html'; }" aria-label="Kembali ke Dashboard Utama">← HOME</button>
 
   <div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem;">
     <div class="glass">
@@ -311,13 +310,16 @@
     }
     window.sessionMgr = new SessionManager(15);
 
-    // ✅ Gunakan window.goHome dari parent (index.html) - JANGAN REDEFINE
-if (!window.goHome) {
-  window.goHome = function() {
-    // Fallback: redirect ke index.html jika tidak ada parent function
-    window.location.href = 'index.html';
-  };
-}
+    // ✅ Gunakan window.goHome dari parent (index.html)
+    // Jika tidak ada, buat fallback yang aman
+    if (typeof window.parent.goHome === 'function' && window.parent !== window) {
+      window.goHome = window.parent.goHome;
+    } else if (!window.goHome) {
+      window.goHome = function() {
+        // Fallback: reload index.html
+        window.location.href = window.location.origin + (window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/') + 'index.html';
+      };
+    }
 
     (function() {
       'use strict';
@@ -1169,6 +1171,5 @@ if (!window.goHome) {
       else setTimeout(safeInit, 400);
     })();
   </script>
-  </div>
 </body>
 </html>
