@@ -27,7 +27,7 @@
     th { background: rgba(0,0,0,0.4); color: var(--accent); padding: 0.8rem; text-align: left; }
     td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .pro-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-    .pro-metric { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,255,157,0.15); border-radius: 10px; padding: 0.9rem; text-align: center; }
+    .pro-metric { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,255,157,0.15); border-radius: 12px; padding: 1.2rem 0.8rem; text-align: center; transition: all 0.2s ease; }
     .pro-metric-val { font-size: 1.6rem; font-weight: 800; color: var(--neon); }
     .pro-metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
     .badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
@@ -77,6 +77,17 @@
         </div>
       </div>
     </div>
+
+    
+    <!-- 🔍 GLOBAL SMART SEARCH (Linear/Notion Style) -->
+    <div class="glass" style="padding: 0.8rem 1.2rem; display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
+      <span style="color: var(--text-muted); font-size: 1.2rem;">🔍</span>
+      <input type="text" id="global-smart-search" placeholder="Cari tiket, nama, ruangan, atau status... (Ctrl+K)" 
+             style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:0.9rem; outline:none;"
+             oninput="window.handleSmartSearch(this.value)">
+      <span style="background:rgba(255,255,255,0.1); padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem; color:var(--text-muted);">⌘K</span>
+    </div>
+    <div id="smart-search-results" style="display:none; position:absolute; z-index:100; width:90%; max-width:1100px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:0.5rem; max-height:300px; overflow-y:auto;"></div>
 
     <div class="tabs">
       <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
@@ -241,6 +252,19 @@
         </div>
       </div>
     </div>
+
+    
+    <!-- 💬 ACTIVITY FEED TEMPLATE (Hidden, used by JS) -->
+    <template id="activity-feed-template">
+      <div class="glass" style="margin-top:1rem; padding:1rem;">
+        <div style="font-weight:700; font-size:0.85rem; margin-bottom:0.8rem; color:var(--accent);">💬 Aktivitas & Komentar</div>
+        <div id="activity-list" style="max-height:200px; overflow-y:auto; margin-bottom:1rem;"></div>
+        <div style="display:flex; gap:0.5rem;">
+          <input type="text" id="new-activity-comment" placeholder="Tulis update atau komentar..." class="input-field" style="margin-bottom:0; flex:1;">
+          <button class="btn btn-primary" onclick="window.postActivityComment()">Kirim</button>
+        </div>
+      </div>
+    </template>
 
     <!-- DANA, APPROVALS, USERS, AUDIT, PENGUMUMAN (TETAP SAMA, DIPENDEKKAN UNTUK BASH LIMIT) -->
     <div id="tab-dana" class="tab-content"><div class="glass"><div style="color:var(--gold);margin-bottom:1rem;font-weight:700;">💸 Pengajuan Dana</div><div id="dana-form-container" style="display:none;margin-bottom:1.5rem;"><div class="form-group"><label>Judul</label><input type="text" id="dana-judul"></div><div class="form-group"><label>Nominal</label><input type="number" id="dana-nominal"></div><button class="btn btn-warning" onclick="submitDana()" style="width:100%;">📤 Ajukan</button></div><div class="table-responsive"><table><thead><tr><th>Tanggal</th><th>Judul</th><th>Nominal</th><th>Status</th><th>Level</th></tr></thead><tbody id="dana-tbody"></tbody></table></div></div></div>
