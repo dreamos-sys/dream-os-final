@@ -55,6 +55,7 @@
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <button class="back-btn" onclick="window.goHome()" aria-label="Kembali ke Dashboard Utama">← HOME</button>
@@ -286,6 +287,12 @@
     window.sessionMgr = new SessionManager(15);
 
     // ✅ Gunakan window.goHome dari parent (index.html) - JANGAN REDEFINE
+if (!window.goHome) {
+  window.goHome = function() {
+    // Fallback: redirect ke index.html jika tidak ada parent function
+    window.location.href = 'index.html';
+  };
+}
 
     (function() {
       'use strict';
@@ -339,6 +346,27 @@
                 }
               } catch (e) { console.warn('Supabase fetch failed for', table, e); }
             }
+            return JSON.parse(localStorage.getItem(localKey) || '[]');
+          }
+
+          // 🌐 REAL-TIME SYNC HELPER: Supabase First, LocalStorage as Cache
+          async function getRealData(table, localKey, filter = null) {
+            if (window.supabaseClient) {
+              try {
+                let query = window.supabaseClient.from(table).select('*');
+                if (filter) {
+                  if (filter.field && filter.op && filter.value) {
+                    query = query[filter.op](filter.field, filter.value);
+                  }
+                }
+                const { data, error } = await query.order('created_at', { ascending: false });
+                if (!error && data) {
+                  localStorage.setItem(localKey, JSON.stringify(data));
+                  return data;
+                }
+              } catch (e) { console.warn('Supabase fetch failed for', table, e); }
+            }
+            // Fallback: baca dari localStorage cache
             return JSON.parse(localStorage.getItem(localKey) || '[]');
           }
       function safeInit() {
@@ -1019,7 +1047,104 @@
             else{if(syncEl){syncEl.innerHTML='🟡 Offline';syncEl.style.color='#f59e0b';}}
           }
           setTimeout(waitSB, 500);
-          console.log('🏢 CC Pro Workspace Ready | Role:', role);
+
+          //  AUTO-SYNC INTERVAL: Update data setiap 30 detik
+          setInterval(async () => {
+            if (window.supabaseClient) {
+              console.log('🔄 Auto-syncing data from Supabase...');
+              if (window.refreshInbox) await window.refreshInbox();
+              if (window.calEngine) window.calEngine.render();
+            }
+          }, 30000);
+
+          // 📊 CHART.JS: Render SLA & Budget Chart di Dashboard
+          function renderExecutiveCharts() {
+            if (typeof Chart === 'undefined') {
+              console.warn('Chart.js not loaded');
+              return;
+            }
+            
+            // Cek apakah chart sudah ada
+            if (document.getElementById('slaChart')) return;
+            
+            const quickStats = document.querySelector('.quick-stats');
+            if (!quickStats) return;
+            
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'glass';
+            chartContainer.style.marginTop = '1rem';
+            chartContainer.innerHTML = `
+              <div style="color: var(--accent); margin-bottom: 1rem; font-weight: 700; font-size: 1rem;">📈 Kinerja Operasional & SLA (Live)</div>
+              <div style="position:relative; height:220px; width:100%;">
+                <canvas id="slaChart"></canvas>
+              </div>
+            `;
+            quickStats.parentNode.insertBefore(chartContainer, quickStats.nextSibling);
+            
+            // Ambil data real untuk chart
+            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+            const completed = bookings.filter(b => b.status === 'approved').length;
+            const pending = bookings.filter(b => b.status === 'pending').length;
+            const rejected = bookings.filter(b => b.status === 'rejected').length;
+            
+            new Chart(document.getElementById('slaChart'), {
+              type: 'doughnut',
+              data: {
+                labels: ['Selesai (Approved)', 'Pending', 'Ditolak'],
+                datasets: [{
+                  data: [completed, pending, rejected],
+                  backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                  borderWidth: 0,
+                  hoverOffset: 4
+                }]
+              },
+              options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                  legend: { position: 'right', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } } 
+                },
+                cutout: '70%'
+              }
+            });
+          }
+          
+          // Render chart setelah DOM siap
+          setTimeout(renderExecutiveCharts, 2000);
+
+          // 🎯 SMART CLICK: Metric Cards jadi shortcut ke Inbox
+          const metricMap = {
+            'op-k3': 'K3',
+            'op-booking': 'Booking',
+            'op-maint': 'Maintenance',
+            'op-dana': 'Dana'
+          };
+          
+          for (const [id, type] of Object.entries(metricMap)) {
+            const el = document.getElementById(id);
+            if (el && el.parentNode) {
+              el.parentNode.style.cursor = 'pointer';
+              el.parentNode.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+              el.parentNode.title = 'Klik untuk meluncur ke antrean ' + type;
+              
+              // Hover effect
+              el.parentNode.onmouseover = function() { 
+                this.style.transform = 'scale(1.05)'; 
+                this.style.boxShadow = '0 0 20px rgba(0,255,157,0.3)'; 
+              };
+              el.parentNode.onmouseout = function() { 
+                this.style.transform = 'scale(1)'; 
+                this.style.boxShadow = 'none'; 
+              };
+              
+              // Click to navigate
+              el.parentNode.onclick = function() {
+                if (window.switchTab) window.switchTab('inbox');
+                console.log('🎯 Navigated to inbox for:', type);
+              };
+            }
+          }
+          console.log(' CC Pro Workspace Ready | Role:', role);
         } catch(err) { console.error('❌ CC CRASH:', err); }
       }
 
