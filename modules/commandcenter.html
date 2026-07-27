@@ -359,20 +359,6 @@ if (!window.goHome) {
   };
 
 
-          // 🌐 REAL-TIME SYNC HELPER: Supabase First, LocalStorage Fallback
-          async function getRealData(table, localKey) {
-            if (window.supabaseClient) {
-              try {
-                const { data, error } = await window.supabaseClient.from(table).select('*').order('created_at', { ascending: false });
-                if (!error && data) {
-                  localStorage.setItem(localKey, JSON.stringify(data));
-                  return data;
-                }
-              } catch (e) { console.warn('Supabase fetch failed for', table, e); }
-            }
-            return JSON.parse(localStorage.getItem(localKey) || '[]');
-          }
-
           // 🌐 REAL-TIME SYNC HELPER: Supabase First, LocalStorage as Cache
           async function getRealData(table, localKey, filter = null) {
             if (window.supabaseClient) {
@@ -454,9 +440,15 @@ if (!window.goHome) {
               const card = document.createElement('div'); card.className = 'mod-card';
               card.innerHTML = '<div class="mod-icon">'+mod.icon+'</div><div class="mod-title">'+mod.title+'</div>';
               card.onclick = () => {
-                const map = { booking:'booking.html', k3:'k3.html', security:'security.html', maintenance:'maintenance.html', dana:'commandcenter.html' };
-                if(map[modKey]) window.location.href = map[modKey];
-                else window.switchTab(['users','audit','approvals'].includes(modKey)?modKey:'dashboard');
+                // Gunakan window.openMod dari parent (index.html) agar tidak 404
+                if (typeof window.openMod === 'function') {
+                  window.openMod(modKey);
+                } else {
+                  // Fallback jika dibuka standalone (meski seharusnya lewat index.html)
+                  const map = { booking:'modules/booking.html', k3:'modules/k3.html', security:'modules/security.html', maintenance:'modules/maintenance.html', dana:'modules/commandcenter.html' };
+                  if(map[modKey]) window.location.href = map[modKey];
+                  else window.switchTab(['users','audit','approvals'].includes(modKey)?modKey:'dashboard');
+                }
               };
               grid.appendChild(card);
             });
