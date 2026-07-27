@@ -739,17 +739,21 @@
         if (active) active.classList.add('active');
       }
 
-      // Go Home
+      // Go Home (Bulletproof State Reset)
       window.goHome = function() {
         const c = document.getElementById('mod-container');
-        if (c) { c.style.display = 'none'; c.innerHTML = ''; }
+        if (c) { 
+          c.style.display = 'none'; 
+          c.innerHTML = ''; // 🧹 Clean residue
+        }
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
         if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
         setActiveNav('home');
+        window.scrollTo(0, 0);
       };
 
-      // Open Module (Smart Path Resolver + Anti-404)
+      // Open Module (Bulletproof State + Solid Background)
       window.openMod = function(moduleId) {
         if (!canAccess(moduleId)) { window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error'); return; }
         const map = {
@@ -761,9 +765,8 @@
           profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
         };
         const file = map[moduleId];
-        if (!file) return;
+        if (!file) { window.showToast('⛔ Modul tidak dikenali.', 'error'); return; }
 
-        // 🌐 Auto-detect base path (GitHub Pages subfolder support)
         const basePath = window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/';
         const pathsToTry = [
           `${basePath}modules/${file}`,
@@ -775,11 +778,20 @@
         let c = document.getElementById('mod-container');
         if (!c) {
           c = document.createElement('div'); c.id = 'mod-container';
-          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:rgba(4,8,20,0.98);padding-bottom:5rem;';
+          // 🛡️ FORCE SOLID BACKGROUND to prevent transparency/starfield bleed
+          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0a0e27 !important;padding-bottom:5rem;';
           document.body.appendChild(c);
+        } else {
+          c.style.display = 'block';
+          c.style.background = '#0a0e27';
+          c.innerHTML = ''; // 🧹 Clean previous module residue
         }
-        c.style.display = 'block';
-        c.innerHTML = '<div class="skeleton-grid">' + Array(6).fill('<div class="skeleton-card"></div>').join('') + '</div>';
+        
+        c.innerHTML = '<div class="skeleton-grid" style="padding:2rem;">' + Array(6).fill('<div class="skeleton-card"></div>').join('') + '</div>';
+        
+        // Hide main UI while module is active
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('bottom-nav').style.display = 'none';
         window.announce('Memuat modul ' + moduleId + '...');
         if (window.BankAudit) BankAudit.log('OPEN_MODULE', { module: file });
 
