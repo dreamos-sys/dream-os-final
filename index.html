@@ -745,12 +745,16 @@
         if (c) { 
           c.style.display = 'none'; 
           c.innerHTML = ''; // 🧹 Clean residue
+          c.style.background = '#0a0e27';
         }
-        document.getElementById('main-app').style.display = 'block';
-        document.getElementById('bottom-nav').style.display = 'block';
+        const mainApp = document.getElementById('main-app');
+        const bottomNav = document.getElementById('bottom-nav');
+        if(mainApp) mainApp.style.display = 'block';
+        if(bottomNav) bottomNav.style.display = 'block';
         if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
         setActiveNav('home');
         window.scrollTo(0, 0);
+        console.log('✅ Returned to dashboard');
       };
 
       // Open Module (Bulletproof State + Solid Background)
@@ -778,8 +782,8 @@
         let c = document.getElementById('mod-container');
         if (!c) {
           c = document.createElement('div'); c.id = 'mod-container';
-          // 🛡️ FORCE SOLID BACKGROUND to prevent transparency/starfield bleed
-          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0a0e27 !important;padding-bottom:5rem;';
+          // 🛡️ FORCE SOLID BACKGROUND + HIGH Z-INDEX
+          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0a0e27 !important;padding-bottom:5rem;backdrop-filter:none !important;';
           document.body.appendChild(c);
         } else {
           c.style.display = 'block';
@@ -790,8 +794,10 @@
         c.innerHTML = '<div class="skeleton-grid" style="padding:2rem;">' + Array(6).fill('<div class="skeleton-card"></div>').join('') + '</div>';
         
         // Hide main UI while module is active
-        document.getElementById('main-app').style.display = 'none';
-        document.getElementById('bottom-nav').style.display = 'none';
+        const mainApp = document.getElementById('main-app');
+        const bottomNav = document.getElementById('bottom-nav');
+        if(mainApp) mainApp.style.display = 'none';
+        if(bottomNav) bottomNav.style.display = 'none';
         window.announce('Memuat modul ' + moduleId + '...');
         if (window.BankAudit) BankAudit.log('OPEN_MODULE', { module: file });
 
