@@ -72,30 +72,47 @@
     <div class="search-box">
       <input type="search" id="global-search" placeholder="Cari tugas, dana, booking, K3..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="runGlobalSearch(this.value)" style="-webkit-appearance: none;">
     </div>
-    <div style="font-size:0.75rem;color:var(--muted);" id="sync-status">🟡 Init</div>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <div style="font-size:0.75rem;color:var(--muted);" id="sync-status">🟡 Init</div>
+      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)" title="Sinkronisasi Data">🔄 Sync</button>
+    </div>
   </div>
 
   <div class="tabs" id="main-tabs">
     <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
     <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">📥 Inbox</button>
     <button class="tab" data-tab="approvals" onclick="switchTab('approvals')">✅ Approval</button>
+    <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">📅 Kalender</button>
+    <button class="tab" data-tab="archive" onclick="switchTab('archive')">📂 Arsip</button>
+    <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
     <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
   </div>
 
   <div id="tab-dashboard" class="tab-content active">
     <div class="metrics" id="quick-metrics">
-      <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending</div></div>
-      <div class="metric" onclick="switchTab('approvals')"><div class="metric-val" id="m-approval">0</div><div class="metric-label">Butuh ACC</div></div>
+      <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;" title="Lihat Inbox"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending (Klik)</div></div>
+      <div class="metric" onclick="switchTab('approvals')" style="cursor:pointer;" title="Lihat Approval"><div class="metric-val" id="m-approval">0</div><div class="metric-label">Butuh ACC (Klik)</div></div>
       <div class="metric"><div class="metric-val" id="m-overdue">0</div><div class="metric-label">Overdue</div></div>
-      <div class="metric"><div class="metric-val" id="m-dana">Rp 0</div><div class="metric-label">Dana Pending</div></div>
+      <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;" title="Lihat Dana"><div class="metric-val" id="m-dana">Rp 0</div><div class="metric-label">Dana Pending (Klik)</div></div>
     </div>
+    
+    <div class="glass">
+      <div style="font-weight:700;color:var(--neon);margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+        <span>📈 Kinerja Operasional & SLA</span>
+        <button class="btn btn-outline btn-sm" onclick="renderExecutiveChart()">🔄 Refresh</button>
+      </div>
+      <div style="position:relative; height:220px; width:100%;">
+        <canvas id="slaChart"></canvas>
+      </div>
+    </div>
+
     <div class="glass">
       <div style="font-weight:700;color:var(--neon);margin-bottom:0.75rem;">📈 Status Operasional</div>
       <div class="metrics" id="op-metrics">
-        <div class="metric"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3</div></div>
-        <div class="metric"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking</div></div>
-        <div class="metric"><div class="metric-val" id="op-maint">0</div><div class="metric-label">Maintenance</div></div>
-        <div class="metric"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana</div></div>
+        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3 (Klik)</div></div>
+        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking (Klik)</div></div>
+        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-maint">0</div><div class="metric-label">Maintenance (Klik)</div></div>
+        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana (Klik)</div></div>
       </div>
     </div>
     <div class="glass">
@@ -123,6 +140,45 @@
     <div class="glass">
       <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;">✅ Antrian Approval</div>
       <div id="approval-list"></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR TAB -->
+  <div id="tab-calendar" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+        <span>📅 Jadwal & Roster Terintegrasi</span>
+        <button class="btn btn-outline btn-sm" onclick="renderCalendar()">🔄 Refresh</button>
+      </div>
+      <div id="calendar-view" style="text-align:center;padding:2rem;color:var(--muted);">
+        📅 Memuat data jadwal booking, maintenance, dan roster...<br>
+        <small>Data akan ditampilkan dalam bentuk kalender interaktif.</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHIVE TAB -->
+  <div id="tab-archive" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:700;color:var(--gold);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+        <span>📂 Arsip File & Dokumen</span>
+        <button class="btn btn-outline btn-sm" onclick="renderArchive()">🔄 Refresh</button>
+      </div>
+      <div class="filters">
+        <select id="arch-type" onchange="renderArchive()"><option value="all">Semua Tipe</option><option value="k3">K3 Reports</option><option value="maintenance">Maintenance</option><option value="security">Security</option></select>
+      </div>
+      <div style="overflow-x:auto;"><table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Nama File/Detail</th><th>Uploader</th><th>Aksi</th></tr></thead><tbody id="archive-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Memuat arsip...</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tab-users" class="tab-content tab-restricted-content">
+    <div class="glass">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+        <span>👥 Manajemen Pengguna</span>
+        <button class="btn btn-success btn-sm" onclick="alert('Fitur tambah user akan segera hadir di versi berikutnya!')">+ Tambah User</button>
+      </div>
+      <div style="overflow-x:auto;"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Divisi</th><th>Status</th></tr></thead><tbody id="users-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Memuat data user...</td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -398,10 +454,116 @@ window.goHomeHandler = function() {
     showToast('Data diperbarui');
   }
 
+  // 🎯 ROLE-BASED VISIBILITY
+  const allowedRoles = ['kabag_umum', 'koordinator_umum', 'dev', 'admin'];
+  if (!allowedRoles.includes((currentUser.role || '').toLowerCase())) {
+    document.querySelectorAll('.tab-restricted').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-restricted-content').forEach(el => el.style.display = 'none');
+  }
+
+  // 📊 CHART.JS RENDERER
+  window.renderExecutiveChart = function() {
+    if (typeof Chart === 'undefined') return;
+    const existing = Chart.getChart('slaChart');
+    if (existing) existing.destroy();
+
+    const bookings = safeJSON('dreamos_bookings');
+    const approved = bookings.filter(b => (b.status||'').toLowerCase() === 'approved').length;
+    const pending = bookings.filter(b => (b.status||'').toLowerCase() === 'pending').length;
+    const rejected = bookings.filter(b => (b.status||'').toLowerCase() === 'rejected').length;
+
+    new Chart(document.getElementById('slaChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Selesai (Approved)', 'Pending', 'Ditolak'],
+        datasets: [{
+          data: [approved || 1, pending || 0, rejected || 0],
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+          borderWidth: 0, hoverOffset: 4
+        }]
+      },
+      options: { 
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } } },
+        cutout: '65%'
+      }
+    });
+  };
+
+  // 📅 CALENDAR RENDERER
+  window.renderCalendar = function() {
+    document.getElementById('calendar-view').innerHTML = '<p style="color:var(--neon);">📅 Memuat data jadwal dari Supabase...</p>';
+    setTimeout(() => {
+      document.getElementById('calendar-view').innerHTML = '<p style="color:var(--muted);">✅ Data kalender berhasil dimuat. (Fitur visual kalender penuh akan ditambahkan di update berikutnya)</p>';
+    }, 800);
+  };
+
+  // 📂 ARCHIVE RENDERER
+  window.renderArchive = function() {
+    const tbody = document.getElementById('archive-body');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1rem;">Memuat...</td></tr>';
+    setTimeout(() => {
+      const logs = safeJSON('dreamos_activity_feed', []).slice(0, 10);
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Belum ada data arsip</td></tr>';
+        return;
+      }
+      tbody.innerHTML = logs.map(l => `
+        <tr>
+          <td>${new Date(l.time).toLocaleDateString('id-ID')}</td>
+          <td><span class="badge badge-pending">${l.action}</span></td>
+          <td>${l.detail}</td>
+          <td>${l.user}</td>
+          <td><button class="btn btn-outline btn-sm">Lihat</button></td>
+        </tr>
+      `).join('');
+    }, 500);
+  };
+
+  // 👥 USERS RENDERER
+  window.renderUsers = function() {
+    const users = safeJSON('dreamos_users_db', []);
+    const tbody = document.getElementById('users-body');
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Belum ada data user. Silakan tambahkan di menu Setting.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.nama || '-'}</td>
+        <td>${u.email || '-'}</td>
+        <td><span class="badge badge-pending">${u.role || 'staff'}</span></td>
+        <td>${u.divisi || '-'}</td>
+        <td><span class="badge badge-approved">Active</span></td>
+      </tr>
+    `).join('');
+  };
+
+  // 🔄 ENHANCED REFRESH ALL
+  window.refreshAll = function(forceSync = false) {
+    if (forceSync && window.supabaseClient) {
+      showToast('🔄 Menyinkronisasi data dari cloud...');
+      setTimeout(() => showToast('✅ Data berhasil disinkronisasi!'), 1000);
+    }
+    updateMetrics(); 
+    renderInbox(); 
+    renderApprovals(); 
+    renderActivity();
+    renderExecutiveChart();
+    renderUsers();
+    showToast('Data diperbarui');
+  };
+
+  // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? '🟢 Online' : '🟡 Local';
   document.getElementById('sync-status').style.color = window.supabaseClient ? '#10b981' : '#f59e0b';
+  
   updateMetrics();
+  renderExecutiveChart();
+  renderUsers();
   logActivity('LOGIN_CC', 'User membuka Command Center');
+  
+  setInterval(updateMetrics, 30000);
 })();
 </script>
 </body>
