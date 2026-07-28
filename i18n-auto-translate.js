@@ -1,6 +1,5 @@
 (function () {
   'use strict';
-
   var translateCache = {};
 
   function getDict() {
@@ -14,30 +13,17 @@
     if (!text || typeof text !== 'string') return text;
     var trimmed = text.trim();
     if (!trimmed || trimmed.length < 2) return text;
-
     var lang = window.currentLang || 'id';
     if (lang === 'id') return text;
-
     var cacheKey = lang + '|' + trimmed;
     if (translateCache[cacheKey] !== undefined) return translateCache[cacheKey];
-
     var dict = getDict();
-    if (!dict) {
-      translateCache[cacheKey] = text;
-      return text;
-    }
-
-    // 1) key langsung
-    if (dict[trimmed]) {
-      translateCache[cacheKey] = dict[trimmed];
-      return dict[trimmed];
-    }
-    // 2) nilai ID sebagai key (map id→en disimpan di dict)
+    if (!dict) { translateCache[cacheKey] = text; return text; }
+    if (dict[trimmed]) { translateCache[cacheKey] = dict[trimmed]; return dict[trimmed]; }
     if (dict._fromId && dict._fromId[trimmed]) {
       translateCache[cacheKey] = dict._fromId[trimmed];
       return dict._fromId[trimmed];
     }
-
     translateCache[cacheKey] = text;
     return text;
   }
@@ -46,28 +32,20 @@
     if (!element || element.nodeType !== 1) return;
     var tag = element.tagName;
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CODE' || tag === 'PRE') return;
-
     if (element.hasAttribute('data-i18n')) {
       var key = element.getAttribute('data-i18n');
       var dict = getDict();
       if (dict && dict[key]) element.textContent = dict[key];
     }
-
-    if (element.childNodes && element.childNodes.length) {
-      for (var i = 0; i < element.childNodes.length; i++) {
-        var child = element.childNodes[i];
-        if (child.nodeType === 3) {
-          var raw = child.textContent;
-          var t = raw.trim();
-          if (!t) continue;
-          var tr = translateText(t);
-          if (tr !== t) child.textContent = raw.replace(t, tr);
-        } else if (child.nodeType === 1) {
-          translateElement(child);
-        }
-      }
+    for (var i = 0; i < element.childNodes.length; i++) {
+      var child = element.childNodes[i];
+      if (child.nodeType === 3) {
+        var raw = child.textContent, t = raw.trim();
+        if (!t) continue;
+        var tr = translateText(t);
+        if (tr !== t) child.textContent = raw.replace(t, tr);
+      } else if (child.nodeType === 1) translateElement(child);
     }
-
     ['placeholder', 'title', 'aria-label'].forEach(function (attr) {
       if (!element.hasAttribute(attr)) return;
       var v = element.getAttribute(attr);
@@ -77,7 +55,6 @@
   }
 
   var observer = null;
-
   function startObserver() {
     if (observer) observer.disconnect();
     if (!document.body) return;
@@ -111,9 +88,7 @@
     startObserver();
     setTimeout(function () { window.i18nTranslate(); }, 400);
   }
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
-
   console.log('🌍 i18n Auto-Translate v2 ready');
 })();
