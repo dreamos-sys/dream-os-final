@@ -381,6 +381,17 @@
         let { error } = await window.supabaseClient.from('janitor_indoor').insert(payload);
         if (error) throw error;
         alert('✅ Data terkirim ke cloud!');
+        // 🚀 TRIGGER NOTIFIKASI
+        if (typeof window.addNotification === 'function') {
+          window.addNotification(
+            'success',
+            '✅ Ceklis Indoor Diserahkan',
+            'Shift ' + state.shift + ' oleh ' + petugas + ' telah disubmit.',
+            'janitor',
+            ['koordinator_umum', 'kabag_umum', 'dev']
+          );
+        }
+
         if (window.BankAudit) BankAudit.log('JANITOR_INDOOR_SUBMIT', { petugas, gedung, shift: state.shift });
       } catch (e) {
         console.warn('Janitor Indoor sync error:', e.message);

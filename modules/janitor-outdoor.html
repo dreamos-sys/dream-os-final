@@ -412,6 +412,17 @@
         let { error } = await window.supabaseClient.from('janitor_outdoor').insert(payload);
         if (error) throw error;
         alert('✅ Data terkirim ke cloud!');
+        // 🚀 TRIGGER NOTIFIKASI
+        if (typeof window.addNotification === 'function') {
+          window.addNotification(
+            'success',
+            '✅ Ceklis Outdoor Diserahkan',
+            'Shift ' + state.shift + ' oleh ' + petugas + ' telah disubmit.',
+            'janitor',
+            ['koordinator_umum', 'kabag_umum', 'dev']
+          );
+        }
+
         if (window.BankAudit) BankAudit.log('JANITOR_OUTDOOR_SUBMIT', { petugas, area, shift: state.shift });
       } catch (e) {
         console.warn('Janitor Outdoor sync error:', e.message);
