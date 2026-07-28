@@ -144,6 +144,12 @@
 (function () {
   'use strict';
 
+  function loginUrl() {
+    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+    return base + 'index.html';
+  }
+
+
   function goHomeSafe() {
     try {
       if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
@@ -154,7 +160,7 @@
     if (typeof window.goHome === 'function') {
       try { window.goHome(); return; } catch (e) {}
     }
-    window.location.href = '../index.html';
+    window.location.href = loginUrl();
   }
   window.goHomeSafe = goHomeSafe;
 
@@ -193,7 +199,7 @@
 
   var user = getUser();
   if (!user) {
-    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2><button class="btn btn-primary" onclick="location.href=\'../index.html\'">Ke Login</button></div>';
+    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2><button class="btn btn-primary" onclick="location.href=\''+loginUrl()+'\'">Ke Login</button></div>';
     return;
   }
 
@@ -469,7 +475,7 @@
       await window.supabaseClient.auth.signOut().catch(function () {});
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
-      window.location.href = '../index.html';
+      window.location.href = loginUrl();
     } catch (e) {
       alert('❌ ' + (e.message || e));
     }
@@ -489,7 +495,7 @@
     if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(function () {});
     localStorage.removeItem('dreamos_bound_user');
     localStorage.removeItem('dreamos_session_active');
-    window.location.href = '../index.html';
+    window.location.href = loginUrl();
   };
 
   // Init
