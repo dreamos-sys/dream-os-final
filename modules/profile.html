@@ -1,309 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Profile • Dream OS</title>
+  <style>
+    :root { --glass-bg: rgba(15,23,42,0.55); --glass-border: rgba(0,255,157,0.12); --neon:#00ff9d; --accent:#0ea5e9; --warning:#e11d48; --gold:#f59e0b; --purple:#8b5cf6; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',system-ui,sans-serif; min-height:100vh; }
+    .glass { background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:16px; padding:1.2rem; margin-bottom:1rem; }
+    .back-btn { position:fixed; bottom:calc(1.5rem + env(safe-area-inset-bottom)); left:1rem; z-index:1000; background:rgba(30,41,59,0.95); border:1px solid var(--neon); color:var(--neon); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.75rem; }
+    .btn { padding:0.55rem 1rem; border:none; border-radius:10px; font-weight:700; font-size:0.75rem; cursor:pointer; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-success { background:#10b981; color:#fff; }
+    .btn-danger { background:var(--warning); color:#fff; }
+    .btn-warning { background:var(--gold); color:#000; }
+    .btn-outline { background:transparent; border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; }
+    .input-field { width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#e2e8f0; font-size:0.8rem; outline:none; margin-bottom:0.5rem; }
+    .input-field:focus { border-color:var(--neon); }
+    .tab-nav { display:flex; gap:0.3rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .tab-btn { padding:0.45rem 0.85rem; border-radius:10px; font-size:0.7rem; font-weight:600; cursor:pointer; border:1px solid rgba(255,255,255,0.15); background:rgba(30,41,59,0.7); color:#94a3b8; }
+    .tab-btn.active { background:var(--neon); color:#000; border-color:var(--neon); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .avatar-preview { width:72px; height:72px; border-radius:50%; background:rgba(30,41,59,0.8); border:2px solid rgba(0,255,157,0.35); display:flex; align-items:center; justify-content:center; font-size:1.8rem; overflow:hidden; flex-shrink:0; }
+    .avatar-preview img { width:100%; height:100%; object-fit:cover; }
+    table { width:100%; border-collapse:collapse; font-size:0.75rem; }
+    th { background:rgba(0,0,0,0.3); color:#94a3b8; padding:0.4rem; text-align:left; }
+    td { padding:0.4rem; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .section-title { font-size:0.85rem; font-weight:700; margin:0 0 0.8rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem; }
+    .badge { padding:0.15rem 0.45rem; border-radius:8px; font-size:0.65rem; font-weight:700; }
+    .badge-pending { background:rgba(245,158,11,0.2); color:#f59e0b; }
+    .badge-approved { background:rgba(16,185,129,0.2); color:#10b981; }
+    .badge-rejected { background:rgba(239,68,68,0.2); color:#ef4444; }
+    .dna-ok { color:#10b981; }
+    .dna-warn { color:#f59e0b; }
+    .hint { font-size:0.7rem; color:#64748b; margin-top:0.35rem; }
+  </style>
+</head>
+<body>
+  <button type="button" class="back-btn" onclick="goHomeSafe()">← HOME</button>
 
-<style>
-        :root { --glass-bg: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 255, 157, 0.1); --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
-        * { box-sizing: border-box; }
-        body { margin:0; background:#0a0e27; color:#e2e8f0; font-family:'Inter',sans-serif; min-height:100vh; }
-        .glass { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.2rem; margin-bottom: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-        .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
-        .btn { padding: 0.6rem 1rem; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease; }
-        .btn-primary { background: var(--accent); color: #fff; }
-        .btn-success { background: #10b981; color: #fff; }
-        .btn-danger { background: var(--warning); color: #fff; }
-        .btn-warning { background: var(--gold); color: #000; }
-        .btn-purple { background: var(--purple); color: #fff; }
-        .btn:hover { transform: translateY(-1px); opacity: 0.95; }
-        .input-field, select { width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.78rem; outline: none; }
-        .input-field:focus, select:focus { border-color: var(--neon); }
-        .tab-nav { display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .tab-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(30,41,59,0.7); color: #94a3b8; transition: all 0.2s ease; white-space: nowrap; }
-        .tab-btn:hover { background: rgba(30,41,59,0.9); border-color: var(--neon); color: #e2e8f0; }
-        .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.4); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .avatar-preview { width: 70px; height: 70px; border-radius: 50%; background: rgba(30,41,59,0.8); border: 2px solid rgba(0,255,157,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden; }
-        .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
-        table { width:100%; border-collapse:collapse; font-size:0.7rem; }
-        th { background: rgba(0,0,0,0.3); color: #94a3b8; padding: 0.4rem; text-align: left; }
-        td { padding: 0.35rem 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .section-title { font-size: 0.85rem; font-weight: 700; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
-    </style>
-<button class="back-btn" onclick="window.goHome()">← HOME</button>
+  <div style="max-width:650px;margin:0 auto;padding:1rem 1rem 5rem;">
 
-<div style="max-width:650px; margin:0 auto; padding:4rem 1.2rem 5rem;">
-
-    <!-- Profile Header -->
-    <div class="glass" style="display:flex; align-items:center; gap:1rem;">
-        <div class="avatar-preview" id="avatar-preview">👤</div>
-        <div style="flex:1;">
-            <h2 style="color:var(--neon); margin:0; font-size:1rem;" id="display-name">Loading...</h2>
-            <div style="font-size:0.7rem; color:#94a3b8;" id="display-role">-</div>
-            <div style="font-size:0.6rem; color:#64748b; margin-top:0.3rem;" id="display-email">-</div>
-            <input type="file" id="avatar-input" accept="image/*" style="display:none;">
-            <button class="btn btn-primary" onclick="document.getElementById('avatar-input').click()" style="font-size:0.65rem; padding:0.3rem 0.7rem; margin-top:0.4rem;">📷 Upload</button>
-        </div>
+    <div class="glass" style="display:flex;align-items:center;gap:1rem;">
+      <div class="avatar-preview" id="avatar-preview">👤</div>
+      <div style="flex:1;">
+        <h2 style="color:var(--neon);margin:0;font-size:1rem;" id="display-name">Loading…</h2>
+        <div style="font-size:0.7rem;color:#94a3b8;" id="display-role">-</div>
+        <div style="font-size:0.65rem;color:#64748b;margin-top:0.25rem;" id="display-email">-</div>
+        <div class="hint" id="dna-status">Device DNA: …</div>
+        <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+        <button type="button" class="btn btn-primary" style="font-size:0.65rem;padding:0.3rem 0.7rem;margin-top:0.4rem;" onclick="document.getElementById('avatar-input').click()">📷 Upload Avatar</button>
+      </div>
     </div>
 
-    <!-- TABS -->
     <div class="tab-nav">
-        <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">📊 Overview</button>
-        <button class="tab-btn" data-tab="edit" onclick="switchTab('edit', this)">✏️ Edit</button>
-        <button class="tab-btn" data-tab="security" onclick="switchTab('security', this)">🔒 Security</button>
-        
-        <button class="tab-btn" data-tab="settings" onclick="switchTab('settings', this)">⚙️ Settings</button>
+      <button type="button" class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">📊 Overview</button>
+      <button type="button" class="tab-btn" data-tab="bookings" onclick="switchTab('bookings', this)">📅 Booking saya</button>
+      <button type="button" class="tab-btn" data-tab="edit" onclick="switchTab('edit', this)">✏️ Edit</button>
+      <button type="button" class="tab-btn" data-tab="security" onclick="switchTab('security', this)">🔒 Security</button>
+      <button type="button" class="tab-btn" data-tab="device" onclick="switchTab('device', this)">📱 Device</button>
+      <button type="button" class="tab-btn" data-tab="settings" onclick="switchTab('settings', this)">⚙️ Settings</button>
     </div>
 
-    <!-- TAB: Overview -->
     <div id="tab-overview" class="tab-content active">
-        <div class="glass">
-            <div class="section-title" style="color:var(--accent);">📊 Informasi Akun</div>
-            <table>
-                <tr><td style="color:#94a3b8;">Nama</td><td id="info-nama">-</td></tr>
-                <tr><td style="color:#94a3b8;">Email</td><td id="info-email">-</td></tr>
-                <tr><td style="color:#94a3b8;">Role</td><td id="info-role">-</td></tr>
-                <tr><td style="color:#94a3b8;">Device DNA</td><td id="info-dna" style="font-family:monospace; font-size:0.6rem;">-</td></tr>
-            </table>
-        </div>
+      <div class="glass">
+        <div class="section-title" style="color:var(--accent);">📊 Informasi Akun</div>
+        <table>
+          <tr><td style="color:#94a3b8;width:40%;">Nama</td><td id="info-nama">-</td></tr>
+          <tr><td style="color:#94a3b8;">Email</td><td id="info-email">-</td></tr>
+          <tr><td style="color:#94a3b8;">Role</td><td id="info-role">-</td></tr>
+          <tr><td style="color:#94a3b8;">Telepon</td><td id="info-phone">-</td></tr>
+          <tr><td style="color:#94a3b8;">Department</td><td id="info-dept">-</td></tr>
+          <tr><td style="color:#94a3b8;">Device DNA</td><td id="info-dna" style="font-family:monospace;font-size:0.65rem;word-break:break-all;">-</td></tr>
+        </table>
+        <p class="hint" id="cloud-status">Cloud: …</p>
+      </div>
     </div>
 
-    <!-- TAB: Edit -->
+    <div id="tab-bookings" class="tab-content">
+      <div class="glass">
+        <div class="section-title" style="color:var(--neon);">📅 Status pengajuan booking (30 hari)</div>
+        <button type="button" class="btn btn-outline" style="margin-bottom:0.6rem;" onclick="loadMyBookings(true)">🔄 Refresh</button>
+        <div id="my-bookings-list"><p class="hint">Memuat…</p></div>
+      </div>
+    </div>
+
     <div id="tab-edit" class="tab-content">
-        <div class="glass">
-            <div class="section-title" style="color:var(--neon);">✏️ Edit Profile</div>
-            <input class="input-field" id="edit-nama" placeholder="Nama" style="margin-bottom:0.5rem;">
-            <input class="input-field" id="edit-email" type="email" readonly style="opacity:0.5; margin-bottom:0.5rem;">
-            <input class="input-field" id="edit-phone" type="tel" placeholder="Telepon" style="margin-bottom:0.5rem;">
-            <input class="input-field" id="edit-department" placeholder="Department" style="margin-bottom:0.5rem;">
-            <button class="btn btn-success" onclick="saveProfile()" style="width:100%;">💾 Simpan & Update Dashboard</button>
-        </div>
+      <div class="glass">
+        <div class="section-title" style="color:var(--neon);">✏️ Edit Profile</div>
+        <input class="input-field" id="edit-nama" placeholder="Nama">
+        <input class="input-field" id="edit-email" type="email" readonly style="opacity:0.55;">
+        <input class="input-field" id="edit-phone" type="tel" placeholder="Telepon">
+        <input class="input-field" id="edit-department" placeholder="Department">
+        <button type="button" class="btn btn-success" style="width:100%;" onclick="saveProfile()">💾 Simpan ke Cloud & Lokal</button>
+      </div>
     </div>
 
-    <!-- TAB: Security -->
     <div id="tab-security" class="tab-content">
-        <div class="glass">
-            <div class="section-title" style="color:var(--warning);">🔐 Ganti Password</div>
-            <input class="input-field" id="old-pass" type="password" placeholder="Password lama" style="margin-bottom:0.5rem;">
-            <input class="input-field" id="new-pass" type="password" placeholder="Password baru" style="margin-bottom:0.5rem;">
-            <input class="input-field" id="confirm-pass" type="password" placeholder="Konfirmasi" style="margin-bottom:0.5rem;">
-            <button class="btn btn-warning" onclick="changePassword()" style="width:100%;">🔑 Ganti Password</button>
-        </div>
+      <div class="glass">
+        <div class="section-title" style="color:var(--warning);">🔐 Ganti Password (Supabase Auth)</div>
+        <input class="input-field" id="old-pass" type="password" placeholder="Password lama" autocomplete="current-password">
+        <input class="input-field" id="new-pass" type="password" placeholder="Password baru (min 6)" autocomplete="new-password">
+        <input class="input-field" id="confirm-pass" type="password" placeholder="Konfirmasi" autocomplete="new-password">
+        <button type="button" class="btn btn-warning" style="width:100%;" onclick="changePassword()">🔑 Ganti Password</button>
+        <p class="hint">Setelah ganti password, sesi diakhiri — login ulang wajib.</p>
+      </div>
     </div>
 
-    <!-- TAB: Settings -->
+    <div id="tab-device" class="tab-content">
+      <div class="glass">
+        <div class="section-title" style="color:var(--purple);">📱 Device Binding</div>
+        <p style="font-size:0.8rem;color:#94a3b8;">Device ini diikat ke akun lewat DNA (canvas + hardware). Jika DNA berubah (HP baru / browser lain), sistem memberi peringatan.</p>
+        <table style="margin-top:0.75rem;">
+          <tr><td style="color:#94a3b8;">DNA saat ini</td><td id="device-dna-now" style="font-family:monospace;font-size:0.65rem;word-break:break-all;">-</td></tr>
+          <tr><td style="color:#94a3b8;">DNA terdaftar</td><td id="device-dna-bound" style="font-family:monospace;font-size:0.65rem;word-break:break-all;">-</td></tr>
+          <tr><td style="color:#94a3b8;">Status</td><td id="device-bind-status">-</td></tr>
+        </table>
+        <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.75rem;" onclick="bindThisDevice()">🔗 Ikat device ini ke akun</button>
+        <button type="button" class="btn btn-outline" style="width:100%;margin-top:0.4rem;" onclick="refreshDeviceStatus()">🔄 Cek ulang DNA</button>
+        <p class="hint">Binding ringan: tidak mengunci total login di device lain, tapi mencatat DNA + peringatan. Kunci penuh bisa ditambah admin di CC.</p>
+      </div>
+    </div>
+
     <div id="tab-settings" class="tab-content">
-        <div class="glass">
-            <div class="section-title" style="color:var(--accent);">🔔 Notifikasi</div>
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; font-size:0.75rem;">
-                <input type="checkbox" id="notif-email" checked style="accent-color:var(--neon);"> Email
-            </label>
-            <button class="btn btn-primary" onclick="saveNotifications()" style="width:100%; margin-top:0.5rem;">💾 Simpan</button>
-        </div>
+      <div class="glass">
+        <div class="section-title" style="color:var(--accent);">🔔 Notifikasi</div>
+        <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;font-size:0.8rem;">
+          <input type="checkbox" id="notif-email" checked style="accent-color:var(--neon);"> Email / in-app booking
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;font-size:0.8rem;">
+          <input type="checkbox" id="notif-device" checked style="accent-color:var(--neon);"> Peringatan device DNA berubah
+        </label>
+        <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="saveNotifications()">💾 Simpan preferensi</button>
+      </div>
     </div>
 
-    <button class="btn btn-danger" onclick="handleLogout()" style="width:100%; margin-top:1rem;">🚪 Logout</button>
+    <button type="button" class="btn btn-danger" style="width:100%;margin-top:0.5rem;" onclick="handleLogout()">🚪 Logout</button>
+  </div>
 
-</div>
-
-<script>
-// ========== PROFILE MODULE (ENTERPRISE) ==========
-(function() {
+  <script>
+(function () {
   'use strict';
-  if (!window.goHome) window.goHome = function() { window.location.href = 'index.html'; };
 
-  function sanitize(str) { if(!str) return ''; var d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
-  function getUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user')||'null'); } catch(e) { return null; } }
-  async function getDNA() { try { var c=document.createElement('canvas'); var x=c.getContext('2d'); x.fillStyle='#f60'; x.fillRect(125,1,62,20); var h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode([navigator.hardwareConcurrency||0,screen.colorDepth,c.toDataURL()].join('|'))); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join('').substring(0,32); } catch(e) { return 'UNKNOWN'; } }
-
-  
-  // SEC Global (dari index.html atau fallback)
-  var SEC = window.SEC || {
-    sanitize: function(s) { if(!s) return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; },
-    hashPassword: async function(p) { var e=new TextEncoder(); var h=await crypto.subtle.digest('SHA-256',e.encode(p+'dreamos_salt_2026')); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
-  };
-  var user = getUser();
-  // Cek Supabase client
-  if (window.supabaseClient) {
-    console.log('✅ Supabase client tersedia di Profile Module');
-  } else {
-    console.warn('⚠️ Supabase client belum siap, retry dalam 2 detik...');
-    setTimeout(function() {
-      if (!window.supabaseClient) console.error('❌ Supabase tetap tidak tersedia setelah retry');
-    }, 2000);
+  function goHomeSafe() {
+    try {
+      if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+        window.parent.goHome();
+        return;
+      }
+    } catch (e) {}
+    if (typeof window.goHome === 'function') {
+      try { window.goHome(); return; } catch (e) {}
+    }
+    window.location.href = '../index.html';
   }
+  window.goHomeSafe = goHomeSafe;
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null'); }
+    catch (e) { return null; }
+  }
+  function saveUserLocal(u) {
+    localStorage.setItem('dreamos_bound_user', JSON.stringify(u));
+  }
+
+  async function getDNA() {
+    try {
+      var c = document.createElement('canvas');
+      var x = c.getContext('2d');
+      x.fillStyle = '#f60';
+      x.fillRect(125, 1, 62, 20);
+      x.fillStyle = '#069';
+      x.font = '14px Arial';
+      x.fillText('DreamOS', 2, 15);
+      var raw = [
+        navigator.hardwareConcurrency || 0,
+        screen.width + 'x' + screen.height,
+        screen.colorDepth || 0,
+        navigator.language || '',
+        c.toDataURL()
+      ].join('|');
+      var h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+      return Array.from(new Uint8Array(h)).map(function (b) {
+        return b.toString(16).padStart(2, '0');
+      }).join('').substring(0, 32);
+    } catch (e) {
+      return 'UNKNOWN';
+    }
+  }
+
+  var user = getUser();
   if (!user) {
-    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2></div>';
+    document.body.innerHTML = '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2><button class="btn btn-primary" onclick="location.href=\'../index.html\'">Ke Login</button></div>';
     return;
   }
 
-  // Init display
-  document.getElementById('display-name').textContent = user.nama || 'User';
-  document.getElementById('display-role').textContent = (user.role||'staff').toUpperCase();
-  document.getElementById('display-email').textContent = user.email || '-';
-  document.getElementById('edit-nama').value = user.nama || '';
-  document.getElementById('edit-email').value = user.email || '';
-  document.getElementById('edit-phone').value = user.phone || '';
-  document.getElementById('edit-department').value = user.department || '';
-  if (user.avatar) document.getElementById('avatar-preview').innerHTML = '<img src="'+user.avatar+'" style="width:100%;height:100%;object-fit:cover;">';
+  var currentDna = '';
 
-  document.getElementById('info-nama').textContent = user.nama || '-';
-  document.getElementById('info-email').textContent = user.email || '-';
-  document.getElementById('info-role').textContent = (user.role||'staff').toUpperCase();
-  getDNA().then(function(d) { document.getElementById('info-dna').textContent = d; });
-
-  
-  // 🔐 Enterprise Audit: catat akses modul profile
-  if (window.BankAudit) {
-    BankAudit.log('ACCESS_PROFILE_MODULE', { role: user.role });
-  }
-
-  function notifyParent(action, detail) {
-    // Gunakan BankAudit untuk enterprise-grade audit trail
-    if (window.BankAudit) {
-      BankAudit.log(action, detail);
-    }
-    // Fallback: tetap simpan ke localStorage
-    try {
-      var logs = JSON.parse(localStorage.getItem('dreamos_audit_logs')||'[]');
-      logs.unshift({ time: new Date().toISOString(), user: user.email, role: user.role, action: action, details: detail });
-      if (logs.length > 100) logs.pop();
-      localStorage.setItem('dreamos_audit_logs', JSON.stringify(logs));
-    } catch(e) {}
-    // Update dashboard parent jika ada
-    if (window.renderDashboard) {
-      setTimeout(function() { window.renderDashboard(); }, 500);
+  function paintHeader() {
+    document.getElementById('display-name').textContent = user.nama || 'User';
+    document.getElementById('display-role').textContent = String(user.role || 'staff').toUpperCase();
+    document.getElementById('display-email').textContent = user.email || '-';
+    document.getElementById('info-nama').textContent = user.nama || '-';
+    document.getElementById('info-email').textContent = user.email || '-';
+    document.getElementById('info-role').textContent = String(user.role || 'staff').toUpperCase();
+    document.getElementById('info-phone').textContent = user.phone || '-';
+    document.getElementById('info-dept').textContent = user.department || '-';
+    document.getElementById('edit-nama').value = user.nama || '';
+    document.getElementById('edit-email').value = user.email || '';
+    document.getElementById('edit-phone').value = user.phone || '';
+    document.getElementById('edit-department').value = user.department || '';
+    if (user.avatar) {
+      document.getElementById('avatar-preview').innerHTML =
+        '<img src="' + user.avatar + '" alt="avatar">';
     }
   }
+  paintHeader();
 
-  window.switchTab = function(name, btn) {
-    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
-    if(btn) btn.classList.add('active');
-    var t = document.getElementById('tab-'+name);
-    if(t) t.classList.add('active');
+  window.switchTab = function (name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    var t = document.getElementById('tab-' + name);
+    if (t) t.classList.add('active');
+    if (name === 'bookings') loadMyBookings(false);
+    if (name === 'device') refreshDeviceStatus();
   };
 
-  // ========== SAVE PROFILE (SUPABASE + AVATAR) ==========
-  window.saveProfile = async function() {
-    var nama = document.getElementById('edit-nama').value;
-    var phone = document.getElementById('edit-phone').value;
-    var department = document.getElementById('edit-department').value;
-    
-    if (!user) return alert('❌ Sesi tidak valid.');
-    
+  /** Load profil dari Supabase (sumber cloud) */
+  async function loadProfileFromCloud() {
+    var statusEl = document.getElementById('cloud-status');
+    if (!window.supabaseClient) {
+      statusEl.textContent = 'Cloud: offline — data lokal';
+      return;
+    }
     try {
-        if (!window.supabaseClient) {
-            alert('⚠️ Koneksi database terputus. Silakan refresh halaman.');
-            return;
+      var q = window.supabaseClient.from('users').select('*');
+      var res;
+      if (user.id) {
+        res = await q.eq('id', user.id).maybeSingle();
+        if ((!res.data) && user.email) {
+          res = await window.supabaseClient.from('users').select('*').eq('email', user.email).maybeSingle();
         }
-        var { error } = await window.supabaseClient
-            .from('users')
-            .update({
-                nama: nama,
-                phone: phone,
-                department: department
-            }).eq('id', user.id);
-            
-        if (error) throw error;
-        
-        user.nama = nama;
-        user.phone = phone;
-        user.department = department;
-        localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
-        
-        document.getElementById('display-name').textContent = nama;
-        document.getElementById('info-nama').textContent = nama;
-        
-        alert('✅ Profile disimpan ke Cloud & Lokal!');
-        
-        window.supabaseClient.from('audit_logs').insert({
-            user_id: user.id,
-            action: 'UPDATE_PROFILE',
-            details: 'Profile updated'
-        }).then(function(){});
-        
+      } else if (user.email) {
+        res = await q.eq('email', user.email).maybeSingle();
+      }
+      if (res && res.error) throw res.error;
+      if (res && res.data) {
+        var row = res.data;
+        user.nama = row.nama || user.nama;
+        user.phone = row.phone || user.phone;
+        user.department = row.department || user.department;
+        user.avatar = row.avatar_url || row.avatar || user.avatar;
+        user.role = row.role || user.role;
+        user.device_dna = row.device_dna || user.device_dna;
+        user.id = row.id || user.id;
+        saveUserLocal(user);
+        paintHeader();
+        statusEl.textContent = 'Cloud: tersinkron · ' + new Date().toLocaleTimeString('id-ID');
+      } else {
+        statusEl.textContent = 'Cloud: baris user belum ada — akan dibuat saat simpan/bind';
+      }
     } catch (e) {
-        alert('⚠️ Gagal simpan ke cloud: ' + e.message);
+      console.warn(e);
+      statusEl.textContent = 'Cloud: gagal load — ' + (e.message || e);
+    }
+  }
+
+  /** Upsert field profil ke public.users */
+  async function upsertUserFields(fields) {
+    if (!window.supabaseClient) throw new Error('Supabase tidak siap');
+    var payload = Object.assign({
+      email: user.email,
+      updated_at: new Date().toISOString()
+    }, fields);
+    if (user.id) payload.id = user.id;
+
+    // Coba update by id, fallback email
+    if (user.id) {
+      var up = await window.supabaseClient.from('users').update(payload).eq('id', user.id).select().maybeSingle();
+      if (!up.error && up.data) return up.data;
+    }
+    if (user.email) {
+      var up2 = await window.supabaseClient.from('users').upsert(
+        Object.assign({ email: user.email }, payload),
+        { onConflict: 'email' }
+      ).select().maybeSingle();
+      if (up2.error) throw up2.error;
+      return up2.data;
+    }
+    throw new Error('Tidak ada id/email untuk upsert');
+  }
+
+  window.saveProfile = async function () {
+    var nama = document.getElementById('edit-nama').value.trim();
+    var phone = document.getElementById('edit-phone').value.trim();
+    var department = document.getElementById('edit-department').value.trim();
+    if (!nama) return alert('Nama wajib diisi');
+    try {
+      var row = await upsertUserFields({ nama: nama, phone: phone, department: department });
+      if (row && row.id) user.id = row.id;
+      user.nama = nama;
+      user.phone = phone;
+      user.department = department;
+      saveUserLocal(user);
+      paintHeader();
+      alert('✅ Profil disimpan ke cloud & lokal');
+    } catch (e) {
+      alert('⚠️ Gagal simpan: ' + (e.message || e));
     }
   };
 
-  // ========== UPLOAD AVATAR ==========
-  document.getElementById('avatar-input').addEventListener('change', async function(){
-    if (this.files[0]) {
-      var file = this.files[0];
-      if (!user) return alert('❌ Sesi tidak valid.');
-      
-      var filePath = user.id + '/' + Date.now() + '_' + file.name;
-      var { data, error } = await window.supabaseClient.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-        
-      if (error) {
-        alert('⚠️ Gagal upload: ' + error.message);
-        return;
-      }
-      
-      var { data: publicData } = window.supabaseClient.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-        
-      if (publicData && publicData.publicUrl) {
-        user.avatar = publicData.publicUrl;
-        localStorage.setItem('dreamos_bound_user', JSON.stringify(user));
-        document.getElementById('avatar-preview').innerHTML = '<img src="'+publicData.publicUrl+'" style="width:100%;height:100%;object-fit:cover;">';
-        notifyParent('UPDATE_AVATAR', 'Avatar updated');
-      }
+  // Avatar → Storage + kolom avatar_url di users
+  document.getElementById('avatar-input').addEventListener('change', async function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    if (!window.supabaseClient) return alert('Supabase tidak siap');
+    if (file.size > 2 * 1024 * 1024) return alert('Maks 2MB');
+
+    var uid = user.id || (user.email || 'anon').replace(/[^a-z0-9]/gi, '_');
+    var path = uid + '/' + Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
+
+    try {
+      var up = await window.supabaseClient.storage.from('avatars').upload(path, file, {
+        upsert: true,
+        contentType: file.type || 'image/jpeg'
+      });
+      if (up.error) throw up.error;
+
+      var pub = window.supabaseClient.storage.from('avatars').getPublicUrl(path);
+      var url = pub && pub.data && pub.data.publicUrl;
+      if (!url) throw new Error('Gagal dapat public URL');
+
+      await upsertUserFields({ avatar_url: url });
+      user.avatar = url;
+      saveUserLocal(user);
+      document.getElementById('avatar-preview').innerHTML = '<img src="' + url + '" alt="avatar">';
+      alert('✅ Avatar tersimpan di Storage + database');
+    } catch (e) {
+      alert('⚠️ Upload gagal: ' + (e.message || e) +
+        '\n\nPastikan bucket "avatars" public-read + policy upload authenticated.');
     }
   });
 
-  // ========== OTHER FUNCTIONS ==========
-  window.changePassword = async function() {
+  // —— Device binding ——
+  async function refreshDeviceStatus() {
+    currentDna = await getDNA();
+    document.getElementById('info-dna').textContent = currentDna;
+    document.getElementById('device-dna-now').textContent = currentDna;
+
+    var bound = user.device_dna || localStorage.getItem('dreamos_device_dna_' + (user.email || '')) || '';
+    document.getElementById('device-dna-bound').textContent = bound || '(belum diikat)';
+
+    var el = document.getElementById('device-bind-status');
+    var st = document.getElementById('dna-status');
+    if (!bound) {
+      el.innerHTML = '<span class="dna-warn">Belum diikat — klik “Ikat device ini”</span>';
+      st.innerHTML = 'Device DNA: <span class="dna-warn">belum bind</span>';
+    } else if (bound === currentDna) {
+      el.innerHTML = '<span class="dna-ok">✅ Device dikenal (DNA cocok)</span>';
+      st.innerHTML = 'Device DNA: <span class="dna-ok">cocok</span>';
+    } else {
+      el.innerHTML = '<span class="dna-warn">⚠️ DNA berbeda — device/browser lain?</span>';
+      st.innerHTML = 'Device DNA: <span class="dna-warn">berubah</span>';
+      var prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem('dreamos_notif_prefs') || '{}'); } catch (e) {}
+      if (prefs.device !== false && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('Dream OS — Device', { body: 'DNA device berbeda dari yang terdaftar di akun ini.', tag: 'dna-warn' });
+        } catch (e) {}
+      }
+    }
+  }
+  window.refreshDeviceStatus = refreshDeviceStatus;
+
+  window.bindThisDevice = async function () {
+    currentDna = await getDNA();
+    try {
+      if (window.supabaseClient) {
+        await upsertUserFields({
+          device_dna: currentDna,
+          device_bound_at: new Date().toISOString()
+        });
+      }
+      user.device_dna = currentDna;
+      saveUserLocal(user);
+      localStorage.setItem('dreamos_device_dna_' + (user.email || ''), currentDna);
+      alert('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12) + '…');
+      refreshDeviceStatus();
+    } catch (e) {
+      // lokal tetap
+      user.device_dna = currentDna;
+      saveUserLocal(user);
+      localStorage.setItem('dreamos_device_dna_' + (user.email || ''), currentDna);
+      alert('⚠️ Cloud gagal (' + (e.message || e) + '). Bind lokal tetap disimpan.\nTambah kolom device_dna di tabel users.');
+      refreshDeviceStatus();
+    }
+  };
+
+  // —— Booking saya ——
+  window.loadMyBookings = async function (fromBtn) {
+    var el = document.getElementById('my-bookings-list');
+    el.innerHTML = '<p class="hint">Memuat…</p>';
+    var rows = [];
+    try {
+      if (window.supabaseClient) {
+        var since = new Date();
+        since.setDate(since.getDate() - 30);
+        var res = await window.supabaseClient
+          .from('bookings')
+          .select('id,tgl,tgl_display,ruang,nama_peminjam,jam_mulai,jam_selesai,status,created_at,created_by,divisi')
+          .gte('created_at', since.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(100);
+        if (res.error) throw res.error;
+        rows = res.data || [];
+      } else {
+        rows = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+      }
+    } catch (e) {
+      try { rows = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch (e2) { rows = []; }
+    }
+
+    var email = String(user.email || '').toLowerCase();
+    var nama = user.nama || '';
+    var mine = rows.filter(function (b) {
+      var by = String(b.created_by || '').toLowerCase();
+      return (email && by === email) ||
+        (nama && b.nama_peminjam === nama) ||
+        (email && String(b.nama_peminjam || '').toLowerCase().indexOf(email.split('@')[0]) >= 0);
+    });
+
+    if (!mine.length) {
+      el.innerHTML = '<p class="hint">Belum ada pengajuan booking 30 hari terakhir untuk akun ini.</p>';
+      return;
+    }
+    var html = '<table><thead><tr><th>Tgl</th><th>Ruang</th><th>Jam</th><th>Status ACC</th></tr></thead><tbody>';
+    mine.forEach(function (b) {
+      var st = String(b.status || 'pending').toLowerCase();
+      var badge = st === 'approved' ? 'approved' : st === 'rejected' ? 'rejected' : 'pending';
+      var label = st === 'approved' ? '✅ Approved' : st === 'rejected' ? '❌ Rejected' : '⏳ Pending';
+      html += '<tr><td>' + (b.tgl_display || b.tgl || '') + '</td><td>' + (b.ruang || '') +
+        '</td><td>' + (b.jam_mulai || '') + '–' + (b.jam_selesai || '') +
+        '</td><td><span class="badge badge-' + badge + '">' + label + '</span></td></tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+    if (fromBtn) alert('Ditemukan ' + mine.length + ' pengajuan milik Anda');
+  };
+
+  window.changePassword = async function () {
     var oldPass = document.getElementById('old-pass').value;
     var newPass = document.getElementById('new-pass').value;
     var confirmPass = document.getElementById('confirm-pass').value;
-    
-    if (!oldPass || !newPass || !confirmPass) return alert('⚠️ Isi semua field!');
-    if (newPass.length < 6) return alert('⚠️ Minimal 6 karakter!');
-    if (newPass !== confirmPass) return alert('⚠️ Password tidak cocok!');
+    if (!oldPass || !newPass || !confirmPass) return alert('Isi semua field');
+    if (newPass.length < 6) return alert('Minimal 6 karakter');
+    if (newPass !== confirmPass) return alert('Konfirmasi tidak cocok');
+    if (!window.supabaseClient) return alert('Supabase tidak siap');
 
     try {
-      // 1. Verifikasi password lama langsung ke Supabase Auth
-      const { error: signInError } = await window.supabaseClient.auth.signInWithPassword({
-        email: user.email,
-        password: oldPass
-      });
-      if (signInError) throw new Error('Password lama salah!');
-
-      // 2. Update password baru di Supabase Auth (Bukan cuma localStorage)
-      const { error: updateError } = await window.supabaseClient.auth.updateUser({
-        password: newPass
-      });
-      if (updateError) throw updateError;
-
-      notifyParent('CHANGE_PASSWORD_SUCCESS', 'Password updated via Supabase Auth');
-      alert('✅ Password berhasil diubah! Silakan login ulang.');
-      
-      // 3. Logout paksa agar sesi baru menggunakan password baru (Zero Session Fraud)
-      await window.supabaseClient.auth.signOut();
+      var s = await window.supabaseClient.auth.signInWithPassword({ email: user.email, password: oldPass });
+      if (s.error) throw new Error('Password lama salah');
+      var u = await window.supabaseClient.auth.updateUser({ password: newPass });
+      if (u.error) throw u.error;
+      alert('✅ Password diubah. Login ulang.');
+      await window.supabaseClient.auth.signOut().catch(function () {});
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
-      window.location.href = 'index.html';
-
+      window.location.href = '../index.html';
     } catch (e) {
-      alert('❌ Gagal: ' + e.message);
+      alert('❌ ' + (e.message || e));
     }
   };
 
-  // 🗑️ Register functions removed: UI not present in profile module. Use Command Center for user management.
-
-  window.saveNotifications = function() { alert('✅ Disimpan!'); };
-
-  window.handleLogout = async function() {
-    if (confirm('🚪 Yakin logout? Session akan dihapus dan harus login ulang.')) {
-      if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(()=>{});
-      localStorage.removeItem('dreamos_bound_user');
-      localStorage.removeItem('dreamos_session_active');
-      window.location.href = 'index.html';
-    }
+  window.saveNotifications = function () {
+    var prefs = {
+      email: document.getElementById('notif-email').checked,
+      device: document.getElementById('notif-device').checked
+    };
+    localStorage.setItem('dreamos_notif_prefs', JSON.stringify(prefs));
+    alert('✅ Preferensi disimpan');
   };
+
+  window.handleLogout = async function () {
+    if (!confirm('Yakin logout?')) return;
+    if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(function () {});
+    localStorage.removeItem('dreamos_bound_user');
+    localStorage.removeItem('dreamos_session_active');
+    window.location.href = '../index.html';
+  };
+
+  // Init
+  loadProfileFromCloud().then(function () {
+    return refreshDeviceStatus();
+  });
+  try {
+    var prefs = JSON.parse(localStorage.getItem('dreamos_notif_prefs') || '{}');
+    if (typeof prefs.email === 'boolean') document.getElementById('notif-email').checked = prefs.email;
+    if (typeof prefs.device === 'boolean') document.getElementById('notif-device').checked = prefs.device;
+  } catch (e) {}
+
+  if (window.BankAudit) {
+    try { window.BankAudit.log('ACCESS_PROFILE_MODULE', { role: user.role }); } catch (e) {}
+  }
 })();
-</script>
+  </script>
+</body>
+</html>
