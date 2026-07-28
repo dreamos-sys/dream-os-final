@@ -367,6 +367,30 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+/* __DOSECURELOGIN_FALLBACK__ */
+    if (typeof window.doSecureLogin !== 'function') {
+      console.warn('⚠️ auth-security.js tidak termuat → mesin login cadangan aktif');
+      window.__dvHash = function(plain){ var h=0,s=String(plain)+'dreamos_salt_2026'; for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;} return 'hash_'+Math.abs(h).toString(16); };
+      window.__dvVerify = function(plain,hash){ if(!plain||!hash) return false; if(hash.indexOf('$2a$')===0||hash.indexOf('$2b$')===0||hash.indexOf('$2y$')===0){ if(typeof bcrypt!=='undefined'){try{return bcrypt.compareSync(String(plain),hash);}catch(e){}} return false; } return hash===window.__dvHash(plain); };
+      window.doSecureLogin = async function(email,password,mfaPin){
+        email=String(email||'').trim().toLowerCase(); password=String(password||'');
+        if(!email||!password) throw new Error('Email dan password wajib diisi');
+        var users=[]; try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }catch(e){}
+        var local=null; for(var i=0;i<users.length;i++){ if((users[i].email||'').toLowerCase()===email){ local=users[i]; break; } }
+        if(local && local.password_hash){
+          if(!window.__dvVerify(password,local.password_hash)) throw new Error('Password salah');
+          return {source:'local',user:{id:local.id||('local_'+email),email:local.email,nama:local.nama||email.split('@')[0],role:local.role||'staff'}};
+        }
+        if(window.supabaseClient && window.supabaseClient.auth){
+          var r=await window.supabaseClient.auth.signInWithPassword({email:email,password:password});
+          if(r.error) throw new Error(r.error.message||'Login gagal');
+          var md=r.data.user.user_metadata||{};
+          return {source:'supabase',user:{id:r.data.user.id,email:r.data.user.email,nama:md.nama||email.split('@')[0],role:md.role||'staff'}};
+        }
+        throw new Error('User tidak ditemukan');
+      };
+    }
+    
       const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
       
