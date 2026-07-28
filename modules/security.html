@@ -440,8 +440,15 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
       m.push({ nama: n, tgl: t, shift: 'L', periode: p });
     }
     localStorage.setItem('dreamos_matrix', JSON.stringify(m));
-    if (window.supabaseClient && window.OfflineQueue) {
-      window.OfflineQueue.add('security_matrix', 'upsert', { nama: n, tgl: t, shift: m.find(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p)?.shift || '', periode: p });
+    
+    // ENTERPRISE FIX: Langsung sync ke Supabase (Real-time)
+    if (window.supabaseClient) {
+      const currentShift = m.find(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p)?.shift || '';
+      window.supabaseClient
+        .from('security_schedules')
+        .upsert({ nama: n, tgl: t, shift: currentShift, periode: p }, { onConflict: 'nama, tgl, periode' }) // Perlu unique constraint, atau pakai match manual
+        .then(() => console.log('✅ Matrix synced to Supabase'))
+        .catch(e => console.warn('⚠️ Matrix sync failed:', e.message));
     }
     renderMatrix();
   };
@@ -635,7 +642,15 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
     document.getElementById('patrol-log').innerHTML = logs.slice(0,10).map(l =>
       `✅ ${l.pos} • ${new Date(l.waktu).toLocaleTimeString('id-ID')} • 📍${l.geo}`
     ).join('<br>');
-    if (window.supabaseClient) window.supabaseClient.from('security_patrol').insert(logs[0]).catch(e => console.warn('Patrol sync:', e.message));
+    // ENTERPRISE FIX: Langsung insert ke tabel security_patrols
+    if (window.supabaseClient) {
+      window.supabaseClient.from('security_patrols').insert({
+        pos: pos,
+        waktu: now.toISOString(),
+        geo: geo,
+        petugas: user?.nama || 'Anonim'
+      }).catch(e => console.warn('⚠️ Patrol sync failed:', e.message));
+    }
     if (window.BankAudit) BankAudit.log('PATROL_CHECKPOINT', { pos, geo });
   };
 

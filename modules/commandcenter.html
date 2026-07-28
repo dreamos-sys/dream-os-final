@@ -1068,8 +1068,28 @@ window.goHomeHandler = function() {
     if (!forceSync) showToast('Data diperbarui');
   };
 
+  // ===== INIT: ENTERPRISE AUTO-RECOVERY =====
+  async function recoverFromCloud() {
+    if (!window.supabaseClient) return;
+    try {
+      // 1. Recover Users
+      const localUsers = safeJSON('dreamos_users_db', []);
+      if (localUsers.length === 0) {
+        const { data: cloudUsers } = await window.supabaseClient.from('users').select('*');
+        if (cloudUsers) { saveJSON('dreamos_users_db', cloudUsers); console.log('🔄 Users recovered from cloud'); }
+      }
+      // 2. Recover Bookings
+      const localBookings = safeJSON('dreamos_bookings', []);
+      if (localBookings.length === 0) {
+        const { data: cloudBookings } = await window.supabaseClient.from('bookings').select('*').order('created_at', {ascending:false}).limit(200);
+        if (cloudBookings) { saveJSON('dreamos_bookings', cloudBookings); console.log('🔄 Bookings recovered from cloud'); }
+      }
+    } catch(e) { console.warn('Recovery failed:', e); }
+  }
+
   // ===== INIT =====
   document.getElementById('sync-status').textContent = window.supabaseClient ? '🟢 Online' : '🟡 Local';
+  recoverFromCloud(); // Jalankan recovery otomatis saat load
   document.getElementById('sync-status').style.color = window.supabaseClient ? '#10b981' : '#f59e0b';
 
   initCalSelectors();
