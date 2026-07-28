@@ -413,50 +413,171 @@ window.goHomeHandler = function() {
   // ===== COLLECT TASKS =====
   function collectTasks() {
     const tasks = [];
+
+    const push = (arr, mapFn) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach(item => {
+        if (!item || typeof item !== 'object') return;
+        try {
+          const t = mapFn(item);
+          if (t && t.id != null) tasks.push(t);
+        } catch (e) { /* skip baris rusak */ }
+      });
+    };
+
     // 💸 Dana
-    safeJSON('dreamos_dana').forEach(d => {
-      tasks.push({ id: d.id, type: 'dana', title: d.judul || 'Pengajuan Dana', detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'), status: (d.status||'pending').toLowerCase(), priority: Number(d.nominal)>5000000?'high':Number(d.nominal)>1000000?'medium':'low', raw: d });
-    });
+    push(safeJSON('dreamos_dana', []), d => ({
+      id: d.id, type: 'dana',
+      title: d.judul || 'Pengajuan Dana',
+      detail: 'Rp ' + Number(d.nominal || 0).toLocaleString('id-ID'),
+      status: String(d.status || 'pending').toLowerCase(),
+      priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low',
+      raw: d
+    }));
+
     // 📅 Booking
-    safeJSON('dreamos_bookings').forEach(b => {
-      tasks.push({ id: b.id, type: 'booking', title: (b.ruang||'Ruang') + ' • ' + (b.nama_peminjam||'-'), detail: (b.tgl||'') + ' ' + (b.jam_mulai||''), status: (b.status||'pending').toLowerCase(), priority: 'medium', raw: b });
-    });
+    push(safeJSON('dreamos_bookings', []), b => ({
+      id: b.id, type: 'booking',
+      title: (b.ruang || 'Ruang') + ' • ' + (b.nama_peminjam || '-'),
+      detail: [b.tgl, b.jam_mulai].filter(Boolean).join(' '),
+      status: String(b.status || 'pending').toLowerCase(),
+      priority: 'medium', raw: b
+    }));
+
     // ⚠️ K3
-    safeJSON('dreamos_k3_reports').forEach(k => {
-      tasks.push({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'Laporan K3', detail: k.pelapor || '', status: (k.status||'pending').toLowerCase(), priority: 'high', raw: k });
-    });
+    push(safeJSON('dreamos_k3_reports', []), k => ({
+      id: k.id, type: 'k3',
+      title: k.judul || k.lokasi || 'Laporan K3',
+      detail: k.pelapor || '',
+      status: String(k.status || 'pending').toLowerCase(),
+      priority: 'high', raw: k
+    }));
+
     // 🔧 Maintenance
-    safeJSON('dreamos_maintenance_tasks').forEach(m => {
-      tasks.push({ id: m.id, type: 'maintenance', title: m.judul || m.deskripsi || 'Maintenance', detail: m.lokasi || '', status: (m.status||'pending').toLowerCase(), priority: (m.priority||'medium').toLowerCase(), raw: m });
-    });
+    push(safeJSON('dreamos_maintenance_tasks', []), m => ({
+      id: m.id, type: 'maintenance',
+      title: m.judul || m.deskripsi || 'Maintenance',
+      detail: m.lokasi || '',
+      status: String(m.status || 'pending').toLowerCase(),
+      priority: String(m.priority || 'medium').toLowerCase(), raw: m
+    }));
+
     // 🛡️ Security
-    safeJSON('dreamos_security_logs').forEach(s => {
-      tasks.push({ id: s.id, type: 'security', title: s.kejadian || s.lokasi || 'Security Log', detail: s.petugas || '-', status: (s.status||'pending').toLowerCase(), priority: (s.priority==='URGENT'||s.priority==='urgent')?'high':'medium', raw: s });
-    });
-    // 🏠 Janitor Indoor
-    safeJSON('dreamos_janitor_indoor').forEach(j => {
-      const items = Array.isArray(j) ? j : (j.tasks || j.checklist ? [j] : []);
-      items.forEach(item => {
-        tasks.push({ id: item.id || 'ji_'+Date.now(), type: 'janitor_indoor', title: item.lokasi || item.nama || 'Janitor Indoor', detail: item.catatan || item.status || '-', status: (item.status||'pending').toLowerCase(), priority: 'low', raw: item });
-      });
-    });
-    // 🌳 Janitor Outdoor
-    safeJSON('dreamos_janitor_outdoor').forEach(j => {
-      const items = Array.isArray(j) ? j : (j.tasks || j.checklist ? [j] : []);
-      items.forEach(item => {
-        tasks.push({ id: item.id || 'jo_'+Date.now(), type: 'janitor_outdoor', title: item.lokasi || item.nama || 'Janitor Outdoor', detail: item.catatan || item.status || '-', status: (item.status||'pending').toLowerCase(), priority: 'low', raw: item });
-      });
-    });
-    // 🏢 Asset
-    safeJSON('dreamos_asset_reports').forEach(a => {
-      tasks.push({ id: a.id, type: 'asset', title: a.nama_aset || a.judul || 'Asset Report', detail: a.lokasi || a.kondisi || '-', status: (a.status||'pending').toLowerCase(), priority: (a.kondisi==='rusak_berat')?'high':'medium', raw: a });
-    });
-    // 📦 Stok Gudang (hanya yang low stock)
-    safeJSON('dreamos_stok_gudang').forEach(s => {
-      if (Number(s.quantity||0) < Number(s.min_stock||10)) {
-        tasks.push({ id: s.id, type: 'stok', title: s.nama_barang || 'Stok Rendah', detail: 'Sisa: ' + (s.quantity||0) + ' (Min: ' + (s.min_stock||10) + ')', status: 'pending', priority: 'high', raw: s });
+    push(safeJSON('dreamos_security_logs', []), s => ({
+      id: s.id, type: 'security',
+      title: s.kejadian || s.lokasi || 'Security Log',
+      detail: s.petugas || '-',
+      status: String(s.status || 'pending').toLowerCase(),
+      priority: String(s.priority || '').toUpperCase() === 'URGENT' ? 'high' : 'medium',
+      raw: s
+    }));
+
+    // 🏠🌳 Janitor (handle array ATAU object per tanggal)
+    function flattenJanitor(storeKey, type, label) {
+      const raw = safeJSON(storeKey, null);
+      const items = [];
+
+      if (Array.isArray(raw)) {
+        raw.forEach(x => { if (x && typeof x === 'object') items.push(x); });
+      } else if (raw && typeof raw === 'object') {
+        Object.entries(raw).forEach(([dateKey, dayData]) => {
+          if (!dayData || typeof dayData !== 'object') return;
+
+          if (dayData.shifts && typeof dayData.shifts === 'object') {
+            Object.entries(dayData.shifts).forEach(([shiftName, shiftData]) => {
+              if (!shiftData || typeof shiftData !== 'object') return;
+              Object.entries(shiftData).forEach(([area, done]) => {
+                if (done !== null && typeof done === 'object') {
+                  Object.entries(done).forEach(([sub, val]) => {
+                    items.push({
+                      id: [type, dateKey, shiftName, area, sub].join('_'),
+                      lokasi: area + '/' + sub + ' (' + shiftName + ')',
+                      tanggal: dateKey,
+                      status: val ? 'selesai' : 'pending',
+                      catatan: dateKey + ' · ' + shiftName
+                    });
+                  });
+                } else {
+                  items.push({
+                    id: [type, dateKey, shiftName, area].join('_'),
+                    lokasi: String(area) + ' (' + shiftName + ')',
+                    tanggal: dateKey,
+                    status: done ? 'selesai' : 'pending',
+                    catatan: dateKey + ' · ' + shiftName
+                  });
+                }
+              });
+            });
+          }
+
+          if (dayData.weekly && typeof dayData.weekly === 'object') {
+            Object.entries(dayData.weekly).forEach(([task, done]) => {
+              items.push({
+                id: [type, dateKey, 'weekly', task].join('_'),
+                lokasi: task,
+                tanggal: dateKey,
+                status: done ? 'selesai' : 'pending',
+                catatan: 'Mingguan · ' + dateKey
+              });
+            });
+          }
+
+          if (dayData.id || dayData.lokasi || dayData.nama || dayData.area) {
+            items.push(dayData);
+          }
+        });
       }
+
+      items.forEach(item => {
+        if (!item || typeof item !== 'object') return;
+        const st = String(item.status || 'pending').toLowerCase();
+        if (st === 'selesai' || st === 'done' || st === 'approved') return;
+        tasks.push({
+          id: item.id || (type + '_' + Math.random().toString(36).slice(2, 9)),
+          type,
+          title: item.lokasi || item.nama || item.area || label,
+          detail: item.catatan || item.tanggal || '-',
+          status: 'pending',
+          priority: 'low',
+          raw: item
+        });
+      });
+    }
+
+    flattenJanitor('dreamos_janitor_indoor', 'janitor_indoor', 'Janitor Indoor');
+    flattenJanitor('dreamos_janitor_outdoor', 'janitor_outdoor', 'Janitor Outdoor');
+
+    // 🏢 Asset
+    push(safeJSON('dreamos_asset_reports', []), a => ({
+      id: a.id, type: 'asset',
+      title: a.nama_aset || a.judul || 'Asset Report',
+      detail: a.lokasi || a.kondisi || '-',
+      status: String(a.status || 'pending').toLowerCase(),
+      priority: a.kondisi === 'rusak_berat' ? 'high' : 'medium',
+      raw: a
+    }));
+
+    // 📦 Stok (FIX: cek .length, bukan truthy ||)
+    const stokA = safeJSON('dreamos_stok', []);
+    const stokB = safeJSON('dreamos_stok_gudang', []);
+    const stokSource = (Array.isArray(stokA) && stokA.length > 0) ? stokA
+                     : (Array.isArray(stokB) ? stokB : []);
+
+    push(stokSource, s => {
+      const qty = Number(s.jumlah ?? s.quantity ?? s.qty ?? 0);
+      const min = Number(s.min_stock ?? s.minimum ?? 5);
+      if (qty >= min) return null;
+      return {
+        id: s.id || ('stok_' + (s.nama || s.nama_barang || Math.random().toString(36).slice(2))),
+        type: 'stok',
+        title: s.nama || s.nama_barang || 'Stok Rendah',
+        detail: 'Sisa: ' + qty + ' (Min: ' + min + ')',
+        status: 'pending',
+        priority: 'high',
+        raw: s
+      };
     });
+
     return tasks;
   }
 
@@ -515,7 +636,17 @@ window.goHomeHandler = function() {
     saveJSON(key, list);
 
     if (window.supabaseClient) {
-      const tableMap = { dana: 'dana_requests', booking: 'bookings', k3: 'k3_reports', maintenance: 'maintenance_requests', security: 'security_logs', janitor_indoor: 'janitorial_requests', janitor_outdoor: 'janitorial_requests', asset: 'asset_reports', stok: 'inventory' };
+      const tableMap = {
+        dana: 'dana_requests',
+        booking: 'bookings',
+        k3: 'k3_reports',
+        maintenance: 'maintenance_requests',
+        security: 'security_logs',
+        janitor_indoor: 'janitorial_requests',
+        janitor_outdoor: 'janitorial_requests',
+        asset: 'asset_reports',
+        stok: 'inventory'
+      };
       const table = tableMap[type];
       if (table) {
         window.supabaseClient.from(table).update({
