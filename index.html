@@ -250,13 +250,29 @@
 
   <div id="notif-panel" class="notif-panel"></div>
   
-  <button class="cast-btn" onclick="openCastModal()" title="Cast ke TV" aria-label="Cast to TV">📺</button>
+  <button class="cast-btn" onclick="openCastModal()" title="Cast & Present" aria-label="Cast and Present">📺</button>
   <div class="cast-modal" id="cast-modal">
-    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:2rem;max-width:400px;width:90%;text-align:center;">
-      <h3 style="color:#00ff9d;margin-bottom:1rem;">📺 Cast & Present</h3>
-      <button onclick="shareToTV()" style="width:100%;padding:12px;margin:8px 0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;background:rgba(0,255,157,0.05);color:#e2e8f0;cursor:pointer;">📡 Share ke TV</button>
-      <button onclick="showQRForTV()" style="width:100%;padding:12px;margin:8px 0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;background:rgba(0,255,157,0.05);color:#e2e8f0;cursor:pointer;">📱 Scan QR dari TV</button>
-      <button onclick="closeCastModal()" style="width:100%;padding:12px;margin:8px 0;border:1px solid #e11d48;border-radius:8px;background:rgba(239,68,68,0.1);color:#e11d48;cursor:pointer;">✕ Tutup</button>
+    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.4rem 1.2rem;max-width:440px;width:92%;text-align:center;max-height:86vh;overflow-y:auto;">
+      <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
+      <p style="color:#94a3b8;font-size:.72rem;margin:0 0 1rem;">Pilih jalur sesuai perangkat target — semua jalur ini nyata, bukan dummy.</p>
+
+      <button onclick="shareToTV()" style="width:100%;padding:12px;margin:6px 0 2px;border:1px solid rgba(0,255,157,0.3);border-radius:8px;background:rgba(0,255,157,0.05);color:#e2e8f0;cursor:pointer;font-weight:600;">📡 Kirim Link (Share)</button>
+      <div style="font-size:.64rem;color:#7c8db5;margin:0 0 10px;line-height:1.35;">Via menu Share HP — pilih TV / aplikasi tujuan.</div>
+
+      <button onclick="toggleCastQR()" style="width:100%;padding:12px;margin:6px 0 2px;border:1px solid rgba(0,255,157,0.3);border-radius:8px;background:rgba(0,255,157,0.05);color:#e2e8f0;cursor:pointer;font-weight:600;">📱 TV / Videotron (QR atau URL)</button>
+      <div style="font-size:.64rem;color:#7c8db5;margin:0 0 4px;line-height:1.35;">Target ber-browser / media player scan QR atau ketik URL. Jalur paling universal.</div>
+      <div id="cast-qr" style="display:none;margin:0 0 10px;"></div>
+
+      <button onclick="presentHere()" style="width:100%;padding:12px;margin:6px 0 2px;border:1px solid rgba(0,255,157,0.3);border-radius:8px;background:rgba(0,255,157,0.05);color:#e2e8f0;cursor:pointer;font-weight:600;">🖥️ Fullscreen di Layar Ini</button>
+      <div style="font-size:.64rem;color:#7c8db5;margin:0 0 10px;line-height:1.35;">Kalau device ini dicolok kabel (HDMI / USB-C) ke proyektor / videotron.</div>
+
+      <button onclick="mirrorGuide()" style="width:100%;padding:12px;margin:6px 0 2px;border:1px solid rgba(14,165,233,0.4);border-radius:8px;background:rgba(14,165,233,0.08);color:#e2e8f0;cursor:pointer;font-weight:600;">📶 Mirror Layar (bawaan HP)</button>
+      <div style="font-size:.64rem;color:#7c8db5;margin:0 0 10px;line-height:1.35;">Web tak bisa mulai mirror sendiri — pakai Smart View / Cast / Wireless Display bawaan HP.</div>
+
+      <button onclick="chromecastGuide()" style="width:100%;padding:12px;margin:6px 0 2px;border:1px solid rgba(14,165,233,0.4);border-radius:8px;background:rgba(14,165,233,0.08);color:#e2e8f0;cursor:pointer;font-weight:600;">🎯 Cast ke Chromecast / Google TV</button>
+      <div style="font-size:.64rem;color:#7c8db5;margin:0 0 12px;line-height:1.35;">Chrome ⋮ → "Cast". Auto-cast via tombol = butuh setup Cast SDK.</div>
+
+      <button onclick="closeCastModal()" style="width:100%;padding:12px;margin:4px 0 0;border:1px solid #e11d48;border-radius:8px;background:rgba(239,68,68,0.1);color:#e11d48;cursor:pointer;font-weight:600;">✕ Tutup</button>
     </div>
   </div>
 
@@ -1185,18 +1201,45 @@
       };
 
       // Cast Functions
-      window.openCastModal = function() { const m=document.getElementById('cast-modal'); m.classList.add('show'); setTimeout(()=>window.trapFocus(m), 50); };
-      window.closeCastModal = function() { const m=document.getElementById('cast-modal'); m.classList.remove('show'); window.releaseFocus(m); };
+      window.openCastModal = function() { const m=document.getElementById('cast-modal'); m.classList.add('show'); setTimeout(()=>{ if(window.trapFocus) window.trapFocus(m); }, 50); };
+      window.closeCastModal = function() { const m=document.getElementById('cast-modal'); m.classList.remove('show'); if(window.releaseFocus) window.releaseFocus(m); };
+      function presentUrl(){ return window.location.origin + (window.location.pathname.indexOf('/dream-os-final/')>=0 ? '/dream-os-final/' : '/') + 'presentation.html'; }
+      function ensureQrLib(cb){ if(typeof qrcode!=='undefined'){ cb(true); return; } var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js'; s.onload=function(){ cb(typeof qrcode!=='undefined'); }; s.onerror=function(){ cb(false); }; document.head.appendChild(s); }
       window.shareToTV = function() {
-        const url = window.location.origin + '/dream-os-final/presentation.html';
-        if (navigator.share) navigator.share({ title: 'Dream OS Presentation', url: url }).catch(()=>{});
-        else alert(' Buka ' + url + ' di browser Smart TV Anda');
+        const url = presentUrl();
+        if (navigator.share) { navigator.share({ title:'Dream OS Presentation', text:'Buka presentasi Dream OS', url:url }).catch(function(){}); }
+        else { window.copyCastUrl(); if(window.showToast) window.showToast('Share tak tersedia — URL disalin. Tempel di browser TV.','info'); }
       };
-      window.showQRForTV = function() {
-        const url = window.location.origin + '/dream-os-final/presentation.html';
-        const qrDiv = document.getElementById('cast-qr');
-        qrDiv.style.display = 'block';
-        qrDiv.innerHTML = '<div style="background:#fff;padding:15px;border-radius:8px;text-align:center;"><p style="color:#000;font-weight:700;font-size:0.7rem;">Scan QR untuk buka di TV</p><p style="color:#64748b;font-size:0.65rem;">' + url + '</p></div>';
+      window.toggleCastQR = function() {
+        const box = document.getElementById('cast-qr'); if(!box) return;
+        if(box.style.display==='block'){ box.style.display='none'; return; }
+        box.style.display='block';
+        const url = presentUrl();
+        box.innerHTML = '<div style="background:#fff;padding:10px;border-radius:8px;display:inline-block;" id="cast-qr-img"></div>' +
+          '<p style="color:#e2e8f0;font-size:.64rem;word-break:break-all;margin:.6rem 0 .3rem;">'+url+'</p>' +
+          '<button onclick="copyCastUrl()" style="font-size:.7rem;padding:.35rem .8rem;border:1px solid rgba(0,255,157,0.4);background:rgba(0,255,157,0.1);color:#00ff9d;border-radius:8px;cursor:pointer;">📋 Salin URL</button>';
+        ensureQrLib(function(ok){
+          const img = document.getElementById('cast-qr-img'); if(!img) return;
+          if(ok){ try{ const qr=qrcode(0,'M'); qr.addData(url); qr.make(); img.innerHTML=qr.createImgTag(4,8); }catch(e){ img.innerHTML='<span style="color:#000;font-size:.7rem;">QR gagal</span>'; } }
+          else { img.style.background='transparent'; img.innerHTML='<span style="color:#cbd5e1;font-size:.68rem;display:block;padding:6px;">QR offline — salin/ketik URL di bawah</span>'; }
+        });
+      };
+      window.copyCastUrl = function() {
+        const url = presentUrl();
+        if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ if(window.showToast) window.showToast('✅ URL tersalin','success'); }).catch(function(){ prompt('Salin URL ini:',url); }); }
+        else { prompt('Salin URL ini:',url); }
+      };
+      window.presentHere = function() {
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if(req){ try{ req.call(el); if(window.showToast) window.showToast('🖥️ Fullscreen aktif — colok kabel ke proyektor/videotron','info'); }catch(e){ alert('Fullscreen ditolak browser.'); } }
+        else { alert('Browser tidak mendukung fullscreen.'); }
+      };
+      window.mirrorGuide = function() {
+        alert('📶 MIRROR LAYAR (fitur bawaan HP — bukan dari web)\n\nBrowser tidak diizinkan memulai mirror sendiri (batas keamanan). Pakai fitur bawaan HP:\n\n• Samsung → Quick Panel: "Smart View"\n• Xiaomi/Redmi/POCO → Control Center: "Cast"/"Proyeksi"\n• OPPO/Realme/Vivo → "Wireless Display"/"Proyeksi"/Smart Sidebar\n• iPhone → Control Center: "Screen Mirroring" (AirPlay)\n\nSyarat: HP & TV satu WiFi, atau TV pakai dongle Miracast/Anycast.\n\nUntuk VIDEOTRON: colok dongle/PC mirror ke input HDMI controller videotron.');
+      };
+      window.chromecastGuide = function() {
+        alert('🎯 CAST KE CHROMECAST / GOOGLE TV\n\nTanpa ngoding (paling gampang):\n1. Buka Dream OS di Chrome (HP/laptop).\n2. Menu ⋮ → "Cast"/"Transmisikan".\n3. Pilih Chromecast / Google TV di daftar.\n4. Pilih "Cast this tab" atau "Cast desktop".\n\nSyarat: satu WiFi dengan Chromecast.\n\nMau tombol Cast OTOMATIS muncul & auto-detect TV di dalam aplikasi? Itu butuh integrasi Google Cast SDK + receiver app + akun developer (setup sekali). Kabari kalau mau jalur pro ini.');
       };
 
       // Service Worker
