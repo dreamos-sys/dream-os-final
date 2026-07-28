@@ -174,11 +174,30 @@
   <!-- USERS TAB -->
   <div id="tab-users" class="tab-content tab-restricted-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
-        <span>👥 Manajemen Pengguna</span>
-        <button class="btn btn-success btn-sm" onclick="alert('Fitur tambah user akan segera hadir di versi berikutnya!')">+ Tambah User</button>
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;">👥 Manajemen Pengguna</div>
+      
+      <!-- Form Tambah User -->
+      <div style="background:rgba(0,0,0,0.25); padding:1rem; border-radius:10px; margin-bottom:1.5rem; border:1px solid var(--border);">
+        <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.75rem; color:var(--neon);">➕ Tambah User Baru</div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:0.75rem;">
+          <input type="text" id="new-user-nama" placeholder="Nama Lengkap" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
+          <input type="email" id="new-user-email" placeholder="Email" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
+          <select id="new-user-role" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
+            <option value="staff">Staff</option><option value="guru">Guru</option><option value="security">Security</option>
+            <option value="maintenance">Maintenance</option><option value="janitor_indoor">Janitor Indoor</option>
+            <option value="janitor_outdoor">Janitor Outdoor</option><option value="koordinator_umum">Koordinator Umum</option>
+            <option value="kabag_umum">Kabag Umum</option>
+          </select>
+          <select id="new-user-divisi" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
+            <option value="UMUM">Umum</option><option value="TK">TK</option><option value="SD">SD</option>
+            <option value="SMP">SMP</option><option value="SMA">SMA</option>
+          </select>
+          <input type="password" id="new-user-pass" placeholder="Password (Min 6)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
+          <button class="btn btn-success" onclick="createNewUser()" style="width:100%; justify-content:center;">✅ Simpan User</button>
+        </div>
       </div>
-      <div style="overflow-x:auto;"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Divisi</th><th>Status</th></tr></thead><tbody id="users-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Memuat data user...</td></tr></tbody></table></div>
+
+      <div style="overflow-x:auto;"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Divisi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="users-body"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Memuat data user...</td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -520,23 +539,78 @@ window.goHomeHandler = function() {
     }, 500);
   };
 
-  // 👥 USERS RENDERER
+  // 👥 USERS RENDERER (With Delete Action)
   window.renderUsers = function() {
     const users = safeJSON('dreamos_users_db', []);
     const tbody = document.getElementById('users-body');
     if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Belum ada data user. Silakan tambahkan di menu Setting.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Belum ada data user.</td></tr>';
       return;
     }
-    tbody.innerHTML = users.map(u => `
+    tbody.innerHTML = users.map((u, index) => `
       <tr>
         <td>${u.nama || '-'}</td>
         <td>${u.email || '-'}</td>
         <td><span class="badge badge-pending">${u.role || 'staff'}</span></td>
         <td>${u.divisi || '-'}</td>
-        <td><span class="badge badge-approved">Active</span></td>
+        <td><span class="badge badge-approved">${u.status || 'Active'}</span></td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${index})">🗑️</button></td>
       </tr>
     `).join('');
+  };
+
+  // ➕ CREATE NEW USER
+  window.createNewUser = async function() {
+    const nama = document.getElementById('new-user-nama').value.trim();
+    const email = document.getElementById('new-user-email').value.trim();
+    const role = document.getElementById('new-user-role').value;
+    const divisi = document.getElementById('new-user-divisi').value;
+    const pass = document.getElementById('new-user-pass').value;
+
+    if (!nama || !email || !pass) return showToast('⚠️ Nama, Email, dan Password wajib diisi!', 'danger');
+    if (pass.length < 6) return showToast('⚠️ Password minimal 6 karakter!', 'danger');
+
+    const users = safeJSON('dreamos_users_db', []);
+    if (users.find(u => u.email === email)) return showToast('⚠️ Email sudah terdaftar!', 'danger');
+
+    const newUser = {
+      id: 'usr_' + Date.now(),
+      nama, email, role, divisi,
+      password_hash: pass, 
+      created_at: new Date().toISOString(),
+      status: 'active'
+    };
+
+    users.push(newUser);
+    saveJSON('dreamos_users_db', users);
+
+    // 🌐 SYNC TO SUPABASE
+    if (window.supabaseClient) {
+      window.supabaseClient.from('users').insert(newUser).catch(e => console.warn('Supabase user sync failed:', e));
+    }
+
+    showToast('✅ User berhasil ditambahkan & tersinkronisasi!');
+    document.getElementById('new-user-nama').value = '';
+    document.getElementById('new-user-email').value = '';
+    document.getElementById('new-user-pass').value = '';
+    renderUsers();
+    logActivity('CREATE_USER', `Menambahkan user: ${nama} (${role})`);
+  };
+
+  // 🗑️ DELETE USER
+  window.deleteUser = function(index) {
+    if (!confirm('Yakin hapus user ini?')) return;
+    const users = safeJSON('dreamos_users_db', []);
+    const deleted = users.splice(index, 1)[0];
+    saveJSON('dreamos_users_db', users);
+    
+    if (window.supabaseClient && deleted.id) {
+      window.supabaseClient.from('users').delete().eq('id', deleted.id).catch(e => console.warn('Supabase delete failed:', e));
+    }
+    
+    showToast('🗑️ User dihapus');
+    renderUsers();
+    logActivity('DELETE_USER', `Menghapus user: ${deleted.nama}`);
   };
 
   // 🔄 ENHANCED REFRESH ALL
