@@ -217,6 +217,8 @@
   @media (max-width: 768px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); } }
 
 </style>
+<script src="js/bcrypt.min.js"></script>
+<script src="js/auth-security.js"></script>
 </head>
 <body>
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
@@ -485,15 +487,20 @@
         }
 
         try {
-          const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
-          
-          if (error) throw error;
+          // 🛡️ SINGLE DOOR: doSecureLogin (bcrypt + rate-limit + MFA)
+          if (typeof window.doSecureLogin !== 'function') {
+            throw new Error('Auth layer belum termuat. Refresh (Ctrl+Shift+R).');
+          }
+          const mfaPin = document.getElementById('mfa-pin')?.value || '';
+          const result = await window.doSecureLogin(email, password, mfaPin);
 
           const userData = {
-            id: data.user.id, 
-            email: data.user.email,
-            nama: data.user.user_metadata?.nama || email.split('@')[0],
-            role: data.user.user_metadata?.role || 'staff'
+            id: result.user.id,
+            email: result.user.email,
+            nama: result.user.nama,
+            role: result.user.role,
+            source: result.source,
+            bound_at: new Date().toISOString()
           };
 
           // 🔐 Session Storage (Standardized for cross-module compatibility)
