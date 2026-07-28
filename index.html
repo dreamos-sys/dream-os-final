@@ -403,6 +403,7 @@
 
     async function verifySession() {
       if (!window.supabaseClient) return true;
+      try { var __u = JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); if (__u.source === 'local') return true; } catch(e){}
       try {
         const { data: { session }, error } = await window.supabaseClient.auth.getSession();
         if (error || !session) {
@@ -534,7 +535,7 @@
           if(window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, hash: auditHash });
           
           if (window.BankSession) BankSession.create(userData);
-          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: data.user.email });
+          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source });
           if (window.PhantomAlerter) PhantomAlerter.systemStartup();
 
           window._loginAttempts = 0; loginBtn.textContent = '✅ Success!';
