@@ -3,62 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Command Center Pro • Dream OS</title>
+  <title>Command Center Pro • Dream OS v5.2</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
   <style>
     :root {
-      --bg: #0a0e27; --panel: rgba(15,23,42,0.92); --border: rgba(255,255,255,0.08);
-      --neon: #00ff9d; --accent: #0ea5e9; --gold: #f59e0b; --danger: #ef4444; --success: #10b981;
-      --text: #e2e8f0; --muted: #94a3b8;
+      --bg:#0a0e27; --panel:rgba(15,23,42,0.92); --border:rgba(255,255,255,0.08);
+      --neon:#00ff9d; --accent:#0ea5e9; --gold:#f59e0b; --danger:#ef4444; --success:#10b981;
+      --text:#e2e8f0; --muted:#94a3b8;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 0.875rem; padding-bottom: 90px; }
-    .glass { background: var(--panel); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
-    .topbar { position: sticky; top: 0; z-index: 100; background: rgba(10,14,39,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-    .search-box { flex: 1; min-width: 200px; position: relative; }
-    .search-box input { width: 100%; padding: 0.7rem 1rem 0.7rem 2.5rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 16px; -webkit-appearance: none; }
-    .search-box::before { content: "🔍"; position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; }
-    .user-info { font-size: 0.8rem; color: var(--muted); }
-    .user-info strong { color: var(--text); }
-    .tabs { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
-    .tab { padding: 0.55rem 1rem; border-radius: 8px; white-space: nowrap; background: transparent; border: 1px solid transparent; color: var(--muted); font-weight: 600; cursor: pointer; font-size: 0.8rem; }
-    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .tab-content { display: none; padding: 1rem; max-width: 1200px; margin: 0 auto; }
-    .tab-content.active { display: block; animation: fade .25s ease; }
-    @keyframes fade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
-    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 0.75rem; margin-bottom: 1rem; }
-    .metric { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; }
-    .metric:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,255,157,0.12); }
-    .metric-val { font-size: 1.5rem; font-weight: 800; color: var(--neon); }
-    .metric-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 0.25rem; }
-    .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
-    .filters select, .filters input { padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.8rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    th { background: rgba(0,0,0,0.35); color: var(--accent); padding: 0.7rem; text-align: left; }
-    td { padding: 0.7rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
-    .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
-    .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
-    .badge-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
-    .badge-high { background: rgba(239,68,68,0.25); color: #fca5a5; }
-    .badge-medium { background: rgba(245,158,11,0.25); color: #fcd34d; }
-    .badge-low { background: rgba(16,185,129,0.2); color: #6ee7b7; }
-    .activity-list { max-height: 420px; overflow-y: auto; }
-    .activity-item { padding: 0.75rem; border-bottom: 1px solid var(--border); display: flex; gap: 0.75rem; font-size: 0.8rem; }
-    .activity-time { color: var(--muted); font-size: 0.7rem; min-width: 70px; }
-    .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
-    .back-btn { position: fixed; bottom: 1.5rem; left: 1rem; z-index: 200; background: rgba(15,23,42,0.95); border: 1px solid var(--neon); color: var(--neon); padding: 0.65rem 1.1rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
-    .toast-container { position: fixed; bottom: 5rem; right: 1rem; z-index: 9999; }
-    .toast { background: var(--panel); border-left: 4px solid var(--success); padding: 0.85rem 1.1rem; border-radius: 8px; margin-top: 0.5rem; animation: slideIn .3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-    @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:none;opacity:1} }
-    @media (max-width: 640px) { .metrics { grid-template-columns: repeat(2,1fr); } .topbar { padding: 0.6rem; } .tab { padding: 0.45rem 0.75rem; font-size: 0.75rem; } }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:.875rem;padding-bottom:90px}
+    .glass{background:var(--panel);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem}
+    .topbar{position:sticky;top:0;z-index:100;background:rgba(10,14,39,.95);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .search-box{flex:1;min-width:200px;position:relative}
+    .search-box input{width:100%;padding:.7rem 1rem .7rem 2.5rem;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:16px}
+    .search-box::before{content:"🔍";position:absolute;left:.8rem;top:50%;transform:translateY(-50%)}
+    .user-info{font-size:.8rem;color:var(--muted)}.user-info strong{color:var(--text)}
+    .tabs{display:flex;gap:.4rem;overflow-x:auto;padding:.75rem 1rem;border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch}
+    .tab{padding:.55rem 1rem;border-radius:8px;white-space:nowrap;background:transparent;border:1px solid transparent;color:var(--muted);font-weight:600;cursor:pointer;font-size:.8rem}
+    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .tab-content{display:none;padding:1rem;max-width:1200px;margin:0 auto}
+    .tab-content.active{display:block;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem}
+    .metric{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:transform .15s}
+    .metric:hover{transform:translateY(-2px)}
+    .metric-val{font-size:1.5rem;font-weight:800;color:var(--neon)}
+    .metric-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;margin-top:.25rem}
+    .filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+    .filters select,.filters input{padding:.5rem .75rem;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8rem}
+    table{width:100%;border-collapse:collapse;font-size:.8rem}
+    th{background:rgba(0,0,0,.35);color:var(--accent);padding:.7rem;text-align:left}
+    td{padding:.7rem;border-bottom:1px solid var(--border);vertical-align:middle}
+    .badge{display:inline-block;padding:.2rem .55rem;border-radius:6px;font-size:.7rem;font-weight:700}
+    .badge-pending{background:rgba(245,158,11,.2);color:#f59e0b}
+    .badge-approved{background:rgba(16,185,129,.2);color:#10b981}
+    .badge-rejected{background:rgba(239,68,68,.2);color:#ef4444}
+    .badge-high{background:rgba(239,68,68,.25);color:#fca5a5}
+    .badge-medium{background:rgba(245,158,11,.25);color:#fcd34d}
+    .badge-low{background:rgba(16,185,129,.2);color:#6ee7b7}
+    .activity-item{padding:.75rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;font-size:.8rem}
+    .activity-time{color:var(--muted);font-size:.7rem;min-width:70px}
+    .btn{padding:.5rem .9rem;border:none;border-radius:8px;font-weight:600;font-size:.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-success{background:var(--success);color:#fff}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .btn-sm{padding:.35rem .65rem;font-size:.75rem}
+    .back-btn{position:fixed;bottom:1.5rem;left:1rem;z-index:200;background:rgba(15,23,42,.95);border:1px solid var(--neon);color:var(--neon);padding:.65rem 1.1rem;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer}
+    .toast-container{position:fixed;bottom:5rem;right:1rem;z-index:9999}
+    .toast{background:var(--panel);border-left:4px solid var(--success);padding:.85rem 1.1rem;border-radius:8px;margin-top:.5rem;animation:slideIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+    .chart-container{position:relative;height:220px;width:100%}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem}
+    .form-grid input,.form-grid select{padding:.6rem;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8rem}
+    .cal-nav{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+    .cal-nav button{min-width:40px}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:rgba(255,255,255,.05);border-radius:10px;overflow:hidden}
+    .cal-day-header{text-align:center;padding:.5rem;font-weight:700;background:rgba(0,0,0,.3);color:var(--muted);font-size:.75rem}
+    .cal-day{min-height:70px;padding:4px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.04);cursor:pointer}
+    .cal-day.today{background:rgba(14,165,233,.15);border-color:var(--accent)}
+    .cal-day-num{text-align:right;font-weight:700;font-size:.8rem;color:var(--muted)}
+    .cal-event{font-size:.65rem;padding:1px 4px;margin:1px 0;border-radius:3px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    @media(max-width:640px){.metrics{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.cal-day{min-height:55px}}
   </style>
 </head>
 <body>
@@ -66,15 +75,15 @@
 
   <div class="topbar">
     <div>
-      <div style="font-weight:800;color:var(--neon);font-size:1.05rem;">🏢 Command Center Pro</div>
-      <div class="user-info"><strong id="user-name">Loading...</strong><span id="role-badge" style="margin-left:0.4rem;font-size:0.75rem;"></span></div>
+      <div style="font-weight:800;color:var(--neon);font-size:1.05rem">🏢 Command Center Pro</div>
+      <div class="user-info"><strong id="user-name">Loading...</strong> <span id="role-badge" style="margin-left:.4rem;font-size:.75rem"></span></div>
     </div>
     <div class="search-box">
-      <input type="search" id="global-search" placeholder="Cari tugas, dana, booking, K3..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="runGlobalSearch(this.value)" style="-webkit-appearance: none;">
+      <input type="search" id="global-search" placeholder="Cari tugas, dana, booking, K3, user..." autocomplete="off" oninput="runGlobalSearch(this.value)">
     </div>
-    <div style="display:flex;align-items:center;gap:0.5rem;">
-      <div style="font-size:0.75rem;color:var(--muted);" id="sync-status">🟡 Init</div>
-      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)" title="Sinkronisasi Data">🔄 Sync</button>
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <div style="font-size:.75rem;color:var(--muted)" id="sync-status">🟡 Init</div>
+      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)">🔄 Sync</button>
     </div>
   </div>
 
@@ -88,288 +97,342 @@
     <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
   </div>
 
+  <!-- DASHBOARD -->
   <div id="tab-dashboard" class="tab-content active">
-    <div class="metrics" id="quick-metrics">
-      <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;" title="Lihat Inbox"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending (Klik)</div></div>
-      <div class="metric" onclick="switchTab('approvals')" style="cursor:pointer;" title="Lihat Approval"><div class="metric-val" id="m-approval">0</div><div class="metric-label">Butuh ACC (Klik)</div></div>
+    <div class="metrics">
+      <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending</div></div>
+      <div class="metric" onclick="switchTab('approvals')"><div class="metric-val" id="m-approval">0</div><div class="metric-label">Butuh ACC</div></div>
       <div class="metric"><div class="metric-val" id="m-overdue">0</div><div class="metric-label">Overdue</div></div>
-      <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;" title="Lihat Dana"><div class="metric-val" id="m-dana">Rp 0</div><div class="metric-label">Dana Pending (Klik)</div></div>
+      <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-dana">Rp 0</div><div class="metric-label">Dana Pending</div></div>
     </div>
-    
     <div class="glass">
-      <div style="font-weight:700;color:var(--neon);margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:700;color:var(--neon);margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center">
         <span>📈 Kinerja Operasional & SLA</span>
-        <button class="btn btn-outline btn-sm" onclick="renderExecutiveChart()">🔄 Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="renderChart()">🔄</button>
       </div>
-      <div style="position:relative; height:220px; width:100%;">
-        <canvas id="slaChart"></canvas>
-      </div>
+      <div class="chart-container"><canvas id="slaChart"></canvas></div>
     </div>
-
     <div class="glass">
-      <div style="font-weight:700;color:var(--neon);margin-bottom:0.75rem;">📈 Status Operasional</div>
-      <div class="metrics" id="op-metrics">
-        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3 (Klik)</div></div>
-        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking (Klik)</div></div>
-        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-maint">0</div><div class="metric-label">Maintenance (Klik)</div></div>
-        <div class="metric" onclick="switchTab('inbox')" style="cursor:pointer;"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana (Klik)</div></div>
+      <div style="font-weight:700;color:var(--neon);margin-bottom:.75rem">📈 Status Operasional</div>
+      <div class="metrics">
+        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3</div></div>
+        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking</div></div>
+        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-maint">0</div><div class="metric-label">Maintenance</div></div>
+        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana</div></div>
       </div>
     </div>
     <div class="glass">
-      <div style="font-weight:700;margin-bottom:0.75rem;">🔍 Hasil Pencarian Global</div>
-      <div id="search-results" style="max-height: 300px; overflow-y: auto; -webkit-overflow-scrolling: touch;"><p style="color:var(--muted);">Ketik di kotak pencarian di atas...</p></div>
+      <div style="font-weight:700;margin-bottom:.75rem">🔍 Hasil Pencarian Global</div>
+      <div id="search-results" style="max-height:300px;overflow-y:auto"><p style="color:var(--muted)">Ketik di kotak pencarian di atas...</p></div>
     </div>
   </div>
 
+  <!-- INBOX -->
   <div id="tab-inbox" class="tab-content">
     <div class="glass">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-        <div style="font-weight:700;color:var(--gold);">📥 Unified Task Inbox</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+        <div style="font-weight:700;color:var(--gold)">📥 Unified Task Inbox</div>
         <button class="btn btn-outline btn-sm" onclick="refreshAll()">🔄 Refresh</button>
       </div>
       <div class="filters">
-        <select id="filter-type" onchange="renderInbox()"><option value="all">Semua Tipe</option><option value="dana">Dana</option><option value="booking">Booking</option><option value="k3">K3</option><option value="maintenance">Maintenance</option><option value="janitor_indoor">Janitor Indoor</option><option value="janitor_outdoor">Janitor Outdoor</option><option value="security">Security</option><option value="asset">Asset</option><option value="stok">Stok Gudang</option></select>
-        <select id="filter-priority" onchange="renderInbox()"><option value="all">Semua Prioritas</option><option value="high">Tinggi</option><option value="medium">Sedang</option><option value="low">Rendah</option></select>
-        <select id="filter-status" onchange="renderInbox()"><option value="all">Semua Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+        <select id="filter-type" onchange="renderInbox()">
+          <option value="all">Semua Tipe</option>
+          <option value="dana">Dana</option>
+          <option value="booking">Booking</option>
+          <option value="k3">K3</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+        <select id="filter-priority" onchange="renderInbox()">
+          <option value="all">Semua Prioritas</option>
+          <option value="high">Tinggi</option>
+          <option value="medium">Sedang</option>
+          <option value="low">Rendah</option>
+        </select>
+        <select id="filter-status" onchange="renderInbox()">
+          <option value="all">Semua Status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
-      <div style="overflow-x:auto;"><table><thead><tr><th>Prioritas</th><th>Tipe</th><th>Judul / Detail</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="inbox-body"></tbody></table></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Prioritas</th><th>Tipe</th><th>Judul / Detail</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="inbox-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
+  <!-- APPROVALS -->
   <div id="tab-approvals" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;">✅ Antrian Approval</div>
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">✅ Antrian Approval</div>
       <div id="approval-list"></div>
     </div>
   </div>
 
-  <!-- CALENDAR TAB -->
+  <!-- CALENDAR (dengan filter bulan + tahun nyata) -->
   <div id="tab-calendar" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
-        <span>📅 Jadwal & Roster Terintegrasi</span>
-        <button class="btn btn-outline btn-sm" onclick="renderCalendar()">🔄 Refresh</button>
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">📅 Jadwal & Roster</div>
+      <div class="cal-nav">
+        <button class="btn btn-outline btn-sm" onclick="calPrev()">◀</button>
+        <select id="cal-month" onchange="renderCalendar()"></select>
+        <select id="cal-year" onchange="renderCalendar()"></select>
+        <button class="btn btn-outline btn-sm" onclick="calNext()">▶</button>
+        <button class="btn btn-outline btn-sm" onclick="calToday()">Hari Ini</button>
       </div>
-      <div id="calendar-view" style="text-align:center;padding:2rem;color:var(--muted);">
-        📅 Memuat data jadwal booking, maintenance, dan roster...<br>
-        <small>Data akan ditampilkan dalam bentuk kalender interaktif.</small>
+      <div class="cal-grid" id="cal-headers">
+        <div class="cal-day-header">Sen</div>
+        <div class="cal-day-header">Sel</div>
+        <div class="cal-day-header">Rab</div>
+        <div class="cal-day-header">Kam</div>
+        <div class="cal-day-header">Jum</div>
+        <div class="cal-day-header">Sab</div>
+        <div class="cal-day-header">Min</div>
       </div>
+      <div class="cal-grid" id="cal-grid" style="margin-top:2px"></div>
+      <div id="cal-list" style="margin-top:1rem"></div>
     </div>
   </div>
 
-  <!-- ARCHIVE TAB -->
+  <!-- ARCHIVE + SUPABASE STORAGE -->
   <div id="tab-archive" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--gold);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
-        <span>📂 Arsip File & Dokumen</span>
-        <button class="btn btn-outline btn-sm" onclick="renderArchive()">🔄 Refresh</button>
-      </div>
-      <div class="filters">
-        <select id="arch-type" onchange="renderArchive()"><option value="all">Semua Tipe</option><option value="k3">K3 Reports</option><option value="maintenance">Maintenance</option><option value="security">Security</option></select>
-      </div>
-      <div style="overflow-x:auto;"><table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Nama File/Detail</th><th>Uploader</th><th>Aksi</th></tr></thead><tbody id="archive-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Memuat arsip...</td></tr></tbody></table></div>
-    </div>
-  </div>
-
-  <!-- USERS TAB -->
-  <div id="tab-users" class="tab-content tab-restricted-content">
-    <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem;">👥 Manajemen Pengguna</div>
-      
-      <!-- Form Tambah User -->
-      <div style="background:rgba(0,0,0,0.25); padding:1rem; border-radius:10px; margin-bottom:1.5rem; border:1px solid var(--border);">
-        <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.75rem; color:var(--neon);">➕ Tambah User Baru</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:0.75rem;">
-          <input type="text" id="new-user-nama" placeholder="Nama Lengkap" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
-          <input type="email" id="new-user-email" placeholder="Email" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
-          <select id="new-user-role" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
-            <option value="staff">Staff</option><option value="guru">Guru</option><option value="security">Security</option>
-            <option value="maintenance">Maintenance</option><option value="janitor_indoor">Janitor Indoor</option>
-            <option value="janitor_outdoor">Janitor Outdoor</option><option value="koordinator_umum">Koordinator Umum</option>
-            <option value="kabag_umum">Kabag Umum</option>
-          </select>
-          <select id="new-user-divisi" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
-            <option value="UMUM">Umum</option><option value="TK">TK</option><option value="SD">SD</option>
-            <option value="SMP">SMP</option><option value="SMA">SMA</option>
-          </select>
-          <input type="password" id="new-user-pass" placeholder="Password (Min 6)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.8rem; margin:0;">
-          <button class="btn btn-success" onclick="createNewUser()" style="width:100%; justify-content:center;">✅ Simpan User</button>
+      <div style="font-weight:700;color:var(--gold);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+        <span>📂 Arsip & Dokumen (Supabase Storage)</span>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input type="file" id="archive-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="uploadArchiveFile(this)">
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('archive-file').click()">📤 Upload</button>
+          <button class="btn btn-outline btn-sm" onclick="renderArchive()">🔄</button>
         </div>
       </div>
-
-      <div style="overflow-x:auto;"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Divisi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="users-body"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Memuat data user...</td></tr></tbody></table></div>
+      <div class="filters">
+        <select id="arch-type" onchange="renderArchive()">
+          <option value="all">Semua Tipe</option>
+          <option value="k3">K3</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="security">Security</option>
+          <option value="general">General</option>
+          <option value="export">Export</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Tanggal</th><th>Tipe</th><th>Nama File</th><th>Ukuran</th><th>User</th><th>Aksi</th></tr></thead>
+          <tbody id="archive-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
+  <!-- USERS -->
+  <div id="tab-users" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">👥 Manajemen Pengguna</div>
+      <div style="background:rgba(0,0,0,.25);padding:1rem;border-radius:10px;margin-bottom:1.5rem;border:1px solid var(--border)">
+        <div style="font-size:.85rem;font-weight:600;margin-bottom:.75rem;color:var(--neon)">➕ Tambah User Baru (bcrypt)</div>
+        <div class="form-grid">
+          <input type="text" id="new-user-nama" placeholder="Nama Lengkap">
+          <input type="email" id="new-user-email" placeholder="Email">
+          <select id="new-user-role">
+            <option value="staff">Staff</option>
+            <option value="koord">Koordinator</option>
+            <option value="kabag">Kabag</option>
+            <option value="dev">Developer</option>
+          </select>
+          <input type="password" id="new-user-pass" placeholder="Password (min 6)">
+          <button class="btn btn-success" onclick="createNewUser()" style="justify-content:center">✅ Simpan</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY -->
   <div id="tab-activity" class="tab-content">
     <div class="glass">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <div style="font-weight:700;">📜 Activity Feed</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div style="font-weight:700">📜 Activity Feed</div>
         <button class="btn btn-outline btn-sm" onclick="renderActivity()">🔄</button>
       </div>
-      <div class="activity-list" id="activity-list"></div>
+      <div id="activity-list" style="max-height:420px;overflow-y:auto"></div>
     </div>
   </div>
 
   <div class="toast-container" id="toast-container"></div>
 
 <script>
-// Global function untuk back button
 window.goHomeHandler = function() {
   try {
-    if (typeof window.goHome === 'function') {
-      window.goHome();
-    } else {
-      window.location.href = 'index.html';
-    }
-  } catch(e) {
-    window.location.href = 'index.html';
-  }
+    if (window.parent && typeof window.parent.goHome === 'function') window.parent.goHome();
+    else if (typeof window.goHome === 'function') window.goHome();
+    else window.location.href = '../index.html';
+  } catch(e) { window.location.href = '../index.html'; }
 };
 
 (function() {
-  function safeJSON(key, fallback = []) { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; } }
+  // ===== HELPERS =====
+  function safeJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback !== undefined ? fallback : [])); }
+    catch(e) { return fallback !== undefined ? fallback : []; }
+  }
   function saveJSON(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
-  function showToast(msg, type = 'success') {
+
+  function showToast(msg, type) {
     const c = document.getElementById('toast-container');
-    const t = document.createElement('div'); t.className = 'toast';
+    const t = document.createElement('div');
+    t.className = 'toast';
     t.style.borderLeftColor = type === 'danger' ? 'var(--danger)' : 'var(--success)';
-    t.textContent = msg; c.appendChild(t);
+    t.textContent = msg;
+    c.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
-  
-  // Cek apakah sudah login dalam 5 menit terakhir
-  let lastLoginTime = sessionStorage.getItem('cc_last_login') || '0';
-  
-  async function logActivity(action, detail, meta = {}) {
-    // Jangan log LOGIN_CC jika sudah login dalam 5 menit terakhir
-    if (action === 'LOGIN_CC') {
-      const now = Date.now();
-      if (now - parseInt(lastLoginTime) < 300000) { // 5 menit
-        return; // Skip duplicate login log
-      }
-      sessionStorage.setItem('cc_last_login', now.toString());
+
+  // ===== BCRYPT HASHING =====
+  function hashPassword(plain) {
+    if (typeof bcrypt !== 'undefined') {
+      return bcrypt.hashSync(String(plain), 10);
     }
-    
-    const logs = safeJSON('dreamos_activity_feed', []);
-    logs.unshift({ id: 'act_' + Date.now(), action, detail, user: currentUser.nama || currentUser.email || 'System', time: new Date().toISOString(), meta });
-    if (logs.length > 200) logs.length = 200;
-    saveJSON('dreamos_activity_feed', logs);
-    
-    // 🌐 SYNC TO SUPABASE
-    if (window.supabaseClient) {
-      window.supabaseClient.from('activity_logs').insert({
-        action, details: detail, user_email: currentUser.email, created_at: new Date().toISOString()
-      }).catch(e => console.warn('Activity log sync failed:', e));
+    // fallback sederhana jika CDN gagal
+    let h = 0;
+    const str = String(plain) + 'dreamos_salt_2026';
+    for (let i = 0; i < str.length; i++) {
+      h = ((h << 5) - h) + str.charCodeAt(i);
+      h |= 0;
     }
+    return 'hash_' + Math.abs(h).toString(16);
   }
 
+  function logActivity(action, detail) {
+    const logs = safeJSON('dreamos_activity_feed', []);
+    const user = safeJSON('dreamos_bound_user', {});
+    logs.unshift({
+      id: 'act_' + Date.now(),
+      action: action,
+      detail: detail,
+      user: user.nama || user.email || 'System',
+      time: new Date().toISOString()
+    });
+    if (logs.length > 200) logs.length = 200;
+    saveJSON('dreamos_activity_feed', logs);
+  }
+
+  // ===== CURRENT USER =====
   const bound = safeJSON('dreamos_bound_user', null);
   const currentUser = bound || { nama: 'Guest', role: 'staff', email: 'guest' };
   document.getElementById('user-name').textContent = currentUser.nama || currentUser.email || 'User';
   document.getElementById('role-badge').textContent = (currentUser.role || '').toUpperCase();
 
+  const adminRoles = ['kabag', 'koord', 'dev', 'admin', 'kabag_umum', 'koordinator_umum'];
+  const isAdmin = adminRoles.includes((currentUser.role || '').toLowerCase());
+  if (!isAdmin) {
+    document.querySelectorAll('.tab-restricted').forEach(el => el.style.display = 'none');
+  }
+
+  // ===== TAB =====
   window.switchTab = function(id) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     const pane = document.getElementById('tab-' + id);
     if (pane) pane.classList.add('active');
-    const btn = document.querySelector(`.tab[data-tab="${id}"]`);
+    const btn = document.querySelector('.tab[data-tab="' + id + '"]');
     if (btn) btn.classList.add('active');
+
     if (id === 'inbox') renderInbox();
     if (id === 'approvals') renderApprovals();
     if (id === 'activity') renderActivity();
+    if (id === 'calendar') renderCalendar();
+    if (id === 'archive') renderArchive();
+    if (id === 'users') renderUsers();
   };
 
-  // Debounce untuk mobile
+  // ===== GLOBAL SEARCH =====
   let searchTimeout;
   window.runGlobalSearch = function(q) {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
+    searchTimeout = setTimeout(function() {
       q = (q || '').toLowerCase().trim();
       const box = document.getElementById('search-results');
-      if (!q) { 
-        box.innerHTML = '<p style="color:var(--muted);">Ketik minimal 2 karakter...</p>'; 
-        return; 
-      }
-      if (q.length < 2) {
-        box.innerHTML = '<p style="color:var(--muted);">Minimal 2 karakter...</p>';
+      if (!q || q.length < 2) {
+        box.innerHTML = '<p style="color:var(--muted)">Ketik minimal 2 karakter...</p>';
         return;
       }
-      
       const sources = [
-        { key: 'dreamos_dana', type: 'Dana', title: d => d.judul || 'Pengajuan Dana', extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
-        { key: 'dreamos_bookings', type: 'Booking', title: d => (d.ruang || 'Ruang') + ' - ' + (d.nama_peminjam || 'Unknown'), extra: d => (d.tgl || '') + ' ' + (d.jam_mulai || '') },
-        { key: 'dreamos_k3_reports', type: 'K3', title: d => d.judul || d.lokasi || 'Laporan K3', extra: d => d.status || 'pending' },
-        { key: 'dreamos_maintenance_tasks', type: 'Maintenance', title: d => d.judul || d.deskripsi || 'Maintenance', extra: d => d.status || 'pending' },
-        { key: 'dreamos_janitor_indoor', type: 'Janitor Indoor', title: d => d.lokasi || 'Janitor Indoor', extra: d => d.status || '-' },
-        { key: 'dreamos_janitor_outdoor', type: 'Janitor Outdoor', title: d => d.lokasi || 'Janitor Outdoor', extra: d => d.status || '-' },
-        { key: 'dreamos_security_logs', type: 'Security', title: d => d.kejadian || d.lokasi || 'Security Log', extra: d => d.status || '-' },
-        { key: 'dreamos_asset_reports', type: 'Asset', title: d => d.nama_aset || d.judul || 'Asset', extra: d => d.status || '-' }
+        { key: 'dreamos_dana', type: 'Dana', title: d => d.judul || 'Dana', extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
+        { key: 'dreamos_bookings', type: 'Booking', title: d => (d.ruang||'') + ' - ' + (d.nama_peminjam||''), extra: d => (d.tgl||'') + ' ' + (d.jam_mulai||'') },
+        { key: 'dreamos_k3_reports', type: 'K3', title: d => d.judul || d.lokasi || 'K3', extra: d => d.status || '' },
+        { key: 'dreamos_maintenance_tasks', type: 'Maint', title: d => d.judul || d.deskripsi || 'Maint', extra: d => d.status || '' },
+        { key: 'dreamos_users_db', type: 'User', title: d => d.nama || d.email || 'User', extra: d => d.role || '' },
+        { key: 'dreamos_file_archive', type: 'File', title: d => d.file_name || 'File', extra: d => d.record_type || '' }
       ];
-      
       let hits = [];
       sources.forEach(s => {
-        const data = safeJSON(s.key);
-        if (data && data.length > 0) {
-          data.forEach(item => {
-            const searchText = JSON.stringify(item).toLowerCase();
-            if (searchText.includes(q)) {
-              hits.push({ 
-                type: s.type, 
-                title: s.title(item) || '-', 
-                extra: s.extra(item), 
-                status: item.status || 'pending' 
-              });
-            }
-          });
-        }
+        safeJSON(s.key).forEach(item => {
+          if (JSON.stringify(item).toLowerCase().includes(q)) {
+            hits.push({ type: s.type, title: s.title(item), extra: s.extra(item), status: item.status || '-' });
+          }
+        });
       });
-      
-      if (hits.length === 0) {
-        box.innerHTML = '<p style="color:var(--muted);padding:1rem;text-align:center;">🔍 Tidak ditemukan hasil untuk "' + q + '"</p>';
-      } else {
-        box.innerHTML = '<div style="padding:0.5rem;background:rgba(0,255,157,0.1);border-radius:8px;margin-bottom:0.5rem;font-size:0.75rem;color:var(--neon);">📊 Ditemukan ' + hits.length + ' hasil</div>' + 
-          hits.slice(0, 30).map(h => `
-            <div style="padding:0.75rem 0.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:center;">
-              <div style="flex:1;min-width:0;">
-                <span class="badge badge-pending" style="margin-right:0.4rem;">${h.type}</span>
-                <strong style="display:block;margin:0.25rem 0;">${h.title}</strong>
-                <div style="font-size:0.75rem;color:var(--muted);">${h.extra}</div>
-              </div>
-              <span class="badge ${h.status==='approved'?'badge-approved':h.status==='rejected'?'badge-rejected':'badge-pending'}">${h.status}</span>
-            </div>`).join('');
+      if (!hits.length) {
+        box.innerHTML = '<p style="color:var(--muted);padding:1rem;text-align:center">🔍 Tidak ditemukan: "' + q + '"</p>';
+        return;
       }
-    }, 200); // Delay 200ms
+      box.innerHTML = '<div style="padding:.4rem;background:rgba(0,255,157,.1);border-radius:6px;margin-bottom:.5rem;font-size:.75rem;color:var(--neon)">📊 ' + hits.length + ' hasil</div>' +
+        hits.slice(0, 20).map(h => '<div style="padding:.6rem 0;border-bottom:1px solid var(--border)"><span class="badge badge-pending" style="margin-right:.4rem">' + h.type + '</span><strong>' + h.title + '</strong><div style="font-size:.75rem;color:var(--muted)">' + h.extra + '</div></div>').join('');
+    }, 200);
   };
 
+  // ===== COLLECT TASKS =====
   function collectTasks() {
     const tasks = [];
-    // Dana
-    safeJSON('dreamos_dana').forEach(d => tasks.push({ id: d.id, type: 'dana', title: d.judul || 'Pengajuan Dana', detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'), status: (d.status || 'pending').toLowerCase(), priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low', raw: d }));
-    // Booking
-    safeJSON('dreamos_bookings').forEach(b => tasks.push({ id: b.id, type: 'booking', title: (b.ruang || 'Ruang') + ' • ' + (b.nama_peminjam || '-'), detail: (b.tgl || '') + ' ' + (b.jam_mulai || ''), status: (b.status || 'pending').toLowerCase(), priority: 'medium', raw: b }));
-    // K3
-    safeJSON('dreamos_k3_reports').forEach(k => tasks.push({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'Laporan K3', detail: k.pelapor || '', status: (k.status || 'pending').toLowerCase(), priority: 'high', raw: k }));
-    // Maintenance
-    safeJSON('dreamos_maintenance_tasks').forEach(m => tasks.push({ id: m.id, type: 'maintenance', title: m.judul || m.deskripsi || 'Maintenance', detail: m.lokasi || '', status: (m.status || 'pending').toLowerCase(), priority: (m.priority || 'medium').toLowerCase(), raw: m }));
-    // Janitor Indoor
-    safeJSON('dreamos_janitor_indoor').forEach(j => tasks.push({ id: j.id, type: 'janitor_indoor', title: j.lokasi || 'Janitor Indoor', detail: j.catatan || '-', status: (j.status || 'pending').toLowerCase(), priority: 'low', raw: j }));
-    // Janitor Outdoor
-    safeJSON('dreamos_janitor_outdoor').forEach(j => tasks.push({ id: j.id, type: 'janitor_outdoor', title: j.lokasi || 'Janitor Outdoor', detail: j.catatan || '-', status: (j.status || 'pending').toLowerCase(), priority: 'low', raw: j }));
-    // Security
-    safeJSON('dreamos_security_logs').forEach(s => tasks.push({ id: s.id, type: 'security', title: s.kejadian || s.lokasi || 'Security Log', detail: s.petugas || '-', status: (s.status || 'pending').toLowerCase(), priority: s.priority === 'URGENT' ? 'high' : 'medium', raw: s }));
-    // Asset
-    safeJSON('dreamos_asset_reports').forEach(a => tasks.push({ id: a.id, type: 'asset', title: a.nama_aset || a.judul || 'Asset', detail: a.lokasi || '-', status: (a.status || 'pending').toLowerCase(), priority: 'medium', raw: a }));
-    // Stok Gudang
-    safeJSON('dreamos_stok_gudang').forEach(s => {
-      if (s.quantity < (s.min_stock || 10)) {
-        tasks.push({ id: s.id, type: 'stok', title: s.nama_barang || 'Stok Rendah', detail: 'Sisa: ' + s.quantity, status: 'pending', priority: 'high', raw: s });
-      }
+    safeJSON('dreamos_dana').forEach(d => {
+      tasks.push({
+        id: d.id, type: 'dana',
+        title: d.judul || 'Dana',
+        detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'),
+        status: (d.status || 'pending').toLowerCase(),
+        priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low',
+        raw: d
+      });
+    });
+    safeJSON('dreamos_bookings').forEach(b => {
+      tasks.push({
+        id: b.id, type: 'booking',
+        title: (b.ruang || '') + ' • ' + (b.nama_peminjam || '-'),
+        detail: (b.tgl || '') + ' ' + (b.jam_mulai || ''),
+        status: (b.status || 'pending').toLowerCase(),
+        priority: 'medium', raw: b
+      });
+    });
+    safeJSON('dreamos_k3_reports').forEach(k => {
+      tasks.push({
+        id: k.id, type: 'k3',
+        title: k.judul || k.lokasi || 'K3',
+        detail: k.pelapor || '',
+        status: (k.status || 'pending').toLowerCase(),
+        priority: 'high', raw: k
+      });
+    });
+    safeJSON('dreamos_maintenance_tasks').forEach(m => {
+      tasks.push({
+        id: m.id, type: 'maintenance',
+        title: m.judul || m.deskripsi || 'Maint',
+        detail: m.lokasi || '',
+        status: (m.status || 'pending').toLowerCase(),
+        priority: (m.priority || 'medium').toLowerCase(), raw: m
+      });
     });
     return tasks;
   }
 
+  // ===== INBOX =====
   window.renderInbox = function() {
     const typeF = document.getElementById('filter-type')?.value || 'all';
     const prioF = document.getElementById('filter-priority')?.value || 'all';
@@ -380,27 +443,33 @@ window.goHomeHandler = function() {
     if (statF !== 'all') tasks = tasks.filter(t => t.status === statF);
 
     const tbody = document.getElementById('inbox-body');
-    if (!tasks.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Tidak ada tugas sesuai filter</td></tr>'; return; }
+    if (!tasks.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Tidak ada tugas</td></tr>';
+      return;
+    }
     tbody.innerHTML = tasks.map(t => {
-      const prioClass = t.priority === 'high' ? 'badge-high' : t.priority === 'medium' ? 'badge-medium' : 'badge-low';
-      const statClass = t.status === 'approved' ? 'badge-approved' : t.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
-      return `<tr>
-        <td><span class="badge ${prioClass}">${t.priority}</span></td><td>${t.type}</td>
-        <td><strong>${t.title}</strong><div style="font-size:0.75rem;color:var(--muted);">${t.detail}</div></td>
-        <td><span class="badge ${statClass}">${t.status}</span></td>
-        <td>${t.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="doApprove('${t.type}','${t.id}',true)">✅</button><button class="btn btn-danger btn-sm" onclick="doApprove('${t.type}','${t.id}',false)">❌</button>` : '-'}</td>
-      </tr>`;
+      const pc = t.priority === 'high' ? 'badge-high' : t.priority === 'medium' ? 'badge-medium' : 'badge-low';
+      const sc = t.status === 'approved' ? 'badge-approved' : t.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
+      const actions = t.status === 'pending'
+        ? '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',true)">✅</button> <button class="btn btn-danger btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',false)">❌</button>'
+        : '-';
+      return '<tr><td><span class="badge ' + pc + '">' + t.priority + '</span></td><td>' + t.type + '</td><td><strong>' + t.title + '</strong><div style="font-size:.75rem;color:var(--muted)">' + t.detail + '</div></td><td><span class="badge ' + sc + '">' + t.status + '</span></td><td>' + actions + '</td></tr>';
     }).join('');
   };
 
-  window.doApprove = async function(type, id, isApprove) {
+  // ===== APPROVAL =====
+  window.doApprove = function(type, id, isApprove) {
     const reason = isApprove ? null : prompt('Alasan penolakan (wajib):');
     if (!isApprove && !reason) return;
 
-    const keyMap = { dana: 'dreamos_dana', booking: 'dreamos_bookings', k3: 'dreamos_k3_reports', maintenance: 'dreamos_maintenance_tasks' };
-    const tableMap = { dana: 'dana_requests', booking: 'bookings', k3: 'k3_reports', maintenance: 'maintenance_requests' };
-    const key = keyMap[type], table = tableMap[type];
-    if (!key || !table) return;
+    const keyMap = {
+      dana: 'dreamos_dana',
+      booking: 'dreamos_bookings',
+      k3: 'dreamos_k3_reports',
+      maintenance: 'dreamos_maintenance_tasks'
+    };
+    const key = keyMap[type];
+    if (!key) return;
 
     const list = safeJSON(key);
     const item = list.find(x => x.id === id);
@@ -412,231 +481,430 @@ window.goHomeHandler = function() {
     if (reason) item.reject_reason = reason;
     saveJSON(key, list);
 
-    // 🌐 SYNC TO SUPABASE
     if (window.supabaseClient) {
-      try {
-        await window.supabaseClient.from(table).update({
-          status: item.status, approved_by: item.approved_by, approved_at: item.approved_at, reject_reason: item.reject_reason || null
-        }).eq('id', id);
-      } catch (e) { console.warn('Supabase sync failed:', e); }
+      const tableMap = { dana: 'dana_requests', booking: 'bookings', k3: 'k3_reports', maintenance: 'maintenance_requests' };
+      const table = tableMap[type];
+      if (table) {
+        window.supabaseClient.from(table).update({
+          status: item.status,
+          approved_by: item.approved_by,
+          approved_at: item.approved_at,
+          reject_reason: item.reject_reason || null
+        }).eq('id', id).then(() => {}).catch(e => console.warn('Supabase sync failed', e));
+      }
     }
 
-    logActivity(isApprove ? 'APPROVE' : 'REJECT', `${type.toUpperCase()}: ${item.judul || item.ruang || id}`, { type, id });
-    showToast(isApprove ? '✅ Disetujui & Tersinkronisasi' : '❌ Ditolak & Tersinkronisasi');
+    logActivity(isApprove ? 'APPROVE' : 'REJECT', type.toUpperCase() + ': ' + (item.judul || item.ruang || id));
+    showToast(isApprove ? '✅ Disetujui' : '❌ Ditolak');
     refreshAll();
   };
 
   window.renderApprovals = function() {
     const tasks = collectTasks().filter(t => t.status === 'pending');
     const box = document.getElementById('approval-list');
-    if (!tasks.length) { box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem;">Tidak ada yang menunggu approval</p>'; return; }
-    box.innerHTML = tasks.map(t => `
-      <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;">
-        <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
-          <div><span class="badge badge-pending">${t.type}</span><strong style="margin-left:0.4rem;">${t.title}</strong><div style="font-size:0.8rem;color:var(--muted);margin-top:0.3rem;">${t.detail}</div></div>
-          <div style="display:flex;gap:0.4rem;">
-            <button class="btn btn-success btn-sm" onclick="doApprove('${t.type}','${t.id}',true)">Setujui</button>
-            <button class="btn btn-danger btn-sm" onclick="doApprove('${t.type}','${t.id}',false)">Tolak</button>
-          </div>
-        </div>
-      </div>`).join('');
+    if (!tasks.length) {
+      box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">Tidak ada antrian approval</p>';
+      return;
+    }
+    box.innerHTML = tasks.map(t =>
+      '<div style="background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem">' +
+      '<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">' +
+      '<div><span class="badge badge-pending">' + t.type + '</span> <strong style="margin-left:.4rem">' + t.title + '</strong>' +
+      '<div style="font-size:.8rem;color:var(--muted);margin-top:.3rem">' + t.detail + '</div></div>' +
+      '<div style="display:flex;gap:.4rem">' +
+      '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',true)">Setujui</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',false)">Tolak</button>' +
+      '</div></div></div>'
+    ).join('');
   };
 
+  // ===== ACTIVITY =====
   window.renderActivity = function() {
     const logs = safeJSON('dreamos_activity_feed', []);
     const box = document.getElementById('activity-list');
-    if (!logs.length) { box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem;">Belum ada aktivitas</p>'; return; }
-    box.innerHTML = logs.slice(0, 50).map(l => `
-      <div class="activity-item">
-        <div class="activity-time">${new Date(l.time).toLocaleString('id-ID', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</div>
-        <div><strong>${l.user}</strong> — ${l.action}<br><span style="color:var(--muted);">${l.detail}</span></div>
-      </div>`).join('');
+    if (!logs.length) {
+      box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">Belum ada aktivitas</p>';
+      return;
+    }
+    box.innerHTML = logs.slice(0, 50).map(l =>
+      '<div class="activity-item"><div class="activity-time">' +
+      new Date(l.time).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) +
+      '</div><div><strong>' + l.user + '</strong> — ' + l.action + '<br><span style="color:var(--muted)">' + l.detail + '</span></div></div>'
+    ).join('');
   };
 
-  function updateMetrics() {
-    const tasks = collectTasks();
-    const pending = tasks.filter(t => t.status === 'pending').length;
-    const danaPending = safeJSON('dreamos_dana').filter(d => (d.status||'').toLowerCase() === 'pending');
-    const danaSum = danaPending.reduce((s,d) => s + Number(d.nominal||0), 0);
+  // ===== CALENDAR (real month + year) =====
+  let calDate = new Date();
 
-    document.getElementById('m-pending').textContent = pending;
-    document.getElementById('m-approval').textContent = pending;
-    document.getElementById('m-dana').textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
-    document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status||'') === 'pending').length;
-    document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status||'') === 'pending').length;
-    document.getElementById('op-maint').textContent = safeJSON('dreamos_maintenance_tasks').filter(m => !['selesai','disetujui','approved'].includes((m.status||'').toLowerCase())).length;
-    document.getElementById('op-dana').textContent = danaPending.length;
+  function initCalSelectors() {
+    const monthSel = document.getElementById('cal-month');
+    const yearSel = document.getElementById('cal-year');
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    monthSel.innerHTML = months.map((m, i) => '<option value="' + i + '"' + (i === calDate.getMonth() ? ' selected' : '') + '>' + m + '</option>').join('');
+    const currentYear = new Date().getFullYear();
+    let yearOpts = '';
+    for (let y = currentYear - 3; y <= currentYear + 2; y++) {
+      yearOpts += '<option value="' + y + '"' + (y === calDate.getFullYear() ? ' selected' : '') + '>' + y + '</option>';
+    }
+    yearSel.innerHTML = yearOpts;
   }
 
-  window.refreshAll = function() {
-    updateMetrics(); renderInbox(); renderApprovals(); renderActivity();
-    showToast('Data diperbarui');
+  window.calPrev = function() {
+    calDate.setMonth(calDate.getMonth() - 1);
+    document.getElementById('cal-month').value = calDate.getMonth();
+    document.getElementById('cal-year').value = calDate.getFullYear();
+    renderCalendar();
+  };
+  window.calNext = function() {
+    calDate.setMonth(calDate.getMonth() + 1);
+    document.getElementById('cal-month').value = calDate.getMonth();
+    document.getElementById('cal-year').value = calDate.getFullYear();
+    renderCalendar();
+  };
+  window.calToday = function() {
+    calDate = new Date();
+    document.getElementById('cal-month').value = calDate.getMonth();
+    document.getElementById('cal-year').value = calDate.getFullYear();
+    renderCalendar();
+  };
+
+  function parseDateStr(str) {
+    if (!str) return null;
+    const s = String(str).trim();
+    // YYYY-MM-DD
+    let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+    // DD/MM/YYYY
+    if (s.includes('/')) {
+      const p = s.split('/');
+      if (p.length === 3) return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+    }
+    return null;
   }
 
-  // 🎯 ROLE-BASED VISIBILITY
-  const allowedRoles = ['kabag_umum', 'koordinator_umum', 'dev', 'admin'];
-  if (!allowedRoles.includes((currentUser.role || '').toLowerCase())) {
-    document.querySelectorAll('.tab-restricted').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.tab-restricted-content').forEach(el => el.style.display = 'none');
-  }
+  window.renderCalendar = function() {
+    const month = parseInt(document.getElementById('cal-month').value);
+    const year = parseInt(document.getElementById('cal-year').value);
+    calDate = new Date(year, month, 1);
 
-  // 📊 CHART.JS RENDERER
-  window.renderExecutiveChart = function() {
+    const grid = document.getElementById('cal-grid');
+    const list = document.getElementById('cal-list');
+
+    // Load events
+    const events = [];
+    const sources = [
+      { key: 'dreamos_bookings', color: '#0ea5e9', label: 'Booking', field: 'ruang' },
+      { key: 'dreamos_maintenance_tasks', color: '#8b5cf6', label: 'Maint', field: 'judul' },
+      { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' }
+    ];
+    sources.forEach(s => {
+      safeJSON(s.key).forEach(d => {
+        const dDate = parseDateStr(d.tgl || d.tanggal || d.date || d.created_at);
+        if (dDate && dDate.getFullYear() === year && dDate.getMonth() === month) {
+          events.push({
+            day: dDate.getDate(),
+            title: (s.label + ': ' + (d[s.field] || d.judul || d.nama_peminjam || '-')).substring(0, 28),
+            color: s.color,
+            full: d
+          });
+        }
+      });
+    });
+
+    // Build grid
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Min
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Senin = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    let html = '';
+    for (let i = 0; i < startOffset; i++) html += '<div class="cal-day" style="background:rgba(0,0,0,.1)"></div>';
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+      const dayEvents = events.filter(e => e.day === d);
+      const evHtml = dayEvents.slice(0, 3).map(e =>
+        '<div class="cal-event" style="background:' + e.color + '">' + e.title + '</div>'
+      ).join('');
+      const more = dayEvents.length > 3 ? '<div style="font-size:.6rem;color:var(--muted);text-align:center">+' + (dayEvents.length - 3) + '</div>' : '';
+
+      html += '<div class="cal-day' + (isToday ? ' today' : '') + '" data-day="' + d + '">' +
+        '<div class="cal-day-num" style="color:' + (isToday ? 'var(--accent)' : 'var(--muted)') + '">' + d + '</div>' +
+        evHtml + more + '</div>';
+    }
+    grid.innerHTML = html;
+
+    // List view
+    if (!events.length) {
+      list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:1rem">Tidak ada jadwal di bulan ini.</p>';
+    } else {
+      events.sort((a, b) => a.day - b.day);
+      list.innerHTML = '<div style="font-weight:600;margin-bottom:.5rem">Daftar ' + events.length + ' event:</div>' +
+        events.map(e =>
+          '<div style="padding:.5rem;border-bottom:1px solid var(--border);display:flex;gap:.5rem;align-items:center">' +
+          '<span class="badge badge-pending">' + e.day + '</span>' +
+          '<span style="background:' + e.color + ';width:8px;height:8px;border-radius:50%;display:inline-block"></span>' +
+          '<span>' + e.title + '</span></div>'
+        ).join('');
+    }
+  };
+
+  // ===== ARCHIVE + SUPABASE STORAGE =====
+  window.uploadArchiveFile = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) return showToast('Maksimal 8MB', 'danger');
+
+    const type = document.getElementById('arch-type').value === 'all' ? 'general' : document.getElementById('arch-type').value;
+    const bucketMap = {
+      k3: 'k3-photos',
+      maintenance: 'maintenance-photos',
+      security: 'security-photos',
+      general: 'exports-archive',
+      export: 'exports-archive'
+    };
+    const bucket = bucketMap[type] || 'exports-archive';
+    const fileName = type + '_' + Date.now() + '_' + file.name.replace(/\s+/g, '_');
+
+    showToast('⏳ Mengupload...');
+
+    try {
+      let publicUrl = null;
+      if (window.supabaseClient) {
+        const { data, error } = await window.supabaseClient.storage.from(bucket).upload(fileName, file, { upsert: false });
+        if (error) throw error;
+        const { data: urlData } = window.supabaseClient.storage.from(bucket).getPublicUrl(fileName);
+        publicUrl = urlData.publicUrl;
+
+        // simpan metadata ke tabel
+        await window.supabaseClient.from('file_attachments').insert({
+          record_type: type,
+          record_id: 'manual_' + Date.now(),
+          file_url: publicUrl,
+          file_name: file.name,
+          file_type: file.type,
+          file_size_kb: Math.round(file.size / 1024),
+          uploaded_by: currentUser.email || currentUser.nama || 'system'
+        });
+      }
+
+      // local backup
+      const meta = {
+        id: 'file_' + Date.now(),
+        record_type: type,
+        file_url: publicUrl || '',
+        file_name: file.name,
+        file_type: file.type,
+        file_size_kb: Math.round(file.size / 1024),
+        uploaded_by: currentUser.email || currentUser.nama || 'system',
+        created_at: new Date().toISOString()
+      };
+      const files = safeJSON('dreamos_file_archive', []);
+      files.unshift(meta);
+      saveJSON('dreamos_file_archive', files);
+
+      logActivity('FILE_UPLOAD', file.name + ' (' + type + ')');
+      showToast('✅ File berhasil diupload');
+      input.value = '';
+      renderArchive();
+    } catch (e) {
+      console.error(e);
+      showToast('⛔ Gagal upload: ' + (e.message || 'cek koneksi / permission Storage'), 'danger');
+    }
+  };
+
+  window.renderArchive = async function() {
+    const tbody = document.getElementById('archive-body');
+    const typeF = document.getElementById('arch-type')?.value || 'all';
+    let files = safeJSON('dreamos_file_archive', []);
+
+    // coba ambil dari Supabase juga
+    if (window.supabaseClient) {
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('file_attachments')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (!error && data && data.length) {
+          // merge (hindari duplikat sederhana)
+          const localIds = new Set(files.map(f => f.id));
+          data.forEach(d => {
+            if (!localIds.has(d.id)) files.push(d);
+          });
+          saveJSON('dreamos_file_archive', files);
+        }
+      } catch (e) { console.warn('Archive fetch failed', e); }
+    }
+
+    if (typeF !== 'all') files = files.filter(f => (f.record_type || '') === typeF);
+
+    if (!files.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">Belum ada file arsip</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = files.slice(0, 40).map(f => {
+      const isImg = (f.file_type || '').startsWith('image/');
+      const preview = f.file_url
+        ? (isImg
+          ? '<a href="' + f.file_url + '" target="_blank" style="color:var(--accent)">🖼️ Preview</a>'
+          : '<a href="' + f.file_url + '" target="_blank" style="color:var(--accent)">📄 Buka</a>')
+        : '-';
+      const dl = f.file_url ? ' <a href="' + f.file_url + '" download style="color:#10b981">⬇️</a>' : '';
+      return '<tr>' +
+        '<td>' + (f.created_at ? new Date(f.created_at).toLocaleDateString('id-ID') : '-') + '</td>' +
+        '<td><span class="badge badge-pending">' + (f.record_type || '-').toUpperCase() + '</span></td>' +
+        '<td>' + (f.file_name || '-') + '</td>' +
+        '<td>' + (f.file_size_kb || 0) + ' KB</td>' +
+        '<td>' + (f.uploaded_by || '-') + '</td>' +
+        '<td style="display:flex;gap:.3rem">' + preview + dl + '</td></tr>';
+    }).join('');
+  };
+
+  // ===== USERS (bcrypt) =====
+  window.renderUsers = function() {
+    const users = safeJSON('dreamos_users_db', []);
+    const tbody = document.getElementById('users-body');
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Belum ada user</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map((u, i) =>
+      '<tr><td>' + (u.nama || '-') + '</td><td>' + (u.email || '-') + '</td>' +
+      '<td><span class="badge badge-pending">' + (u.role || 'staff') + '</span></td>' +
+      '<td><span class="badge badge-approved">' + (u.status || 'Active') + '</span></td>' +
+      '<td><button class="btn btn-danger btn-sm" onclick="deleteUser(' + i + ')">🗑️</button></td></tr>'
+    ).join('');
+  };
+
+  window.createNewUser = function() {
+    if (!isAdmin) return showToast('Akses ditolak', 'danger');
+    const nama = document.getElementById('new-user-nama').value.trim();
+    const email = document.getElementById('new-user-email').value.trim().toLowerCase();
+    const role = document.getElementById('new-user-role').value;
+    const pass = document.getElementById('new-user-pass').value;
+    if (!nama || !email || !pass) return showToast('Nama, Email, Password wajib!', 'danger');
+    if (pass.length < 6) return showToast('Password minimal 6 karakter', 'danger');
+
+    const users = safeJSON('dreamos_users_db', []);
+    if (users.find(u => u.email === email)) return showToast('Email sudah terdaftar', 'danger');
+
+    const newUser = {
+      id: 'usr_' + Date.now(),
+      nama: nama,
+      email: email,
+      role: role,
+      password_hash: hashPassword(pass),   // ← bcrypt
+      created_at: new Date().toISOString(),
+      status: 'active'
+    };
+    users.push(newUser);
+    saveJSON('dreamos_users_db', users);
+
+    if (window.supabaseClient) {
+      window.supabaseClient.from('users').insert({
+        id: newUser.id,
+        nama: newUser.nama,
+        email: newUser.email,
+        role: newUser.role,
+        password_hash: newUser.password_hash,
+        status: 'active'
+      }).then(() => {}).catch(e => console.warn('User sync failed', e));
+    }
+
+    showToast('✅ User ditambahkan (bcrypt)');
+    document.getElementById('new-user-nama').value = '';
+    document.getElementById('new-user-email').value = '';
+    document.getElementById('new-user-pass').value = '';
+    renderUsers();
+    logActivity('CREATE_USER', 'User baru: ' + nama + ' (' + role + ')');
+  };
+
+  window.deleteUser = function(index) {
+    if (!isAdmin) return showToast('Akses ditolak', 'danger');
+    if (!confirm('Hapus user ini?')) return;
+    const users = safeJSON('dreamos_users_db', []);
+    const deleted = users.splice(index, 1)[0];
+    saveJSON('dreamos_users_db', users);
+    if (window.supabaseClient && deleted && deleted.id) {
+      window.supabaseClient.from('users').delete().eq('id', deleted.id).then(() => {}).catch(() => {});
+    }
+    showToast('🗑️ User dihapus');
+    renderUsers();
+    logActivity('DELETE_USER', 'Hapus: ' + (deleted ? deleted.nama : ''));
+  };
+
+  // ===== CHART =====
+  window.renderChart = function() {
     if (typeof Chart === 'undefined') return;
     const existing = Chart.getChart('slaChart');
     if (existing) existing.destroy();
 
     const bookings = safeJSON('dreamos_bookings');
-    const approved = bookings.filter(b => (b.status||'').toLowerCase() === 'approved').length;
-    const pending = bookings.filter(b => (b.status||'').toLowerCase() === 'pending').length;
-    const rejected = bookings.filter(b => (b.status||'').toLowerCase() === 'rejected').length;
+    const approved = bookings.filter(b => (b.status || '').toLowerCase() === 'approved').length;
+    const pending = bookings.filter(b => (b.status || '').toLowerCase() === 'pending').length;
+    const rejected = bookings.filter(b => (b.status || '').toLowerCase() === 'rejected').length;
 
     new Chart(document.getElementById('slaChart'), {
       type: 'doughnut',
       data: {
-        labels: ['Selesai (Approved)', 'Pending', 'Ditolak'],
+        labels: ['Approved', 'Pending', 'Rejected'],
         datasets: [{
-          data: [approved || 1, pending || 0, rejected || 0],
+          data: [approved || 0, pending || 0, rejected || 0],
           backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-          borderWidth: 0, hoverOffset: 4
+          borderWidth: 0,
+          hoverOffset: 4
         }]
       },
-      options: { 
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'right', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } } },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } }
+        },
         cutout: '65%'
       }
     });
   };
 
-  // 📅 CALENDAR RENDERER
-  window.renderCalendar = function() {
-    document.getElementById('calendar-view').innerHTML = '<p style="color:var(--neon);">📅 Memuat data jadwal dari Supabase...</p>';
-    setTimeout(() => {
-      document.getElementById('calendar-view').innerHTML = '<p style="color:var(--muted);">✅ Data kalender berhasil dimuat. (Fitur visual kalender penuh akan ditambahkan di update berikutnya)</p>';
-    }, 800);
-  };
+  // ===== METRICS =====
+  function updateMetrics() {
+    const tasks = collectTasks();
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const danaPending = safeJSON('dreamos_dana').filter(d => (d.status || '').toLowerCase() === 'pending');
+    const danaSum = danaPending.reduce((s, d) => s + Number(d.nominal || 0), 0);
 
-  // 📂 ARCHIVE RENDERER
-  window.renderArchive = function() {
-    const tbody = document.getElementById('archive-body');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1rem;">Memuat...</td></tr>';
-    setTimeout(() => {
-      const logs = safeJSON('dreamos_activity_feed', []).slice(0, 10);
-      if (logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Belum ada data arsip</td></tr>';
-        return;
-      }
-      tbody.innerHTML = logs.map(l => `
-        <tr>
-          <td>${new Date(l.time).toLocaleDateString('id-ID')}</td>
-          <td><span class="badge badge-pending">${l.action}</span></td>
-          <td>${l.detail}</td>
-          <td>${l.user}</td>
-          <td><button class="btn btn-outline btn-sm">Lihat</button></td>
-        </tr>
-      `).join('');
-    }, 500);
-  };
+    document.getElementById('m-pending').textContent = pending;
+    document.getElementById('m-approval').textContent = pending;
+    document.getElementById('m-overdue').textContent = 0;
+    document.getElementById('m-dana').textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
 
-  // 👥 USERS RENDERER (With Delete Action)
-  window.renderUsers = function() {
-    const users = safeJSON('dreamos_users_db', []);
-    const tbody = document.getElementById('users-body');
-    if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Belum ada data user.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = users.map((u, index) => `
-      <tr>
-        <td>${u.nama || '-'}</td>
-        <td>${u.email || '-'}</td>
-        <td><span class="badge badge-pending">${u.role || 'staff'}</span></td>
-        <td>${u.divisi || '-'}</td>
-        <td><span class="badge badge-approved">${u.status || 'Active'}</span></td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${index})">🗑️</button></td>
-      </tr>
-    `).join('');
-  };
+    document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status || '') === 'pending').length;
+    document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status || '') === 'pending').length;
+    document.getElementById('op-maint').textContent = safeJSON('dreamos_maintenance_tasks').filter(m => !['selesai', 'approved', 'disetujui'].includes((m.status || '').toLowerCase())).length;
+    document.getElementById('op-dana').textContent = danaPending.length;
+  }
 
-  // ➕ CREATE NEW USER
-  window.createNewUser = async function() {
-    const nama = document.getElementById('new-user-nama').value.trim();
-    const email = document.getElementById('new-user-email').value.trim();
-    const role = document.getElementById('new-user-role').value;
-    const divisi = document.getElementById('new-user-divisi').value;
-    const pass = document.getElementById('new-user-pass').value;
-
-    if (!nama || !email || !pass) return showToast('⚠️ Nama, Email, dan Password wajib diisi!', 'danger');
-    if (pass.length < 6) return showToast('⚠️ Password minimal 6 karakter!', 'danger');
-
-    const users = safeJSON('dreamos_users_db', []);
-    if (users.find(u => u.email === email)) return showToast('⚠️ Email sudah terdaftar!', 'danger');
-
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      nama, email, role, divisi,
-      password_hash: pass, 
-      created_at: new Date().toISOString(),
-      status: 'active'
-    };
-
-    users.push(newUser);
-    saveJSON('dreamos_users_db', users);
-
-    // 🌐 SYNC TO SUPABASE
-    if (window.supabaseClient) {
-      window.supabaseClient.from('users').insert(newUser).catch(e => console.warn('Supabase user sync failed:', e));
-    }
-
-    showToast('✅ User berhasil ditambahkan & tersinkronisasi!');
-    document.getElementById('new-user-nama').value = '';
-    document.getElementById('new-user-email').value = '';
-    document.getElementById('new-user-pass').value = '';
-    renderUsers();
-    logActivity('CREATE_USER', `Menambahkan user: ${nama} (${role})`);
-  };
-
-  // 🗑️ DELETE USER
-  window.deleteUser = function(index) {
-    if (!confirm('Yakin hapus user ini?')) return;
-    const users = safeJSON('dreamos_users_db', []);
-    const deleted = users.splice(index, 1)[0];
-    saveJSON('dreamos_users_db', users);
-    
-    if (window.supabaseClient && deleted.id) {
-      window.supabaseClient.from('users').delete().eq('id', deleted.id).catch(e => console.warn('Supabase delete failed:', e));
-    }
-    
-    showToast('🗑️ User dihapus');
-    renderUsers();
-    logActivity('DELETE_USER', `Menghapus user: ${deleted.nama}`);
-  };
-
-  // 🔄 ENHANCED REFRESH ALL
-  window.refreshAll = function(forceSync = false) {
-    if (forceSync && window.supabaseClient) {
-      showToast('🔄 Menyinkronisasi data dari cloud...');
-      setTimeout(() => showToast('✅ Data berhasil disinkronisasi!'), 1000);
-    }
-    updateMetrics(); 
-    renderInbox(); 
-    renderApprovals(); 
+  window.refreshAll = function(forceSync) {
+    if (forceSync) showToast('🔄 Menyegarkan data...');
+    updateMetrics();
+    renderInbox();
+    renderApprovals();
     renderActivity();
-    renderExecutiveChart();
-    renderUsers();
-    showToast('Data diperbarui');
+    renderChart();
+    if (isAdmin) renderUsers();
+    if (!forceSync) showToast('Data diperbarui');
   };
 
-  // INIT
+  // ===== INIT =====
   document.getElementById('sync-status').textContent = window.supabaseClient ? '🟢 Online' : '🟡 Local';
   document.getElementById('sync-status').style.color = window.supabaseClient ? '#10b981' : '#f59e0b';
-  
+
+  initCalSelectors();
   updateMetrics();
-  renderExecutiveChart();
-  renderUsers();
-  logActivity('LOGIN_CC', 'User membuka Command Center');
-  
+  renderChart();
+  logActivity('LOGIN_CC', 'Membuka Command Center v5.2');
   setInterval(updateMetrics, 30000);
 })();
 </script>
