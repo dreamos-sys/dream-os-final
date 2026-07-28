@@ -340,6 +340,9 @@
 
   // ===== TAMBAH BOOKING =====
   window.addBooking = async function() {
+    // Pull server dulu agar double-booking multi-device akurat
+    await ensureServerBookings();
+
     const tglMulai = document.getElementById('booking-tgl').value;
     const tglSelesai = document.getElementById('booking-tgl-selesai').value || tglMulai;
     const jamMulai = document.getElementById('booking-jam-mulai').value;
@@ -438,6 +441,12 @@
     bookings.push(newBooking); 
     saveBookings(bookings); 
     renderBookings();
+  try {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  } catch (e) {}
+
     console.log('✅ Booking saved to localStorage:', newBooking.id);
 
     // ☁️ Sync ke cloud (async, tidak blocking)
