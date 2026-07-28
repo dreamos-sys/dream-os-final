@@ -195,10 +195,65 @@
     alert('✅ Tugas tersimpan!');
   };
 
+  
+  function deductInventory(sparepartsInput) {
+    if (!sparepartsInput) return;
+    let inventory = safeGet('dreamos_inventory', []);
+    let parts = sparepartsInput.split(',');
+    let logDetails = [];
+    
+    parts.forEach(part => {
+      let [name, qtyStr] = part.split(':');
+      if (!name || !qtyStr) return;
+      let itemName = name.trim().toLowerCase();
+      let qtyNeeded = parseInt(qtyStr.trim()) || 0;
+      
+      let itemIdx = inventory.findIndex(i => i.nama && i.nama.toLowerCase() === itemName);
+      if (itemIdx > -1) {
+        let currentQty = parseInt(inventory[itemIdx].jumlah) || 0;
+        if (currentQty >= qtyNeeded) {
+          inventory[itemIdx].jumlah = currentQty - qtyNeeded;
+          inventory[itemIdx].updated_at = new Date().toISOString();
+          logDetails.push(`${inventory[itemIdx].nama} (-${qtyNeeded})`);
+          
+          // Sync ke Supabase
+          if (window.supabaseClient) {
+            window.supabaseClient.from('inventory').update({ 
+              quantity: parseInt(inventory[itemIdx].jumlah),
+              last_updated: new Date().toISOString()
+            }).eq('id', inventory[itemIdx].id).then(() => {}).catch(e => console.warn('Inv sync error:', e.message));
+          }
+        } else {
+          alert(`⚠️ Stok ${inventory[itemIdx].nama} tidak cukup! (Sisa: ${currentQty})`);
+        }
+      } else {
+        alert(`⚠️ Barang '${name.trim()}' tidak ditemukan di gudang.`);
+      }
+    });
+    
+    if (logDetails.length > 0) {
+      safeSet('dreamos_inventory', inventory);
+      if (window.BankAudit) BankAudit.log('MAINT_DEDUCT_STOCK', { items: logDetails });
+      alert('✅ Stok gudang berhasil diperbarui!');
+    }
+  }
+
   window.changeStatus = function(id, newStatus) {
     let tasks = safeGet('dreamos_maintenance_tasks', []);
     let idx = tasks.findIndex(t => t.id === id);
     if (idx === -1) return;
+    
+    if (newStatus === 'Selesai') {
+      let useParts = confirm('Apakah ada penggunaan sparepart/barang dari gudang untuk tugas ini?');
+      if (useParts) {
+        let partsInput = prompt('Masukkan nama barang dan jumlah (pisahkan dengan titik dua, pisahkan banyak barang dengan koma).\nContoh: Bohlam:2, Kabel:1');
+        if (partsInput) {
+          deductInventory(partsInput);
+          tasks[idx].spareparts_used = partsInput;
+        }
+      }
+    }
+    
     tasks[idx].status = newStatus;
     tasks[idx].updatedAt = new Date().toISOString();
     safeSet('dreamos_maintenance_tasks', tasks);

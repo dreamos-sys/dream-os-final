@@ -158,7 +158,7 @@
 
   // ===== RENDER GUDANG =====
   function renderGudang() {
-    let data = safeGet('dreamos_gudang', []);
+    let data = safeGet('dreamos_inventory', []);
     let html = '';
     data.forEach(g => {
       let qty = parseInt(g.jumlah) || 0;
@@ -186,7 +186,7 @@
 
   // ===== RENDER RAB & TAX =====
   function renderRAB() {
-    let gudang = safeGet('dreamos_gudang', []);
+    let gudang = safeGet('dreamos_inventory', []);
     let rabList = [], totalRAB = 0;
     gudang.forEach(g => {
       let qty = parseInt(g.jumlah) || 0;
@@ -257,7 +257,7 @@
       kondisi: document.getElementById('gd-kondisi').value,
       updated_at: new Date().toISOString()
     };
-    let data = safeGet('dreamos_gudang', []);
+    let data = safeGet('dreamos_inventory', []);
     let editId = document.getElementById('gd-edit-id').value;
     if (editId) { let idx = data.findIndex(g => g.id === editId); if (idx > -1) data[idx] = item; } else { data.push(item); }
     safeSet('dreamos_gudang', data);
@@ -268,7 +268,7 @@
   };
 
   window.editGudang = function(id) {
-    let data = safeGet('dreamos_gudang', []), item = data.find(g => g.id === id);
+    let data = safeGet('dreamos_inventory', []), item = data.find(g => g.id === id);
     if (!item) return;
     document.getElementById('gd-nama').value = item.nama || '';
     document.getElementById('gd-kategori').value = item.kategori || 'ATK';
@@ -283,7 +283,7 @@
   window.deleteGudang = function(id) {
     if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menghapus data.');
     if (!confirm('Hapus barang ini?')) return;
-    let data = safeGet('dreamos_gudang', []).filter(g => g.id !== id);
+    let data = safeGet('dreamos_inventory', []).filter(g => g.id !== id);
     safeSet('dreamos_gudang', data);
     if (window.supabaseClient) window.supabaseClient.from('stok').delete().eq('id', id).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     logAudit('HAPUS_GUDANG', 'ID: ' + id);
@@ -364,7 +364,16 @@
     if (!total || !items.length) return alert('⚠️ Tidak ada item yang perlu diajukan.');
     let desc = 'Pengadaan otomatis: ' + items.map(i => i.nama + ' (' + i.qty + ' unit)').join(', ');
     let dana = safeGet('dreamos_dana', []);
-    dana.push({ id: 'rab_auto_' + Date.now(), judul: 'Pengadaan Barang Gudang (Auto-RAB)', nominal: total, deskripsi: desc, status: 'pending', tanggal: new Date().toLocaleDateString('id-ID'), created_at: new Date().toISOString() });
+    dana.push({ 
+      id: 'rab_auto_' + Date.now(), 
+      judul: 'Pengadaan Barang Gudang (Auto-RAB)', 
+      nominal: total, 
+      deskripsi: desc, 
+      status: 'pending', 
+      divisi: 'Gudang Umum',
+      tanggal: new Date().toLocaleDateString('id-ID'), 
+      created_at: new Date().toISOString() 
+    });
     safeSet('dreamos_dana', dana);
     if (window.OfflineQueue) window.OfflineQueue.add('dana', 'insert', dana[dana.length - 1]);
     logAudit('AJUKAN_RAB', 'Total: ' + fmtRp(total));
@@ -374,7 +383,7 @@
   // ===== SYNC TO CLOUD =====
   window.syncGudangToCloud = async function() {
     if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
-    let data = safeGet('dreamos_gudang', []);
+    let data = safeGet('dreamos_inventory', []);
     if (!data.length) return alert('⚠️ Tidak ada data untuk disync.');
     let count = 0;
     for (let item of data) {

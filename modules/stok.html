@@ -70,20 +70,20 @@
   function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function renderList() {
-    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     document.getElementById('stok-list').innerHTML = s.length ? 
       ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>Aksi</th></tr>' + 
        s.map(function(x, i) {
-         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.qty + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size: 0.75rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
+         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.jumlah + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size: 0.75rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
        }).join('') + '</table>') : 
       '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada data barang.</p>';
     updateStats();
   }
 
   function updateStats() {
-    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     document.getElementById('stat-total').textContent = s.length;
-    document.getElementById('stat-qty').textContent = s.reduce(function(a, x) { return a + (x.qty || 0); }, 0);
+    document.getElementById('stat-qty').textContent = s.reduce(function(a, x) { return a + (x.jumlah || 0); }, 0);
     var lokasi = new Set(s.map(function(x) { return x.lokasi; }));
     document.getElementById('stat-lokasi').textContent = lokasi.size;
     if (s.length > 0) {
@@ -98,13 +98,23 @@
     var lokasi = document.getElementById('stok-lokasi').value.trim();
     if (!nama || qty <= 0) return alert('⚠️ Nama dan jumlah harus diisi!');
     
-    var item = { nama: nama, qty: qty, lokasi: lokasi || '-', id: 'stok_' + Date.now(), created_at: new Date().toISOString() };
-    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var item = { 
+      id: 'inv_' + Date.now(), 
+      nama: nama, 
+      kategori: 'Umum', 
+      jumlah: qty, 
+      minimal: 5, 
+      nilai: 0, 
+      kondisi: 'Baik', 
+      lokasi_gudang: lokasi || '-', 
+      created_at: new Date().toISOString() 
+    };
+    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     
     // Cek duplikat (update qty jika nama & lokasi sama)
     var exist = s.find(function(x) { return x.nama.toLowerCase() === nama.toLowerCase() && x.lokasi === lokasi; });
     if (exist) {
-      exist.qty += qty;
+      exist.jumlah = parseInt(exist.jumlah) + qty;
       exist.updated_at = new Date().toISOString();
       alert('✅ Barang sudah ada, quantity ditambahkan!');
     } else {
@@ -112,7 +122,7 @@
       alert('✅ Barang baru disimpan!');
     }
     
-    localStorage.setItem('dreamos_stok', JSON.stringify(s));
+    localStorage.setItem('dreamos_inventory', JSON.stringify(s));
     renderList();
     
     // Bersihkan form
@@ -121,7 +131,7 @@
     
     // Sync ke cloud jika tersedia
     if (window.supabaseClient) {
-      window.supabaseClient.from('stok_gudang').upsert(exist || item).then(function() {
+      window.supabaseClient.from('inventory').upsert({ id: (exist||item).id, nama_barang: (exist||item).nama, kategori: (exist||item).kategori, quantity: parseInt((exist||item).jumlah)||0, min_stock: parseInt((exist||item).minimal)||5, lokasi_gudang: (exist||item).lokasi_gudang, kondisi: (exist||item).kondisi }).then(function() {
         console.log('✅ Stok synced to cloud');
       }).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
     }
@@ -130,31 +140,31 @@
 
   window.deleteStok = function(i) {
     if (!confirm('Hapus barang ini?')) return;
-    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     var deleted = s[i];
     s.splice(i, 1);
-    localStorage.setItem('dreamos_stok', JSON.stringify(s));
+    localStorage.setItem('dreamos_inventory', JSON.stringify(s));
     renderList();
     
     if (window.supabaseClient && deleted.id) {
-      window.supabaseClient.from('stok_gudang').delete().eq('id', deleted.id).then(function() {}).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
+      window.supabaseClient.from('inventory').delete().eq('id', deleted.id).then(function() {}).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
     }
     if (window.BankAudit) BankAudit.log('STOK_DELETE', { nama: deleted.nama });
   };
 
   window.syncToCloud = async function() {
     if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
-    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
+    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     if (s.length === 0) return alert('⚠️ Tidak ada data untuk disync.');
     
     var count = 0;
     for (var i = 0; i < s.length; i++) {
       try {
-        await window.supabaseClient.from('stok_gudang').upsert(s[i]);
+        await window.supabaseClient.from('inventory').upsert(s[i]);
         count++;
       } catch(e) {
         console.warn('Sync failed for:', s[i].nama, e.message);
-        if (window.OfflineQueue) window.OfflineQueue.add('stok_gudang', 'upsert', s[i]);
+        if (window.OfflineQueue) window.OfflineQueue.add('inventory', 'upsert', s[i]);
       }
     }
     alert('✅ ' + count + '/' + s.length + ' barang tersync ke cloud!');
@@ -162,8 +172,8 @@
   };
 
   window.exportCSV = function() {
-    var s = JSON.parse(localStorage.getItem('dreamos_stok') || '[]');
-    var csv = 'Nama,Qty,Lokasi,ID\n' + s.map(function(x) { return '"' + x.nama + '",' + x.qty + ',"' + (x.lokasi||'-') + '",' + (x.id||'-'); }).join('\n');
+    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
+    var csv = 'Nama,Qty,Lokasi,ID\n' + s.map(function(x) { return '"' + x.nama + '",' + x.jumlah + ',"' + (x.lokasi||'-') + '",' + (x.id||'-'); }).join('\n');
     var blob = new Blob([csv], { type: 'text/csv' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -175,7 +185,7 @@
 
   window.clearAll = function() {
     if (confirm('⚠️ HAPUS SEMUA DATA STOK? Aksi ini tidak bisa dibatalkan!')) {
-      localStorage.removeItem('dreamos_stok');
+      localStorage.removeItem('dreamos_inventory');
       renderList();
       alert('✅ Semua data stok dihapus.');
       if (window.BankAudit) BankAudit.log('STOK_CLEAR_ALL');
