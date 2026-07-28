@@ -74,7 +74,7 @@
     </div>
     <div class="glass" style="overflow-x: auto;">
       <div class="landscape-hint">📱 Putar HP ke landscape untuk melihat tabel lebih leluasa</div>
-<table><thead><tr><th>Nama Barang</th><th>Kategori</th><th>Stok</th><th>Min</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead>
+<table><thead><tr><th>Nama Barang</th><th>Kategori</th><th>Stok</th><th>Min</th><th>Harga</th><th>Status</th><th>QR</th><th>Aksi</th></tr></thead>
       <tbody id="gudang-list"></tbody></table>
     </div>
   </div>
@@ -102,7 +102,7 @@
       </div>
     </div>
     <div class="glass" style="overflow-x: auto;">
-      <table><thead><tr><th>Nama Aset</th><th>Jenis</th><th>Lokasi</th><th>Nilai</th><th>Tahun</th><th>Status</th><th>Aksi</th></tr></thead>
+      <table><thead><tr><th>Nama Aset</th><th>Jenis</th><th>Lokasi</th><th>Nilai</th><th>Tahun</th><th>Status</th><th>QR</th><th>Aksi</th></tr></thead>
       <tbody id="asset-list"></tbody></table>
     </div>
   </div>
@@ -435,6 +435,26 @@
     a.download = 'Asset_Register_' + new Date().toISOString().split('T')[0] + '.csv';
     a.click();
     if (window.BankAudit) BankAudit.log('ASSET_EXPORT_CSV', { count: assets.length });
+  };
+
+  
+  window.showAssetQR = function(id, name, type) {
+    if (typeof qrcode === 'undefined') {
+      // Fallback load library
+      let s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+      s.onload = () => showAssetQR(id, name, type);
+      document.head.appendChild(s);
+      return;
+    }
+    let qrData = `DREAMOS|${type}|${id}|${name}`;
+    let qr = qrcode(0, 'M');
+    qr.addData(qrData);
+    qr.make();
+    document.getElementById('qr-code-display').innerHTML = qr.createImgTag(4, 10);
+    document.getElementById('qr-item-name').textContent = name;
+    document.getElementById('qr-item-id').textContent = `ID: ${id} | ${type}`;
+    document.getElementById('qr-modal').classList.add('show');
   };
 
   // Init

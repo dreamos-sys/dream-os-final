@@ -88,7 +88,7 @@
   function renderList(searchTerm = '') {
     var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     document.getElementById('stok-list').innerHTML = s.length ? 
-      ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>Aksi</th></tr>' + 
+      ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>QR</th><th>Aksi</th></tr>' + 
        s.map(function(x, i) {
          return '<tr><td>' + esc(x.nama) + '</td><td>' + x.jumlah + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size: 0.75rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
        }).join('') + '</table>') : 
@@ -212,6 +212,25 @@
   document.getElementById('search-stok').addEventListener('input', function(e) {
     renderList(e.target.value);
   });
+
+  
+  window.showStokQR = function(id, name) {
+    if (typeof qrcode === 'undefined') {
+      let s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+      s.onload = () => showStokQR(id, name);
+      document.head.appendChild(s);
+      return;
+    }
+    let qrData = `DREAMOS|STOK|${id}|${name}`;
+    let qr = qrcode(0, 'M');
+    qr.addData(qrData);
+    qr.make();
+    document.getElementById('qr-code-display').innerHTML = qr.createImgTag(4, 10);
+    document.getElementById('qr-item-name').textContent = name;
+    document.getElementById('qr-item-id').textContent = `ID: ${id}`;
+    document.getElementById('qr-modal').classList.add('show');
+  };
 
   // Init
   renderList();
