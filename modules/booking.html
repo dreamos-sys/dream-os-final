@@ -297,17 +297,39 @@
   }
 
   // ===== VALIDASI BENTROK =====
-  function isBentrok(newBooking, excludeIndex = -1) {
-    const bookings = getBookings();
-    return bookings.some((b, i) => {
-      if (i === excludeIndex) return false;
-      if (b.tgl !== newBooking.tgl || b.ruang !== newBooking.ruang) return false;
-      const ns = newBooking.jam_mulai.replace(':', '');
-      const ne = newBooking.jam_selesai.replace(':', '');
-      const os = b.jam_mulai.replace(':', '');
-      const oe = b.jam_selesai.replace(':', '');
-      return (ns < oe && ne > os);
-    });
+  /** Cek overlap jam (ketat: 1 detik pun dianggap bentrok) */
+  function rangesOverlap(s1, e1, s2, e2) {
+    // gunakan menit absolut agar presisi
+    function toMin(t) {
+      var p = String(t || "0:0").split(":");
+      return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+    }
+    var a = toMin(s1), b = toMin(e1), c = toMin(s2), d = toMin(e2);
+    return a < d && b > c; // strict overlap (sentuhan ujung = bentrok juga: a < d && b > c)
+  }
+
+  /**
+   * First-come-first-served:
+   * - status rejected diabaikan
+   * - jika id sama (edit) diabaikan
+   * - yang sudah ada di list (created lebih dulu / sudah di local/server) menang
+   */
+  function findConflict(newBooking) {
+    var list = getBookings();
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      if (!b || b.id === newBooking.id) continue;
+      if (String(b.status || "").toLowerCase() === "rejected") continue;
+      if (b.tgl !== newBooking.tgl || b.ruang !== newBooking.ruang) continue;
+      if (rangesOverlap(newBooking.jam_mulai, newBooking.jam_selesai, b.jam_mulai, b.jam_selesai)) {
+        return b; // booking yang lebih dulu
+      }
+    }
+    return null;
+  }
+
+  function isBentrok(newBooking) {
+    return !!findConflict(newBooking);
   }
 
   // ===== VALIDASI NO HP =====
@@ -403,8 +425,12 @@
       created_by: user.id || null
     };
 
-    if (isBentrok(newBooking)) {
-      if (!confirm('⚠️ Jadwal bentrok. Tetap simpan?')) return;
+    var conflict = findConflict(newBooking);
+    if (conflict) {
+      return fail(
+        '⛔ DOUBLE BOOKING ditolak otomatis. Sudah ada: ' +
+        (conflict.nama_peminjam || '-') + ' ' + (conflict.jam_mulai || '') + '–' + (conflict.jam_selesai || '')
+      );
     }
 
     // 💾 SIMPAN KE LOCALSTORAGE DULU (PERSISTEN!)
