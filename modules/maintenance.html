@@ -197,7 +197,8 @@
 
   
   function deductInventory(sparepartsInput) {
-    if (!sparepartsInput) return;
+    if (!sparepartsInput) return 0;
+    let totalCost = 0;
     let inventory = safeGet('dreamos_inventory', []);
     let parts = sparepartsInput.split(',');
     let logDetails = [];
@@ -214,7 +215,10 @@
         if (currentQty >= qtyNeeded) {
           inventory[itemIdx].jumlah = currentQty - qtyNeeded;
           inventory[itemIdx].updated_at = new Date().toISOString();
-          logDetails.push(`${inventory[itemIdx].nama} (-${qtyNeeded})`);
+          let price = parseInt(inventory[itemIdx].nilai) || 0;
+          let itemTotal = price * qtyNeeded;
+          totalCost += itemTotal;
+          logDetails.push(`${inventory[itemIdx].nama} (-${qtyNeeded}) @ Rp ${price.toLocaleString('id-ID')}`);
           
           // Sync ke Supabase
           if (window.supabaseClient) {
@@ -233,9 +237,10 @@
     
     if (logDetails.length > 0) {
       safeSet('dreamos_inventory', inventory);
-      if (window.BankAudit) BankAudit.log('MAINT_DEDUCT_STOCK', { items: logDetails });
-      alert('✅ Stok gudang berhasil diperbarui!');
+      if (window.BankAudit) BankAudit.log('MAINT_DEDUCT_STOCK', { items: logDetails, total_cost: totalCost });
+      alert('✅ Stok gudang berhasil diperbarui! Biaya Sparepart: Rp ' + totalCost.toLocaleString('id-ID'));
     }
+    return totalCost;
   }
 
   window.changeStatus = function(id, newStatus) {
@@ -248,8 +253,9 @@
       if (useParts) {
         let partsInput = prompt('Masukkan nama barang dan jumlah (pisahkan dengan titik dua, pisahkan banyak barang dengan koma).\nContoh: Bohlam:2, Kabel:1');
         if (partsInput) {
-          deductInventory(partsInput);
+          let cost = deductInventory(partsInput);
           tasks[idx].spareparts_used = partsInput;
+          tasks[idx].actual_cost = (parseInt(tasks[idx].biaya) || 0) + cost;
         }
       }
     }

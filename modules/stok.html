@@ -45,6 +45,11 @@
     </div>
   </div>
 
+  
+    <div class="glass" style="display: flex; gap: 0.5rem;">
+      <input type="text" id="search-stok" class="input-field" placeholder=" Cari nama barang atau lokasi..." style="margin-bottom:0;">
+    </div>
+
   <div class="glass" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
     <div class="mini-stat"><div class="mini-stat-val" id="stat-total">0</div><div class="mini-stat-label">Total Item</div></div>
     <div class="mini-stat"><div class="mini-stat-val" id="stat-qty">0</div><div class="mini-stat-label">Total Qty</div></div>
@@ -69,7 +74,18 @@
 
   function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  function renderList() {
+  
+  function logMutation(type, itemName, qty, location) {
+    let logs = JSON.parse(localStorage.getItem('dreamos_stock_log') || '[]');
+    logs.unshift({
+      type: type, item: itemName, qty: qty, location: location,
+      user: window.getUserRole ? window.getUserRole() : 'System',
+      time: new Date().toISOString()
+    });
+    localStorage.setItem('dreamos_stock_log', JSON.stringify(logs.slice(0, 200))); // Simpan 200 log terakhir
+  }
+
+  function renderList(searchTerm = '') {
     var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     document.getElementById('stok-list').innerHTML = s.length ? 
       ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>Aksi</th></tr>' + 
@@ -122,7 +138,7 @@
       alert('✅ Barang baru disimpan!');
     }
     
-    localStorage.setItem('dreamos_inventory', JSON.stringify(s));
+    localStorage.setItem('dreamos_inventory', JSON.stringify(s)); logMutation('MASUK', nama, qty, lokasi);
     renderList();
     
     // Bersihkan form
@@ -143,7 +159,7 @@
     var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     var deleted = s[i];
     s.splice(i, 1);
-    localStorage.setItem('dreamos_inventory', JSON.stringify(s));
+    localStorage.setItem('dreamos_inventory', JSON.stringify(s)); logMutation('MASUK', nama, qty, lokasi);
     renderList();
     
     if (window.supabaseClient && deleted.id) {
@@ -191,6 +207,11 @@
       if (window.BankAudit) BankAudit.log('STOK_CLEAR_ALL');
     }
   };
+
+  
+  document.getElementById('search-stok').addEventListener('input', function(e) {
+    renderList(e.target.value);
+  });
 
   // Init
   renderList();

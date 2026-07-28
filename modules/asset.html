@@ -39,6 +39,7 @@
     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
       <button class="btn btn-success" onclick="syncGudangToCloud()">☁️ Sync Gudang</button>
       <button class="btn btn-primary" onclick="syncAssetToCloud()">☁️ Sync Aset</button>
+      <button class="btn btn-warning" onclick="exportAssetCSV()">📥 Export Aset</button>
     </div>
   </div>
 
@@ -409,6 +410,31 @@
     }
     alert('✅ ' + count + '/' + data.length + ' aset tersync ke cloud!');
     if (window.BankAudit) BankAudit.log('ASSET_SYNC_ASSET', { total: data.length, success: count });
+  };
+
+  
+  window.exportAssetCSV = function() {
+    let assets = safeGet('dreamos_assets', []);
+    let csv = 'Nama Aset,Jenis,Lokasi,Nilai Perolehan,Tahun,Status,Nilai Buku\n';
+    let currentYear = new Date().getFullYear();
+    
+    assets.forEach(a => {
+      let purchaseVal = parseInt(a.nilai) || 0;
+      let year = parseInt(a.tahun) || currentYear;
+      let age = currentYear - year;
+      let rate = a.jenis === 'Gedung' ? 0.02 : (a.jenis === 'Tanah' ? 0 : 0.10);
+      let depAmount = purchaseVal * rate * age;
+      let bookValue = Math.max(0, purchaseVal - depAmount);
+      
+      csv += '"' + (a.nama||'') + '","' + (a.jenis||'') + '","' + (a.lokasi||'') + '",' + purchaseVal + ',' + year + ',"' + (a.status||'') + '",' + bookValue + '\n';
+    });
+    
+    let blob = new Blob([csv], { type: 'text/csv' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Asset_Register_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    if (window.BankAudit) BankAudit.log('ASSET_EXPORT_CSV', { count: assets.length });
   };
 
   // Init
