@@ -136,11 +136,16 @@
       </div>
       <div class="filters">
         <select id="filter-type" onchange="renderInbox()">
-          <option value="all">Semua Tipe</option>
-          <option value="dana">Dana</option>
-          <option value="booking">Booking</option>
-          <option value="k3">K3</option>
-          <option value="maintenance">Maintenance</option>
+          <option value="all">📋 Semua Tipe</option>
+          <option value="dana">💸 Dana</option>
+          <option value="booking">📅 Booking</option>
+          <option value="k3">⚠️ K3 Safety</option>
+          <option value="maintenance">🔧 Maintenance</option>
+          <option value="security">🛡️ Security</option>
+          <option value="janitor_indoor">🏠 Janitor Indoor</option>
+          <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
+          <option value="asset">🏢 Asset</option>
+          <option value="stok">📦 Stok Gudang</option>
         </select>
         <select id="filter-priority" onchange="renderInbox()">
           <option value="all">Semua Prioritas</option>
@@ -210,12 +215,16 @@
       </div>
       <div class="filters">
         <select id="arch-type" onchange="renderArchive()">
-          <option value="all">Semua Tipe</option>
-          <option value="k3">K3</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="security">Security</option>
-          <option value="general">General</option>
-          <option value="export">Export</option>
+          <option value="all">📋 Semua Tipe</option>
+          <option value="k3">⚠️ K3</option>
+          <option value="maintenance">🔧 Maintenance</option>
+          <option value="security">🛡️ Security</option>
+          <option value="janitor_indoor">🏠 Janitor Indoor</option>
+          <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
+          <option value="booking">📅 Booking</option>
+          <option value="asset">🏢 Asset</option>
+          <option value="general">📄 General</option>
+          <option value="export">📤 Export</option>
         </select>
       </div>
       <div style="overflow-x:auto">
@@ -237,10 +246,16 @@
           <input type="text" id="new-user-nama" placeholder="Nama Lengkap">
           <input type="email" id="new-user-email" placeholder="Email">
           <select id="new-user-role">
-            <option value="staff">Staff</option>
-            <option value="koord">Koordinator</option>
-            <option value="kabag">Kabag</option>
-            <option value="dev">Developer</option>
+            <option value="staff">👤 Staff</option>
+            <option value="guru">👨‍🏫 Guru</option>
+            <option value="security">🛡️ Anggota Security</option>
+            <option value="komandan_regu">⭐ Komandan Security</option>
+            <option value="janitor_indoor">🏠 Janitor Indoor</option>
+            <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
+            <option value="maintenance">🔧 Maintenance</option>
+            <option value="koordinator_umum">🛡️ Koordinator Umum</option>
+            <option value="kabag_umum">👑 Kabag Umum</option>
+            <option value="dev">💻 Developer</option>
           </select>
           <input type="password" id="new-user-pass" placeholder="Password (min 6)">
           <button class="btn btn-success" onclick="createNewUser()" style="justify-content:center">✅ Simpan</button>
@@ -331,6 +346,7 @@ window.goHomeHandler = function() {
   document.getElementById('role-badge').textContent = (currentUser.role || '').toUpperCase();
 
   const adminRoles = ['kabag', 'koord', 'dev', 'admin', 'kabag_umum', 'koordinator_umum'];
+  const allRoles = ['staff','guru','security','komandan_regu','janitor_indoor','janitor_outdoor','maintenance','koordinator_umum','kabag_umum','dev','admin'];
   const isAdmin = adminRoles.includes((currentUser.role || '').toLowerCase());
   if (!isAdmin) {
     document.querySelectorAll('.tab-restricted').forEach(el => el.style.display = 'none');
@@ -365,12 +381,17 @@ window.goHomeHandler = function() {
         return;
       }
       const sources = [
-        { key: 'dreamos_dana', type: 'Dana', title: d => d.judul || 'Dana', extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
-        { key: 'dreamos_bookings', type: 'Booking', title: d => (d.ruang||'') + ' - ' + (d.nama_peminjam||''), extra: d => (d.tgl||'') + ' ' + (d.jam_mulai||'') },
-        { key: 'dreamos_k3_reports', type: 'K3', title: d => d.judul || d.lokasi || 'K3', extra: d => d.status || '' },
-        { key: 'dreamos_maintenance_tasks', type: 'Maint', title: d => d.judul || d.deskripsi || 'Maint', extra: d => d.status || '' },
-        { key: 'dreamos_users_db', type: 'User', title: d => d.nama || d.email || 'User', extra: d => d.role || '' },
-        { key: 'dreamos_file_archive', type: 'File', title: d => d.file_name || 'File', extra: d => d.record_type || '' }
+        { key: 'dreamos_dana', type: '💸 Dana', title: d => d.judul || 'Dana', extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
+        { key: 'dreamos_bookings', type: '📅 Booking', title: d => (d.ruang||'') + ' - ' + (d.nama_peminjam||''), extra: d => (d.tgl||'') + ' ' + (d.jam_mulai||'') },
+        { key: 'dreamos_k3_reports', type: '⚠️ K3', title: d => d.judul || d.lokasi || 'K3', extra: d => d.status || '' },
+        { key: 'dreamos_maintenance_tasks', type: '🔧 Maint', title: d => d.judul || d.deskripsi || 'Maint', extra: d => d.status || '' },
+        { key: 'dreamos_security_logs', type: '🛡️ Security', title: d => d.kejadian || d.lokasi || 'Security', extra: d => d.petugas || '' },
+        { key: 'dreamos_janitor_indoor', type: '🏠 Jan Indoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
+        { key: 'dreamos_janitor_outdoor', type: '🌳 Jan Outdoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
+        { key: 'dreamos_asset_reports', type: '🏢 Asset', title: d => d.nama_aset || d.judul || 'Asset', extra: d => d.lokasi || '' },
+        { key: 'dreamos_stok_gudang', type: '📦 Stok', title: d => d.nama_barang || 'Stok', extra: d => 'Qty: ' + (d.quantity||0) },
+        { key: 'dreamos_users_db', type: '👤 User', title: d => d.nama || d.email || 'User', extra: d => d.role || '' },
+        { key: 'dreamos_file_archive', type: '📂 File', title: d => d.file_name || 'File', extra: d => d.record_type || '' }
       ];
       let hits = [];
       sources.forEach(s => {
@@ -392,42 +413,49 @@ window.goHomeHandler = function() {
   // ===== COLLECT TASKS =====
   function collectTasks() {
     const tasks = [];
+    // 💸 Dana
     safeJSON('dreamos_dana').forEach(d => {
-      tasks.push({
-        id: d.id, type: 'dana',
-        title: d.judul || 'Dana',
-        detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'),
-        status: (d.status || 'pending').toLowerCase(),
-        priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low',
-        raw: d
-      });
+      tasks.push({ id: d.id, type: 'dana', title: d.judul || 'Pengajuan Dana', detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'), status: (d.status||'pending').toLowerCase(), priority: Number(d.nominal)>5000000?'high':Number(d.nominal)>1000000?'medium':'low', raw: d });
     });
+    // 📅 Booking
     safeJSON('dreamos_bookings').forEach(b => {
-      tasks.push({
-        id: b.id, type: 'booking',
-        title: (b.ruang || '') + ' • ' + (b.nama_peminjam || '-'),
-        detail: (b.tgl || '') + ' ' + (b.jam_mulai || ''),
-        status: (b.status || 'pending').toLowerCase(),
-        priority: 'medium', raw: b
-      });
+      tasks.push({ id: b.id, type: 'booking', title: (b.ruang||'Ruang') + ' • ' + (b.nama_peminjam||'-'), detail: (b.tgl||'') + ' ' + (b.jam_mulai||''), status: (b.status||'pending').toLowerCase(), priority: 'medium', raw: b });
     });
+    // ⚠️ K3
     safeJSON('dreamos_k3_reports').forEach(k => {
-      tasks.push({
-        id: k.id, type: 'k3',
-        title: k.judul || k.lokasi || 'K3',
-        detail: k.pelapor || '',
-        status: (k.status || 'pending').toLowerCase(),
-        priority: 'high', raw: k
+      tasks.push({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'Laporan K3', detail: k.pelapor || '', status: (k.status||'pending').toLowerCase(), priority: 'high', raw: k });
+    });
+    // 🔧 Maintenance
+    safeJSON('dreamos_maintenance_tasks').forEach(m => {
+      tasks.push({ id: m.id, type: 'maintenance', title: m.judul || m.deskripsi || 'Maintenance', detail: m.lokasi || '', status: (m.status||'pending').toLowerCase(), priority: (m.priority||'medium').toLowerCase(), raw: m });
+    });
+    // 🛡️ Security
+    safeJSON('dreamos_security_logs').forEach(s => {
+      tasks.push({ id: s.id, type: 'security', title: s.kejadian || s.lokasi || 'Security Log', detail: s.petugas || '-', status: (s.status||'pending').toLowerCase(), priority: (s.priority==='URGENT'||s.priority==='urgent')?'high':'medium', raw: s });
+    });
+    // 🏠 Janitor Indoor
+    safeJSON('dreamos_janitor_indoor').forEach(j => {
+      const items = Array.isArray(j) ? j : (j.tasks || j.checklist ? [j] : []);
+      items.forEach(item => {
+        tasks.push({ id: item.id || 'ji_'+Date.now(), type: 'janitor_indoor', title: item.lokasi || item.nama || 'Janitor Indoor', detail: item.catatan || item.status || '-', status: (item.status||'pending').toLowerCase(), priority: 'low', raw: item });
       });
     });
-    safeJSON('dreamos_maintenance_tasks').forEach(m => {
-      tasks.push({
-        id: m.id, type: 'maintenance',
-        title: m.judul || m.deskripsi || 'Maint',
-        detail: m.lokasi || '',
-        status: (m.status || 'pending').toLowerCase(),
-        priority: (m.priority || 'medium').toLowerCase(), raw: m
+    // 🌳 Janitor Outdoor
+    safeJSON('dreamos_janitor_outdoor').forEach(j => {
+      const items = Array.isArray(j) ? j : (j.tasks || j.checklist ? [j] : []);
+      items.forEach(item => {
+        tasks.push({ id: item.id || 'jo_'+Date.now(), type: 'janitor_outdoor', title: item.lokasi || item.nama || 'Janitor Outdoor', detail: item.catatan || item.status || '-', status: (item.status||'pending').toLowerCase(), priority: 'low', raw: item });
       });
+    });
+    // 🏢 Asset
+    safeJSON('dreamos_asset_reports').forEach(a => {
+      tasks.push({ id: a.id, type: 'asset', title: a.nama_aset || a.judul || 'Asset Report', detail: a.lokasi || a.kondisi || '-', status: (a.status||'pending').toLowerCase(), priority: (a.kondisi==='rusak_berat')?'high':'medium', raw: a });
+    });
+    // 📦 Stok Gudang (hanya yang low stock)
+    safeJSON('dreamos_stok_gudang').forEach(s => {
+      if (Number(s.quantity||0) < Number(s.min_stock||10)) {
+        tasks.push({ id: s.id, type: 'stok', title: s.nama_barang || 'Stok Rendah', detail: 'Sisa: ' + (s.quantity||0) + ' (Min: ' + (s.min_stock||10) + ')', status: 'pending', priority: 'high', raw: s });
+      }
     });
     return tasks;
   }
@@ -466,7 +494,12 @@ window.goHomeHandler = function() {
       dana: 'dreamos_dana',
       booking: 'dreamos_bookings',
       k3: 'dreamos_k3_reports',
-      maintenance: 'dreamos_maintenance_tasks'
+      maintenance: 'dreamos_maintenance_tasks',
+      security: 'dreamos_security_logs',
+      janitor_indoor: 'dreamos_janitor_indoor',
+      janitor_outdoor: 'dreamos_janitor_outdoor',
+      asset: 'dreamos_asset_reports',
+      stok: 'dreamos_stok_gudang'
     };
     const key = keyMap[type];
     if (!key) return;
@@ -482,7 +515,7 @@ window.goHomeHandler = function() {
     saveJSON(key, list);
 
     if (window.supabaseClient) {
-      const tableMap = { dana: 'dana_requests', booking: 'bookings', k3: 'k3_reports', maintenance: 'maintenance_requests' };
+      const tableMap = { dana: 'dana_requests', booking: 'bookings', k3: 'k3_reports', maintenance: 'maintenance_requests', security: 'security_logs', janitor_indoor: 'janitorial_requests', janitor_outdoor: 'janitorial_requests', asset: 'asset_reports', stok: 'inventory' };
       const table = tableMap[type];
       if (table) {
         window.supabaseClient.from(table).update({
@@ -595,7 +628,10 @@ window.goHomeHandler = function() {
     const sources = [
       { key: 'dreamos_bookings', color: '#0ea5e9', label: 'Booking', field: 'ruang' },
       { key: 'dreamos_maintenance_tasks', color: '#8b5cf6', label: 'Maint', field: 'judul' },
-      { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' }
+      { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' },
+      { key: 'dreamos_security_logs', color: '#f59e0b', label: 'Security', field: 'kejadian' },
+      { key: 'dreamos_janitor_indoor', color: '#10b981', label: 'Jan Indoor', field: 'lokasi' },
+      { key: 'dreamos_janitor_outdoor', color: '#22c55e', label: 'Jan Outdoor', field: 'lokasi' }
     ];
     sources.forEach(s => {
       safeJSON(s.key).forEach(d => {
@@ -660,6 +696,10 @@ window.goHomeHandler = function() {
       k3: 'k3-photos',
       maintenance: 'maintenance-photos',
       security: 'security-photos',
+      janitor_indoor: 'janitor-photos',
+      janitor_outdoor: 'janitor-photos',
+      booking: 'exports-archive',
+      asset: 'exports-archive',
       general: 'exports-archive',
       export: 'exports-archive'
     };
