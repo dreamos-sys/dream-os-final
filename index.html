@@ -1104,53 +1104,168 @@
       });
       cmdPalette.addEventListener('click', e => { if(e.target===cmdPalette) closeCmd(); });
 
-      // ===== 🔔 PRIORITY NOTIFICATION CENTER =====
-      window.toggleNotif = function() {
-        const panel = document.getElementById('notif-panel');
-        const count = document.getElementById('notif-badge') || document.getElementById('notif-count');
-        if (!panel) return;
-        if (panel.style.display === 'block') { panel.style.display = 'none'; } 
-        else { panel.style.display = 'block'; if(window.renderNotifPanel) window.renderNotifPanel(); }
-        const notifs = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
-        if (count) count.textContent = notifs.length > 0 ? (notifs.length > 9 ? '9+' : notifs.length) : '0';
-        if (count) count.style.display = notifs.length > 0 ? 'flex' : 'none';
+      // ===== 🔔 DREAM OS NOTIFICATION ENGINE (Real, RBAC, Time-Based) =====
+  window.DreamNotif = (function() {
+    const STORAGE_KEY = 'dreamos_notifications';
+    
+    function getNotifs() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } 
+      catch(e) { return []; }
+    }
+    
+    function saveNotifs(notifs) {
+      // Batasi max 50 notifikasi biar localStorage nggak penuh
+      if (notifs.length > 50) notifs = notifs.slice(0, 50);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifs));
+      updateBadge();
+      // Trigger event biar modul lain tau ada update
+      window.dispatchEvent(new CustomEvent('dreamos-notif-updated'));
+    }
+
+    function updateBadge() {
+      const notifs = getNotifs();
+      const unread = notifs.filter(n => !n.read).length;
+      const badge = document.getElementById('notif-badge');
+      if (badge) {
+        badge.textContent = unread > 0 ? (unread > 9 ? '9+' : unread) : '';
+        badge.style.display = unread > 0 ? 'flex' : 'none';
+      }
+    }
+
+    // API PUBLIK: Tambah Notifikasi
+    window.addNotification = function(type, title, message, moduleId, targetRoles = ['all']) {
+      const userRole = window.getUserRole ? window.getUserRole() : 'staff';
+      // Cek RBAC: kalau targetRoles tidak 'all' dan tidak mencakup role user, abaikan
+      if (!targetRoles.includes('all') && !targetRoles.includes(userRole)) return;
+
+      const notif = {
+        id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: type, // 'urgent', 'info', 'success'
+        title: title,
+        message: message,
+        moduleId: moduleId || 'general',
+        targetRoles: targetRoles,
+        time: new Date().toISOString(),
+        read: false
+      };
+      
+      const notifs = getNotifs();
+      notifs.unshift(notif);
+      saveNotifs(notifs);
+      
+      // Tampilkan toast juga biar langsung kelihatan
+      if (window.showToast) window.showToast(title + ': ' + message, type === 'urgent' ? 'error' : 'info');
+    };
+
+    // API PUBLIK: Tandai sudah dibaca
+    window.markNotifAsRead = function(id) {
+      const notifs = getNotifs();
+      const notif = notifs.find(n => n.id === id);
+      if (notif) {
+        notif.read = true;
+        saveNotifs(notifs);
+        renderPanel(); // Re-render panel
+      }
+    };
+
+    window.clearAllNotifs = function() {
+      localStorage.removeItem(STORAGE_KEY);
+      updateBadge();
+      renderPanel();
+    };
+
+    function renderPanel() {
+      const panel = document.getElementById('notif-panel');
+      if (!panel) return;
+      
+      const notifs = getNotifs();
+      if (notifs.length === 0) {
+        panel.innerHTML = '<p style="text-align:center;color:#64748b;padding:2rem;">🔔 Tidak ada notifikasi baru.</p>';
+        return;
+      }
+
+      const groups = { urgent: [], info: [], success: [] };
+      notifs.forEach(n => {
+        if (groups[n.type]) groups[n.type].push(n);
+        else groups.info.push(n);
+      });
+
+      let html = '';
+      const labels = { 
+        urgent: '🚨 Mendesak / Perlu Tindakan', 
+        info: '📢 Informasi & Update', 
+        success: '✅ Berhasil / Disetujui' 
       };
 
-      window.renderNotifPanel = function() {
-        const panel = document.getElementById('notif-panel');
-        if (!panel) return;
-        const raw = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
-        if (!raw.length) { panel.innerHTML = '<p style="text-align:center;color:#64748b;padding:1rem;">Tidak ada notifikasi.</p>'; return; }
-        
-        const groups = { urgent: [], info: [], success: [] };
-        raw.forEach(n => {
-          const type = n.type || 'info';
-          if (groups[type]) groups[type].push(n); else groups.info.push(n);
+      Object.keys(groups).forEach(type => {
+        if (groups[type].length === 0) return;
+        html += `<div class="notif-group"><div class="notif-group-title">${labels[type]}</div>`;
+        groups[type].forEach(n => {
+          const timeStr = new Date(n.time).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+          const unreadClass = n.read ? '' : 'style="background:rgba(0,255,157,0.05);border-left:3px solid var(--neon);"';
+          html += `<div class="notif-item ${type}" ${unreadClass} onclick="window.DreamNotif.markNotifAsRead('${n.id}')">
+            <div style="font-weight:600;">${n.title}</div>
+            <div style="font-size:0.75rem;color:#cbd5e1;margin-top:2px;">${n.message}</div>
+            <div class="notif-time">${timeStr} • ${n.moduleId.toUpperCase()}</div>
+          </div>`;
         });
+        html += '</div>';
+      });
+      
+      html += '<div class="notif-clear" onclick="window.DreamNotif.clearAllNotifs()">🧹 Hapus Semua Notifikasi</div>';
+      panel.innerHTML = html;
+    }
 
-        let html = '';
-        const labels = { urgent: '🚨 Urgent / Kejadian', info: '📢 Info & Booking', success: '✅ Selesai & Approval' };
-        Object.keys(groups).forEach(type => {
-          if (!groups[type].length) return;
-          html += `<div class="notif-group"><div class="notif-group-title">${labels[type]}</div>`;
-          groups[type].slice(0,5).forEach(n => {
-            html += `<div class="notif-item ${type}" onclick="this.style.opacity='0.5'; setTimeout(()=>this.remove(),200);">
-              <div>${n.msg || n}</div>
-              <div class="notif-time">${n.time ? new Date(n.time).toLocaleString('id-ID') : ''}</div>
-            </div>`;
-          });
-          html += '</div>';
-        });
-        html += '<div class="notif-clear" onclick="localStorage.removeItem(\'dreamos_notifications\'); renderNotifPanel();">🧹 Hapus Semua</div>';
-        panel.innerHTML = html;
-      };
+    // AUTO-TRIGGER: Shift Security (Jam 7 Pagi & 7 Malam)
+    function checkShiftAlert() {
+      const hour = new Date().getHours();
+      const today = new Date().toDateString();
+      const lastAlert = localStorage.getItem('dreamos_last_shift_alert');
+      
+      // Trigger jam 06:50 - 07:10 atau 18:50 - 19:10, dan belum di-alert hari ini
+      if ((hour === 6 || hour === 18) && lastAlert !== today) {
+        const shiftName = hour === 6 ? 'PAGI (07:00)' : 'MALAM (19:00)';
+        window.addNotification(
+          'urgent', 
+          '🛡️ Waktunya Serah Terima Shift', 
+          `Silakan lakukan serah terima shift ${shiftName} di modul Security.`,
+          'security',
+          ['security', 'komandan_regu', 'koordinator_umum', 'kabag_umum', 'dev']
+        );
+        localStorage.setItem('dreamos_last_shift_alert', today);
+      }
+    }
 
-      // ===== INIT =====
-      renderKPI();
-      renderHealth();
-      if (typeof window.renderNotifPanel === 'function') window.renderNotifPanel();
-      console.log('🏆 Enterprise UX Layer active: KPI, Health, CmdPalette, PriorityNotif');
-    })();
+    // Init
+    updateBadge();
+    checkShiftAlert();
+    setInterval(checkShiftAlert, 60000); // Cek tiap 1 menit
+    
+    // Listen storage event dari tab/window lain
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        updateBadge();
+        renderPanel();
+      }
+    });
+
+    return { updateBadge, renderPanel };
+  })();
+
+  // ===== INTEGRASI DENGAN UI LAMA =====
+  window.toggleNotif = function() {
+    const panel = document.getElementById('notif-panel');
+    if (!panel) return;
+    if (panel.style.display === 'block') {
+      panel.style.display = 'none';
+    } else {
+      window.DreamNotif.renderPanel();
+      panel.style.display = 'block';
+    }
+  };
+
+  console.log('🔔 Dream Notif Engine Active: Real-time, RBAC, Shift-Aware');
+})();
 
 
     // 🚪 GLOBAL LOGOUT HANDLER (Dipanggil oleh Profile & Command Palette)
