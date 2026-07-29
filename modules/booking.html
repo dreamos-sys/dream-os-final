@@ -22,9 +22,17 @@
     .flex-row { display:flex; gap:0.5rem; }
     .flex-row > div { flex:1; }
     .alat-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:8px; max-height:150px; overflow-y:auto; margin-bottom:0.8rem; }
-    .alat-item { font-size:0.875rem; color:#cbd5e1; display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.45rem 0.55rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.2); user-select:none; }
-    .alat-item:has(input:checked) { background:rgba(0,255,157,0.15); border-color:rgba(0,255,157,0.5); }
-    .alat-item input { accent-color:var(--neon); width:1.1rem; height:1.1rem; flex-shrink:0; }
+    .alat-item { font-size:0.875rem; color:#cbd5e1; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; cursor:pointer; padding:0.5rem 0.75rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.2); user-select:none; min-height:48px; }
+    .alat-item:has(input[type="checkbox"]:checked), .alat-item.active { background:rgba(0,255,157,0.15); border-color:rgba(0,255,157,0.5); }
+    .alat-left { display:flex; align-items:center; gap:0.5rem; flex:1; }
+    .alat-counter { display:flex; align-items:center; gap:0.3rem; }
+    .counter-btn { width:28px; height:28px; border:none; border-radius:6px; background:rgba(255,255,255,0.1); color:#e2e8f0; cursor:pointer; font-weight:700; font-size:0.875rem; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+    .counter-btn:hover { background:rgba(0,255,157,0.3); }
+    .counter-btn:active { transform:scale(0.95); }
+    .counter-value { min-width:32px; text-align:center; font-weight:700; color:var(--neon); cursor:pointer; padding:0.2rem 0.4rem; border-radius:4px; background:rgba(0,0,0,0.3); }
+    .counter-value:hover { background:rgba(0,255,157,0.2); }
+    .alat-item input[type="checkbox"] { accent-color:var(--neon); width:1.1rem; height:1.1rem; flex-shrink:0; }
+    .alat-item.hidden-zero { display:none; }
     .badge { padding:0.2rem 0.5rem; border-radius:10px; font-size:0.8125rem; font-weight:700; white-space:nowrap; }
     .badge-pending { background:rgba(245,158,11,0.2); color:#f59e0b; }
     .badge-approved { background:rgba(16,185,129,0.2); color:#10b981; }
@@ -110,6 +118,10 @@
       </div>
       <label style="color:#94a3b8;font-size:0.875rem;display:block;margin-bottom:0.3rem;">🔌 Kebutuhan Alat</label>
       <div class="alat-grid" id="alat-container"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">
+        <button type="button" class="btn btn-outline" onclick="resetAlat()" style="font-size:0.75rem;">🔄 Reset Semua</button>
+        <button type="button" class="btn btn-outline" onclick="toggleZeroAlat()" style="font-size:0.75rem;">👁️ <span id="toggle-text">Sembunyikan 0</span></button>
+      </div>
       <label style="color:#94a3b8;font-size:0.875rem;">Keterangan acara</label>
       <input type="text" id="booking-keperluan" class="input-field" placeholder="Rapat, seminar, …">
       <div id="booking-error" style="color:var(--warning);font-size:0.875rem;margin:0.4rem 0;display:none;"></div>
@@ -138,7 +150,7 @@
   var WORK_START = 7.5, WORK_END = 16.0;
 
   var SARANA_LIST = ['Aula SMP','Aula SMA','Saung Besar','Saung Kecil','R Meeting SMA','Serbaguna','Lapangan Basket','Lapangan Volly','Lapangan Tanah','Lapangan SMA','Kantin SMP','Kantin SMA','Labkom SD','Labkom SMP','Labkom SMA','Perpustakaan SD','Perpustakaan SMP','Perpustakaan SMA','Area Taman Depan Masjid','Area Parkir Depan Dapur','Area Parkir Loby SMA','R Lain-lain'];
-  var ALAT_LIST = ['Sound Portable','Sound Portable LCD','Projector','Standing Mic','Keyboard','Meja Panjang','Meja Kantin','Meja Siswa','Meja Oshin','Kursi Futura','Kursi Chitose','Kursi Siswa','Taplak Meja','Matras','Smart Box TV','Layar Projektor','White Board','Kabel AC Ekstension','Dispenser'];
+  var ALAT_LIST = ['Sound Portable','Sound Portable LCD','Projector','Standing Mic','Keyboard','Meja Panjang','Meja Kantin','Meja Siswa','Meja Oshin','Kursi Futura','Kursi Chitose','Kursi Siswa','Taplak Meja','Matras','Smart Box TV','Layar Projektor','White Board','Kabel AC Ekstension','Dispenser','Tirai','Sketsel','Kipas Angin Standing','TOA'];
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function getBookings() { try { return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch (e) { return []; } }
@@ -232,10 +244,21 @@
   // Populate
   var ruangSelect = document.getElementById('booking-ruang');
   SARANA_LIST.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; ruangSelect.appendChild(o); });
+  // ===== Alat Counter System =====
+  var alatQuantities = {}; // Store quantity for each alat
+  var showZeroAlat = true;
+  
   var alatContainer = document.getElementById('alat-container');
   ALAT_LIST.forEach(function(alat){
-    var lab = document.createElement('label'); lab.className='alat-item'; lab.tabIndex=0;
-    lab.innerHTML = '<input type="checkbox" class="cb-alat" value="'+esc(alat)+'"><span class="alat-text">'+esc(alat)+'</span>';
+    alatQuantities[alat] = 0; // Initialize with 0
+    var lab = document.createElement('label'); 
+    lab.className='alat-item'; 
+    lab.tabIndex=0;
+    lab.dataset.alat = alat;
+    lab.innerHTML = '<div class="alat-left"><input type="checkbox" class="cb-alat" value="'+esc(alat)+'" onchange="updateAlatVisual(this)"><span class="alat-text">'+esc(alat)+'</span></div>' +
+                    '<div class="alat-counter"><button type="button" class="counter-btn" onclick="decreaseAlat(\''+esc(alat)+'\')">−</button>' +
+                    '<span class="counter-value" onclick="editAlatQuantity(\''+esc(alat)+'\')" id="qty-'+esc(alat).replace(/\s+/g, '-')+'">0</span>' +
+                    '<button type="button" class="counter-btn" onclick="increaseAlat(\''+esc(alat)+'\')">+</button></div>';
     alatContainer.appendChild(lab);
   });
   alatContainer.addEventListener('keydown', function(e){
@@ -328,8 +351,18 @@
     var nohp = document.getElementById('booking-nohp').value.trim();
     var divisi = document.getElementById('booking-divisi').value;
     var keperluan = document.getElementById('booking-keperluan').value.trim();
-    var selectedAlats = Array.prototype.map.call(document.querySelectorAll('.cb-alat:checked'), function(cb){ return cb.value; });
-    var saranaStr = selectedAlats.length ? selectedAlats.join(', ') : 'Tidak ada alat';
+    // Get selected alat dengan quantity
+    var selectedAlatsWithQty = [];
+    document.querySelectorAll('.cb-alat:checked').forEach(function(cb){
+      var alatName = cb.value;
+      var qty = alatQuantities[alatName] || 0;
+      if (qty > 0) {
+        selectedAlatsWithQty.push(alatName + ' (' + qty + ')');
+      } else {
+        selectedAlatsWithQty.push(alatName);
+      }
+    });
+    var saranaStr = selectedAlatsWithQty.length ? selectedAlatsWithQty.join(', ') : 'Tidak ada alat';
 
     if (!tglMulai || !jamMulai || !jamSelesai || !ruang) return showError('⚠️ Tanggal, ruangan, dan jam wajib.');
     if (!peminjam) return showError('⚠️ Nama peminjam wajib.');
@@ -417,6 +450,104 @@
     alert('Upload: '+ok+' OK, '+fail+' gagal');
   };
 
+  // ===== Fungsi Counter Alat =====
+  window.increaseAlat = function(alatName) {
+    var currentQty = alatQuantities[alatName] || 0;
+    if (currentQty < 999) {
+      alatQuantities[alatName] = currentQty + 1;
+      updateAlatDisplay(alatName);
+      // Auto-check checkbox jika quantity > 0
+      var checkbox = document.querySelector('.cb-alat[value="'+alatName+'"]');
+      if (checkbox && alatQuantities[alatName] > 0) checkbox.checked = true;
+    }
+  };
+  
+  window.decreaseAlat = function(alatName) {
+    var currentQty = alatQuantities[alatName] || 0;
+    if (currentQty > 0) {
+      alatQuantities[alatName] = currentQty - 1;
+      updateAlatDisplay(alatName);
+      // Uncheck checkbox jika quantity = 0
+      var checkbox = document.querySelector('.cb-alat[value="'+alatName+'"]');
+      if (checkbox && alatQuantities[alatName] === 0) checkbox.checked = false;
+    }
+  };
+  
+  window.editAlatQuantity = function(alatName) {
+    var currentQty = alatQuantities[alatName] || 0;
+    var newQty = prompt('Masukkan jumlah untuk ' + alatName + ' (0-999):', currentQty);
+    if (newQty !== null) {
+      var num = parseInt(newQty, 10);
+      if (!isNaN(num) && num >= 0 && num <= 999) {
+        alatQuantities[alatName] = num;
+        updateAlatDisplay(alatName);
+        // Update checkbox
+        var checkbox = document.querySelector('.cb-alat[value="'+alatName+'"]');
+        if (checkbox) checkbox.checked = (num > 0);
+      } else {
+        alert('Masukkan angka antara 0-999!');
+      }
+    }
+  };
+  
+  window.updateAlatDisplay = function(alatName) {
+    var qtyEl = document.getElementById('qty-'+alatName.replace(/\s+/g, '-'));
+    if (qtyEl) {
+      qtyEl.textContent = alatQuantities[alatName] || 0;
+    }
+    // Update visual class
+    var itemEl = document.querySelector('.alat-item[data-alat="'+alatName+'"]');
+    if (itemEl) {
+      if ((alatQuantities[alatName] || 0) > 0) {
+        itemEl.classList.add('active');
+      } else {
+        itemEl.classList.remove('active');
+      }
+    }
+  };
+  
+  window.updateAlatVisual = function(checkbox) {
+    var alatName = checkbox.value;
+    if (checkbox.checked && (alatQuantities[alatName] || 0) === 0) {
+      // Auto-set to 1 jika checkbox dicentang tapi qty masih 0
+      alatQuantities[alatName] = 1;
+      updateAlatDisplay(alatName);
+    } else if (!checkbox.checked && (alatQuantities[alatName] || 0) > 0) {
+      // Reset qty to 0 jika checkbox di-uncheck
+      alatQuantities[alatName] = 0;
+      updateAlatDisplay(alatName);
+    }
+  };
+  
+  window.resetAlat = function() {
+    if (!confirm('Reset semua jumlah alat menjadi 0?')) return;
+    ALAT_LIST.forEach(function(alat){
+      alatQuantities[alat] = 0;
+      updateAlatDisplay(alat);
+      var checkbox = document.querySelector('.cb-alat[value="'+alat+'"]');
+      if (checkbox) checkbox.checked = false;
+    });
+  };
+  
+  window.toggleZeroAlat = function() {
+    showZeroAlat = !showZeroAlat;
+    var toggleText = document.getElementById('toggle-text');
+    toggleText.textContent = showZeroAlat ? 'Sembunyikan 0' : 'Tampilkan 0';
+    
+    ALAT_LIST.forEach(function(alat){
+      var itemEl = document.querySelector('.alat-item[data-alat="'+alat+'"]');
+      if (itemEl) {
+        if ((alatQuantities[alat] || 0) === 0) {
+          if (showZeroAlat) {
+            itemEl.classList.remove('hidden-zero');
+          } else {
+            itemEl.classList.add('hidden-zero');
+          }
+        }
+      }
+    });
+  };
+  
   // Init
   renderBookings();
   try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission(); } catch(e){}
