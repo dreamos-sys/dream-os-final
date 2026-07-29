@@ -33,9 +33,7 @@ async function laporK3() {
     
     alert('✅ Laporan tersimpan! Akan disync ke cloud.');
     if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
-});
-        if (error) throw error;
-        alert('✅ Laporan K3 berhasil dikirim ke cloud!');
+
         // Refresh tampilan
         if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
     } catch(e) {
@@ -44,300 +42,16 @@ async function laporK3() {
 }
 
 
-async 
-function tampilkanLaporan() {
-  var cache = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-  if (cache.length) renderList(cache); // tampilkan cache dulu
-  setSyncStatus('cached');
-  
-  try {
-    window.supabaseClient.from('k3_reports').select('*').then(function(res) {
-      if (!res.error && res.data) {
-        localStorage.setItem('dreamos_k3_reports', JSON.stringify(res.data));
-        renderList(res.data);
-        setSyncStatus('synced');
-      }
-    });
-  } catch(e) { setSyncStatus('error'); }
-
+async function tampilkanLaporan() {
     const container = document.getElementById('k3-list');
     if (!container) return;
-    container.innerHTML = '<p>Memuat laporan dari cloud...</p>';
+    container.innerHTML = '<p style="color:#cbd5e1;">Memuat laporan...</p>';
     
     try {
         const { data, error } = await window.supabaseClient
             .from('k3_reports')
-            .select('*, users!inner(nama)')
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p>Belum ada laporan.</p>';
-            return;
-        }
-        
-        container.innerHTML = data.map(item => `
-            <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
-                <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
-                <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
-                ${item.deskripsi || '-'}<br>
-                <span class="badge badge-${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- === 'pending' ? 'pending' : 'approved'}">${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- || 'pending'}</span>
-            </div>
-        `).join('');
-        
-        // Tetap simpan di localStorage sebagai cache offline
-        localStorage.setItem('dreamos_k3_reports', JSON.stringify(data));
-    } catch(e) {
-        // Fallback ke localStorage jika offline
-        const cached = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-        if (cached.length > 0) {
-            container.innerHTML = cached.map(item => `
-                <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
-                    <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
-                    <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
-                    ${item.deskripsi || '-'}<br>
-                    <span class="badge badge-${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- === 'pending' ? 'pending' : 'approved'}">${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- || 'pending'}</span>
-                </div>
-            `).join('');
-        } else {
-            container.innerHTML = '<p>Gagal memuat laporan. Periksa koneksi.</p>';
-        }
-    }
-}
-
-
-function setSyncStatus(s) {
-  var b = document.getElementById('sync-badge');
-  if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : s === 'cached' ? '🟡 Cached' : '🔴 Error';
-}
-</script>
-<!-- K3 MODULE - HYBRID SOUL EDITION -->
-<button data-i18n="save" onclick="window.goHome()" style="position:fixed;bottom: calc(2rem + env(safe-area-inset-bottom));left:1rem;background:#1e293b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;">← Kembali</button>
-
-<div style="padding:1rem;" id="k3-app">
-  <span id="sync-badge" style="font-size:0.65rem;color:#94a3b8;">🟡 Cached</span>
-<h2 data-i18n="k3_title" style="color:#ef4444;">⚠️ Laporan K3 • Hybrid Cloud</h2>
-  <p style="color:#64748b;font-size:0.75rem;">LocalStorage + Supabase Sync • Offline-First</p>
-  
-  <form id="k3-form" style="background:#0f172a;padding:1rem;border-radius:0.75rem;margin:1rem 0;">
-    <input id="k3-nama" class="bk-input" placeholder="Nama Pelapor *" required>
-    <select id="k3-jenis" class="bk-input">
-      <option value="kerusakan">Kerusakan Sarana</option>
-      <option value="kebersihan">Kebersihan</option>
-      <option value="kehilangan">Kehilangan</option>
-      <option value="kecelakaan">Kecelakaan</option>
-    </select>
-    <input id="k3-lokasi" class="bk-input" placeholder="Lokasi *" required>
-    <textarea id="k3-deskripsi" class="bk-input" rows="3" placeholder="Deskripsi *" required></textarea>
-    <select id="k3-priority" class="bk-input">
-      <option value="normal">Normal</option>
-      <option value="high">Tinggi</option>
-      <option value="critical">Kritis</option>
-    </select>
-    <button data-i18n="save" type="submit" style="width:100%;padding:1rem;background:#ef4444;color:white;border:none;border-radius:0.5rem;font-weight:bold;">📩 KIRIM LAPORAN</button>
-    <p id="k3-status" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;"></p>
-  </form>
-  
-  <div id="k3-list" style="margin-top:1rem;"></div>
-</div>
-
-<style>
-.bk-input{width:100%;padding:0.6rem;margin:0.3rem 0;background:#020617;border:1px solid #334155;border-radius:0.4rem;color:#e2e8f0;}
-</style>
-
-<script>
-(function(){
-  const SUPA_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-  const SUPA_KEY = 'sb_publishable_rgSsdppHSeZ8a0I_NWtqZA_jBz2wWwW';
-  
-  function safeGet(k,fb){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb));}catch(e){return fb;}}
-  function safeSet(k,d){localStorage.setItem(k,JSON.stringify(d));}
-  
-  async function syncK3Report(data) {
-    const statusEl = document.getElementById('k3-status');    const localReports = safeGet('dreamos_k3_reports', []);
-    const localId = 'local_' + Date.now();
-    const localEntry = {...data, id: localId, synced: false, created_at: new Date().toISOString()};
-    localReports.unshift(localEntry);
-    safeSet('dreamos_k3_reports', localReports);
-    
-    statusEl.textContent = '✅ Disimpan lokal. Sync ke cloud...';
-    statusEl.style.color = '#f59e0b';
-    
-    try {
-      const response = await fetch(SUPA_URL + '/rest/v1/k3_reports', {
-        method: 'POST',
-        headers: {
-          'apikey': SUPA_KEY,
-          'Authorization': 'Bearer ' + SUPA_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(data)
-      });
-      
-      if (response.ok) {
-        const cloudData = await response.json();
-        const idx = localReports.findIndex(r => r.id === localId);
-        if (idx > -1) {
-          localReports[idx] = {...localReports[idx], id: cloudData[0].id, synced: true};
-          safeSet('dreamos_k3_reports', localReports);
-        }
-        statusEl.textContent = '✅ Synced to Cloud!';
-        statusEl.style.color = '#10b981';
-      } else { throw new Error('Cloud sync failed'); }
-    } catch (e) {
-      statusEl.textContent = '⚠️ Offline mode. Akan sync nanti.';
-      statusEl.style.color = '#64748b';
-      console.log('Cloud sync pending:', e.message);
-    }
-    renderList();
-  }
-  
-  function renderList() {
-    const list = document.getElementById('k3-list');
-    const reports = safeGet('dreamos_k3_reports', []);
-    if (reports.length === 0) {
-      list.innerHTML = '<p style="color:#64748b;text-align:center;">Belum ada laporan.</p>';
-      return;
-    }
-    list.innerHTML = reports.map(r => 
-      '<div style="padding:0.8rem;margin:0.3rem 0;background:#1e293b;border-radius:0.5rem;border-left:3px solid ' + 
-      (r.priority==='critical'?'#ef4444':r.priority==='high'?'#f59e0b':'#10b981') + 
-      ';"><div style="font-weight:bold;">' + r.jenis.toUpperCase() + ' • ' + r.lokasi + '</div>' +      '<div style="font-size:0.75rem;color:#94a3b8;">' + r.nama + ' • ' + new Date(r.created_at).toLocaleDateString('id-ID') + '</div>' +
-      '<div style="font-size:0.7rem;margin:0.3rem 0;">' + r.deskripsi + '</div>' +
-      '<div style="font-size:0.65rem;">' + (r.synced?'☁️ Synced':'📱 Local only') + ' • ' +
-      '<span style="color:' + (r.priority==='critical'?'#ef4444':r.priority==='high'?'#f59e0b':'#10b981') + '">' + r.priority.toUpperCase() + '</span></div></div>'
-    ).join('');
-  }
-  
-  document.getElementById('k3-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const report = {
-      nama_pelapor: document.getElementById('k3-nama').value.trim(),
-      jenis: document.getElementById('k3-jenis').value,
-      lokasi: document.getElementById('k3-lokasi').value.trim(),
-      deskripsi: document.getElementById('k3-deskripsi').value.trim(),
-      priority: document.getElementById('k3-priority').value,
-      status: 'pending'
-    };
-    if (!report.nama_pelapor || !report.lokasi || !report.deskripsi) {
-      document.getElementById('k3-status').textContent = '❌ Isi semua field wajib!';
-      document.getElementById('k3-status').style.color = '#ef4444';
-      return;
-    }
-    syncK3Report(report);
-    this.reset();
-  });
-  
-  renderList();
-  console.log('🌌 K3 Module - Hybrid Soul Active');
-
-    // 🔄 REAL-TIME SYNC: k3_reports
-    if (window.SyncEngine) {
-        window.SyncEngine.subscribe('k3_reports', (newData) => {
-            console.log('📡 Data baru untuk k3_reports:', newData);
-            renderK3Reports();
-        }, (deletedData) => {
-            console.log('🗑️ Data dihapus dari k3_reports:', deletedData);
-            renderK3Reports();
-        });
-    }
-
-})();
-
-async function laporK3() {
-    var lokasi = document.getElementById('k3-lokasi')?.value || '';
-    var kategori = document.getElementById('k3-kategori')?.value || '';
-    var deskripsi = document.getElementById('k3-deskripsi')?.value || '';
-    if (!lokasi || !kategori) return alert('⚠️ Lokasi dan kategori wajib!');
-    
-    var user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
-    var newReport = {
-        id: 'k3_' + Date.now(),
-        pelapor_id: user?.id,
-        lokasi: lokasi, kategori: kategori, deskripsi: deskripsi,
-        status: 'pending', created_at: new Date().toISOString()
-    };
-    
-    // Optimistic save: simpan ke localStorage + tampilkan + coba kirim ke cloud
-    window.optimisticSave('dreamos_k3_reports', newReport, function() {
-        return window.supabaseClient.from('k3_reports').insert(newReport);
-    }, 'Laporan K3: ' + lokasi);
-    
-    alert('✅ Laporan tersimpan! Akan disync ke cloud.');
-    if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
-});
-        if (error) throw error;
-        alert('✅ Laporan K3 berhasil dikirim ke cloud!');
+            .select('*')
+            .order('created_at', { ascending: false 
         // Refresh tampilan
         if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
     } catch(e) {
@@ -346,136 +60,59 @@ async function laporK3() {
 }
 
 
-async 
-function tampilkanLaporan() {
-  var cache = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-  if (cache.length) renderList(cache); // tampilkan cache dulu
-  setSyncStatus('cached');
-  
-  try {
-    window.supabaseClient.from('k3_reports').select('*').then(function(res) {
-      if (!res.error && res.data) {
-        localStorage.setItem('dreamos_k3_reports', JSON.stringify(res.data));
-        renderList(res.data);
-        setSyncStatus('synced');
-      }
-    });
-  } catch(e) { setSyncStatus('error'); }
-
+async function tampilkanLaporan() {
     const container = document.getElementById('k3-list');
     if (!container) return;
-    container.innerHTML = '<p>Memuat laporan dari cloud...</p>';
+    container.innerHTML = '<p style="color:#cbd5e1;">Memuat laporan...</p>';
     
     try {
         const { data, error } = await window.supabaseClient
             .from('k3_reports')
-            .select('*, users!inner(nama)')
+            .select('*')
             .order('created_at', { ascending: false });
         
         if (error) throw error;
         
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p>Belum ada laporan.</p>';
-            return;
-        }
-        
-        container.innerHTML = data.map(item => `
-            <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
-                <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
-                <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
-                ${item.deskripsi || '-'}<br>
-                <span class="badge badge-${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- === 'pending' ? 'pending' : 'approved'}">${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- || 'pending'}</span>
-            </div>
-        `).join('');
-        
-        // Tetap simpan di localStorage sebagai cache offline
-        localStorage.setItem('dreamos_k3_reports', JSON.stringify(data));
+        const reports = data || [];
+        localStorage.setItem('dreamos_k3_reports', JSON.stringify(reports));
+        renderList(reports);
+        setSyncStatus('synced');
     } catch(e) {
-        // Fallback ke localStorage jika offline
+        console.warn('Cloud fetch failed, using cache:', e.message);
+        setSyncStatus('error');
         const cached = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-        if (cached.length > 0) {
-            container.innerHTML = cached.map(item => `
-                <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
-                    <b>${item.kategori?.toUpperCase() || 'UMUM'}</b> • ${item.lokasi || '-'}<br>
-                    <small>${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
-                    ${item.deskripsi || '-'}<br>
-                    <span class="badge badge-${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- === 'pending' ? 'pending' : 'approved'}">${item.status
-            // 🛡️ WORKFLOW: Tombol Approve/Reject
-            if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum')) {
-                const approveBtn = document.createElement('button');
-                approveBtn.textContent = '✅ Setujui';
-                approveBtn.className = 'btn btn-success';
-                approveBtn.style.marginRight = '0.5rem';
-                approveBtn.onclick = () => window.WorkflowEngine.approve('k3_reports', item.id);
-
-                const rejectBtn = document.createElement('button');
-                rejectBtn.textContent = '❌ Tolak';
-                rejectBtn.className = 'btn btn-danger';
-                rejectBtn.onclick = () => window.WorkflowEngine.reject('k3_reports', item.id);
-
-                card.appendChild(approveBtn);
-                card.appendChild(rejectBtn);
-            }
- || 'pending'}</span>
-                </div>
-            `).join('');
-        } else {
-            container.innerHTML = '<p>Gagal memuat laporan. Periksa koneksi.</p>';
-        }
+        renderList(cached);
     }
 }
 
+function renderList(reports) {
+    const container = document.getElementById('k3-list');
+    if (!container) return;
+    if (!reports || reports.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#cbd5e1; padding:1rem;">Belum ada laporan.</p>';
+        return;
+    }
+    
+    container.innerHTML = reports.map(item => {
+        let statusClass = item.status === 'pending' ? 'pending' : 'approved';
+        let html = \`
+            <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
+                <b>\${item.kategori?.toUpperCase() || 'UMUM'}</b> • \${item.lokasi || '-'}<br>
+                <small style="color:#cbd5e1;">\${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
+                \${item.deskripsi || '-'}<br>
+                <span class="badge badge-\${statusClass}">\${item.status || 'pending'}</span>
+        \`;
+        
+        if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum') && item.status === 'pending') {
+            html += \`<div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                <button class="btn btn-success" style="min-height:44px; font-size:0.8125rem;" onclick="window.WorkflowEngine.approve('k3_reports', '\${item.id}')">✅ Setujui</button>
+                <button class="btn btn-danger" style="min-height:44px; font-size:0.8125rem;" onclick="window.WorkflowEngine.reject('k3_reports', '\${item.id}')">❌ Tolak</button>
+            </div>\`;
+        }
+        html += \`</div>\`;
+        return html;
+    }).join('');
+}
 
 function setSyncStatus(s) {
   var b = document.getElementById('sync-badge');
