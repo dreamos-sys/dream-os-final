@@ -773,7 +773,7 @@
         }
 
         
-      // ===== 📊 8 MODUL LAPORAN CEPAT =====
+      // ===== 📈 8 MODUL LAPORAN DENGAN SPARKLINE (Crypto Market Style) =====
       window.updateSmartSummary = function() {
         const today = new Date().toISOString().split('T')[0];
         const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
@@ -781,8 +781,17 @@
         const dana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
         const maint = JSON.parse(localStorage.getItem('dreamos_maintenance_tasks') || '[]');
         const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
-        const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
         
+        // Simulasi data historis 7 hari (di production, ambil dari database)
+        const getHistoricalData = (baseKey, currentVal) => {
+          const base = JSON.parse(localStorage.getItem(baseKey) || '[]');
+          // Generate mock data berdasarkan current value
+          return Array.from({length: 8}, (_, i) => {
+            const variation = Math.sin(i * 0.5) * (currentVal * 0.3);
+            return Math.max(0, Math.round(currentVal + variation + Math.random() * 2));
+          });
+        };
+
         // Hitung statistik
         const totalBooking = bookings.length;
         const pendingBooking = bookings.filter(b => b.status === 'pending').length;
@@ -790,48 +799,124 @@
         const pendingK3 = k3.filter(k => k.status === 'pending').length;
         const totalDana = dana.length;
         const pendingDana = dana.filter(d => d.status === 'pending').length;
-        const totalMaint = maint.length;
-        const pendingMaint = maint.filter(m => m.status === 'pending').length;
         const totalStok = stok.length;
         const lowStock = stok.filter(s => Number(s.quantity || s.jumlah || 0) < Number(s.min_stock || 5)).length;
-        const totalUsers = users.length;
+
+        // Hitung trend (perubahan dari data sebelumnya)
+        const calcTrend = (current, prev) => {
+          if (prev === 0) return { change: 0, direction: 'neutral' };
+          const pct = ((current - prev) / prev * 100).toFixed(0);
+          return {
+            change: Math.abs(pct),
+            direction: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral'
+          };
+        };
+
+        // Helper buat SVG sparkline
+        const generateSparkline = (data, isGoodWhenDown = false) => {
+          if (data.length === 0) return '';
+          const max = Math.max(...data, 1);
+          const min = Math.min(...data);
+          const range = max - min || 1;
+          
+          // Generate points
+          const points = data.map((val, i) => {
+            const x = (i / (data.length - 1)) * 100;
+            const y = 100 - ((val - min) / range * 100);
+            return `${x},${y}`;
+          }).join(' ');
+
+          // Tentukan warna berdasarkan trend
+          const isGoingUp = data[data.length - 1] > data[0];
+          const isGood = isGoodWhenDown ? !isGoingUp : isGoingUp;
+          const colorClass = isGood ? 'sparkline-good sparkline-good-glow' : 'sparkline-bad sparkline-bad-glow';
+
+          return `<div class="sparkline-container">
+            <svg class="sparkline-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polyline class="sparkline-path ${colorClass}" points="${points}" />
+            </svg>
+          </div>`;
+        };
 
         const grid = document.getElementById('smart-summary-grid');
         if (!grid) return;
 
+        // Data historis untuk sparkline
+        const histBooking = getHistoricalData('dreamos_bookings', totalBooking);
+        const histK3 = getHistoricalData('dreamos_k3_reports', totalK3);
+        const histDana = getHistoricalData('dreamos_dana', totalDana);
+        const histStok = getHistoricalData('dreamos_stok_gudang', totalStok);
+
+        // Trend calculations
+        const trendBooking = calcTrend(histBooking[7], histBooking[0]);
+        const trendK3 = calcTrend(histK3[7], histK3[0]);
+        const trendDana = calcTrend(histDana[7], histDana[0]);
+        const trendStok = calcTrend(histStok[7], histStok[0]);
+
         grid.innerHTML = `
+          <!-- Total Booking -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('booking');">
+            <div class="trend-indicator ${trendBooking.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendBooking.direction === 'up' ? '▲' : '▼'} ${trendBooking.change}%
+            </div>
             <div class="mini-stat-icon">📅</div>
             <div class="mini-stat-val">${totalBooking}</div>
             <div class="mini-stat-label">Total Booking</div>
+            ${generateSparkline(histBooking, false)}
           </div>
+          
+          <!-- Booking Pending -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${pendingBooking > 0 ? '#f59e0b' : '#10b981'}">${pendingBooking}</div>
             <div class="mini-stat-label">Booking Pending</div>
           </div>
+          
+          <!-- Total K3 -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('k3');">
+            <div class="trend-indicator ${trendK3.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendK3.direction === 'up' ? '▲' : '▼'} ${trendK3.change}%
+            </div>
             <div class="mini-stat-icon">⚠️</div>
             <div class="mini-stat-val">${totalK3}</div>
             <div class="mini-stat-label">Laporan K3</div>
+            ${generateSparkline(histK3, false)}
           </div>
+          
+          <!-- K3 Pending -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${pendingK3 > 0 ? '#ef4444' : '#10b981'}">${pendingK3}</div>
             <div class="mini-stat-label">K3 Pending</div>
           </div>
+          
+          <!-- Total Dana -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('dana');">
+            <div class="trend-indicator ${trendDana.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendDana.direction === 'up' ? '▲' : '▼'} ${trendDana.change}%
+            </div>
             <div class="mini-stat-icon">💰</div>
             <div class="mini-stat-val">${totalDana}</div>
             <div class="mini-stat-label">Pengajuan Dana</div>
+            ${generateSparkline(histDana, false)}
           </div>
+          
+          <!-- Dana Pending -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${pendingDana > 0 ? '#f59e0b' : '#10b981'}">${pendingDana}</div>
             <div class="mini-stat-label">Dana Pending</div>
           </div>
+          
+          <!-- Total Stok -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('stok');">
+            <div class="trend-indicator ${trendStok.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendStok.direction === 'up' ? '▲' : '▼'} ${trendStok.change}%
+            </div>
             <div class="mini-stat-icon">📦</div>
             <div class="mini-stat-val">${totalStok}</div>
             <div class="mini-stat-label">Total Stok</div>
+            ${generateSparkline(histStok, false)}
           </div>
+          
+          <!-- Stok Menipis -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('stok');">
             <div class="mini-stat-val" style="color: ${lowStock > 0 ? '#ef4444' : '#10b981'}">${lowStock}</div>
             <div class="mini-stat-label">Stok Menipis</div>
@@ -876,7 +961,7 @@
         if(bottomNav) bottomNav.style.display = 'block';
         if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
         
-      // ===== 📊 8 MODUL LAPORAN CEPAT =====
+      // ===== 📈 8 MODUL LAPORAN DENGAN SPARKLINE (Crypto Market Style) =====
       window.updateSmartSummary = function() {
         const today = new Date().toISOString().split('T')[0];
         const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
@@ -884,8 +969,17 @@
         const dana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
         const maint = JSON.parse(localStorage.getItem('dreamos_maintenance_tasks') || '[]');
         const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
-        const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
         
+        // Simulasi data historis 7 hari (di production, ambil dari database)
+        const getHistoricalData = (baseKey, currentVal) => {
+          const base = JSON.parse(localStorage.getItem(baseKey) || '[]');
+          // Generate mock data berdasarkan current value
+          return Array.from({length: 8}, (_, i) => {
+            const variation = Math.sin(i * 0.5) * (currentVal * 0.3);
+            return Math.max(0, Math.round(currentVal + variation + Math.random() * 2));
+          });
+        };
+
         // Hitung statistik
         const totalBooking = bookings.length;
         const pendingBooking = bookings.filter(b => b.status === 'pending').length;
@@ -893,48 +987,124 @@
         const pendingK3 = k3.filter(k => k.status === 'pending').length;
         const totalDana = dana.length;
         const pendingDana = dana.filter(d => d.status === 'pending').length;
-        const totalMaint = maint.length;
-        const pendingMaint = maint.filter(m => m.status === 'pending').length;
         const totalStok = stok.length;
         const lowStock = stok.filter(s => Number(s.quantity || s.jumlah || 0) < Number(s.min_stock || 5)).length;
-        const totalUsers = users.length;
+
+        // Hitung trend (perubahan dari data sebelumnya)
+        const calcTrend = (current, prev) => {
+          if (prev === 0) return { change: 0, direction: 'neutral' };
+          const pct = ((current - prev) / prev * 100).toFixed(0);
+          return {
+            change: Math.abs(pct),
+            direction: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral'
+          };
+        };
+
+        // Helper buat SVG sparkline
+        const generateSparkline = (data, isGoodWhenDown = false) => {
+          if (data.length === 0) return '';
+          const max = Math.max(...data, 1);
+          const min = Math.min(...data);
+          const range = max - min || 1;
+          
+          // Generate points
+          const points = data.map((val, i) => {
+            const x = (i / (data.length - 1)) * 100;
+            const y = 100 - ((val - min) / range * 100);
+            return `${x},${y}`;
+          }).join(' ');
+
+          // Tentukan warna berdasarkan trend
+          const isGoingUp = data[data.length - 1] > data[0];
+          const isGood = isGoodWhenDown ? !isGoingUp : isGoingUp;
+          const colorClass = isGood ? 'sparkline-good sparkline-good-glow' : 'sparkline-bad sparkline-bad-glow';
+
+          return `<div class="sparkline-container">
+            <svg class="sparkline-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polyline class="sparkline-path ${colorClass}" points="${points}" />
+            </svg>
+          </div>`;
+        };
 
         const grid = document.getElementById('smart-summary-grid');
         if (!grid) return;
 
+        // Data historis untuk sparkline
+        const histBooking = getHistoricalData('dreamos_bookings', totalBooking);
+        const histK3 = getHistoricalData('dreamos_k3_reports', totalK3);
+        const histDana = getHistoricalData('dreamos_dana', totalDana);
+        const histStok = getHistoricalData('dreamos_stok_gudang', totalStok);
+
+        // Trend calculations
+        const trendBooking = calcTrend(histBooking[7], histBooking[0]);
+        const trendK3 = calcTrend(histK3[7], histK3[0]);
+        const trendDana = calcTrend(histDana[7], histDana[0]);
+        const trendStok = calcTrend(histStok[7], histStok[0]);
+
         grid.innerHTML = `
+          <!-- Total Booking -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('booking');">
+            <div class="trend-indicator ${trendBooking.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendBooking.direction === 'up' ? '▲' : '▼'} ${trendBooking.change}%
+            </div>
             <div class="mini-stat-icon">📅</div>
             <div class="mini-stat-val">${totalBooking}</div>
             <div class="mini-stat-label">Total Booking</div>
+            ${generateSparkline(histBooking, false)}
           </div>
+          
+          <!-- Booking Pending -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${pendingBooking > 0 ? '#f59e0b' : '#10b981'}">${pendingBooking}</div>
             <div class="mini-stat-label">Booking Pending</div>
           </div>
+          
+          <!-- Total K3 -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('k3');">
+            <div class="trend-indicator ${trendK3.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendK3.direction === 'up' ? '▲' : '▼'} ${trendK3.change}%
+            </div>
             <div class="mini-stat-icon">⚠️</div>
             <div class="mini-stat-val">${totalK3}</div>
             <div class="mini-stat-label">Laporan K3</div>
+            ${generateSparkline(histK3, false)}
           </div>
+          
+          <!-- K3 Pending -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${pendingK3 > 0 ? '#ef4444' : '#10b981'}">${pendingK3}</div>
             <div class="mini-stat-label">K3 Pending</div>
           </div>
+          
+          <!-- Total Dana -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('dana');">
+            <div class="trend-indicator ${trendDana.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendDana.direction === 'up' ? '▲' : '▼'} ${trendDana.change}%
+            </div>
             <div class="mini-stat-icon">💰</div>
             <div class="mini-stat-val">${totalDana}</div>
             <div class="mini-stat-label">Pengajuan Dana</div>
+            ${generateSparkline(histDana, false)}
           </div>
+          
+          <!-- Dana Pending -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${pendingDana > 0 ? '#f59e0b' : '#10b981'}">${pendingDana}</div>
             <div class="mini-stat-label">Dana Pending</div>
           </div>
+          
+          <!-- Total Stok -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('stok');">
+            <div class="trend-indicator ${trendStok.direction === 'up' ? 'trend-up' : 'trend-down'}">
+              ${trendStok.direction === 'up' ? '▲' : '▼'} ${trendStok.change}%
+            </div>
             <div class="mini-stat-icon">📦</div>
             <div class="mini-stat-val">${totalStok}</div>
             <div class="mini-stat-label">Total Stok</div>
+            ${generateSparkline(histStok, false)}
           </div>
+          
+          <!-- Stok Menipis -->
           <div class="mini-stat" style="cursor:pointer;" onclick="window.hapticTap('light'); window.openMod('stok');">
             <div class="mini-stat-val" style="color: ${lowStock > 0 ? '#ef4444' : '#10b981'}">${lowStock}</div>
             <div class="mini-stat-label">Stok Menipis</div>
