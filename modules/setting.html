@@ -280,6 +280,7 @@
     // Feedback visual kecil
     const el = document.getElementById('tog-' + key);
     if (el) { el.style.transform = 'scale(1.1)'; setTimeout(() => el.style.transform = '', 150); }
+    if (key === 'autoDetect' || key === 'geoLang') { if (typeof window.applyLangDetectionPolicy === 'function') window.applyLangDetectionPolicy(); }
   };
 
   window.updateFontSize = function(val) { state.fontSize = parseInt(val); document.getElementById('val-font').textContent = val + '%'; saveState(); };
@@ -287,14 +288,17 @@
   window.changeLang = function(val) {
     state.lang = val;
     saveState();
-    // Panggil fungsi global i18n
     if (typeof window.setLanguage === 'function') {
-      window.setLanguage(val);
+      window.setLanguage(val, { fromUser: true });
     } else {
       window.currentLang = val;
       localStorage.setItem('dreamos_lang', val);
       if (typeof window.renderDashboard === 'function') window.renderDashboard();
     }
+    try {
+      if (window.parent && typeof window.parent.setLanguage === 'function')
+        window.parent.setLanguage(val, { fromUser: true });
+    } catch (e) {}
   };
 
   window.resetAll = function() {
