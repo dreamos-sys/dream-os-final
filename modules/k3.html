@@ -1,121 +1,259 @@
+<!-- K3 MODULE - HYBRID SOUL EDITION (FIXED + PHOTO UPLOAD + WCAG COMPLIANT) -->
+<style>
+  :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
+  .glass { background: rgba(15,23,42,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,157,0.15); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
+  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8125rem; min-height: 44px; }
+  .btn { min-height: 44px; padding: 0.6rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8125rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-danger { background: var(--warning); color: #fff; }
+  .bk-input { min-height: 44px; width: 100%; padding: 0.6rem; margin: 0.3rem 0; background: #020617; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 0.875rem; outline: none; }
+  .bk-input:focus { border-color: var(--neon); }
+  .badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+  .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
+  .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
+  .file-input-wrapper { position: relative; margin: 0.3rem 0; }
+  .file-input-wrapper input[type="file"] { width: 100%; padding: 0.6rem; background: #020617; border: 1px dashed #334155; border-radius: 8px; color: #cbd5e1; font-size: 0.875rem; cursor: pointer; }
+  .preview-img { max-width: 100%; max-height: 150px; border-radius: 8px; margin-top: 0.5rem; border: 1px solid #334155; display: none; }
+</style>
+
+<button class="back-btn" onclick="window.goHome()">← Kembali</button>
+
+<div style="padding: 1rem; max-width: 900px; margin: 0 auto; padding-bottom: 6rem;" id="k3-app">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+      <h2 style="color: var(--warning); margin: 0; font-size: 1.25rem;">⚠️ Laporan K3</h2>
+      <p style="color: #cbd5e1; font-size: 0.875rem; margin: 0.2rem 0 0;">Hybrid Cloud • Offline-First • Dengan Bukti Foto</p>
+    </div>
+    <span id="sync-badge" style="font-size: 0.8125rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 0.3rem 0.6rem; border-radius: 6px;">🟡 Cached</span>
+  </div>
+  
+  <div class="glass">
+    <h3 style="color: var(--accent); font-size: 0.9375rem; margin-top: 0; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">📝 Form Laporan Baru</h3>
+    <form id="k3-form">
+      <input id="k3-nama" class="bk-input" placeholder="Nama Pelapor *" required>
+      <select id="k3-kategori" class="bk-input" required>
+        <option value="">Pilih Kategori *</option>
+        <option value="Kerusakan Sarana">Kerusakan Sarana</option>
+        <option value="Kebersihan">Kebersihan</option>
+        <option value="Kehilangan">Kehilangan</option>
+        <option value="Kecelakaan">Kecelakaan</option>
+        <option value="Bahaya Potensial">Bahaya Potensial</option>
+      </select>
+      <input id="k3-lokasi" class="bk-input" placeholder="Lokasi Kejadian *" required>
+      <textarea id="k3-deskripsi" class="bk-input" rows="3" placeholder="Deskripsi detail kejadian *" required style="min-height: 80px;"></textarea>
+      
+      <div class="file-input-wrapper">
+        <label style="color: #cbd5e1; font-size: 0.875rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Opsional)</label>
+        <input type="file" id="k3-foto" accept="image/*" onchange="previewFoto(this)">
+        <img id="foto-preview" class="preview-img">
+      </div>
+
+      <select id="k3-priority" class="bk-input">
+        <option value="normal">Normal</option>
+        <option value="high">Tinggi</option>
+        <option value="critical">Kritis</option>
+      </select>
+      
+      <button type="submit" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;">📩 KIRIM LAPORAN</button>
+      <p id="k3-status" style="text-align: center; margin-top: 0.5rem; font-size: 0.8125rem; color: #cbd5e1;"></p>
+    </form>
+  </div>
+  
+  <div class="glass">
+    <h3 style="color: var(--neon); font-size: 0.9375rem; margin-top: 0; margin-bottom: 0.8rem;">📋 Riwayat Laporan</h3>
+    <div id="k3-list"></div>
+  </div>
+</div>
 
 <script>
 // Auto-fallback untuk fungsi global
 if (!window.goHome) window.goHome = function() { 
   if (window.parent && window.parent.goHome) window.parent.goHome();
-  else window.location.reload();
+  else window.location.href = '../index.html';
 };
-if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
+if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   window.supabaseClient = window.parent.supabaseClient;
-if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
-  window.renderDashboard = window.parent.renderDashboard;
-</script>
+}
 
-<script src="../js/security-helper.js">
-async function laporK3() {
-    var lokasi = document.getElementById('k3-lokasi')?.value || '';
-    var kategori = document.getElementById('k3-kategori')?.value || '';
-    var deskripsi = document.getElementById('k3-deskripsi')?.value || '';
-    if (!lokasi || !kategori) return alert('⚠️ Lokasi dan kategori wajib!');
-    
-    var user = JSON.parse(localStorage.getItem('dreamos_bound_user'));
-    var newReport = {
-        id: 'k3_' + Date.now(),
-        pelapor_id: user?.id,
-        lokasi: lokasi, kategori: kategori, deskripsi: deskripsi,
-        status: 'pending', created_at: new Date().toISOString()
+(function() {
+  'use strict';
+  
+  let currentFotoBase64 = null;
+
+  function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
+  function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
+
+  window.previewFoto = function(input) {
+    const preview = document.getElementById('foto-preview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        currentFotoBase64 = e.target.result;
+        preview.src = currentFotoBase64;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      currentFotoBase64 = null;
+      preview.style.display = 'none';
+    }
+  };
+
+  async function laporK3(e) {
+    e.preventDefault();
+    const statusEl = document.getElementById('k3-status');
+    const nama = document.getElementById('k3-nama').value.trim();
+    const kategori = document.getElementById('k3-kategori').value;
+    const lokasi = document.getElementById('k3-lokasi').value.trim();
+    const deskripsi = document.getElementById('k3-deskripsi').value.trim();
+    const priority = document.getElementById('k3-priority').value;
+
+    if (!nama || !kategori || !lokasi || !deskripsi) {
+      statusEl.textContent = '❌ Isi semua field wajib!';
+      statusEl.style.color = '#ef4444';
+      return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    const newReport = {
+      id: 'k3_' + Date.now(),
+      nama_pelapor: nama,
+      kategori: kategori,
+      lokasi: lokasi,
+      deskripsi: deskripsi,
+      priority: priority,
+      foto: currentFotoBase64 || null,
+      pelapor_id: user?.id || 'unknown',
+      status: 'pending',
+      created_at: new Date().toISOString()
     };
-    
-    // Optimistic save: simpan ke localStorage + tampilkan + coba kirim ke cloud
-    window.optimisticSave('dreamos_k3_reports', newReport, function() {
-        return window.supabaseClient.from('k3_reports').insert(newReport);
-    }, 'Laporan K3: ' + lokasi);
-    
-    alert('✅ Laporan tersimpan! Akan disync ke cloud.');
-    if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
 
-        // Refresh tampilan
-        if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
-    } catch(e) {
-        alert('⚠️ Gagal mengirim laporan: ' + e.message);
+    statusEl.textContent = '💾 Menyimpan lokal...';
+    statusEl.style.color = '#f59e0b';
+
+    const localReports = safeGet('dreamos_k3_reports', []);
+    localReports.unshift(newReport);
+    safeSet('dreamos_k3_reports', localReports);
+    renderList(localReports);
+
+    if (window.supabaseClient) {
+      try {
+        statusEl.textContent = '☁️ Syncing ke cloud...';
+        const { error } = await window.supabaseClient.from('k3_reports').insert(newReport);
+        if (error) throw error;
+        
+        const idx = localReports.findIndex(r => r.id === newReport.id);
+        if (idx > -1) {
+          localReports[idx].synced = true;
+          safeSet('dreamos_k3_reports', localReports);
+        }
+        statusEl.textContent = '✅ Tersimpan & Synced!';
+        statusEl.style.color = '#10b981';
+        
+        if (typeof window.addNotification === 'function') {
+          window.addNotification('warning', 'Laporan K3 Baru', kategori + ' di ' + lokasi + ' oleh ' + nama, 'k3', ['kabag_umum', 'dev']);
+        }
+      } catch (err) {
+        console.warn('Cloud sync failed:', err.message);
+        statusEl.textContent = '⚠️ Disimpan lokal. Akan sync saat online.';
+        statusEl.style.color = '#cbd5e1';
+        if (window.OfflineQueue) window.OfflineQueue.add('k3_reports', 'insert', newReport);
+      }
+    } else {
+      statusEl.textContent = '⚠️ Mode Offline. Data aman di perangkat.';
+      statusEl.style.color = '#cbd5e1';
     }
-}
 
+    document.getElementById('k3-form').reset();
+    document.getElementById('foto-preview').style.display = 'none';
+    currentFotoBase64 = null;
+    setTimeout(function() { statusEl.textContent = ''; }, 3000);
+  }
 
-async function tampilkanLaporan() {
+  document.getElementById('k3-form').addEventListener('submit', laporK3);
+
+  window.tampilkanLaporan = async function() {
     const container = document.getElementById('k3-list');
     if (!container) return;
-    container.innerHTML = '<p style="color:#cbd5e1;">Memuat laporan...</p>';
+    container.innerHTML = '<p style="color:#cbd5e1; text-align:center;">Memuat laporan...</p>';
+    setSyncStatus('cached');
     
     try {
+      if (window.supabaseClient) {
         const { data, error } = await window.supabaseClient
-            .from('k3_reports')
-            .select('*')
-            .order('created_at', { ascending: false 
-        // Refresh tampilan
-        if (typeof tampilkanLaporan === 'function') tampilkanLaporan();
-    } catch(e) {
-        alert('⚠️ Gagal mengirim laporan: ' + e.message);
-    }
-}
-
-
-async function tampilkanLaporan() {
-    const container = document.getElementById('k3-list');
-    if (!container) return;
-    container.innerHTML = '<p style="color:#cbd5e1;">Memuat laporan...</p>';
-    
-    try {
-        const { data, error } = await window.supabaseClient
-            .from('k3_reports')
-            .select('*')
-            .order('created_at', { ascending: false });
+          .from('k3_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
         
         if (error) throw error;
         
-        const reports = data || [];
-        localStorage.setItem('dreamos_k3_reports', JSON.stringify(reports));
-        renderList(reports);
-        setSyncStatus('synced');
+        if (data && data.length > 0) {
+          safeSet('dreamos_k3_reports', data);
+          renderList(data);
+          setSyncStatus('synced');
+          return;
+        }
+      }
     } catch(e) {
-        console.warn('Cloud fetch failed, using cache:', e.message);
-        setSyncStatus('error');
-        const cached = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-        renderList(cached);
+      console.warn('Cloud fetch failed, using cache:', e.message);
     }
-}
+    
+    const cached = safeGet('dreamos_k3_reports', []);
+    renderList(cached);
+  };
 
-function renderList(reports) {
+  window.renderList = function(reports) {
     const container = document.getElementById('k3-list');
     if (!container) return;
     if (!reports || reports.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#cbd5e1; padding:1rem;">Belum ada laporan.</p>';
-        return;
+      container.innerHTML = '<p style="text-align:center; color:#cbd5e1; padding:1rem;">Belum ada laporan.</p>';
+      return;
     }
     
-    container.innerHTML = reports.map(item => {
-        let statusClass = item.status === 'pending' ? 'pending' : 'approved';
-        let html = \`
-            <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem;">
-                <b>\${item.kategori?.toUpperCase() || 'UMUM'}</b> • \${item.lokasi || '-'}<br>
-                <small style="color:#cbd5e1;">\${new Date(item.created_at).toLocaleDateString('id-ID')}</small><br>
-                \${item.deskripsi || '-'}<br>
-                <span class="badge badge-\${statusClass}">\${item.status || 'pending'}</span>
-        \`;
+    container.innerHTML = reports.map(function(item) {
+      var statusClass = item.status === 'pending' ? 'pending' : 'approved';
+      var prioColor = item.priority === 'critical' ? '#ef4444' : (item.priority === 'high' ? '#f59e0b' : '#10b981');
+      
+      var html = '<div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem; border-left: 4px solid ' + prioColor + ';">' +
+        '<div style="display:flex; justify-content:space-between; align-items:start;">' +
+          '<b style="color:#e2e8f0;">' + (item.kategori ? item.kategori.toUpperCase() : 'UMUM') + '</b>' +
+          '<span class="badge badge-' + statusClass + '">' + (item.status || 'pending') + '</span>' +
+        '</div>' +
+        '<div style="font-size:0.8125rem; color:#cbd5e1; margin:0.3rem 0;">' +
+          '📍 ' + (item.lokasi || '-') + ' • 👤 ' + (item.nama_pelapor || item.pelapor_id || '-') +
+        '</div>' +
+        '<div style="font-size:0.8125rem; color:#e2e8f0; margin-bottom:0.3rem;">' + (item.deskripsi || '-') + '</div>';
         
-        if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum') && item.status === 'pending') {
-            html += \`<div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
-                <button class="btn btn-success" style="min-height:44px; font-size:0.8125rem;" onclick="window.WorkflowEngine.approve('k3_reports', '\${item.id}')">✅ Setujui</button>
-                <button class="btn btn-danger" style="min-height:44px; font-size:0.8125rem;" onclick="window.WorkflowEngine.reject('k3_reports', '\${item.id}')">❌ Tolak</button>
-            </div>\`;
-        }
-        html += \`</div>\`;
-        return html;
+      if (item.foto) {
+        html += '<img src="' + item.foto + '" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155;">';
+      }
+      
+      html += '<div style="font-size:0.75rem; color:#94a3b8; margin-top:0.3rem; display:flex; justify-content:space-between;">' +
+        '<span>📅 ' + new Date(item.created_at).toLocaleDateString('id-ID') + '</span>' +
+        '<span style="color:' + prioColor + '; font-weight:700;">' + (item.priority ? item.priority.toUpperCase() : 'NORMAL') + '</span>' +
+      '</div>';
+      
+      if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum') && item.status === 'pending') {
+        html += '<div style="margin-top:0.5rem; display:flex; gap:0.5rem;">' +
+          '<button class="btn btn-success" style="min-height:44px; font-size:0.8125rem; flex:1;" onclick="window.WorkflowEngine.approve(\'k3_reports\', \'' + item.id + '\')">✅ Setujui</button>' +
+          '<button class="btn btn-danger" style="min-height:44px; font-size:0.8125rem; flex:1;" onclick="window.WorkflowEngine.reject(\'k3_reports\', \'' + item.id + '\')">❌ Tolak</button>' +
+        '</div>';
+      }
+      html += '</div>';
+      return html;
     }).join('');
-}
+  };
 
-function setSyncStatus(s) {
-  var b = document.getElementById('sync-badge');
-  if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : s === 'cached' ? '🟡 Cached' : '🔴 Error';
-}
+  window.setSyncStatus = function(s) {
+    var b = document.getElementById('sync-badge');
+    if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : (s === 'error' ? '🔴 Error' : '🟡 Cached');
+  };
+
+  tampilkanLaporan();
+  console.log('🌌 K3 Module - Hybrid Soul Active with Photo Support');
+})();
 </script>
