@@ -949,47 +949,65 @@ window.goHomeHandler = function() {
     ).join('');
   };
 
-  window.createNewUser = function() {
+  window.createNewUser = async function() {
     if (!isAdmin) return showToast('Akses ditolak', 'danger');
-    const nama = document.getElementById('new-user-nama').value.trim();
+    const nama  = document.getElementById('new-user-nama').value.trim();
     const email = document.getElementById('new-user-email').value.trim().toLowerCase();
-    const role = document.getElementById('new-user-role').value;
-    const pass = document.getElementById('new-user-pass').value;
+    const role  = document.getElementById('new-user-role').value;
+    const pass  = document.getElementById('new-user-pass').value;
+    const divisi = 'umum'; // form CC belum punya field divisi; default aman
     if (!nama || !email || !pass) return showToast('Nama, Email, Password wajib!', 'danger');
     if (pass.length < 6) return showToast('Password minimal 6 karakter', 'danger');
 
     const users = safeJSON('dreamos_users_db', []);
-    if (users.find(u => u.email === email)) return showToast('Email sudah terdaftar', 'danger');
+    if (users.find(u => (u.email||'').toLowerCase() === email)) return showToast('Email sudah terdaftar', 'danger');
 
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      nama: nama,
-      email: email,
-      role: role,
-      password_hash: hashPassword(pass),   // ← bcrypt
-      created_at: new Date().toISOString(),
-      status: 'active'
-    };
-    users.push(newUser);
-    saveJSON('dreamos_users_db', users);
+    // === PANGGIL EDGE FUNCTION: bikin user BENARAN di Supabase Auth ===
+    if (!window.supabaseClient || !window.supabaseClient.functions) {
+      return showToast('⛔ Koneksi Auth tidak tersedia — user tidak dibuat.', 'danger');
+    }
+    showToast('⏳ Membuat user di Auth...');
+    let res;
+    try {
+      res = await window.supabaseClient.functions.invoke('create-user', {
+        body: { email: email, password: pass, nama: nama, role: role, divisi: divisi }
+      });
+    } catch (e) {
+      return showToast('⛔ Gagal hubungi Edge function: ' + (e.message || e), 'danger');
+    }
+    if (res.error) return showToast('⛔ Edge error: ' + (res.error.message || res.error), 'danger');
+    const payload = res.data || {};
+    if (payload.error) return showToast('⛔ ' + payload.error, 'danger');
 
-    if (window.supabaseClient) {
-      window.supabaseClient.from('users').insert({
-        id: newUser.id,
-        nama: newUser.nama,
-        email: newUser.email,
-        role: newUser.role,
-        password_hash: newUser.password_hash,
-        status: 'active'
-      }).then(() => {}).catch(e => console.warn('User sync failed', e));
+    // ambil Auth user id (defensif: berbagai bentuk response)
+    const authId = payload.id || payload.user_id || payload.userId
+      || (payload.user && (payload.user.id || payload.user.user_id))
+      || (payload.data && (payload.data.id || payload.data.user_id)) || null;
+
+    // === MIRROR ke public.users (TANPA password) — try/catch terpisah ===
+    //     Auth udah jadi duluan; kalau mirror gagal, user TETAP bisa login.
+    try {
+      const row = { email: email, nama: nama, role: role, divisi: divisi,
+                    status: 'active', source: 'edge-create', updated_at: new Date().toISOString() };
+      if (authId) row.id = authId;
+      await window.supabaseClient.from('users').upsert(row, { onConflict: 'email' });
+    } catch (e) {
+      console.warn('⚠️ Auth OK, mirror profil gagal:', e.message || e);
+      showToast('⚠️ Akun Auth jadi, tapi profil belum sync. Buka Users → refresh.', 'danger');
     }
 
-    showToast('✅ User ditambahkan (bcrypt)');
+    // === LOCAL cache (TANPA password_hash — jangan simpen hash di client) ===
+    users.push({ id: authId || ('usr_' + Date.now()), email: email, nama: nama,
+                 role: role, divisi: divisi, status: 'active', source: 'edge-create',
+                 created_at: new Date().toISOString() });
+    saveJSON('dreamos_users_db', users);
+
     document.getElementById('new-user-nama').value = '';
     document.getElementById('new-user-email').value = '';
     document.getElementById('new-user-pass').value = '';
     renderUsers();
-    logActivity('CREATE_USER', 'User baru: ' + nama + ' (' + role + ')');
+    logActivity('CREATE_USER', 'User baru via Auth: ' + nama + ' (' + role + ')');
+    showToast('✅ User ' + email + ' dibuat & bisa login di device manapun.');
   };
 
   window.deleteUser = function(index) {
@@ -1087,28 +1105,9 @@ window.goHomeHandler = function() {
     } catch(e) { console.warn('Recovery failed:', e); }
   }
 
-  // ===== INIT: ENTERPRISE AUTO-RECOVERY =====
-  async function recoverFromCloud() {
-    if (!window.supabaseClient) return;
-    try {
-      // 1. Recover Users
-      const localUsers = safeJSON('dreamos_users_db', []);
-      if (localUsers.length === 0) {
-        const { data: cloudUsers } = await window.supabaseClient.from('users').select('*');
-        if (cloudUsers) { saveJSON('dreamos_users_db', cloudUsers); console.log('🔄 Users recovered from cloud'); }
-      }
-      // 2. Recover Bookings
-      const localBookings = safeJSON('dreamos_bookings', []);
-      if (localBookings.length === 0) {
-        const { data: cloudBookings } = await window.supabaseClient.from('bookings').select('*').order('created_at', {ascending:false}).limit(200);
-        if (cloudBookings) { saveJSON('dreamos_bookings', cloudBookings); console.log('🔄 Bookings recovered from cloud'); }
-      }
-    } catch(e) { console.warn('Recovery failed:', e); }
-  }
 
   // ===== INIT =====
   document.getElementById('sync-status').textContent = window.supabaseClient ? '🟢 Online' : '🟡 Local';
-  recoverFromCloud(); // Jalankan recovery otomatis saat load
   recoverFromCloud(); // Jalankan recovery otomatis saat load
   document.getElementById('sync-status').style.color = window.supabaseClient ? '#10b981' : '#f59e0b';
 
