@@ -373,6 +373,21 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+
+    // 📳 HAPTIC FEEDBACK (Native-like vibration on tap)
+    window.hapticTap = function(intensity = 'light') {
+      if ('vibrate' in navigator) {
+        const patterns = {
+          light: 10,      // 10ms - subtle tap
+          medium: 20,     // 20ms - normal tap
+          heavy: 30,      // 30ms - strong tap
+          success: [10, 50, 10],  // Double tap
+          error: [30, 50, 30]     // Warning pattern
+        };
+        navigator.vibrate(patterns[intensity] || 10);
+      }
+    };
+
 /* __DOSECURELOGIN_FALLBACK__ */
     if (typeof window.doSecureLogin !== 'function') {
       console.warn('⚠️ auth-security.js tidak termuat → mesin login cadangan aktif');
@@ -641,7 +656,7 @@
               window.showToast('⛔ Akses Ditolak! Role ' + (getStoredUser().role || 'Anda') + ' tidak diizinkan membuka ' + m.n + '.', 'error');
             });
           } else {
-            card.addEventListener('click', () => openMod(m.id));
+            card.addEventListener('click', () => { window.hapticTap('light'); openMod(m.id); });
           }
           grid.appendChild(card);
         });
@@ -792,19 +807,19 @@
         if (!grid) return;
 
         grid.innerHTML = `
-          <div class="mini-stat" style="border-left-color: ${getColor(validBookings > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(validBookings > 0, false)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(validBookings > 0, false)}">${validBookings}</div>
             <div class="mini-stat-label">Booking Pending</div>
           </div>
-          <div class="mini-stat" style="border-left-color: ${getColor(pendingK3 > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(pendingK3 > 0, false)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(pendingK3 > 0, false)}">${pendingK3}</div>
             <div class="mini-stat-label">Laporan K3</div>
           </div>
-          <div class="mini-stat" style="border-left-color: ${getColor(urgentDana > 0, totalDanaPending > 0)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(urgentDana > 0, totalDanaPending > 0)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(urgentDana > 0, totalDanaPending > 0)}">${totalDanaPending}${urgentDana > 0 ? ' ⚠️' : ''}</div>
             <div class="mini-stat-label">Pengajuan Dana</div>
           </div>
-          <div class="mini-stat" style="border-left-color: ${getColor(lowStock > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(lowStock > 0, false)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(lowStock > 0, false)}">${lowStock}</div>
             <div class="mini-stat-label">Stok Menipis</div>
           </div>
@@ -822,8 +837,8 @@
         if (!navItem) return;
         const mod = navItem.dataset.mod;
         const nav = navItem.dataset.nav;
-        if (mod) window.openMod(mod);
-        if (nav === 'home') window.goHome();
+        if (mod) { window.hapticTap('light'); window.openMod(mod); }
+        if (nav === 'home') { window.hapticTap('light'); window.goHome(); }
         setActiveNav(mod || nav || 'home');
       });
 
@@ -878,19 +893,19 @@
         if (!grid) return;
 
         grid.innerHTML = `
-          <div class="mini-stat" style="border-left-color: ${getColor(validBookings > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(validBookings > 0, false)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(validBookings > 0, false)}">${validBookings}</div>
             <div class="mini-stat-label">Booking Pending</div>
           </div>
-          <div class="mini-stat" style="border-left-color: ${getColor(pendingK3 > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(pendingK3 > 0, false)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(pendingK3 > 0, false)}">${pendingK3}</div>
             <div class="mini-stat-label">Laporan K3</div>
           </div>
-          <div class="mini-stat" style="border-left-color: ${getColor(urgentDana > 0, totalDanaPending > 0)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(urgentDana > 0, totalDanaPending > 0)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(urgentDana > 0, totalDanaPending > 0)}">${totalDanaPending}${urgentDana > 0 ? ' ⚠️' : ''}</div>
             <div class="mini-stat-label">Pengajuan Dana</div>
           </div>
-          <div class="mini-stat" style="border-left-color: ${getColor(lowStock > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
+          <div class="mini-stat" style="border-left-color: ${getColor(lowStock > 0, false)}; cursor:pointer;" onclick="window.hapticTap('light'); window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
             <div class="mini-stat-val" style="color: ${getColor(lowStock > 0, false)}">${lowStock}</div>
             <div class="mini-stat-label">Stok Menipis</div>
           </div>
