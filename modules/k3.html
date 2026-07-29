@@ -17,6 +17,10 @@
   .file-input-wrapper { position: relative; margin: 0.3rem 0; }
   .file-input-wrapper input[type="file"] { width: 100%; padding: 0.6rem; background: #020617; border: 1px dashed #334155; border-radius: 8px; color: #cbd5e1; font-size: 0.875rem; cursor: pointer; }
   .preview-img { max-width: 100%; max-height: 150px; border-radius: 8px; margin-top: 0.5rem; border: 1px solid #334155; display: none; }
+
+  .foto-preview-container { margin-top: 0.5rem; text-align: center; }
+  .foto-preview-container img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--neon); display: none; }
+  .btn-clear-foto { margin-top: 0.3rem; font-size: 0.75rem; padding: 0.3rem 0.6rem; }
 </style>
 
 <button class="back-btn" onclick="window.goHome()">← Kembali</button>
@@ -44,6 +48,15 @@
       </select>
       <input id="k3-lokasi" class="bk-input" placeholder="Lokasi Kejadian *" required>
       <textarea id="k3-deskripsi" class="bk-input" rows="3" placeholder="Deskripsi detail kejadian *" required style="min-height: 80px;"></textarea>
+      
+      <div style="margin-top: 0.5rem;">
+        <label style="color: #cbd5e1; font-size: 0.8125rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Auto-Compress ~300KB)</label>
+        <input type="file" id="k3-foto-input" accept="image/*" capture="environment" onchange="handlePhoto(this, 'k3-foto-preview')" class="bk-input" style="padding: 0.5rem;">
+        <div class="foto-preview-container">
+          <img id="k3-foto-preview">
+          <button type="button" onclick="clearPhoto('k3-foto-input', 'k3-foto-preview')" class="btn btn-danger btn-clear-foto">✕ Hapus Foto</button>
+        </div>
+      </div>
       
       <div class="file-input-wrapper">
         <label style="color: #cbd5e1; font-size: 0.875rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Opsional)</label>
@@ -110,6 +123,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     const lokasi = document.getElementById('k3-lokasi').value.trim();
     const deskripsi = document.getElementById('k3-deskripsi').value.trim();
     const priority = document.getElementById('k3-priority').value;
+    const fotoBukti = window.currentPhoto || null;
 
     if (!nama || !kategori || !lokasi || !deskripsi) {
       statusEl.textContent = '❌ Isi semua field wajib!';
@@ -125,7 +139,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       lokasi: lokasi,
       deskripsi: deskripsi,
       priority: priority,
-      foto: currentFotoBase64 || null,
+      foto: fotoBukti || currentFotoBase64 || null,
       pelapor_id: user?.id || 'unknown',
       status: 'pending',
       created_at: new Date().toISOString()
@@ -170,6 +184,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     document.getElementById('k3-form').reset();
     document.getElementById('foto-preview').style.display = 'none';
     currentFotoBase64 = null;
+    clearPhoto('k3-foto-input', 'k3-foto-preview');
     setTimeout(function() { statusEl.textContent = ''; }, 3000);
   }
 
@@ -251,6 +266,54 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   window.setSyncStatus = function(s) {
     var b = document.getElementById('sync-badge');
     if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : (s === 'error' ? '🔴 Error' : '🟡 Cached');
+  };
+
+  
+  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentPhoto = null;
+  
+  window.handlePhoto = function(input, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.src = window.currentPhoto;
+          preview.style.display = 'block';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearPhoto = function(inputId, previewId) {
+    window.currentPhoto = null;
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    const preview = document.getElementById(previewId);
+    if (preview) preview.style.display = 'none';
   };
 
   tampilkanLaporan();

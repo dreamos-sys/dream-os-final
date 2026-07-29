@@ -26,6 +26,10 @@
   .prio-Sedang { background: rgba(14,165,233,0.15); color: var(--accent); }
   .prio-Tinggi { background: rgba(245,158,11,0.15); color: var(--gold); }
   .prio-Kritis { background: rgba(239,68,68,0.15); color: var(--warning); }
+
+  .foto-preview-container { margin-top: 0.5rem; text-align: center; }
+  .foto-preview-container img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--neon); display: none; }
+  .btn-clear-foto { margin-top: 0.3rem; font-size: 0.75rem; padding: 0.3rem 0.6rem; }
 </style>
 
 <button class="back-btn" onclick="window.goHome()">← HOME</button>
@@ -70,6 +74,15 @@
       <input type="number" id="maint-biaya" class="input-field" placeholder="Estimasi Biaya (Rp)">
     </div>
     <textarea id="maint-desc" class="input-field" rows="3" placeholder="Deskripsi kerusakan & tindakan..."></textarea>
+    
+    <div style="margin-top: 0.5rem;">
+      <label style="color: #cbd5e1; font-size: 0.8125rem; display: block; margin-bottom: 0.3rem;">📸 Foto Kerusakan (Auto-Compress ~300KB)</label>
+      <input type="file" id="maint-foto-input" accept="image/*" capture="environment" onchange="handlePhoto(this, 'maint-foto-preview')" class="input-field" style="padding: 0.5rem;">
+      <div class="foto-preview-container">
+        <img id="maint-foto-preview">
+        <button type="button" onclick="clearPhoto('maint-foto-input', 'maint-foto-preview')" class="btn btn-danger btn-clear-foto">✕ Hapus Foto</button>
+      </div>
+    </div>
     <button class="btn btn-success" onclick="addTask()" style="width: 100%;">💾 SIMPAN TUGAS</button>
   </div>
 
@@ -168,6 +181,7 @@
       prioritas: document.getElementById('maint-prio').value,
       biaya: document.getElementById('maint-biaya').value,
       deskripsi: document.getElementById('maint-desc').value.trim(),
+      foto: window.currentPhoto || null,
       status: 'Pending',
       created_at: new Date().toISOString()
     };
@@ -175,7 +189,55 @@
     let tasks = safeGet('dreamos_maintenance_tasks', []);
     tasks.unshift(task);
     safeSet('dreamos_maintenance_tasks', tasks);
-    renderActive();
+    
+  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentPhoto = null;
+  
+  window.handlePhoto = function(input, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.src = window.currentPhoto;
+          preview.style.display = 'block';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearPhoto = function(inputId, previewId) {
+    window.currentPhoto = null;
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    const preview = document.getElementById(previewId);
+    if (preview) preview.style.display = 'none';
+  };
+
+  renderActive();
 
     // Sync ke Supabase
     if (window.supabaseClient) {
@@ -192,6 +254,7 @@
     document.getElementById('maint-lokasi').value = '';
     document.getElementById('maint-petugas').value = '';
     document.getElementById('maint-desc').value = '';
+    clearPhoto('maint-foto-input', 'maint-foto-preview');
     alert('✅ Tugas tersimpan!');
   };
 
@@ -263,7 +326,55 @@
     tasks[idx].status = newStatus;
     tasks[idx].updatedAt = new Date().toISOString();
     safeSet('dreamos_maintenance_tasks', tasks);
-    renderActive();
+    
+  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentPhoto = null;
+  
+  window.handlePhoto = function(input, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.src = window.currentPhoto;
+          preview.style.display = 'block';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearPhoto = function(inputId, previewId) {
+    window.currentPhoto = null;
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    const preview = document.getElementById(previewId);
+    if (preview) preview.style.display = 'none';
+  };
+
+  renderActive();
 
     if (window.supabaseClient) {
       window.supabaseClient.from('maintenance_tasks').update({ status: newStatus, updatedAt: tasks[idx].updatedAt }).eq('id', id).then(() => {}).catch(e => { console.warn('Maintenance update error:', e.message); });
@@ -276,7 +387,55 @@
     let tasks = safeGet('dreamos_maintenance_tasks', []);
     tasks = tasks.filter(t => t.id !== id);
     safeSet('dreamos_maintenance_tasks', tasks);
-    renderActive();
+    
+  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentPhoto = null;
+  
+  window.handlePhoto = function(input, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.src = window.currentPhoto;
+          preview.style.display = 'block';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearPhoto = function(inputId, previewId) {
+    window.currentPhoto = null;
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    const preview = document.getElementById(previewId);
+    if (preview) preview.style.display = 'none';
+  };
+
+  renderActive();
 
     if (window.supabaseClient) {
       window.supabaseClient.from('maintenance_tasks').delete().eq('id', id).then(() => {}).catch(e => { console.warn('Maintenance delete error:', e.message); });
@@ -312,10 +471,106 @@
 
   // Sync Engine
   if (window.SyncEngine && window.supabaseClient) {
-    window.SyncEngine.subscribe('maintenance_tasks', () => { renderActive(); });
+    window.SyncEngine.subscribe('maintenance_tasks', () => { 
+  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentPhoto = null;
+  
+  window.handlePhoto = function(input, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.src = window.currentPhoto;
+          preview.style.display = 'block';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearPhoto = function(inputId, previewId) {
+    window.currentPhoto = null;
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    const preview = document.getElementById(previewId);
+    if (preview) preview.style.display = 'none';
+  };
+
+  renderActive(); });
   }
 
   // Init
+  
+  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentPhoto = null;
+  
+  window.handlePhoto = function(input, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.src = window.currentPhoto;
+          preview.style.display = 'block';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearPhoto = function(inputId, previewId) {
+    window.currentPhoto = null;
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    const preview = document.getElementById(previewId);
+    if (preview) preview.style.display = 'none';
+  };
+
   renderActive();
   updateStats();
   if (window.BankAudit) BankAudit.log('ACCESS_MAINT_MODULE', { role: window.getUserRole ? window.getUserRole() : 'staff' });
