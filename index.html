@@ -788,7 +788,7 @@
         }
 
         
-      // =====  SMART SUMMARY ENGINE =====
+      // ===== 🏆 ENTERPRISE SMART SUMMARY ENGINE =====
       window.updateSmartSummary = function() {
         const today = new Date().toISOString().split('T')[0];
         const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
@@ -799,7 +799,6 @@
         
         const validBookings = bookings.filter(b => b.status === 'pending' && b.tgl >= today).length;
         const pendingK3 = k3.filter(k => k.status === 'pending').length;
-        const pendingMaint = maint.filter(m => m.status === 'pending').length;
         const urgentDana = dana.filter(d => {
           if (d.status !== 'pending') return false;
           const created = new Date(d.created_at).getTime();
@@ -808,24 +807,31 @@
         const totalDanaPending = dana.filter(d => d.status === 'pending').length;
         const lowStock = stok.filter(s => Number(s.quantity || s.jumlah || 0) < Number(s.min_stock || 5)).length;
 
+        // Helper untuk warna dinamis (Merah = Urgent, Kuning = Warning, Hijau = Aman)
+        const getColor = (isUrgent, isWarning) => {
+          if (isUrgent) return '#ef4444'; 
+          if (isWarning) return '#f59e0b'; 
+          return '#10b981'; 
+        };
+
         const grid = document.getElementById('smart-summary-grid');
         if (!grid) return;
 
         grid.innerHTML = `
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${validBookings > 0 ? '#f59e0b' : '#10b981'}">${validBookings}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(validBookings > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(validBookings > 0, false)}">${validBookings}</div>
             <div class="mini-stat-label">Booking Pending</div>
           </div>
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${pendingK3 > 0 ? '#ef4444' : '#10b981'}">${pendingK3}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(pendingK3 > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(pendingK3 > 0, false)}">${pendingK3}</div>
             <div class="mini-stat-label">Laporan K3</div>
           </div>
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${urgentDana > 0 ? '#ef4444' : (totalDanaPending > 0 ? '#f59e0b' : '#10b981')}">${totalDanaPending}</div>
-            <div class="mini-stat-label">Pengajuan Dana ${urgentDana > 0 ? '(⚠️)' : ''}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(urgentDana > 0, totalDanaPending > 0)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(urgentDana > 0, totalDanaPending > 0)}">${totalDanaPending}${urgentDana > 0 ? ' ⚠️' : ''}</div>
+            <div class="mini-stat-label">Pengajuan Dana</div>
           </div>
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${lowStock > 0 ? '#ef4444' : '#10b981'}">${lowStock}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(lowStock > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(lowStock > 0, false)}">${lowStock}</div>
             <div class="mini-stat-label">Stok Menipis</div>
           </div>
         `;
@@ -868,7 +874,7 @@
         if(bottomNav) bottomNav.style.display = 'block';
         if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
         
-      // =====  SMART SUMMARY ENGINE =====
+      // ===== 🏆 ENTERPRISE SMART SUMMARY ENGINE =====
       window.updateSmartSummary = function() {
         const today = new Date().toISOString().split('T')[0];
         const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
@@ -879,7 +885,6 @@
         
         const validBookings = bookings.filter(b => b.status === 'pending' && b.tgl >= today).length;
         const pendingK3 = k3.filter(k => k.status === 'pending').length;
-        const pendingMaint = maint.filter(m => m.status === 'pending').length;
         const urgentDana = dana.filter(d => {
           if (d.status !== 'pending') return false;
           const created = new Date(d.created_at).getTime();
@@ -888,24 +893,31 @@
         const totalDanaPending = dana.filter(d => d.status === 'pending').length;
         const lowStock = stok.filter(s => Number(s.quantity || s.jumlah || 0) < Number(s.min_stock || 5)).length;
 
+        // Helper untuk warna dinamis (Merah = Urgent, Kuning = Warning, Hijau = Aman)
+        const getColor = (isUrgent, isWarning) => {
+          if (isUrgent) return '#ef4444'; 
+          if (isWarning) return '#f59e0b'; 
+          return '#10b981'; 
+        };
+
         const grid = document.getElementById('smart-summary-grid');
         if (!grid) return;
 
         grid.innerHTML = `
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${validBookings > 0 ? '#f59e0b' : '#10b981'}">${validBookings}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(validBookings > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='booking'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(validBookings > 0, false)}">${validBookings}</div>
             <div class="mini-stat-label">Booking Pending</div>
           </div>
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${pendingK3 > 0 ? '#ef4444' : '#10b981'}">${pendingK3}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(pendingK3 > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='k3'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(pendingK3 > 0, false)}">${pendingK3}</div>
             <div class="mini-stat-label">Laporan K3</div>
           </div>
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${urgentDana > 0 ? '#ef4444' : (totalDanaPending > 0 ? '#f59e0b' : '#10b981')}">${totalDanaPending}</div>
-            <div class="mini-stat-label">Pengajuan Dana ${urgentDana > 0 ? '(⚠️)' : ''}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(urgentDana > 0, totalDanaPending > 0)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='dana'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(urgentDana > 0, totalDanaPending > 0)}">${totalDanaPending}${urgentDana > 0 ? ' ⚠️' : ''}</div>
+            <div class="mini-stat-label">Pengajuan Dana</div>
           </div>
-          <div class="mini-stat" style="cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
-            <div class="mini-stat-val" style="color:${lowStock > 0 ? '#ef4444' : '#10b981'}">${lowStock}</div>
+          <div class="mini-stat" style="border-left-color: ${getColor(lowStock > 0, false)}; cursor:pointer;" onclick="window.switchTab('inbox'); document.getElementById('filter-type').value='stok'; window.renderInbox();">
+            <div class="mini-stat-val" style="color: ${getColor(lowStock > 0, false)}">${lowStock}</div>
             <div class="mini-stat-label">Stok Menipis</div>
           </div>
         `;
