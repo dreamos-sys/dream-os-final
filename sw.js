@@ -1,5 +1,5 @@
 /* Dream OS Service Worker — cache + web push */
-const CACHE_NAME = 'dreamos-v14-cache';
+const CACHE_NAME = 'dreamos-v15-cache';
 const ASSETS = [
   './',
   './index.html',
