@@ -65,6 +65,11 @@
   }
   .ttd-field:focus { border-color: var(--neon) !important; background: rgba(0,0,0,0.7) !important; }
 
+
+  .log-photo-preview { display: none; margin-top: 0.5rem; position: relative; text-align: center; }
+  .log-photo-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--neon); }
+  .btn-remove-photo { position: absolute; top: 5px; right: 5px; min-height: 32px; padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+
 </style>
 
 <button class="back-btn no-print" onclick="window.goHome()">← HOME</button>
@@ -146,6 +151,15 @@
       </div>
       <div id="sig-preview-penyerah" style="display:none; margin-top:0.5rem; text-align:center;"><img style="max-height:60px; border:1px dashed rgba(0,255,157,0.3); border-radius:8px; background:#fff;"></div>
       <div id="sig-preview-penerima" style="display:none; margin-top:0.5rem; text-align:center;"><img style="max-height:60px; border:1px dashed rgba(0,255,157,0.3); border-radius:8px; background:#fff;"></div>
+      <div style="margin-top:0.8rem; border-top:1px dashed rgba(255,255,255,0.2); padding-top:0.8rem;">
+        <label style="font-size:0.8125rem; color:#cbd5e1; display:block; margin-bottom:0.3rem; font-weight:600;">📸 Foto Bukti Serah Terima (Auto-Compress Max ~300KB)</label>
+        <input type="file" id="lap-foto" accept="image/*" capture="environment" onchange="handleLogPhoto(this)" class="bk-input" style="padding:0.5rem;">
+        <div id="log-photo-preview" class="log-photo-preview">
+          <img id="log-photo-img">
+          <button type="button" onclick="clearLogPhoto()" class="btn btn-danger btn-remove-photo">✕ Hapus Foto</button>
+        </div>
+      </div>
+
       <button data-act="save-laporan-pro" class="btn btn-success" style="width:100%; margin-top:0.5rem;" id="save-btn">💾 SIMPAN LOG SERAH TERIMA</button>
     </div>
   </div>
@@ -476,6 +490,7 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
     tbody.innerHTML = filtered.map((x, i) => {
       const statusColor = (x.severity === 'DARURAT' || x.severity === 'BERAT') ? '#ef4444' : (x.severity === 'AMAN' ? '#10b981' : '#f59e0b');
       const ttdDisplay = (x.ttd_img_penyerah || x.ttd_penyerah) ? '<span style="color:#10b981;">✅ TTD Lengkap</span>' : '<span style="color:#94a3b8;">-</span>';
+      const fotoDisplay = x.foto_bukti ? `<br><img src="${x.foto_bukti}" style="max-width:100px; max-height:100px; border-radius:4px; margin-top:4px; border:1px solid #cbd5e1;" onclick="window.open('' + x.foto_bukti)">` : '';
       
       return `<tr>
         <td style="text-align:center; font-weight:700;">${i + 1}</td>
@@ -484,7 +499,7 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
         <td><b>D:</b> ${esc(x.petugas)}<br><b>K:</b> ${esc(x.penerima)}</td>
         <td>${esc(x.teks || '-')}<br><small style="color:#64748b; margin-top:4px; display:block;">📦 Aset: ${esc(x.aset_serah_terima || '-')}</small></td>
         <td style="text-align:center; color:${statusColor}; font-weight:700;">${esc(x.severity || x.stat)}</td>
-        <td style="text-align:center;">${ttdDisplay}</td>
+        <td style="text-align:center;">${ttdDisplay}${fotoDisplay}</td>
       </tr>`;
     }).join('');
   }
@@ -528,6 +543,7 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
       const asetVal = document.getElementById('lap-aset')?.value.trim() || '-';
       const sigPenyerah = window.currentSignatures.penyerah || null;
       const sigPenerima = window.currentSignatures.penerima || null;
+      const fotoBukti = window.currentLogPhoto || null;
       const ttdRaw = `${sigPenyerah ? 'SIG_PENYERAH' : 'NO_SIG'}|${sigPenerima ? 'SIG_PENERIMA' : 'NO_SIG'}|${logId}|${now.toISOString()}`;
       let ttdHash = 'N/A';
       try {
@@ -550,13 +566,15 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
         ttd_hash: ttdHash,
         ttd_img_penyerah: sigPenyerah,
         ttd_img_penerima: sigPenerima,
+        foto_bukti: fotoBukti,
         teks: esc(document.getElementById('lap-teks')?.value.substring(0,500) || ''),
         created_at: now.toISOString(),
         sla_deadline: severity === 'DARURAT' ? new Date(Date.now()+15*60000).toISOString() : (severity === 'BERAT' ? new Date(Date.now()+2*3600000).toISOString() : null)
       };
 
-      // Reset signature setelah simpan
+      // Reset signature & photo setelah simpan
       window.currentSignatures = { penyerah: null, penerima: null };
+      clearLogPhoto();
       document.getElementById('sig-preview-penyerah').style.display = 'none';
       document.getElementById('sig-preview-penerima').style.display = 'none';
 
@@ -810,7 +828,12 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
     'th{background:#f0f0f0; font-weight:bold;}' +
     '.sig-box{display:flex; justify-content:space-between; margin-top:40px;}' +
     '.sig-item{text-align:center; width:30%;}' +
-    '.sig-line{border-bottom:1px solid #000; height:60px; margin-bottom:5px;}</style>' +
+    '.sig-line{border-bottom:1px solid #000; height:60px; margin-bottom:5px;}
+  .log-photo-preview { display: none; margin-top: 0.5rem; position: relative; text-align: center; }
+  .log-photo-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--neon); }
+  .btn-remove-photo { position: absolute; top: 5px; right: 5px; min-height: 32px; padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+
+</style>' +
     '</head><body>' +
     '<h2>Logbook Kegiatan Harian Keamanan 24 Jam</h2>' +
     '<p>Tanggal: ' + today + ' | Petugas: ' + (user.nama || '-') + '</p>' +
@@ -834,6 +857,51 @@ console.log(`🔐 RBAC Active: Role=${role}, CanEdit=${perms.canEditMatrix}, Can
     win.document.close();
   };
 
-  console.log('🛡️ Security Ops Center Pro Ready + ISO Enterprise Upgrades');
+  
+  // ===== 📸 PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
+  window.currentLogPhoto = null;
+
+  window.handleLogPhoto = function(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    // Hard limit 5MB sebelum diproses
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800; // Resolusi cukup untuk dokumen, hemat storage
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Kompresi ke JPEG dengan kualitas 60% (Hasil biasanya 100KB - 300KB)
+        window.currentLogPhoto = canvas.toDataURL('image/jpeg', 0.6);
+        
+        document.getElementById('log-photo-img').src = window.currentLogPhoto;
+        document.getElementById('log-photo-preview').style.display = 'block';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearLogPhoto = function() {
+    window.currentLogPhoto = null;
+    document.getElementById('lap-foto').value = '';
+    document.getElementById('log-photo-preview').style.display = 'none';
+  };
+
+  console.log('🛡️ Security Ops Center Pro Ready + ISO Enterprise Upgrades + PTO Compression');
 })();
 </script>
