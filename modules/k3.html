@@ -110,6 +110,150 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     });
   }
 
+
+  // ===== AUTO-CREATE TASK ENGINE (Multi-Module Integration) =====
+  async function autoCreateTaskFromK3(k3Report) {
+    var kategori = k3Report.kategori.toLowerCase();
+    var lokasi = k3Report.lokasi;
+    var deskripsi = k3Report.deskripsi;
+    var pelapor = k3Report.nama_pelapor || k3Report.pelapor_nama;
+    var createdTasks = [];
+    
+    // Mapping kategori ke modul target
+    if (kategori.includes('kerusakan')) {
+      // → Create task di Maintenance
+      var maintTask = {
+        id: 'maint_' + Date.now(),
+        judul: 'Perbaiki ' + lokasi,
+        deskripsi: deskripsi + ' (Laporan dari: ' + pelapor + ')',
+        lokasi: lokasi,
+        priority: k3Report.priority || 'medium',
+        status: 'pending',
+        kategori: 'repair',
+        created_at: new Date().toISOString(),
+        created_by: pelapor,
+        k3_report_id: k3Report.id // Link ke laporan K3 asli
+      };
+      
+      // Simpan ke localStorage Maintenance
+      var maintTasks = safeGet('dreamos_maintenance_tasks', []);
+      maintTasks.unshift(maintTask);
+      safeSet('dreamos_maintenance_tasks', maintTasks);
+      createdTasks.push({ module: 'Maintenance', task: maintTask });
+      
+      // Sync ke Supabase jika tersedia
+      if (window.supabaseClient) {
+        try {
+          await window.supabaseClient.from('maintenance_tasks').insert(maintTask);
+        } catch(e) { console.warn('Failed to sync maintenance task to cloud', e); }
+      }
+    }
+    
+    if (kategori.includes('kebersihan')) {
+      // → Create task di Janitor Indoor & Outdoor
+      var janitorTask = {
+        id: 'jan_' + Date.now(),
+        lokasi: lokasi,
+        nama: 'Pembersihan ' + lokasi,
+        deskripsi: deskripsi + ' (Laporan dari: ' + pelapor + ')',
+        status: 'pending',
+        priority: k3Report.priority || 'low',
+        created_at: new Date().toISOString(),
+        created_by: pelapor,
+        k3_report_id: k3Report.id
+      };
+      
+      // Simpan ke localStorage Janitor Indoor
+      var janIndoor = safeGet('dreamos_janitor_indoor', {});
+      var today = new Date().toISOString().split('T')[0];
+      if (!janIndoor[today]) janIndoor[today] = {};
+      if (!janIndoor[today].shifts) janIndoor[today].shifts = {};
+      if (!janIndoor[today].shifts.morning) janIndoor[today].shifts.morning = {};
+      
+      janIndoor[today].shifts.morning[lokasi] = {
+        status: false,
+        note: deskripsi,
+        k3_link: k3Report.id
+      };
+      safeSet('dreamos_janitor_indoor', janIndoor);
+      createdTasks.push({ module: 'Janitor Indoor', task: janitorTask });
+      
+      // Sync ke Supabase
+      if (window.supabaseClient) {
+        try {
+          await window.supabaseClient.from('janitorial_requests').insert({
+            id: janitorTask.id,
+            lokasi: lokasi,
+            nama: janitorTask.nama,
+            deskripsi: deskripsi,
+            status: 'pending',
+            created_at: janitorTask.created_at,
+            k3_report_id: k3Report.id
+          });
+        } catch(e) { console.warn('Failed to sync janitor task to cloud', e); }
+      }
+    }
+    
+    if (kategori.includes('kehilangan')) {
+      // → Create task di Security
+      var securityTask = {
+        id: 'sec_' + Date.now(),
+        kejadian: 'Barang Hilang di ' + lokasi,
+        lokasi: lokasi,
+        deskripsi: deskripsi + ' (Dilaporkan oleh: ' + pelapor + ')',
+        priority: 'high',
+        status: 'pending',
+        petugas: '-',
+        created_at: new Date().toISOString(),
+        created_by: pelapor,
+        k3_report_id: k3Report.id
+      };
+      
+      // Simpan ke localStorage Security
+      var secLogs = safeGet('dreamos_security_logs', []);
+      secLogs.unshift(securityTask);
+      safeSet('dreamos_security_logs', secLogs);
+      createdTasks.push({ module: 'Security', task: securityTask });
+      
+      // Sync ke Supabase
+      if (window.supabaseClient) {
+        try {
+          await window.supabaseClient.from('security_logs').insert(securityTask);
+        } catch(e) { console.warn('Failed to sync security task to cloud', e); }
+      }
+    }
+    
+    if (kategori.includes('kecelakaan') || kategori.includes('bahaya')) {
+      // → Create task di Security (Investigasi)
+      var investTask = {
+        id: 'sec_inv_' + Date.now(),
+        kejadian: 'Investigasi ' + (kategori.includes('kecelakaan') ? 'Kecelakaan' : 'Bahaya') + ' di ' + lokasi,
+        lokasi: lokasi,
+        deskripsi: deskripsi + ' (Laporan dari: ' + pelapor + ')',
+        priority: 'urgent',
+        status: 'pending',
+        petugas: '-',
+        created_at: new Date().toISOString(),
+        created_by: pelapor,
+        k3_report_id: k3Report.id
+      };
+      
+      var secLogs = safeGet('dreamos_security_logs', []);
+      secLogs.unshift(investTask);
+      safeSet('dreamos_security_logs', secLogs);
+      createdTasks.push({ module: 'Security (Investigasi)', task: investTask });
+      
+      if (window.supabaseClient) {
+        try {
+          await window.supabaseClient.from('security_logs').insert(investTask);
+        } catch(e) { console.warn('Failed to sync security investigation to cloud', e); }
+      }
+    }
+    
+    // Return summary task yang dibuat
+    return createdTasks;
+  }
+
   async function laporK3(e) {
     e.preventDefault();
     const statusEl = document.getElementById('k3-status');
@@ -178,6 +322,18 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
         }
         statusEl.textContent = '✅ Tersimpan & Synced ke Cloud!';
         statusEl.style.color = '#10b981';
+        
+        // Auto-create task di modul terkait
+        try {
+          var createdTasks = await autoCreateTaskFromK3(newReport);
+          if (createdTasks.length > 0) {
+            var taskSummary = createdTasks.map(function(t) { return t.module; }).join(', ');
+            statusEl.textContent = '✅ Tersimpan & Synced! Auto-create task di: ' + taskSummary;
+            console.log('📋 Auto-created tasks:', createdTasks);
+          }
+        } catch(taskErr) {
+          console.warn('Auto-create task failed:', taskErr);
+        }
         
         if (typeof window.addNotification === 'function') {
           window.addNotification('urgent', 'Laporan K3 Baru', kategori + ' di ' + lokasi + ' oleh ' + nama, 'k3', ['kabag_umum', 'koordinator_umum', 'dev']);
