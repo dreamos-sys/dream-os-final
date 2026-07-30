@@ -95,9 +95,8 @@
     <button class="tab" data-tab="archive" onclick="switchTab('archive')">📂 Arsip</button>
     <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
     <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
-  </div>
-
-  <!-- DASHBOARD -->
+      <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
+  
   <div id="tab-dashboard" class="tab-content active">
     <div class="metrics">
       <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending</div></div>
@@ -281,6 +280,31 @@
     </div>
   </div>
 
+  <!-- ANNOUNCEMENTS (SLIDE 5, 6, 7) -->
+  <div id="tab-announcements" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:700;color:var(--gold);margin-bottom:1rem">📢 Kelola Info Dashboard (Slide 5, 6, 7)</div>
+      <p style="font-size:0.875rem;color:var(--muted);margin-bottom:1rem">Update informasi ini akan langsung muncul di Dashboard utama semua device.</p>
+      
+      <div class="form-grid" style="grid-template-columns: 1fr;">
+        <div>
+          <label style="font-size:0.8125rem;color:var(--accent);font-weight:600">Slide 5: Info Manajemen</label>
+          <textarea id="slide-5-input" class="bk-input" rows="2" placeholder="Contoh: Rapat evaluasi bulan depan tanggal 15..."></textarea>
+        </div>
+        <div>
+          <label style="font-size:0.8125rem;color:var(--accent);font-weight:600">Slide 6: Info Bagian Umum</label>
+          <textarea id="slide-6-input" class="bk-input" rows="2" placeholder="Contoh: Jadwal kebersihan gedung diperketat..."></textarea>
+        </div>
+        <div>
+          <label style="font-size:0.8125rem;color:var(--accent);font-weight:600">Slide 7: Ucapan / Motivasi</label>
+          <textarea id="slide-7-input" class="bk-input" rows="2" placeholder="Contoh: The Power Soul of Shalawat..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveAnnouncements()" style="margin-top:0.5rem;">💾 Simpan & Sinkronisasi</button>
+        <p id="slide-save-status" style="font-size:0.8125rem;margin-top:0.3rem;"></p>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
 <script>
@@ -367,6 +391,18 @@ window.goHomeHandler = function() {
     if (id === 'calendar') renderCalendar();
     if (id === 'archive') renderArchive();
     if (id === 'users') renderUsers();
+    
+    // Load existing announcements when tab is opened
+    if (id === 'announcements') {
+      const saved = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
+      const s5 = saved.find(x => x.type === 'management')?.msg || '';
+      const s6 = saved.find(x => x.type === 'umum')?.msg || '';
+      const s7 = saved.find(x => x.type === 'ucapan')?.msg || '';
+      
+      document.getElementById('slide-5-input').value = s5;
+      document.getElementById('slide-6-input').value = s6;
+      document.getElementById('slide-7-input').value = s7;
+    }
   };
 
   // ===== GLOBAL SEARCH =====

@@ -99,21 +99,14 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
   function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
 
-  window.previewFoto = function(input) {
-    const preview = document.getElementById('foto-preview');
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        currentFotoBase64 = e.target.result;
-        preview.src = currentFotoBase64;
-        preview.style.display = 'block';
-      };
-      reader.readAsDataURL(input.files[0]);
-    } else {
-      currentFotoBase64 = null;
-      preview.style.display = 'none';
-    }
-  };
+  // Generate UUID yang kompatibel dengan Supabase
+  function generateUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
 
   async function laporK3(e) {
     e.preventDefault();
@@ -132,8 +125,9 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     }
 
     const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    
     const newReport = {
-      id: 'k3_' + Date.now(),
+      id: generateUUID(), 
       nama_pelapor: nama,
       kategori: kategori,
       lokasi: lokasi,
@@ -141,6 +135,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       priority: priority,
       foto: fotoBukti || currentFotoBase64 || null,
       pelapor_id: user?.id || 'unknown',
+      pelapor_nama: user?.nama || nama,
       status: 'pending',
       created_at: new Date().toISOString()
     };
@@ -149,6 +144,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     statusEl.style.color = '#f59e0b';
 
     const localReports = safeGet('dreamos_k3_reports', []);
+    const existingIdx = localReports.findIndex(r => r.id === newReport.id);
+    if (existingIdx > -1) localReports.splice(existingIdx, 1);
     localReports.unshift(newReport);
     safeSet('dreamos_k3_reports', localReports);
     renderList(localReports);
@@ -156,7 +153,11 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     if (window.supabaseClient) {
       try {
         statusEl.textContent = '☁️ Syncing ke cloud...';
-        const { error } = await window.supabaseClient.from('k3_reports').insert(newReport);
+        const { data, error } = await window.supabaseClient
+          .from('k3_reports')
+          .insert(newReport)
+          .select();
+          
         if (error) throw error;
         
         const idx = localReports.findIndex(r => r.id === newReport.id);
@@ -164,16 +165,16 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
           localReports[idx].synced = true;
           safeSet('dreamos_k3_reports', localReports);
         }
-        statusEl.textContent = '✅ Tersimpan & Synced!';
+        statusEl.textContent = '✅ Tersimpan & Synced ke Cloud!';
         statusEl.style.color = '#10b981';
         
         if (typeof window.addNotification === 'function') {
-          window.addNotification('warning', 'Laporan K3 Baru', kategori + ' di ' + lokasi + ' oleh ' + nama, 'k3', ['kabag_umum', 'dev']);
+          window.addNotification('urgent', 'Laporan K3 Baru', kategori + ' di ' + lokasi + ' oleh ' + nama, 'k3', ['kabag_umum', 'koordinator_umum', 'dev']);
         }
       } catch (err) {
-        console.warn('Cloud sync failed:', err.message);
-        statusEl.textContent = '⚠️ Disimpan lokal. Akan sync saat online.';
-        statusEl.style.color = '#cbd5e1';
+        console.error('❌ Cloud sync failed:', err);
+        statusEl.textContent = '⚠️ Disimpan lokal. Gagal sync: ' + (err.message || 'Cek RLS/Schema');
+        statusEl.style.color = '#ef4444';
         if (window.OfflineQueue) window.OfflineQueue.add('k3_reports', 'insert', newReport);
       }
     } else {
@@ -185,7 +186,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     document.getElementById('foto-preview').style.display = 'none';
     currentFotoBase64 = null;
     clearPhoto('k3-foto-input', 'k3-foto-preview');
-    setTimeout(function() { statusEl.textContent = ''; }, 3000);
+    setTimeout(function() { statusEl.textContent = ''; }, 4000);
   }
 
   document.getElementById('k3-form').addEventListener('submit', laporK3);
@@ -193,7 +194,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   window.tampilkanLaporan = async function() {
     const container = document.getElementById('k3-list');
     if (!container) return;
-    container.innerHTML = '<p style="color:#cbd5e1; text-align:center;">Memuat laporan...</p>';
+    container.innerHTML = '<p style="color:#cbd5e1; text-align:center; padding:1rem;">🔄 Memuat laporan dari cloud...</p>';
     setSyncStatus('cached');
     
     try {
@@ -206,56 +207,69 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
         
         if (error) throw error;
         
-        if (data && data.length > 0) {
-          safeSet('dreamos_k3_reports', data);
-          renderList(data);
+        if (data) {
+          const localReports = safeGet('dreamos_k3_reports', []);
+          const merged = [...data];
+          
+          localReports.forEach(localItem => {
+            if (!localItem.synced && !merged.find(m => m.id === localItem.id)) {
+              merged.push(localItem);
+            }
+          });
+          
+          merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          
+          safeSet('dreamos_k3_reports', merged);
+          renderList(merged.slice(0, 100));
           setSyncStatus('synced');
           return;
         }
       }
     } catch(e) {
-      console.warn('Cloud fetch failed, using cache:', e.message);
+      console.warn('⚠️ Cloud fetch failed, using cache:', e.message);
     }
     
     const cached = safeGet('dreamos_k3_reports', []);
     renderList(cached);
+    setSyncStatus('error');
   };
 
   window.renderList = function(reports) {
     const container = document.getElementById('k3-list');
     if (!container) return;
     if (!reports || reports.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:#cbd5e1; padding:1rem;">Belum ada laporan.</p>';
+      container.innerHTML = '<p style="text-align:center; color:#cbd5e1; padding:1rem;">📭 Belum ada laporan.</p>';
       return;
     }
     
     container.innerHTML = reports.map(function(item) {
       var statusClass = item.status === 'pending' ? 'pending' : 'approved';
       var prioColor = item.priority === 'critical' ? '#ef4444' : (item.priority === 'high' ? '#f59e0b' : '#10b981');
+      var syncIcon = item.synced ? '🟢' : '🟡';
       
       var html = '<div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem; border-left: 4px solid ' + prioColor + ';">' +
         '<div style="display:flex; justify-content:space-between; align-items:start;">' +
-          '<b style="color:#e2e8f0;">' + (item.kategori ? item.kategori.toUpperCase() : 'UMUM') + '</b>' +
+          '<b style="color:#e2e8f0;">' + (item.kategori ? item.kategori.toUpperCase() : 'UMUM') + ' <span style="font-size:0.7rem;">'+syncIcon+'</span></b>' +
           '<span class="badge badge-' + statusClass + '">' + (item.status || 'pending') + '</span>' +
         '</div>' +
         '<div style="font-size:0.8125rem; color:#cbd5e1; margin:0.3rem 0;">' +
-          '📍 ' + (item.lokasi || '-') + ' • 👤 ' + (item.nama_pelapor || item.pelapor_id || '-') +
+          '📍 ' + (item.lokasi || '-') + ' • 👤 ' + (item.nama_pelapor || item.pelapor_nama || item.pelapor_id || '-') +
         '</div>' +
-        '<div style="font-size:0.8125rem; color:#e2e8f0; margin-bottom:0.3rem;">' + (item.deskripsi || '-') + '</div>';
+        '<div style="font-size:0.8125rem; color:#e2e8f0; margin-bottom:0.3rem; line-height:1.4;">' + (item.deskripsi || '-') + '</div>';
         
       if (item.foto) {
-        html += '<img src="' + item.foto + '" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155;">';
+        html += '<img src="' + item.foto + '" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155; cursor:pointer;" onclick="window.open(this.src)">';
       }
       
       html += '<div style="font-size:0.75rem; color:#94a3b8; margin-top:0.3rem; display:flex; justify-content:space-between;">' +
-        '<span>📅 ' + new Date(item.created_at).toLocaleDateString('id-ID') + '</span>' +
+        '<span>📅 ' + new Date(item.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) + '</span>' +
         '<span style="color:' + prioColor + '; font-weight:700;">' + (item.priority ? item.priority.toUpperCase() : 'NORMAL') + '</span>' +
       '</div>';
       
-      if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum') && item.status === 'pending') {
+      if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum' || window.getUserRole() === 'koordinator_umum') && item.status === 'pending') {
         html += '<div style="margin-top:0.5rem; display:flex; gap:0.5rem;">' +
-          '<button class="btn btn-success" style="min-height:44px; font-size:0.8125rem; flex:1;" onclick="window.WorkflowEngine.approve(\'k3_reports\', \'' + item.id + '\')">✅ Setujui</button>' +
-          '<button class="btn btn-danger" style="min-height:44px; font-size:0.8125rem; flex:1;" onclick="window.WorkflowEngine.reject(\'k3_reports\', \'' + item.id + '\')">❌ Tolak</button>' +
+          '<button class="btn btn-success" style="min-height:44px; font-size:0.8125rem; flex:1;" onclick="window.WorkflowEngine.approve(\'k3_reports\', \'" + item.id + "\')">✅ Setujui</button>' +
+          '<button class="btn btn-danger" style="min-height:44px; font-size:0.8125rem; flex:1;" onclick="window.WorkflowEngine.reject(\'k3_reports\', \'" + item.id + "\')">❌ Tolak</button>' +
         '</div>';
       }
       html += '</div>';
@@ -265,11 +279,9 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
 
   window.setSyncStatus = function(s) {
     var b = document.getElementById('sync-badge');
-    if (b) b.innerHTML = s === 'synced' ? '🟢 Synced' : (s === 'error' ? '🔴 Error' : '🟡 Cached');
+    if (b) b.innerHTML = s === 'synced' ? '🟢 Synced (Cloud)' : (s === 'error' ? '🔴 Offline/Error' : '🟡 Cached (Lokal)');
   };
 
-  
-  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
   window.currentPhoto = null;
   
   window.handlePhoto = function(input, previewId) {
@@ -317,6 +329,6 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   };
 
   tampilkanLaporan();
-  console.log('🌌 K3 Module - Hybrid Soul Active with Photo Support');
+  console.log('🌌 K3 Module - Hybrid Soul Active with Robust Sync');
 })();
 </script>
