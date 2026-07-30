@@ -1207,7 +1207,7 @@ window.goHomeHandler = function() {
     // 🔐 DATA QR CODE (ISO 27001 Audit Trail)
     const qrData = 'DREAM-OS-VERIFY | ID: ' + data.id + ' | TYPE: ' + type.toUpperCase() + ' | STAT: ' + (data.status || 'pending').toUpperCase() + ' | APPR: ' + (data.approved_by || 'SYSTEM') + ' | DATE: ' + new Date().toISOString().split('T')[0];
     
-    const printContent = '<!DOCTYPE html><html><head><title>Cetak ' + docType + ' - ' + data.id + '</title>' +
+    let printContent = '<!DOCTYPE html><html><head><title>Cetak ' + docType + ' - ' + data.id + '</title>' +
       '<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"><\/script>' +
       '<style>' +
       'body{font-family:"Segoe UI",Arial,sans-serif;padding:20px;max-width:800px;margin:0 auto;color:#333}' +
@@ -1254,7 +1254,7 @@ window.goHomeHandler = function() {
       '<div class="info-item full"><div class="label">Deskripsi Detail</div><div class="value">' + (data.deskripsi || '-') + '</div></div>';
     }
     
-    printContent += '<div class="info-item"><div class="label">Dibuat Pada</div><div class="value">' + new Date(data.created_at).toLocaleString('id-ID') + '</div></div>' +
+    printContent += '<div class="info-item"><div class="label">Dibuat Pada</div><div class="value">' + (data.created_at ? new Date(data.created_at).toLocaleString('id-ID') : '-') + '</div></div>' +
       '<div class="info-item"><div class="label">Disetujui Oleh</div><div class="value">' + (data.approved_by || 'Belum ada') + '</div></div>' +
       '</div>' +
       '<div class="footer">' +
@@ -1265,9 +1265,18 @@ window.goHomeHandler = function() {
       '<script>window.onload=function(){try{var qr=qrcode(0,"L");qr.addData("' + qrData.replace(/"/g, '\\"') + '");qr.make();document.getElementById("qr-code").innerHTML=qr.createImgTag(3,2)}catch(e){document.getElementById("qr-code").innerHTML="<span style=color:red;font-size:10px>QR Error</span>"}setTimeout(function(){window.print()},800)}<\/script>' +
       '</body></html>';
 
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
+    let printWindow;
+    try {
+      printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) throw new Error('Popup blocked');
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    } catch(e) {
+      // Fallback: buka di tab baru tanpa popup
+      const blob = new Blob([printContent], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      window.location.href = url;
+    }
   };
 
 })();
