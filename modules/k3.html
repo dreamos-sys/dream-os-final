@@ -32,7 +32,8 @@
       <p style="color: #cbd5e1; font-size: 0.875rem; margin: 0.2rem 0 0;">Hybrid Cloud • Offline-First • Dengan Bukti Foto</p>
     </div>
     <span id="sync-badge" style="font-size: 0.8125rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 0.3rem 0.6rem; border-radius: 6px;">🟡 Cached</span>
-      <button onclick="window.forceK3Sync()" class="btn btn-primary" style="min-height:36px;padding:0.4rem 0.8rem;font-size:0.8125rem;margin-left:0.5rem;">🔄 Sync Cloud</button>
+      <button onclick="window.forceK3Sync()" class="btn btn-primary" style="min-height:36px;padding:0.4rem 0.8rem;font-size:0.8125rem;margin-left:0.5rem;">🔄 Pull Cloud</button>
+<button onclick="window.uploadTrappedData()" class="btn btn-success" style="min-height:36px;padding:0.4rem 0.8rem;font-size:0.8125rem;margin-left:0.5rem;">☁️ Push Lokal</button>
   </div>
   
   <div class="glass">
@@ -118,6 +119,15 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     const deskripsi = document.getElementById('k3-deskripsi').value.trim();
     const priority = document.getElementById('k3-priority').value;
     const fotoBukti = window.currentPhoto || null;
+
+    // Cek apakah user login (Supabase Auth)
+    var userBound = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    if (!userBound.email && !userBound.id) {
+       statusEl.textContent = '⛔ Anda belum Login! Data tidak bisa ke Cloud.';
+       statusEl.style.color = '#ef4444';
+       alert('⚠️ HARAP LOGIN DULU!\n\nData K3 hanya bisa tersimpan ke Cloud jika Anda login menggunakan akun Supabase (Email/Password).\nSaat ini data hanya akan tersimpan di HP ini (Lokal).');
+       return;
+    }
 
     if (!nama || !kategori || !lokasi || !deskripsi) {
       statusEl.textContent = '❌ Isi semua field wajib!';
@@ -327,6 +337,43 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     if (input) input.value = '';
     const preview = document.getElementById(previewId);
     if (preview) preview.style.display = 'none';
+  };
+
+
+  // ===== UPLOAD DATA LOKAL TERJEBAK (FORCE SYNC) =====
+  window.uploadTrappedData = async function() {
+    var localData = safeGet('dreamos_k3_reports', []);
+    var trappedData = localData.filter(function(item) { return !item.synced; });
+    
+    if (trappedData.length === 0) {
+      alert('✅ Tidak ada data terjebak. Semua data sudah tersinkronisasi!');
+      return;
+    }
+
+    if (!window.supabaseClient) return alert(' Supabase tidak tersedia.');
+    
+    var b = document.getElementById('sync-badge');
+    if(b) b.innerHTML = ' Upload ' + trappedData.length + ' data...';
+
+    var successCount = 0;
+    for (var i = 0; i < trappedData.length; i++) {
+      var item = trappedData[i];
+      try {
+        var { error } = await window.supabaseClient.from('k3_reports').upsert(item, { onConflict: 'id' });
+        if (error) throw error;
+        // Tandai sebagai synced di lokal
+        var idx = localData.findIndex(x => x.id === item.id);
+        if (idx > -1) { localData[idx].synced = true; }
+        successCount++;
+      } catch (e) {
+        console.error('Gagal upload item ' + item.id, e);
+      }
+    }
+    
+    safeSet('dreamos_k3_reports', localData);
+    alert('✅ Berhasil upload ' + successCount + ' dari ' + trappedData.length + ' laporan terjebak ke Cloud!\nSilakan klik tombol "Sync Cloud" di HP lain.');
+    if(b) b.innerHTML = '🟢 Cloud: ' + (localData.length) + ' laporan';
+    renderList(localData);
   };
 
   tampilkanLaporan();
