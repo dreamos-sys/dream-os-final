@@ -265,8 +265,12 @@
     if (e.key==='Enter'||e.key===' ') { var t=e.target.closest('.alat-item'); if(t){ e.preventDefault(); var cb=t.querySelector('input[type=checkbox]'); if(cb) cb.checked=!cb.checked; } }
   });
   document.getElementById('booking-peminjam').value = user.nama || user.email || '';
-  var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
-  var minDate = tomorrow.toISOString().split('T')[0];
+  // Hitung "Besok" berdasarkan waktu LOKAL (WIB), bukan UTC, agar aturan H-1 akurat
+  var now = new Date();
+  var tomorrowLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  var minDate = tomorrowLocal.getFullYear() + '-' + 
+                String(tomorrowLocal.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(tomorrowLocal.getDate()).padStart(2, '0');
   document.getElementById('booking-tgl').min = minDate;
   document.getElementById('booking-tgl-selesai').min = minDate;
 
@@ -364,13 +368,23 @@
     });
     var saranaStr = selectedAlatsWithQty.length ? selectedAlatsWithQty.join(', ') : 'Tidak ada alat';
 
-    if (!tglMulai || !jamMulai || !jamSelesai || !ruang) return showError('⚠️ Tanggal, ruangan, dan jam wajib.');
-    if (!peminjam) return showError('⚠️ Nama peminjam wajib.');
-    if (!nohp || !/^[0-9+\-\s]{8,15}$/.test(nohp)) return showError('⚠️ No. HP tidak valid.');
-    if (!divisi) return showError('⚠️ Divisi wajib.');
-    if (tglSelesai < tglMulai) return showError('⚠️ Tanggal selesai lebih awal.');
+    // 1. Validasi Field Wajib
+    if (!tglMulai || !jamMulai || !jamSelesai || !ruang) return showError('⚠️ Tanggal, ruangan, dan jam wajib diisi.');
+    if (!peminjam) return showError('⚠️ Nama peminjam wajib diisi.');
+    if (!nohp || !/^[0-9+\-\s]{8,15}$/.test(nohp)) return showError('⚠️ No. HP tidak valid (min 8 digit).');
+    if (!divisi) return showError('⚠️ Divisi wajib dipilih.');
+    if (tglSelesai < tglMulai) return showError('⚠️ Tanggal selesai tidak boleh lebih awal dari tanggal mulai.');
+    
+    // 2. Validasi Ketat: Minimal H-1 (Tidak bisa booking untuk hari ini)
+    if (tglMulai < minDate) {
+      return showError('⚠️ Booking minimal H-1 (sehari sebelumnya). Tidak bisa booking untuk hari ini.');
+    }
+
+    // 3. Validasi Ketat: Hanya Jam Kerja 07:30 - 16:00 WIB
     var startT = timeToFloat(jamMulai), endT = timeToFloat(jamSelesai);
-    if (startT < WORK_START || endT > WORK_END || startT >= endT) return showError('⛔ Hanya jam 07:30–16:00 WIB.');
+    if (startT < 7.5 || endT > 16.0 || startT >= endT) {
+      return showError('⛔ Booking HANYA diperbolehkan pada jam kerja: 07:30 – 16:00 WIB.');
+    }
     var dateObj = new Date(tglMulai + 'T12:00:00'); var dayOfWeek = dateObj.getDay();
     if (dayOfWeek === 0) return showError('⛔ Minggu libur booking.');
     if (dayOfWeek === 5 && (ruang==='Aula SMP'||ruang==='Serbaguna') && startT < 13 && endT > 10.5) return showError('⛔ Jumat 10:30–13:00 Aula/Serbaguna untuk Shalat Jumat.');
