@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Command Center Pro • Dream OS v5.2</title>
+  <title>Command Center Pro • Dream OS v5.3</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
@@ -67,6 +67,16 @@
     .cal-day.today{background:rgba(14,165,233,.15);border-color:var(--accent)}
     .cal-day-num{text-align:right;font-weight:700;font-size:.875rem;color:var(--muted);line-height:1.5}
     .cal-event{font-size:.875rem;padding:1px 4px;margin:1px 0;border-radius:3px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    
+    /* Modal Edit User */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.show{display:flex}
+    .modal-content{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    .modal-header h3{color:var(--neon);margin:0}
+    .modal-close{background:transparent;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
+    .modal-close:hover{color:var(--danger)}
+    
     @media(max-width:640px){.metrics{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.cal-day{min-height:55px}}
   </style>
 
@@ -87,7 +97,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:.5rem">
       <div style="font-size:.875rem;color:var(--muted);line-height:1.5" id="sync-status">🟡 Init</div>
-      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)">🔄 Sync</button>
+      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)"> Sync</button>
     </div>
   </div>
 
@@ -99,7 +109,7 @@
     <button class="tab" data-tab="archive" onclick="switchTab('archive')">📂 Arsip</button>
     <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
     <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
-      <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
+    <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -112,13 +122,13 @@
     </div>
     <div class="glass">
       <div style="font-weight:700;color:var(--neon);margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center">
-        <span>📈 Kinerja Operasional & SLA</span>
+        <span> Kinerja Operasional & SLA</span>
         <button class="btn btn-outline btn-sm" onclick="renderChart()">🔄</button>
       </div>
       <div class="chart-container"><canvas id="slaChart"></canvas></div>
     </div>
     <div class="glass">
-      <div style="font-weight:700;color:var(--neon);margin-bottom:.75rem">📈 Status Operasional</div>
+      <div style="font-weight:700;color:var(--neon);margin-bottom:.75rem"> Status Operasional</div>
       <div class="metrics">
         <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3</div></div>
         <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking</div></div>
@@ -127,7 +137,7 @@
       </div>
     </div>
     <div class="glass">
-      <div style="font-weight:700;margin-bottom:.75rem">🔍 Hasil Pencarian Global</div>
+      <div style="font-weight:700;margin-bottom:.75rem"> Hasil Pencarian Global</div>
       <div id="search-results" style="max-height:300px;overflow-y:auto"><p style="color:var(--muted);line-height:1.5">Ketik di kotak pencarian di atas...</p></div>
     </div>
   </div>
@@ -147,7 +157,7 @@
           <option value="k3">⚠️ K3 Safety</option>
           <option value="maintenance">🔧 Maintenance</option>
           <option value="security">🛡️ Security</option>
-          <option value="janitor_indoor">🏠 Janitor Indoor</option>
+          <option value="janitor_indoor"> Janitor Indoor</option>
           <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
           <option value="asset">🏢 Asset</option>
           <option value="stok">📦 Stok Gudang</option>
@@ -182,12 +192,12 @@
     </div>
   </div>
 
-  <!-- CALENDAR (dengan filter bulan + tahun nyata) -->
+  <!-- CALENDAR -->
   <div id="tab-calendar" class="tab-content">
     <div class="glass">
       <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">📅 Jadwal & Roster</div>
       <div class="cal-nav">
-        <button class="btn btn-outline btn-sm" onclick="calPrev()">◀</button>
+        <button class="btn btn-outline btn-sm" onclick="calPrev()"></button>
         <select id="cal-month" onchange="renderCalendar()"></select>
         <select id="cal-year" onchange="renderCalendar()"></select>
         <button class="btn btn-outline btn-sm" onclick="calNext()">▶</button>
@@ -207,7 +217,7 @@
     </div>
   </div>
 
-  <!-- ARCHIVE + SUPABASE STORAGE -->
+  <!-- ARCHIVE -->
   <div id="tab-archive" class="tab-content">
     <div class="glass">
       <div style="font-weight:700;color:var(--gold);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
@@ -223,11 +233,11 @@
           <option value="all">📋 Semua Tipe</option>
           <option value="k3">⚠️ K3</option>
           <option value="maintenance">🔧 Maintenance</option>
-          <option value="security">🛡️ Security</option>
+          <option value="security">️ Security</option>
           <option value="janitor_indoor">🏠 Janitor Indoor</option>
           <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
           <option value="booking">📅 Booking</option>
-          <option value="asset">🏢 Asset</option>
+          <option value="asset"> Asset</option>
           <option value="general">📄 General</option>
           <option value="export">📤 Export</option>
         </select>
@@ -251,14 +261,14 @@
           <input type="text" id="new-user-nama" placeholder="Nama Lengkap">
           <input type="email" id="new-user-email" placeholder="Email">
           <select id="new-user-role">
-            <option value="staff">👤 Staff</option>
+            <option value="staff"> Staff</option>
             <option value="guru">👨‍🏫 Guru</option>
             <option value="security">🛡️ Anggota Security</option>
             <option value="komandan_regu">⭐ Komandan Security</option>
             <option value="janitor_indoor">🏠 Janitor Indoor</option>
-            <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
+            <option value="janitor_outdoor"> Janitor Outdoor</option>
             <option value="maintenance">🔧 Maintenance</option>
-            <option value="koordinator_umum">🛡️ Koordinator Umum</option>
+            <option value="koordinator_umum">️ Koordinator Umum</option>
             <option value="kabag_umum">👑 Kabag Umum</option>
             <option value="dev">💻 Developer</option>
           </select>
@@ -286,7 +296,7 @@
     </div>
   </div>
 
-  <!-- ANNOUNCEMENTS (SLIDE 5, 6, 7) -->
+  <!-- ANNOUNCEMENTS -->
   <div id="tab-announcements" class="tab-content">
     <div class="glass">
       <div style="font-weight:700;color:var(--gold);margin-bottom:1rem">📢 Kelola Info Dashboard (Slide 5, 6, 7)</div>
@@ -307,6 +317,53 @@
         </div>
         <button class="btn btn-primary" onclick="saveAnnouncements()" style="margin-top:0.5rem;">💾 Simpan & Sinkronisasi</button>
         <p id="slide-save-status" style="font-size:0.8125rem;margin-top:0.3rem;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT USER -->
+  <div class="modal-overlay" id="edit-user-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>✏️ Edit User</h3>
+        <button class="modal-close" onclick="closeEditModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="hidden" id="edit-user-index">
+        <div>
+          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Nama Lengkap</label>
+          <input type="text" id="edit-user-nama" placeholder="Nama Lengkap">
+        </div>
+        <div>
+          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Email</label>
+          <input type="email" id="edit-user-email" placeholder="Email">
+        </div>
+        <div>
+          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Role</label>
+          <select id="edit-user-role">
+            <option value="staff">👤 Staff</option>
+            <option value="guru">👨‍🏫 Guru</option>
+            <option value="security">🛡️ Anggota Security</option>
+            <option value="komandan_regu">⭐ Komandan Security</option>
+            <option value="janitor_indoor">🏠 Janitor Indoor</option>
+            <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
+            <option value="maintenance"> Maintenance</option>
+            <option value="koordinator_umum">🛡️ Koordinator Umum</option>
+            <option value="kabag_umum">👑 Kabag Umum</option>
+            <option value="dev">💻 Developer</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Status</label>
+          <select id="edit-user-status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;display:flex;gap:.5rem;margin-top:.5rem">
+          <button class="btn btn-success" onclick="saveEditUser()" style="flex:1">💾 Simpan Perubahan</button>
+          <button class="btn btn-outline" onclick="closeEditModal()" style="flex:1">Batal</button>
+        </div>
       </div>
     </div>
   </div>
@@ -334,7 +391,7 @@ window.goHomeHandler = function() {
     const c = document.getElementById('toast-container');
     const t = document.createElement('div');
     t.className = 'toast';
-    t.style.borderLeftColor = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+    t.style.borderLeftColor = type === 'danger' ? 'var(--danger)' : (type === 'warn' ? 'var(--gold)' : 'var(--success)');
     t.textContent = msg;
     c.appendChild(t);
     setTimeout(() => t.remove(), 3500);
@@ -345,7 +402,6 @@ window.goHomeHandler = function() {
     if (typeof bcrypt !== 'undefined') {
       return bcrypt.hashSync(String(plain), 10);
     }
-    // fallback sederhana jika CDN gagal
     let h = 0;
     const str = String(plain) + 'dreamos_salt_2026';
     for (let i = 0; i < str.length; i++) {
@@ -376,7 +432,6 @@ window.goHomeHandler = function() {
   document.getElementById('role-badge').textContent = (currentUser.role || '').toUpperCase();
 
   const adminRoles = ['kabag', 'koord', 'dev', 'admin', 'kabag_umum', 'koordinator_umum'];
-  const allRoles = ['staff','guru','security','komandan_regu','janitor_indoor','janitor_outdoor','maintenance','koordinator_umum','kabag_umum','dev','admin'];
   const isAdmin = adminRoles.includes((currentUser.role || '').toLowerCase());
   if (!isAdmin) {
     document.querySelectorAll('.tab-restricted').forEach(el => el.style.display = 'none');
@@ -396,9 +451,11 @@ window.goHomeHandler = function() {
     if (id === 'activity') renderActivity();
     if (id === 'calendar') renderCalendar();
     if (id === 'archive') renderArchive();
-    if (id === 'users') renderUsers();
+    if (id === 'users') {
+      syncUsersFromSupabase(); // Sync dulu sebelum render
+      renderUsers();
+    }
     
-    // Load existing announcements when tab is opened
     if (id === 'announcements') {
       const saved = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
       const s5 = saved.find(x => x.type === 'management')?.msg || '';
@@ -411,7 +468,7 @@ window.goHomeHandler = function() {
     }
   };
 
-  // ===== GLOBAL SEARCH =====
+  // ===== GLOBAL SEARCH (IMPROVED) =====
   let searchTimeout;
   window.runGlobalSearch = function(q) {
     clearTimeout(searchTimeout);
@@ -419,38 +476,95 @@ window.goHomeHandler = function() {
       q = (q || '').toLowerCase().trim();
       const box = document.getElementById('search-results');
       if (!q || q.length < 2) {
-        box.innerHTML = '<p style="color:var(--muted);line-height:1.5">Ketik minimal 2 karakter...</p>';
+        box.innerHTML = '<p style="color:var(--muted);line-height:1.5;padding:1rem;text-align:center">Ketik minimal 2 karakter...</p>';
         return;
       }
+      
       const sources = [
         { key: 'dreamos_dana', type: '💸 Dana', title: d => d.judul || 'Dana', extra: d => 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID') },
         { key: 'dreamos_bookings', type: '📅 Booking', title: d => (d.ruang||'') + ' - ' + (d.nama_peminjam||''), extra: d => (d.tgl||'') + ' ' + (d.jam_mulai||'') },
         { key: 'dreamos_k3_reports', type: '⚠️ K3', title: d => d.judul || d.lokasi || 'K3', extra: d => d.status || '' },
         { key: 'dreamos_maintenance_tasks', type: '🔧 Maint', title: d => d.judul || d.deskripsi || 'Maint', extra: d => d.status || '' },
         { key: 'dreamos_security_logs', type: '🛡️ Security', title: d => d.kejadian || d.lokasi || 'Security', extra: d => d.petugas || '' },
-        { key: 'dreamos_janitor_indoor', type: '🏠 Jan Indoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
+        { key: 'dreamos_janitor_indoor', type: ' Jan Indoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
         { key: 'dreamos_janitor_outdoor', type: '🌳 Jan Outdoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
-        { key: 'dreamos_asset_reports', type: '🏢 Asset', title: d => d.nama_aset || d.judul || 'Asset', extra: d => d.lokasi || '' },
+        { key: 'dreamos_asset_reports', type: ' Asset', title: d => d.nama_aset || d.judul || 'Asset', extra: d => d.lokasi || '' },
         { key: 'dreamos_stok_gudang', type: '📦 Stok', title: d => d.nama_barang || 'Stok', extra: d => 'Qty: ' + (d.quantity||0) },
         { key: 'dreamos_users_db', type: '👤 User', title: d => d.nama || d.email || 'User', extra: d => d.role || '' },
         { key: 'dreamos_file_archive', type: '📂 File', title: d => d.file_name || 'File', extra: d => d.record_type || '' }
       ];
+      
       let hits = [];
       sources.forEach(s => {
-        safeJSON(s.key).forEach(item => {
-          if (JSON.stringify(item).toLowerCase().includes(q)) {
-            hits.push({ type: s.type, title: s.title(item), extra: s.extra(item), status: item.status || '-' });
-          }
-        });
+        try {
+          const data = safeJSON(s.key, []);
+          if (!Array.isArray(data)) return;
+          data.forEach(item => {
+            if (!item || typeof item !== 'object') return;
+            const str = JSON.stringify(item).toLowerCase();
+            if (str.includes(q)) {
+              hits.push({ 
+                type: s.type, 
+                title: s.title(item), 
+                extra: s.extra(item), 
+                status: item.status || '-' 
+              });
+            }
+          });
+        } catch(e) {
+          console.warn('Search error in ' + s.key, e);
+        }
       });
+      
       if (!hits.length) {
         box.innerHTML = '<p style="color:var(--muted);line-height:1.5;padding:1rem;text-align:center">🔍 Tidak ditemukan: "' + q + '"</p>';
         return;
       }
-      box.innerHTML = '<div style="padding:.4rem;background:rgba(0,255,157,.1);border-radius:6px;margin-bottom:.5rem;font-size:.875rem;color:var(--neon)">📊 ' + hits.length + ' hasil</div>' +
+      
+      box.innerHTML = '<div style="padding:.4rem;background:rgba(0,255,157,.1);border-radius:6px;margin-bottom:.5rem;font-size:.875rem;color:var(--neon)">📊 ' + hits.length + ' hasil untuk "' + q + '"</div>' +
         hits.slice(0, 20).map(h => '<div style="padding:.6rem 0;border-bottom:1px solid var(--border)"><span class="badge badge-pending" style="margin-right:.4rem">' + h.type + '</span><strong>' + h.title + '</strong><div style="font-size:.875rem;color:var(--muted);line-height:1.5">' + h.extra + '</div></div>').join('');
-    }, 200);
+    }, 300);
   };
+
+  // ===== SYNC USERS FROM SUPABASE =====
+  async function syncUsersFromSupabase() {
+    if (!window.supabaseClient) return;
+    try {
+      const { data: cloudUsers, error } = await window.supabaseClient
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (cloudUsers && cloudUsers.length > 0) {
+        // Merge dengan local (prioritas cloud)
+        const localUsers = safeJSON('dreamos_users_db', []);
+        const cloudMap = new Map(cloudUsers.map(u => [u.email, u]));
+        
+        // Tambah user dari cloud yang belum ada di local
+        cloudUsers.forEach(cu => {
+          const existing = localUsers.find(lu => lu.email === cu.email);
+          if (!existing) {
+            localUsers.push({
+              id: cu.id,
+              nama: cu.nama || cu.name || '-',
+              email: cu.email,
+              role: cu.role || 'staff',
+              status: cu.status || 'active',
+              source: 'supabase',
+              created_at: cu.created_at
+            });
+          }
+        });
+        
+        saveJSON('dreamos_users_db', localUsers);
+        showToast('🔄 User disinkronkan dari cloud (' + cloudUsers.length + ' user)', 'success');
+      }
+    } catch(e) {
+      console.warn('Sync users failed:', e);
+    }
+  }
 
   // ===== COLLECT TASKS =====
   function collectTasks() {
@@ -495,7 +609,7 @@ window.goHomeHandler = function() {
       priority: 'high', raw: k
     }));
 
-    // 🔧 Maintenance
+    //  Maintenance
     push(safeJSON('dreamos_maintenance_tasks', []), m => ({
       id: m.id, type: 'maintenance',
       title: m.judul || m.deskripsi || 'Maintenance',
@@ -514,7 +628,7 @@ window.goHomeHandler = function() {
       raw: s
     }));
 
-    // 🏠🌳 Janitor (handle array ATAU object per tanggal)
+    // 🏠🌳 Janitor
     function flattenJanitor(storeKey, type, label) {
       const raw = safeJSON(storeKey, null);
       const items = [];
@@ -524,46 +638,6 @@ window.goHomeHandler = function() {
       } else if (raw && typeof raw === 'object') {
         Object.entries(raw).forEach(([dateKey, dayData]) => {
           if (!dayData || typeof dayData !== 'object') return;
-
-          if (dayData.shifts && typeof dayData.shifts === 'object') {
-            Object.entries(dayData.shifts).forEach(([shiftName, shiftData]) => {
-              if (!shiftData || typeof shiftData !== 'object') return;
-              Object.entries(shiftData).forEach(([area, done]) => {
-                if (done !== null && typeof done === 'object') {
-                  Object.entries(done).forEach(([sub, val]) => {
-                    items.push({
-                      id: [type, dateKey, shiftName, area, sub].join('_'),
-                      lokasi: area + '/' + sub + ' (' + shiftName + ')',
-                      tanggal: dateKey,
-                      status: val ? 'selesai' : 'pending',
-                      catatan: dateKey + ' · ' + shiftName
-                    });
-                  });
-                } else {
-                  items.push({
-                    id: [type, dateKey, shiftName, area].join('_'),
-                    lokasi: String(area) + ' (' + shiftName + ')',
-                    tanggal: dateKey,
-                    status: done ? 'selesai' : 'pending',
-                    catatan: dateKey + ' · ' + shiftName
-                  });
-                }
-              });
-            });
-          }
-
-          if (dayData.weekly && typeof dayData.weekly === 'object') {
-            Object.entries(dayData.weekly).forEach(([task, done]) => {
-              items.push({
-                id: [type, dateKey, 'weekly', task].join('_'),
-                lokasi: task,
-                tanggal: dateKey,
-                status: done ? 'selesai' : 'pending',
-                catatan: 'Mingguan · ' + dateKey
-              });
-            });
-          }
-
           if (dayData.id || dayData.lokasi || dayData.nama || dayData.area) {
             items.push(dayData);
           }
@@ -589,7 +663,7 @@ window.goHomeHandler = function() {
     flattenJanitor('dreamos_janitor_indoor', 'janitor_indoor', 'Janitor Indoor');
     flattenJanitor('dreamos_janitor_outdoor', 'janitor_outdoor', 'Janitor Outdoor');
 
-    // 🏢 Asset
+    //  Asset
     push(safeJSON('dreamos_asset_reports', []), a => ({
       id: a.id, type: 'asset',
       title: a.nama_aset || a.judul || 'Asset Report',
@@ -599,7 +673,7 @@ window.goHomeHandler = function() {
       raw: a
     }));
 
-    // 📦 Stok (FIX: cek .length, bukan truthy ||)
+    // 📦 Stok
     const stokA = safeJSON('dreamos_stok', []);
     const stokB = safeJSON('dreamos_stok_gudang', []);
     const stokSource = (Array.isArray(stokA) && stokA.length > 0) ? stokA
@@ -682,29 +756,6 @@ window.goHomeHandler = function() {
     if (reason) item.reject_reason = reason;
     saveJSON(key, list);
 
-    if (window.supabaseClient) {
-      const tableMap = {
-        dana: 'dana_requests',
-        booking: 'bookings',
-        k3: 'k3_reports',
-        maintenance: 'maintenance_requests',
-        security: 'security_logs',
-        janitor_indoor: 'janitorial_requests',
-        janitor_outdoor: 'janitorial_requests',
-        asset: 'asset_reports',
-        stok: 'inventory'
-      };
-      const table = tableMap[type];
-      if (table) {
-        window.supabaseClient.from(table).update({
-          status: item.status,
-          approved_by: item.approved_by,
-          approved_at: item.approved_at,
-          reject_reason: item.reject_reason || null
-        }).eq('id', id).then(() => {}).catch(e => console.warn('Supabase sync failed', e));
-      }
-    }
-
     logActivity(isApprove ? 'APPROVE' : 'REJECT', type.toUpperCase() + ': ' + (item.judul || item.ruang || id));
     showToast(isApprove ? '✅ Disetujui' : '❌ Ditolak');
     refreshAll();
@@ -744,7 +795,7 @@ window.goHomeHandler = function() {
     ).join('');
   };
 
-  // ===== CALENDAR (real month + year) =====
+  // ===== CALENDAR =====
   let calDate = new Date();
 
   function initCalSelectors() {
@@ -782,10 +833,8 @@ window.goHomeHandler = function() {
   function parseDateStr(str) {
     if (!str) return null;
     const s = String(str).trim();
-    // YYYY-MM-DD
     let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
     if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
-    // DD/MM/YYYY
     if (s.includes('/')) {
       const p = s.split('/');
       if (p.length === 3) return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
@@ -801,7 +850,6 @@ window.goHomeHandler = function() {
     const grid = document.getElementById('cal-grid');
     const list = document.getElementById('cal-list');
 
-    // Load events
     const events = [];
     const sources = [
       { key: 'dreamos_bookings', color: '#0ea5e9', label: 'Booking', field: 'ruang' },
@@ -825,9 +873,8 @@ window.goHomeHandler = function() {
       });
     });
 
-    // Build grid
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Min
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Senin = 0
+    const firstDay = new Date(year, month, 1).getDay();
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
 
@@ -848,7 +895,6 @@ window.goHomeHandler = function() {
     }
     grid.innerHTML = html;
 
-    // List view
     if (!events.length) {
       list.innerHTML = '<p style="color:var(--muted);line-height:1.5;text-align:center;padding:1rem">Tidak ada jadwal di bulan ini.</p>';
     } else {
@@ -863,7 +909,7 @@ window.goHomeHandler = function() {
     }
   };
 
-  // ===== ARCHIVE + SUPABASE STORAGE =====
+  // ===== ARCHIVE =====
   window.uploadArchiveFile = async function(input) {
     const file = input.files[0];
     if (!file) return;
@@ -894,7 +940,6 @@ window.goHomeHandler = function() {
         const { data: urlData } = window.supabaseClient.storage.from(bucket).getPublicUrl(fileName);
         publicUrl = urlData.publicUrl;
 
-        // simpan metadata ke tabel
         await window.supabaseClient.from('file_attachments').insert({
           record_type: type,
           record_id: 'manual_' + Date.now(),
@@ -906,7 +951,6 @@ window.goHomeHandler = function() {
         });
       }
 
-      // local backup
       const meta = {
         id: 'file_' + Date.now(),
         record_type: type,
@@ -927,7 +971,7 @@ window.goHomeHandler = function() {
       renderArchive();
     } catch (e) {
       console.error(e);
-      showToast('⛔ Gagal upload: ' + (e.message || 'cek koneksi / permission Storage'), 'danger');
+      showToast(' Gagal upload: ' + (e.message || 'cek koneksi / permission Storage'), 'danger');
     }
   };
 
@@ -936,7 +980,6 @@ window.goHomeHandler = function() {
     const typeF = document.getElementById('arch-type')?.value || 'all';
     let files = safeJSON('dreamos_file_archive', []);
 
-    // coba ambil dari Supabase juga
     if (window.supabaseClient) {
       try {
         const { data, error } = await window.supabaseClient
@@ -945,7 +988,6 @@ window.goHomeHandler = function() {
           .order('created_at', { ascending: false })
           .limit(50);
         if (!error && data && data.length) {
-          // merge (hindari duplikat sederhana)
           const localIds = new Set(files.map(f => f.id));
           data.forEach(d => {
             if (!localIds.has(d.id)) files.push(d);
@@ -969,7 +1011,7 @@ window.goHomeHandler = function() {
           ? '<a href="' + f.file_url + '" target="_blank" style="color:var(--accent)">🖼️ Preview</a>'
           : '<a href="' + f.file_url + '" target="_blank" style="color:var(--accent)">📄 Buka</a>')
         : '-';
-      const dl = f.file_url ? ' <a href="' + f.file_url + '" download style="color:#10b981">⬇️</a>' : '';
+      const dl = f.file_url ? ' <a href="' + f.file_url + '" download style="color:#10b981">️</a>' : '';
       return '<tr>' +
         '<td>' + (f.created_at ? new Date(f.created_at).toLocaleDateString('id-ID') : '-') + '</td>' +
         '<td><span class="badge badge-pending">' + (f.record_type || '-').toUpperCase() + '</span></td>' +
@@ -980,7 +1022,7 @@ window.goHomeHandler = function() {
     }).join('');
   };
 
-  // ===== USERS (bcrypt) =====
+  // ===== USERS MANAGEMENT (WITH EDIT) =====
   window.renderUsers = function() {
     const users = safeJSON('dreamos_users_db', []);
     const tbody = document.getElementById('users-body');
@@ -991,9 +1033,71 @@ window.goHomeHandler = function() {
     tbody.innerHTML = users.map((u, i) =>
       '<tr><td>' + (u.nama || '-') + '</td><td>' + (u.email || '-') + '</td>' +
       '<td><span class="badge badge-pending">' + (u.role || 'staff') + '</span></td>' +
-      '<td><span class="badge badge-approved">' + (u.status || 'Active') + '</span></td>' +
-      '<td><button class="btn btn-danger btn-sm" onclick="deleteUser(' + i + ')">🗑️</button></td></tr>'
+      '<td><span class="badge badge-approved">' + (u.status || 'active') + '</span></td>' +
+      '<td style="display:flex;gap:.3rem">' +
+      '<button class="btn btn-primary btn-sm" onclick="editUser(' + i + ')" title="Edit">✏️</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteUser(' + i + ')" title="Hapus">️</button>' +
+      '</td></tr>'
     ).join('');
+  };
+
+  window.openEditModal = function(index) {
+    const users = safeJSON('dreamos_users_db', []);
+    const user = users[index];
+    if (!user) return;
+    
+    document.getElementById('edit-user-index').value = index;
+    document.getElementById('edit-user-nama').value = user.nama || '';
+    document.getElementById('edit-user-email').value = user.email || '';
+    document.getElementById('edit-user-role').value = user.role || 'staff';
+    document.getElementById('edit-user-status').value = user.status || 'active';
+    
+    document.getElementById('edit-user-modal').classList.add('show');
+  };
+
+  window.closeEditModal = function() {
+    document.getElementById('edit-user-modal').classList.remove('show');
+  };
+
+  window.editUser = function(index) {
+    window.openEditModal(index);
+  };
+
+  window.saveEditUser = async function() {
+    const index = parseInt(document.getElementById('edit-user-index').value);
+    const nama = document.getElementById('edit-user-nama').value.trim();
+    const email = document.getElementById('edit-user-email').value.trim().toLowerCase();
+    const role = document.getElementById('edit-user-role').value;
+    const status = document.getElementById('edit-user-status').value;
+    
+    if (!nama || !email) return showToast('Nama dan Email wajib diisi!', 'danger');
+    
+    const users = safeJSON('dreamos_users_db', []);
+    if (!users[index]) return showToast('User tidak ditemukan', 'danger');
+    
+    // Update local
+    users[index].nama = nama;
+    users[index].email = email;
+    users[index].role = role;
+    users[index].status = status;
+    users[index].updated_at = new Date().toISOString();
+    saveJSON('dreamos_users_db', users);
+    
+    // Update ke Supabase jika ada
+    if (window.supabaseClient && users[index].id) {
+      try {
+        await window.supabaseClient.from('users')
+          .update({ nama, email, role, status, updated_at: users[index].updated_at })
+          .eq('id', users[index].id);
+      } catch(e) {
+        console.warn('Failed to update user in Supabase:', e);
+      }
+    }
+    
+    closeEditModal();
+    renderUsers();
+    logActivity('EDIT_USER', 'Edit user: ' + nama + ' (' + email + ')');
+    showToast('✅ User berhasil diubah', 'success');
   };
 
   window.createNewUser = async function() {
@@ -1002,14 +1106,13 @@ window.goHomeHandler = function() {
     const email = document.getElementById('new-user-email').value.trim().toLowerCase();
     const role  = document.getElementById('new-user-role').value;
     const pass  = document.getElementById('new-user-pass').value;
-    const divisi = 'umum'; // form CC belum punya field divisi; default aman
+    const divisi = 'umum';
     if (!nama || !email || !pass) return showToast('Nama, Email, Password wajib!', 'danger');
     if (pass.length < 6) return showToast('Password minimal 6 karakter', 'danger');
 
     const users = safeJSON('dreamos_users_db', []);
     if (users.find(u => (u.email||'').toLowerCase() === email)) return showToast('Email sudah terdaftar', 'danger');
 
-    // === PANGGIL EDGE FUNCTION: bikin user BENARAN di Supabase Auth ===
     if (!window.supabaseClient || !window.supabaseClient.functions) {
       return showToast('⛔ Koneksi Auth tidak tersedia — user tidak dibuat.', 'danger');
     }
@@ -1024,15 +1127,12 @@ window.goHomeHandler = function() {
     }
     if (res.error) return showToast('⛔ Edge error: ' + (res.error.message || res.error), 'danger');
     const payload = res.data || {};
-    if (payload.error) return showToast('⛔ ' + payload.error, 'danger');
+    if (payload.error) return showToast(' ' + payload.error, 'danger');
 
-    // ambil Auth user id (defensif: berbagai bentuk response)
     const authId = payload.id || payload.user_id || payload.userId
       || (payload.user && (payload.user.id || payload.user.user_id))
       || (payload.data && (payload.data.id || payload.data.user_id)) || null;
 
-    // === MIRROR ke public.users (TANPA password) — try/catch terpisah ===
-    //     Auth udah jadi duluan; kalau mirror gagal, user TETAP bisa login.
     try {
       const row = { email: email, nama: nama, role: role, divisi: divisi,
                     status: 'active', source: 'edge-create', updated_at: new Date().toISOString() };
@@ -1040,10 +1140,9 @@ window.goHomeHandler = function() {
       await window.supabaseClient.from('users').upsert(row, { onConflict: 'email' });
     } catch (e) {
       console.warn('⚠️ Auth OK, mirror profil gagal:', e.message || e);
-      showToast('⚠️ Akun Auth jadi, tapi profil belum sync. Buka Users → refresh.', 'danger');
+      showToast('⚠️ Akun Auth jadi, tapi profil belum sync. Buka Users → refresh.', 'warn');
     }
 
-    // === LOCAL cache (TANPA password_hash — jangan simpen hash di client) ===
     users.push({ id: authId || ('usr_' + Date.now()), email: email, nama: nama,
                  role: role, divisi: divisi, status: 'active', source: 'edge-create',
                  created_at: new Date().toISOString() });
@@ -1118,7 +1217,7 @@ window.goHomeHandler = function() {
 
     document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status || '') === 'pending').length;
     document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status || '') === 'pending').length;
-    var __woOpen = safeJSON('dreamos_maintenance_tasks').filter(m => !['selesai','approved','disetujui'].includes((m.status||'').toLowerCase())).length; var __ma = safeJSON('dreamos_maint_assets', []), __mp = safeJSON('dreamos_maint_pm', []); var __eqOd = __ma.filter(function(m){ return __mp.some(function(p){ return p.assetId===m.id && p.status!=='hold' && (new Date(p.nextDue)-new Date())<0; }); }).length; document.getElementById('op-maint').textContent = __woOpen + (__eqOd ? (' (+'+__eqOd+'⚠)') : '');
+    var __woOpen = safeJSON('dreamos_maintenance_tasks').filter(m => !['selesai','approved','disetujui'].includes((m.status||'').toLowerCase())).length; var __ma = safeJSON('dreamos_maint_assets', []), __mp = safeJSON('dreamos_maint_pm', []); var __eqOd = __ma.filter(function(m){ return __mp.some(function(p){ return p.assetId===m.id && p.status!=='hold' && (new Date(p.nextDue)-new Date())<0; }); }).length; document.getElementById('op-maint').textContent = __woOpen + (__eqOd ? (' (+'+__eqOd+')') : '');
     document.getElementById('op-dana').textContent = danaPending.length;
   }
 
@@ -1129,40 +1228,22 @@ window.goHomeHandler = function() {
     renderApprovals();
     renderActivity();
     renderChart();
-    if (isAdmin) renderUsers();
+    if (isAdmin) {
+      syncUsersFromSupabase();
+      renderUsers();
+    }
     if (!forceSync) showToast('Data diperbarui');
   };
 
-  // ===== INIT: ENTERPRISE AUTO-RECOVERY =====
-  async function recoverFromCloud() {
-    if (!window.supabaseClient) return;
-    try {
-      // 1. Recover Users
-      const localUsers = safeJSON('dreamos_users_db', []);
-      if (localUsers.length === 0) {
-        const { data: cloudUsers } = await window.supabaseClient.from('users').select('*');
-        if (cloudUsers) { saveJSON('dreamos_users_db', cloudUsers); console.log('🔄 Users recovered from cloud'); }
-      }
-      // 2. Recover Bookings
-      const localBookings = safeJSON('dreamos_bookings', []);
-      if (localBookings.length === 0) {
-        const { data: cloudBookings } = await window.supabaseClient.from('bookings').select('*').order('created_at', {ascending:false}).limit(200);
-        if (cloudBookings) { saveJSON('dreamos_bookings', cloudBookings); console.log('🔄 Bookings recovered from cloud'); }
-      }
-    } catch(e) { console.warn('Recovery failed:', e); }
-  }
-
-
   // ===== INIT =====
-  document.getElementById('sync-status').textContent = window.supabaseClient ? '🟢 Online' : '🟡 Local';
-  recoverFromCloud(); // Jalankan recovery otomatis saat load
-  document.getElementById('sync-status').style.color = window.supabaseClient ? '#10b981' : '#f59e0b';
-
+  document.getElementById('sync-status').textContent = window.supabaseClient ? ' Online' : '🟡 Local';
+  
   initCalSelectors();
   updateMetrics();
   renderChart();
-  logActivity('LOGIN_CC', 'Membuka Command Center v5.2');
+  logActivity('LOGIN_CC', 'Membuka Command Center v5.3');
   setInterval(updateMetrics, 30000);
+  
   // ===== ANNOUNCEMENTS MANAGER =====
   window.saveAnnouncements = async function() {
     const statusEl = document.getElementById('slide-save-status');
@@ -1187,133 +1268,7 @@ window.goHomeHandler = function() {
     setTimeout(() => { statusEl.textContent = ''; }, 3000);
   };
 
-  // =====  SMART PRINT & SHARE + QR VALIDATION (ISO 27001) =====
-  window.cetakDokumen = function(type, id) {
-    let data, title, docType;
-    
-    if (type === 'booking') {
-      const list = safeJSON('dreamos_bookings', []);
-      data = list.find(x => x.id === id);
-      title = 'FORM PERSETUJUAN BOOKING RUANGAN';
-      docType = 'Booking';
-    } else if (type === 'k3') {
-      const list = safeJSON('dreamos_k3_reports', []);
-      data = list.find(x => x.id === id);
-      title = 'LAPORAN KESELAMATAN & KESEHATAN KERJA (K3)';
-      docType = 'K3 Report';
-    }
-    
-    if (!data) return alert('Data tidak ditemukan!');
-
-    const statusColor = data.status === 'approved' ? '#10b981' : (data.status === 'rejected' ? '#ef4444' : '#f59e0b');
-    const statusText = data.status === 'approved' ? 'DISETUJUI' : (data.status === 'rejected' ? 'DITOLAK' : 'PENDING');
-    
-    // 🔐 DATA QR CODE (ISO 27001 Audit Trail)
-    const qrData = 'DREAM-OS-VERIFY | ID: ' + data.id + ' | TYPE: ' + type.toUpperCase() + ' | STAT: ' + (data.status || 'pending').toUpperCase() + ' | APPR: ' + (data.approved_by || 'SYSTEM') + ' | DATE: ' + new Date().toISOString().split('T')[0];
-    
-    let printContent = '<!DOCTYPE html><html><head><title>Cetak ' + docType + ' - ' + data.id + '</title>' +
-      '<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"><\/script>' +
-      '<style>' +
-      'body{font-family:"Segoe UI",Arial,sans-serif;padding:20px;max-width:800px;margin:0 auto;color:#333}' +
-      '.header{text-align:center;border-bottom:3px solid #00ff9d;padding-bottom:15px;margin-bottom:20px}' +
-      '.header h1{margin:0;color:#0a0e27;font-size:22px}' +
-      '.header p{margin:5px 0 0;color:#666;font-size:13px}' +
-      '.bismillah{text-align:center;font-size:18px;margin-bottom:20px;color:#00ff9d;font-family:serif}' +
-      '.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}' +
-      '.info-item{background:#f8fafc;padding:10px;border-radius:6px;border-left:4px solid #0ea5e9}' +
-      '.info-item.full{grid-column:1/-1}' +
-      '.label{font-size:11px;color:#64748b;text-transform:uppercase;font-weight:bold;margin-bottom:3px}' +
-      '.value{font-size:14px;color:#0f172a;font-weight:600}' +
-      '.status-badge{display:inline-block;padding:5px 12px;border-radius:20px;color:#fff;font-weight:bold;font-size:13px;background:' + statusColor + '}' +
-      '.footer{margin-top:30px;border-top:2px solid #e2e8f0;padding-top:20px;display:flex;justify-content:space-between;align-items:flex-end}' +
-      '.signature{text-align:center;width:200px}' +
-      '.signature-line{border-bottom:1px solid #333;margin-bottom:5px;height:40px}' +
-      '.qr-container{text-align:right}' +
-      '#qr-code{display:inline-block;padding:4px;border:1px solid #e2e8f0;border-radius:4px}' +
-      '.qr-label{font-size:9px;color:#64748b;font-weight:bold;margin-top:4px}' +
-      '.watermark{position:fixed;bottom:10px;left:20px;font-size:10px;color:#cbd5e1;font-weight:bold}' +
-      '@media print{body{padding:0}.no-print{display:none}.info-item{border:1px solid #ddd}}' +
-      '</style></head><body>' +
-      '<div class="no-print" style="text-align:center;margin-bottom:20px">' +
-      '<button onclick="window.print()" style="padding:10px 20px;background:#00ff9d;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:15px">🖨️ Cetak / Simpan PDF</button>' +
-      '<button onclick="window.close()" style="padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:15px;margin-left:10px">✕ Tutup</button>' +
-      '</div>' +
-      '<div class="header">' +
-      '<img src="' + (window.location.origin + (window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/') + 'assets/logo-sultan.png') + '" alt="Dream OS" style="width:60px;height:60px;border-radius:12px;margin-bottom:8px;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">' +
-      '<div style="display:none;font-size:40px;margin-bottom:8px;">🏢</div>' +
-      '<h1>DREAM OS • COMMAND CENTER</h1>' +
-      '<p style="font-size:11px;color:#64748b;margin-top:4px;">Enterprise Facility Management System • v1.0 Beta</p>' +
-      '</div>' +
-      '<div class="bismillah" style="font-size:20px;margin-bottom:6px;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
-      '<div style="text-align:center;font-size:13px;color:#0ea5e9;margin-bottom:20px;font-family:serif;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
-      '<h2 style="text-align:center;margin-bottom:25px;font-size:18px">' + title + '</h2>' +
-      '<div class="info-grid">' +
-      '<div class="info-item"><div class="label">No. Referensi</div><div class="value">' + data.id + '</div></div>' +
-      '<div class="info-item"><div class="label">Status</div><div class="value"><span class="status-badge">' + statusText + '</span></div></div>';
-    
-    if (type === 'booking') {
-      printContent += '<div class="info-item"><div class="label">Ruangan</div><div class="value">' + (data.ruang || '-') + '</div></div>' +
-      '<div class="info-item"><div class="label">Nama Pemohon</div><div class="value">' + (data.nama_peminjam || '-') + '</div></div>' +
-      '<div class="info-item"><div class="label">Tanggal</div><div class="value">' + (data.tgl || '-') + '</div></div>' +
-      '<div class="info-item"><div class="label">Waktu</div><div class="value">' + (data.jam_mulai || '-') + ' s/d ' + (data.jam_selesai || '-') + '</div></div>' +
-      '<div class="info-item full"><div class="label">Keperluan</div><div class="value">' + (data.keperluan || '-') + '</div></div>' +
-        '<div class=\"info-item full\"><div class=\"label\">Sarana / Ruangan</div><div class=\"value\" style=\"color:#0ea5e9;font-weight:700;\">' + (data.ruang || '-') + '</div></div>' +
-        '<div class=\"info-item full\"><div class=\"label\">Peralatan yang Dibutuhkan</div><div class=\"value\" style=\"color:#8b5cf6;\">' + (data.sarana_alat || 'Tidak ada') + '</div></div>';
-    } else {
-      printContent += '<div class="info-item"><div class="label">Nama Pelapor</div><div class="value">' + (data.nama_pelapor || data.pelapor_nama || '-') + '</div></div>' +
-      '<div class="info-item"><div class="label">Kategori</div><div class="value">' + (data.kategori || '-') + '</div></div>' +
-      '<div class="info-item full"><div class="label">Lokasi Kejadian</div><div class="value">' + (data.lokasi || '-') + '</div></div>' +
-      '<div class="info-item full"><div class="label">Deskripsi Detail</div><div class="value">' + (data.deskripsi || '-') + '</div></div>';
-    }
-    
-    printContent += '<div class="info-item"><div class="label">Dibuat Pada</div><div class="value">' + (data.created_at ? new Date(data.created_at).toLocaleString('id-ID') : '-') + '</div></div>' +
-      '<div class="info-item"><div class="label">Disetujui Oleh</div><div class="value">' + (data.approved_by || 'Belum ada') + '</div></div>' +
-      '</div>' +
-      '<div class="footer">' +
-      '<div class="signature"><div class="signature-line"></div><div style="font-weight:bold">' + (data.approved_by || 'Admin Command Center') + '</div><div style="font-size:11px;color:#64748b">' + (data.approved_at ? new Date(data.approved_at).toLocaleDateString('id-ID') : '') + '</div></div>' +
-      '<div class="qr-container"><div id="qr-code"></div><div class="qr-label">SCAN UNTUK VERIFIKASI<br>ISO 27001 AUDIT TRAIL</div></div>' +
-      '</div>' +
-      '<div class="watermark">Dream OS v1.0 Beta • The Power Soul Of Shalawat</div>' +
-      '<script>window.onload=function(){try{var qr=qrcode(0,"L");qr.addData("' + qrData.replace(/"/g, '\\"') + '");qr.make();document.getElementById("qr-code").innerHTML=qr.createImgTag(3,2)}catch(e){document.getElementById("qr-code").innerHTML="<span style=color:red;font-size:10px>QR Error</span>"}setTimeout(function(){window.print()},800)}<\/script>' +
-      '</body></html>';
-
-    let printWindow;
-    try {
-      printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) throw new Error('Popup blocked');
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-    } catch(e) {
-      // Fallback: buka di tab baru tanpa popup
-      const blob = new Blob([printContent], {type: 'text/html'});
-      const url = URL.createObjectURL(blob);
-      window.location.href = url;
-    }
-  };
-
-  // =====  PDF LIBS ON-DEMAND LOADER (CSP-SAFE, jsdelivr only) =====
-  function __loadScript(src) {
-    return new Promise(function(resolve, reject) {
-      var s = document.createElement('script');
-      s.src = src; s.async = true;
-      s.onload = function(){ resolve(true); };
-      s.onerror = function(){ console.warn('Gagal muat lib:', src); resolve(false); };
-      document.head.appendChild(s);
-    });
-  }
-  function ensurePdfLibs() {
-    if (window.__pdfLibsP) return window.__pdfLibsP;
-    window.__pdfLibsP = (async function() {
-      var urls = [];
-      if (typeof qrcode === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js');
-      if (typeof html2canvas === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
-      if (!(window.jspdf && window.jspdf.jsPDF) && typeof window.jsPDF === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
-      for (var i = 0; i < urls.length; i++) { try { await __loadScript(urls[i]); } catch(e) {} }
-    })();
-    return window.__pdfLibsP;
-  }
-
-  // ===== 1-CLICK STEALTH PDF SHARE (FIXED) =====
+  // ===== PDF SHARE =====
   window.shareDirectPDF = async function(evt, type, id) {
     var btn = evt ? (evt.currentTarget || evt.target) : null;
     var origHTML = btn ? btn.innerHTML : '';
@@ -1338,9 +1293,9 @@ window.goHomeHandler = function() {
       var logoUrl = window.location.origin + base + 'assets/logo-sultan.png';
 
       await ensurePdfLibs();
-      if (typeof html2canvas === "undefined") throw new Error("Library html2canvas gagal dimuat. Cek koneksi internet / refresh halaman.");
-      if (!(window.jspdf && window.jspdf.jsPDF) && typeof window.jsPDF === "undefined") throw new Error("Library jsPDF gagal dimuat. Cek koneksi internet / refresh halaman.");
-      // Container rahasia (off-screen)
+      if (typeof html2canvas === "undefined") throw new Error("Library html2canvas gagal dimuat.");
+      if (!(window.jspdf && window.jspdf.jsPDF) && typeof window.jsPDF === "undefined") throw new Error("Library jsPDF gagal dimuat.");
+      
       var c = document.createElement('div');
       c.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;padding:40px;font-family:"Segoe UI",Arial,sans-serif;color:#333;';
 
@@ -1378,7 +1333,6 @@ window.goHomeHandler = function() {
 
       document.body.appendChild(c);
 
-      // Render QR
       try {
         var qr = qrcode(0, 'L');
         qr.addData(qrData);
@@ -1387,10 +1341,8 @@ window.goHomeHandler = function() {
         if (qel) qel.innerHTML = qr.createImgTag(3, 2);
       } catch(e) { console.warn('QR render skip:', e); }
 
-      // Tunggu QR + font render
       await new Promise(function(r){ setTimeout(r, 600); });
 
-      // Capture → PDF
       var canvas = await html2canvas(c, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
       var imgData = canvas.toDataURL('image/jpeg', 0.95);
       var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
@@ -1414,7 +1366,7 @@ window.goHomeHandler = function() {
         if (btn) btn.innerHTML = '✅ Terkirim!';
       } else {
         pdf.save(fname);
-        if (btn) btn.innerHTML = '⬇️ PDF Diunduh';
+        if (btn) btn.innerHTML = '️ PDF Diunduh';
         alert('PDF diunduh! Lampirkan manual ke WhatsApp.');
       }
     } catch(err) {
@@ -1425,6 +1377,27 @@ window.goHomeHandler = function() {
       setTimeout(function(){ if (btn) { btn.innerHTML = origHTML || '📤 Share PDF'; btn.disabled = false; } }, 2500);
     }
   };
+
+  function __loadScript(src) {
+    return new Promise(function(resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src; s.async = true;
+      s.onload = function(){ resolve(true); };
+      s.onerror = function(){ console.warn('Gagal muat lib:', src); resolve(false); };
+      document.head.appendChild(s);
+    });
+  }
+  function ensurePdfLibs() {
+    if (window.__pdfLibsP) return window.__pdfLibsP;
+    window.__pdfLibsP = (async function() {
+      var urls = [];
+      if (typeof qrcode === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js');
+      if (typeof html2canvas === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+      if (!(window.jspdf && window.jspdf.jsPDF) && typeof window.jsPDF === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+      for (var i = 0; i < urls.length; i++) { try { await __loadScript(urls[i]); } catch(e) {} }
+    })();
+    return window.__pdfLibsP;
+  }
 
 })();
 </script>
