@@ -235,12 +235,74 @@
     .toast{display:flex; align-items:center; gap:.55rem; background:rgba(7,11,28,.96); border:1px solid var(--line); border-left:4px solid var(--neon); color:var(--txt); padding:.7rem .9rem; border-radius:11px; font-size:.82rem; box-shadow:0 12px 30px rgba(0,0,0,.5); animation:toastIn .3s ease; backdrop-filter:blur(10px);}
     .toast.err{border-left-color:var(--warn);} .toast.warn{border-left-color:var(--gold);}
     @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.05ms !important;} }
+  
+    /* ===== bridge modals (crafted, isolated) ===== */
+    .brg-ov{position:fixed; inset:0; z-index:1400; display:none; align-items:center; justify-content:center; padding:1rem;
+      background:radial-gradient(600px 400px at 50% 30%, rgba(0,255,157,.06), transparent 70%), rgba(3,5,10,.82); backdrop-filter:blur(6px);}
+    .brg-ov.show{display:flex;}
+    .brg-mdl{position:relative; width:100%; max-width:440px; max-height:90vh; overflow:auto; border-radius:20px; padding:1.3rem 1.3rem 1.2rem;
+      background:linear-gradient(180deg, rgba(16,22,40,.98), rgba(9,13,26,.98)); border:1px solid var(--line);
+      box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05); animation:brgPop .26s cubic-bezier(.2,.8,.2,1);}
+    .brg-mdl::before{content:""; position:absolute; left:1.3rem; right:1.3rem; top:0; height:2px; border-radius:2px;
+      background:linear-gradient(90deg, transparent, var(--neon), var(--teal), transparent); opacity:.8;}
+    @keyframes brgPop{from{opacity:0; transform:translateY(14px) scale(.97);}to{opacity:1; transform:none;}}
+    .brg-mdl h3{font-family:var(--disp); margin:.2rem 0 .25rem; color:#fff; font-size:1.1rem; letter-spacing:.3px;}
+    .brg-sub{margin:0 0 1rem; font-size:.78rem; color:var(--mut); line-height:1.5;}
+    .brg-sub b{color:var(--neon);}
+    .brg-fld{margin-bottom:.7rem;}
+    .brg-fld label{display:block; font-size:.64rem; letter-spacing:.9px; text-transform:uppercase; color:var(--mut); margin-bottom:.32rem; font-family:var(--disp);}
+    .brg-fld input,.brg-fld select{width:100%; padding:.62rem .72rem; background:rgba(0,0,0,.42); border:1px solid var(--line2);
+      border-radius:10px; color:var(--txt); font-size:.86rem; font-family:var(--body); outline:none; transition:border-color .2s, box-shadow .2s;}
+    .brg-fld input:focus,.brg-fld select:focus{border-color:var(--neon); box-shadow:0 0 0 3px rgba(0,255,157,.14);}
+    .brg-row{display:grid; grid-template-columns:1fr 1fr; gap:.6rem;}
+    .brg-actions{display:flex; gap:.5rem; margin-top:.3rem;}
+    .brg-btn{min-height:42px; padding:.55rem .85rem; border:none; border-radius:11px; font-weight:700; font-size:.76rem; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; gap:.35rem; font-family:var(--disp); letter-spacing:.3px;
+      transition:transform .14s, box-shadow .2s, filter .2s;}
+    .brg-btn:active{transform:scale(.95);}
+    .brg-neon{background:linear-gradient(135deg, var(--neon), var(--teal)); color:#04130d;}
+    .brg-neon:hover{box-shadow:0 10px 24px rgba(0,255,157,.32); transform:translateY(-2px);}
+    .brg-warn{background:linear-gradient(135deg, var(--gold), #f97316); color:#1a1205;}
+    .brg-warn:hover{box-shadow:0 10px 24px rgba(245,158,11,.3); transform:translateY(-2px);}
+    .brg-ghost{background:rgba(255,255,255,.05); color:var(--txt); border:1px solid var(--line2);}
+    .brg-ghost:hover{background:rgba(0,255,157,.1); border-color:var(--neon);}
+    .brg-x{position:absolute; top:.8rem; right:.9rem; background:transparent; border:none; color:var(--mut2); font-size:1.2rem; cursor:pointer; line-height:1; transition:color .2s;}
+    .brg-x:hover{color:var(--warn);}
+    .asset .lnk{font-family:var(--mono); font-size:.66rem; color:var(--neon); background:rgba(0,255,157,.08); border:1px solid var(--line); padding:.15rem .45rem; border-radius:999px;}
+
   </style>
 </head>
 <body>
 <div class="cmms">
   <button class="back-btn" onclick="window.goHome()">← HOME</button>
   <div id="cmms-toast"></div>
+
+  <!-- ===== bridge modals ===== -->
+  <div class="brg-ov" id="ov-eq">
+    <div class="brg-mdl">
+      <button class="brg-x" onclick="closeBrg('ov-eq')">✕</button>
+      <h3>＋ Indukkan Peralatan</h3>
+      <p class="brg-sub" id="eq-parent">—</p>
+      <div class="brg-fld"><label>Nama Peralatan *</label><input id="eq-name" placeholder="Cth: AC Split 1 PK / Panel Lt.1"></div>
+      <div class="brg-row">
+        <div class="brg-fld"><label>Kategori</label><select id="eq-cat"><option value="ac">AC</option><option value="panel">Panel Listrik</option><option value="pompa">Pompa</option><option value="it">IT / Server</option><option value="other">Lainnya</option></select></div>
+        <div class="brg-fld"><label>Kritikalitas (1–5)</label><select id="eq-crit"><option>3</option><option>4</option><option>5</option><option>2</option><option>1</option></select></div>
+      </div>
+      <div class="brg-fld"><label>Frekuensi Preventive (hari)</label><input id="eq-freq" type="number" value="90"></div>
+      <div class="brg-actions"><button class="brg-btn brg-neon" style="flex:1;" onclick="saveEqModal()">💾 Simpan & Buat Jadwal</button><button class="brg-btn brg-ghost" onclick="closeBrg('ov-eq')">Batal</button></div>
+    </div>
+  </div>
+  <div class="brg-ov" id="ov-consume">
+    <div class="brg-mdl">
+      <button class="brg-x" onclick="closeBrg('ov-consume')">✕</button>
+      <h3>🧾 Pakai Sparepart dari Gudang</h3>
+      <p class="brg-sub" id="con-wo">—</p>
+      <div class="brg-fld"><label>Sparepart *</label><select id="con-item"></select></div>
+      <div class="brg-fld"><label>Jumlah *</label><input id="con-qty" type="number" value="1" min="1"></div>
+      <div class="brg-actions"><button class="brg-btn brg-warn" style="flex:1;" onclick="saveConsume()">✅ Catat & Kurangi Stok</button><button class="brg-btn brg-ghost" onclick="closeBrg('ov-consume')">Batal</button></div>
+    </div>
+  </div>
+
 
   <div class="amb">
     <span class="scanline"></span>
@@ -269,6 +331,7 @@
 (function(){
   'use strict';
   var K={ wo:'dreamos_maintenance_tasks', k3:'dreamos_k3_reports', assets:'dreamos_maint_assets', pm:'dreamos_maint_pm', tpl:'dreamos_maint_tpl', insp:'dreamos_maint_inspections', audit:'dreamos_maint_audit', draft:'dreamos_maint_draft' };
+  var K_ASSET='dreamos_assets', K_INV='dreamos_inventory'; // read-only refs ke modul Aset & Stok
   var SEED_V=2; // naikkan ini kalau struktur seed berubah lagi
   var view='cockpit', woFilter='all';
 
@@ -567,13 +630,35 @@
   window.reconcileK3=function(verbose){var k3=safeGet(K.k3,[]),wos=safeGet(K.wo,[]),linked={};wos.forEach(function(w){if(w.k3_report_id)linked[w.k3_report_id]=1;});var n=0;k3.forEach(function(r){if(!/kerusakan/i.test(r.kategori||'')||linked[r.id])return;wos.unshift({id:uid('maint'),judul:'Perbaiki '+(r.lokasi||'sarana'),deskripsi:(r.deskripsi||'')+' · (otomatis dari K3)',lokasi:r.lokasi||'-',priority:(r.priority||'medium'),status:'pending',kategori:'repair',created_at:r.created_at||iso(),created_by:r.nama_pelapor||r.pelapor_nama||'sistem',k3_report_id:r.id,source:'k3'});n++;});if(n){safeSet(K.wo,wos);audit('WO_FROM_K3',n+' tugas');Cloud.pushDebounced();renderRail();renderView();if(verbose)toast(n+' work order ditarik dari K3');}else if(verbose){toast('Tidak ada K3 “Kerusakan Sarana” baru','warn');}return n;};
 
   function vAssets(){
-    var A=safeGet(K.assets,[]);
-    var html='<div class="toolbar"><button class="btn btn-primary" onclick="toggleAssetAdd()">＋ Tambah Aset</button></div>'+
-      '<div class="addpanel" id="asset-add"><div class="addcard"><h4>🏷️ Aset Baru + Jadwal Preventive</h4><form onsubmit="return submitAsset(event)"><div class="fld-row"><div class="fld"><label>Nama Aset *</label><input id="as-n" required></div><div class="fld"><label>Lokasi / Gedung *</label><input id="as-l" required placeholder="Cth: Gedung E · SMA Lt.2"></div></div><div class="fld-row"><div class="fld"><label>Kategori</label><select id="as-c"><option value="ac">AC</option><option value="panel_induk">Panel Induk PLN</option><option value="panel">Panel Distribusi</option><option value="pompa">Pompa</option><option value="other">Lainnya</option></select></div><div class="fld"><label>Kritikalitas (1-5)</label><select id="as-cr"><option>3</option><option>4</option><option>5</option><option>2</option><option>1</option></select></div></div><div class="fld-row"><div class="fld"><label>Umur Pakai (tahun)</label><input id="as-life" type="number" value="10"></div><div class="fld"><label>Frekuensi Preventive (hari)</label><input id="as-freq" type="number" value="90"></div></div><div style="display:flex;gap:.5rem;"><button class="btn btn-success" style="flex:1;">💾 Simpan</button><button type="button" class="btn btn-ghost" onclick="toggleAssetAdd(false)">Batal</button></div></form></div></div>';
-    if(!A.length)html+='<div class="empty"><h3>Belum ada aset</h3><p>Tambahkan aset pertama Anda.</p></div>';
-    else html+=A.map(function(a){var s=assetSignals(a);var lv=riskLevel(s.risk);var crit='';for(var i=1;i<=5;i++)crit+='<i class="'+(i<=a.criticality?'on':'')+'"></i>';return '<div class="asset"><div class="ai">'+assetIcon(a.category)+'</div>'+miniRing(s.health,riskColor(s.risk))+'<div class="am"><div class="t">'+esc(a.name)+(a.status==='maintenance'?' <span class="badge badge-renov">RENOVASI</span>':'')+' <span class="lvl" style="background:'+lv.bg+';color:'+lv.c+';">'+lv.t+'</span></div><div class="s">'+esc(a.location)+' · dipasang '+fmtDate(a.installDate)+' · servis terakhir '+fmtDate(a.lastServiceDate)+'</div><div style="margin-top:.3rem;"><span class="crit" title="Kritikalitas">'+crit+'</span></div></div></div>';}).join('');
+    var strat=safeGet(K_ASSET,[]), maint=safeGet(K.assets,[]);
+    var byParent={}, ungrouped=[];
+    maint.forEach(function(m){ if(m.refAssetId){ (byParent[m.refAssetId]=byParent[m.refAssetId]||[]).push(m); } else { ungrouped.push(m); } });
+    var locs={}; strat.forEach(function(a){ var k=a.lokasi||'Tanpa lokasi'; (locs[k]=locs[k]||[]).push(a); });
+    var keys=Object.keys(locs);
+    if(!strat.length && !maint.length){
+      return '<div class="empty"><svg viewBox="0 0 64 64" fill="none"><path d="M10 26 32 12l22 14v22H10z" stroke="#00ff9d" stroke-width="3" stroke-linejoin="round"/><path d="M26 48V34h12v14" stroke="#0ea5e9" stroke-width="3"/></svg><h3>Belum ada aset</h3><p>Mulai dari <b>modul Aset</b> untuk induk strategis (gedung/aset bernilai), lalu kembali ke sini dan tekan <b>＋ peralatan</b> untuk mengindukkan yang Anda rawat — tanpa mengetik ulang data induk.</p></div>';
+    }
+    var html='<div class="tile s6" style="--c:var(--teal);margin-bottom:.9rem;"><span class="shine"></span><div class="lab">Induk Strategis · dibaca dari Modul Aset (read-only)</div>'+(strat.length?'':'<p style="color:var(--mut);font-size:.8rem;margin:.3rem 0 0;">Belum ada induk. Input di modul Aset dulu.</p>')+'</div>';
+    keys.forEach(function(k){
+      var items=locs[k];
+      html+='<div class="zone"><div class="zone-h"><span class="zn">📍 '+esc(k)+'</span><span class="zpct">'+items.length+' induk</span></div>';
+      items.forEach(function(a,ai){
+        var kids=byParent[a.id]||[]; var attn=kids.some(function(m){return pmOverdue(m.id)||(m.criticality||0)>=5;});
+        html+='<div class="asset" style="flex-direction:column;align-items:stretch;gap:.5rem;animation-delay:'+(ai*40)+'ms;'+(attn?'border-left-color:var(--gold);':'')+'"><div style="display:flex;align-items:center;gap:.7rem;"><div class="ai">'+iconAsset(a.jenis)+'</div><div class="am"><div class="t">'+esc(a.nama)+(attn?' <span class="badge b-prio" style="--pbg:rgba(245,158,11,.16);--pcol:#fbbf24;">PERLU PERHATIAN</span>':'')+'</div><div class="s">'+esc(a.jenis||'-')+' · '+(a.nilai?('Rp '+Number(a.nilai).toLocaleString('id-ID')):'-')+' · thn '+esc(a.tahun||'-')+'</div></div><span class="lnk">'+kids.length+' dirawat</span><button class="btn btn-primary btn-sm" onclick="openEqModal(\''+escA(a.id)+'\')">＋ peralatan</button></div>';
+        if(kids.length){
+          html+='<div style="margin-left:1.2rem;border-left:2px solid var(--line);padding-left:.6rem;">'+kids.map(function(m,mi){var od=pmOverdue(m.id);return '<div class="asset" style="border-left-color:'+(od?'var(--warning)':'var(--teal)')+';animation-delay:'+(mi*30)+'ms;"><div class="ai">'+assetIcon(m.category||m.kategori)+'</div><div class="am"><div class="t">'+esc(m.name||m.nama||'Peralatan')+(od?' <span class="badge b-prio" style="--pbg:rgba(225,29,72,.16);--pcol:#fb7185;">TELAT</span>':'')+'</div><div class="s">'+esc(m.category||m.kategori||'-')+' · krit '+(m.criticality||'-')+' · PM '+nextDueTxt(m.id)+'</div></div><div style="display:flex;gap:.3rem;"><button class="btn btn-ghost btn-sm" onclick="spawnWO(\''+escA(m.id)+'\')">＋WO</button></div></div>';}).join('')+'</div>';
+        } else { html+='<div style="margin-left:1.2rem;font-size:.74rem;color:var(--mut2);padding:.2rem 0;">Belum ada peralatan dirawat di sini.</div>'; }
+        html+='</div>';
+      });
+      html+='</div>';
+    });
+    if(ungrouped.length){
+      html+='<div class="tile s6" style="--c:var(--gold);margin-top:.4rem;margin-bottom:.7rem;"><span class="shine"></span><div class="lab">Peralatan Belum Diindukkan</div></div>';
+      html+=ungrouped.map(function(m,i){return '<div class="asset" style="animation-delay:'+(i*30)+'ms;"><div class="ai">'+assetIcon(m.category||m.kategori)+'</div><div class="am"><div class="t">'+esc(m.name||m.nama||'Peralatan')+'</div><div class="s">'+esc(m.location||m.lokasi||'-')+' · PM '+nextDueTxt(m.id)+'</div></div><button class="btn btn-ghost btn-sm" onclick="spawnWO(\''+escA(m.id)+'\')">＋WO</button></div>';}).join('');
+    }
     return html;
   }
+
   window.toggleAssetAdd=function(force){var p=$('asset-add');if(!p)return;var open=(typeof force==='boolean')?force:!p.classList.contains('open');p.classList.toggle('open',open);};
   window.submitAsset=function(e){e.preventDefault();var n=$('as-n').value.trim(),l=$('as-l').value.trim();if(!n||!l){toast('Nama & lokasi wajib','err');return false;}var id=uid('a');var a={id:id,name:n,location:l,category:$('as-c').value,criticality:parseInt($('as-cr').value,10),installDate:iso(),expectedLifeYears:parseInt($('as-life').value,10)||10,lastServiceDate:iso(),tags:[]};var A=safeGet(K.assets,[]);A.push(a);safeSet(K.assets,A);var freq=parseInt($('as-freq').value,10)||90;var pms=safeGet(K.pm,[]);pms.push({id:uid('pm'),assetId:id,title:'Perawatan berkala '+n,freqDays:freq,lastDone:iso(),nextDue:iso(addDays(now(),freq)),status:'active'});safeSet(K.pm,pms);audit('ASSET_CREATE',n);renderRail();renderView();Cloud.pushDebounced();toast('Aset + jadwal preventive ditambahkan');return false;};
 
@@ -642,6 +727,77 @@
   })();
   window.Cloud = Cloud;
 
+  // ===== JEMBATAN ASET <-> PERAWATAN <-> STOK =====
+  function iconAsset(j){return ({Gedung:'🏫',Tanah:'🟫',Kendaraan:'🚗',Elektronik:'🔌',Meubelair:'🪑'})[j]||assetIcon(j);}
+  function pmOverdue(eqId){var p=safeGet(K.pm,[]).filter(function(x){return x.assetId===eqId;});return p.some(function(x){return x.status!=='hold' && (new Date(x.nextDue)-new Date())<0;});}
+  function nextDueTxt(eqId){var p=safeGet(K.pm,[]).filter(function(x){return x.assetId===eqId;})[0];if(!p)return '—';var d=Math.round((new Date(p.nextDue)-new Date())/86400000);return d<0?('telat '+(-d)+'h'):('dalam '+d+'h');}
+  function cl2(){return window.supabaseClient||(window.parent&&window.parent.supabaseClient)||null;}
+  async function pullRefs(){ // tarik induk (Aset) + stok (Stok) — read-only, jangan push balik
+    var c=cl2(); if(!c)return;
+    try{
+      var a=await c.from('assets').select('*').limit(2000);
+      if(!a.error&&a.data){var loc=safeGet(K_ASSET,[]),m={};loc.forEach(function(x){if(x&&x.id)m[x.id]=x;});a.data.forEach(function(x){if(x&&x.id)m[x.id]=Object.assign({},m[x.id]||{},x);});safeSet(K_ASSET,Object.keys(m).map(function(id){return m[id];}));}
+      var s=await c.from('inventory').select('*').limit(2000);
+      if(!s.error&&s.data){var loc2=safeGet(K_INV,[]),m2={};loc2.forEach(function(x){if(x&&x.id)m2[x.id]=x;});s.data.forEach(function(x){if(x&&x.id)m2[x.id]=Object.assign({},m2[x.id]||{},x);});safeSet(K_INV,Object.keys(m2).map(function(id){return m2[id];}));}
+    }catch(e){console.warn('[bridge] pullRefs',e);}
+  }
+  window.pullRefs=pullRefs;
+
+  var __eqParent=null, __conWo=null;
+  function openBrg(id){var e=document.getElementById(id);if(e){e.classList.add('show');}}
+  window.closeBrg=function(id){var e=document.getElementById(id);if(e)e.classList.remove('show');};
+  ['ov-eq','ov-consume'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){if(ev.target===this)closeBrg(id);});});
+
+  window.openEqModal=function(parentId){
+    var a=safeGet(K_ASSET,[]).find(function(x){return x.id===parentId;}); if(!a)return;
+    __eqParent=parentId;
+    var p=document.getElementById('eq-parent'); if(p)p.innerHTML='Induk: <b>'+esc(a.nama)+'</b> · '+esc(a.lokasi||'-');
+    var n=document.getElementById('eq-name'); if(n)n.value='';
+    var f=document.getElementById('eq-freq'); if(f)f.value='90';
+    openBrg('ov-eq'); setTimeout(function(){var n2=document.getElementById('eq-name');if(n2)n2.focus();},160);
+  };
+  window.saveEqModal=function(){
+    var nm=(document.getElementById('eq-name').value||'').trim(); if(!nm){alert('⚠️ Nama peralatan wajib diisi.');return;}
+    var a=safeGet(K_ASSET,[]).find(function(x){return x.id===__eqParent;});
+    var cat=document.getElementById('eq-cat').value, crit=parseInt(document.getElementById('eq-crit').value,10)||3, freq=parseInt(document.getElementById('eq-freq').value,10)||90;
+    var eqId='eq_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+    var eq={id:eqId, refAssetId:__eqParent, refAssetName:a?a.nama:'', name:nm, nama:nm, category:cat, kategori:cat, location:a?a.lokasi:'', lokasi:a?a.lokasi:'', criticality:crit, installDate:new Date().toISOString(), expectedLifeYears:10, lastServiceDate:new Date().toISOString(), status:null};
+    var ma=safeGet(K.assets,[]); ma.unshift(eq); safeSet(K.assets,ma);
+    var pm={id:'pm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), assetId:eqId, title:'Perawatan '+nm, freqDays:freq, lastDone:new Date().toISOString(), nextDue:new Date(Date.now()+freq*86400000).toISOString(), status:'active'};
+    var mp=safeGet(K.pm,[]); mp.unshift(pm); safeSet(K.pm,mp);
+    if(window.Cloud&&Cloud.pushDebounced)Cloud.pushDebounced();
+    closeBrg('ov-eq'); renderView(); toast('Peralatan diindukkan ke '+(a?a.nama:'induk')+' + jadwal dibuat');
+  };
+
+  window.spawnWO=function(eqId){
+    var m=safeGet(K.assets,[]).find(function(x){return x.id===eqId;}); if(!m)return;
+    var wo={id:'maint_'+Date.now(), judul:'Periksa/perbaiki: '+(m.name||m.nama||''), deskripsi:'Dibuat dari modul Maintenance (peralatan terindukkan).', lokasi:m.location||m.lokasi||'-', priority:(m.criticality||0)>=4?'high':'medium', status:'pending', kategori:'repair', created_at:new Date().toISOString(), created_by:(safeGet('dreamos_bound_user',{}).nama||safeGet('dreamos_bound_user',{}).email||'sistem'), k3_report_id:null, source:'maintenance'};
+    var w=safeGet(K.wo,[]); w.unshift(wo); safeSet(K.wo,w);
+    if(window.Cloud&&Cloud.pushDebounced)Cloud.pushDebounced();
+    renderView(); toast('Work order dibuat');
+  };
+
+  window.openConsume=function(woId){
+    var w=safeGet(K.wo,[]).find(function(x){return x.id===woId;}); if(!w)return; __conWo=woId;
+    var p=document.getElementById('con-wo'); if(p)p.textContent='WO: '+(w.judul||w.deskripsi||woId);
+    var inv=safeGet(K_INV,[]).filter(function(x){return (parseInt(x.jumlah)||0)>0;});
+    if(!inv.length){alert('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.');return;}
+    document.getElementById('con-item').innerHTML=inv.map(function(x){return '<option value="'+escA(x.id)+'">'+esc(x.nama||x.nama_barang||'-')+' (sisa '+(parseInt(x.jumlah)||0)+')</option>';}).join('');
+    document.getElementById('con-qty').value='1'; openBrg('ov-consume');
+  };
+  window.saveConsume=function(){
+    var invId=document.getElementById('con-item').value, qty=parseInt(document.getElementById('con-qty').value,10)||0;
+    if(qty<=0){alert('⚠️ Jumlah tidak valid.');return;}
+    var inv=safeGet(K_INV,[]); var it=inv.find(function(x){return x.id===invId;}); if(!it)return;
+    if((parseInt(it.jumlah)||0)<qty){alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)||0)+').');return;}
+    it.jumlah=(parseInt(it.jumlah)||0)-qty; it.updated_at=new Date().toISOString(); safeSet(K_INV,inv);
+    var wos=safeGet(K.wo,[]); var w=wos.find(function(x){return x.id===__conWo;});
+    var note=(it.nama||it.nama_barang||'')+' ×'+qty;
+    if(w){w.consumed=w.consumed?(w.consumed+'; '+note):note; safeSet(K.wo,wos);}
+    if(window.Cloud&&Cloud.pushDebounced)Cloud.pushDebounced();
+    closeBrg('ov-consume'); renderView(); toast('Pemakaian dicatat · stok dikurangi · ke-audit');
+  };
+
   // ---------- init (dengan versioning seed) ----------
   if(safeGet('dreamos_maint_seed_v',0)<SEED_V){
     [K.assets,K.pm,K.tpl,K.insp,K.draft].forEach(function(k){localStorage.removeItem(k);});
@@ -651,6 +807,8 @@
   renderRail(); renderView(); tick(); setInterval(tick,1000);
   Cloud.pull().then(function(){ reconcileK3(false); Cloud.pushDebounced(); renderRail(); renderView(); });
   console.log('🛰️ CMMS Maintenance ready — 29 aset real + cloud sync (assets/pm/templates/inspections/tasks)');
+
+  try{ pullRefs().then(function(){ renderView(); }); }catch(e){ console.warn('pullRefs',e); }
 })();
 </script>
 </body>
