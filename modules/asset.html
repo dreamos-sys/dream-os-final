@@ -261,8 +261,8 @@
     let data = safeGet('dreamos_inventory', []);
     let editId = document.getElementById('gd-edit-id').value;
     if (editId) { let idx = data.findIndex(g => g.id === editId); if (idx > -1) data[idx] = item; } else { data.push(item); }
-    safeSet('dreamos_gudang', data);
-    if (window.supabaseClient) window.supabaseClient.from('stok').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, jumlah: parseInt(item.jumlah) || 0, ambang_batas: parseInt(item.minimal) || 5, kondisi: item.kondisi }).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
+    safeSet('dreamos_inventory', data);
+    if (window.supabaseClient) window.supabaseClient.from('inventory').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, quantity: parseInt(item.jumlah) || 0, min_stock: parseInt(item.minimal) || 5, kondisi: item.kondisi }).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     if (window.OfflineQueue) window.OfflineQueue.add('stok', 'upsert', item);
     logAudit(editId ? 'UPDATE_GUDANG' : 'TAMBAH_GUDANG', item.nama);
     resetForm('gudang'); renderGudang();
@@ -285,8 +285,8 @@
     if (!isAdmin()) return alert('⛔ Hanya admin yang bisa menghapus data.');
     if (!confirm('Hapus barang ini?')) return;
     let data = safeGet('dreamos_inventory', []).filter(g => g.id !== id);
-    safeSet('dreamos_gudang', data);
-    if (window.supabaseClient) window.supabaseClient.from('stok').delete().eq('id', id).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
+    safeSet('dreamos_inventory', data);
+    if (window.supabaseClient) window.supabaseClient.from('inventory').delete().eq('id', id).then(() => {}).catch(e => { console.warn("Asset sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("assets","upsert",item); });
     logAudit('HAPUS_GUDANG', 'ID: ' + id);
     renderGudang();
   };
@@ -389,7 +389,7 @@
     let count = 0;
     for (let item of data) {
       try {
-        await window.supabaseClient.from('stok').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, jumlah: parseInt(item.jumlah) || 0, ambang_batas: parseInt(item.minimal) || 5, kondisi: item.kondisi });
+        await window.supabaseClient.from('inventory').upsert({ id: item.id, nama_barang: item.nama, kategori: item.kategori, quantity: parseInt(item.jumlah) || 0, min_stock: parseInt(item.minimal) || 5, kondisi: item.kondisi });
         count++;
       } catch(e) { console.warn('Sync error:', e.message); if (window.OfflineQueue) window.OfflineQueue.add('stok', 'upsert', item); }
     }

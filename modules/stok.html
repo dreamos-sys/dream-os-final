@@ -86,13 +86,19 @@
   }
 
   function renderList(searchTerm = '') {
-    var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
+    var all = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
+    var q = String(searchTerm || '').toLowerCase().trim();
+    var s = !q ? all : all.filter(function(x){ 
+      return String(x.nama||'').toLowerCase().indexOf(q) >= 0 || 
+             String(x.lokasi_gudang||x.lokasi||'').toLowerCase().indexOf(q) >= 0; 
+    });
     document.getElementById('stok-list').innerHTML = s.length ? 
-      ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>QR</th><th>Aksi</th></tr>' + 
-       s.map(function(x, i) {
-         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.jumlah + '</td><td>' + esc(x.lokasi) + '</td><td style="font-size: 0.75rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
+      ('<table><tr><th>Nama</th><th>Qty</th><th>Lokasi</th><th>ID</th><th>Aksi</th></tr>' + 
+       all.map(function(x, i) {
+         if (q && String(x.nama||'').toLowerCase().indexOf(q) < 0 && String(x.lokasi_gudang||x.lokasi||'').toLowerCase().indexOf(q) < 0) return '';
+         return '<tr><td>' + esc(x.nama) + '</td><td>' + x.jumlah + '</td><td>' + esc(x.lokasi_gudang || x.lokasi || '-') + '</td><td style="font-size: 0.75rem;color:#64748b;">' + (x.id||'-') + '</td><td><button onclick="deleteStok(' + i + ')" class="btn btn-danger" style="font-size: 0.75rem;padding:0.2rem 0.5rem;">🗑️</button></td></tr>';
        }).join('') + '</table>') : 
-      '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada data barang.</p>';
+      '<p style="text-align:center;color:#94a3b8;padding:1rem;">' + (q ? ' Tidak ditemukan: ' + q : 'Belum ada data barang.') + '</p>';
     updateStats();
   }
 
@@ -138,7 +144,7 @@
       alert('✅ Barang baru disimpan!');
     }
     
-    localStorage.setItem('dreamos_inventory', JSON.stringify(s)); logMutation('MASUK', nama, qty, lokasi);
+    localStorage.setItem('dreamos_inventory', JSON.stringify(s)); logMutation('HAPUS', deleted.nama, deleted.jumlah, deleted.lokasi_gudang || deleted.lokasi || '-');
     renderList();
     
     // Bersihkan form
@@ -149,7 +155,7 @@
     if (window.supabaseClient) {
       window.supabaseClient.from('inventory').upsert({ id: (exist||item).id, nama_barang: (exist||item).nama, kategori: (exist||item).kategori, quantity: parseInt((exist||item).jumlah)||0, min_stock: parseInt((exist||item).minimal)||5, lokasi_gudang: (exist||item).lokasi_gudang, kondisi: (exist||item).kondisi }).then(function() {
         console.log('✅ Stok synced to cloud');
-      }).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
+      }).catch(function(e){ console.warn("Stok sync error:", e.message); try{ if(window.OfflineQueue) window.OfflineQueue.add('inventory','delete',{id:deleted.id}); }catch(_){} });
     }
     if (window.BankAudit) BankAudit.log('STOK_ADD', { nama: nama, qty: qty });
   };
@@ -159,11 +165,11 @@
     var s = JSON.parse(localStorage.getItem('dreamos_inventory') || '[]');
     var deleted = s[i];
     s.splice(i, 1);
-    localStorage.setItem('dreamos_inventory', JSON.stringify(s)); logMutation('MASUK', nama, qty, lokasi);
+    localStorage.setItem('dreamos_inventory', JSON.stringify(s)); logMutation('HAPUS', deleted.nama, deleted.jumlah, deleted.lokasi_gudang || deleted.lokasi || '-');
     renderList();
     
     if (window.supabaseClient && deleted.id) {
-      window.supabaseClient.from('inventory').delete().eq('id', deleted.id).then(function() {}).catch(function(e){ console.warn("Stok sync error:", e.message); if(window.OfflineQueue) window.OfflineQueue.add("stok_gudang","upsert",exist||item); });
+      window.supabaseClient.from('inventory').delete().eq('id', deleted.id).then(function() {}).catch(function(e){ console.warn("Stok sync error:", e.message); try{ if(window.OfflineQueue) window.OfflineQueue.add('inventory','delete',{id:deleted.id}); }catch(_){} });
     }
     if (window.BankAudit) BankAudit.log('STOK_DELETE', { nama: deleted.nama });
   };
@@ -176,7 +182,7 @@
     var count = 0;
     for (var i = 0; i < s.length; i++) {
       try {
-        await window.supabaseClient.from('inventory').upsert(s[i]);
+        await window.supabaseClient.from('inventory').upsert({ id: s[i].id, nama_barang: s[i].nama, kategori: s[i].kategori, quantity: parseInt(s[i].jumlah)||0, min_stock: parseInt(s[i].minimal)||5, lokasi_gudang: s[i].lokasi_gudang || s[i].lokasi || '-', kondisi: s[i].kondisi });
         count++;
       } catch(e) {
         console.warn('Sync failed for:', s[i].nama, e.message);
