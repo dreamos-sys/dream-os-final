@@ -526,43 +526,91 @@ window.goHomeHandler = function() {
     }, 300);
   };
 
-  // ===== SYNC USERS FROM SUPABASE =====
+  // ===== SYNC USERS FROM SUPABASE (IMPROVED) =====
   async function syncUsersFromSupabase() {
-    if (!window.supabaseClient) return;
+    if (!window.supabaseClient) {
+      console.warn('⚠️ Supabase client tidak tersedia');
+      return;
+    }
+    
     try {
-      const { data: cloudUsers, error } = await window.supabaseClient
+      console.log('🔄 Syncing users from Supabase...');
+      
+      // 1. Ambil dari tabel users
+      const { data: cloudUsers, error: usersError } = await window.supabaseClient
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (usersError) {
+        console.warn('⚠️ Error fetching users:', usersError);
+      }
       
+      // 2. Ambil juga dari Supabase Auth (jika ada akses)
+      let authUsers = [];
+      try {
+        const { data: authData, error: authError } = await window.supabaseClient.auth.admin.listUsers();
+        if (!authError && authData?.users) {
+          authUsers = authData.users;
+          console.log('📊 Ditemukan', authUsers.length, 'user di Auth');
+        }
+      } catch(e) {
+        console.log('ℹ️ Tidak bisa akses Auth admin (normal untuk role non-admin)');
+      }
+      
+      const localUsers = safeJSON('dreamos_users_db', []);
+      let addedCount = 0;
+      
+      // 3. Merge dari tabel users
       if (cloudUsers && cloudUsers.length > 0) {
-        // Merge dengan local (prioritas cloud)
-        const localUsers = safeJSON('dreamos_users_db', []);
-        const cloudMap = new Map(cloudUsers.map(u => [u.email, u]));
-        
-        // Tambah user dari cloud yang belum ada di local
         cloudUsers.forEach(cu => {
           const existing = localUsers.find(lu => lu.email === cu.email);
           if (!existing) {
             localUsers.push({
               id: cu.id,
-              nama: cu.nama || cu.name || '-',
+              nama: cu.nama || cu.name || cu.email.split('@')[0],
               email: cu.email,
               role: cu.role || 'staff',
               status: cu.status || 'active',
+              divisi: cu.divisi || 'umum',
               source: 'supabase',
-              created_at: cu.created_at
+              created_at: cu.created_at || new Date().toISOString()
             });
+            addedCount++;
           }
         });
-        
-        saveJSON('dreamos_users_db', localUsers);
-        showToast('🔄 User disinkronkan dari cloud (' + cloudUsers.length + ' user)', 'success');
       }
+      
+      // 4. Merge dari Auth users (untuk yang belum ada di tabel users)
+      authUsers.forEach(au => {
+        const existing = localUsers.find(lu => lu.email === au.email);
+        if (!existing) {
+          const metadata = au.user_metadata || {};
+          localUsers.push({
+            id: au.id,
+            nama: metadata.nama || metadata.name || au.email.split('@')[0],
+            email: au.email,
+            role: metadata.role || 'staff',
+            status: 'active',
+            divisi: metadata.divisi || 'umum',
+            source: 'supabase-auth',
+            created_at: au.created_at
+          });
+          addedCount++;
+        }
+      });
+      
+      saveJSON('dreamos_users_db', localUsers);
+      
+      if (addedCount > 0) {
+        showToast('🔄 Sinkronisasi: +' + addedCount + ' user dari cloud', 'success');
+        console.log('✅ Synced', addedCount, 'new users from cloud');
+      } else {
+        console.log('ℹ️ Tidak ada user baru dari cloud');
+      }
+      
     } catch(e) {
-      console.warn('Sync users failed:', e);
+      console.error('❌ Sync users error:', e);
     }
   }
 
