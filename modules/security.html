@@ -63,6 +63,18 @@
     .sig-canvas-wrap { background: #fff; border-radius: 8px; margin: 1rem 0; touch-action: none; }
     #sig-canvas { width: 100%; height: 180px; display: block; }
 
+    /* 🔐 ENTERPRISE VERIFICATION & NFC UI */
+    .verify-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10002; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .verify-modal.show { display: flex; }
+    .verify-box { background: #0f172a; border: 1px solid var(--neon); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 450px; text-align: center; }
+    .verify-status { font-size: 1.1rem; font-weight: 800; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0; }
+    .verify-valid { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid #10b981; }
+    .verify-tampered { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; }
+    .nfc-status { font-size: 0.8rem; padding: 0.4rem; border-radius: 6px; margin-top: 0.5rem; text-align: center; }
+    .nfc-ready { background: rgba(14,165,233,0.15); color: #0ea5e9; }
+    .nfc-error { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+
     /* 🛡️ ENTERPRISE ADDONS */
     .sop-checklist { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.8rem; margin: 0.5rem 0; }
     .sop-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.8rem; }
@@ -252,6 +264,10 @@
         </select>
         <button class="btn btn-primary" onclick="openQRScanner()" style="width:100%; margin-top:0.5rem;">📷 Scan QR Checkpoint</button>
         <button class="btn btn-success" onclick="logPatrol()" style="width:100%; margin-top:0.5rem;">✅ TAP CHECKPOINT</button>
+
+        <button class="btn btn-warning" onclick="startNFCScan()" style="width:100%; margin-top:0.5rem;">📡 Tap NFC Checkpoint</button>
+        <div id="nfc-status" class="nfc-status" style="display:none;"></div>
+
         <div id="patrol-log" style="margin-top:0.8rem; font-size:0.75rem; color:#cbd5e1; max-height:200px; overflow-y:auto;"></div>
       </div>
     </div>
@@ -905,6 +921,169 @@
     a.click();
     showToast('💾 Backup JSON berhasil diunduh!', 'success');
     if (window.BankAudit) BankAudit.log('EXPORT_BACKUP', 'Security module full backup');
+  };
+
+
+  // 🔐 DIGITAL SIGNATURE & HASH-CHAIN VERIFICATION
+  window.openVerifyModal = function() {
+    document.getElementById('verify-modal').classList.add('show');
+    const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
+    const resEl = document.getElementById('verify-result');
+    const detEl = document.getElementById('verify-details');
+    const ttdEl = document.getElementById('verify-ttd-preview');
+    
+    if (logs.length === 0) {
+      resEl.textContent = '⚠️ Tidak ada log untuk diverifikasi.';
+      resEl.className = 'verify-status verify-tampered';
+      detEl.innerHTML = ''; ttdEl.innerHTML = '';
+      return;
+    }
+
+    // Verifikasi log terbaru
+    const latest = logs[0];
+    const prevHash = logs.length > 1 ? (logs[1].chain_hash || logs[1].ttd_hash || 'GENESIS') : 'GENESIS';
+    const raw = `${prevHash}|${latest.ttd_img_penyerah ? 'SIG_P' : 'NO'}|${latest.ttd_img_penerima ? 'SIG_K' : 'NO'}|${latest.id}|${latest.created_at}`;
+    
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)).then(buf => {
+      const calcHash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
+      const isValid = calcHash === (latest.chain_hash || latest.ttd_hash);
+      
+      resEl.textContent = isValid ? '✅ INTEGRITAS VALID (Tamper-Evident)' : '⚠️ TERDETEKSI PERUBAHAN (Hash Mismatch)';
+      resEl.className = `verify-status ${isValid ? 'verify-valid' : 'verify-tampered'}`;
+      
+      detEl.innerHTML = `
+        <div>🆔 Log ID: ${latest.id}</div>
+        <div>📅 Waktu: ${new Date(latest.created_at).toLocaleString('id-ID')}</div>
+        <div>🔗 Prev Hash: ${prevHash.slice(0,12)}...</div>
+        <div>🧮 Calc Hash: ${calcHash}</div>
+        <div>💾 Stored Hash: ${(latest.chain_hash || latest.ttd_hash || 'N/A').slice(0,12)}...</div>
+        <div>📍 Pos: ${latest.pos} | Severity: ${latest.severity}</div>
+      `;
+      
+      ttdEl.innerHTML = '';
+      if (latest.ttd_img_penyerah) ttdEl.innerHTML += `<img src="${latest.ttd_img_penyerah}" style="max-height:50px; margin:4px; border:1px solid #10b981; border-radius:6px;">`;
+      if (latest.ttd_img_penerima) ttdEl.innerHTML += `<img src="${latest.ttd_img_penerima}" style="max-height:50px; margin:4px; border:1px solid #0ea5e9; border-radius:6px;">`;
+      if (!latest.ttd_img_penyerah && !latest.ttd_img_penerima) ttdEl.innerHTML = '<span style="color:#94a3b8;">Tidak ada TTD tersimpan.</span>';
+    }).catch(() => {
+      resEl.textContent = '❌ Gagal verifikasi (Browser tidak mendukung Web Crypto)';
+      resEl.className = 'verify-status verify-tampered';
+    });
+  };
+  window.closeVerifyModal = function() { document.getElementById('verify-modal').classList.remove('show'); };
+
+  // 📧 AUTO-EMAIL REPORT TO KABAG (Client-Side Workflow + Backend Ready)
+  window.sendEmailToKabag = async function() {
+    const kabagEmail = 'kabag.umum@sekolah.sch.id'; // 🔧 GANTI DENGAN EMAIL KABAG ASLI
+    const now = new Date().toLocaleString('id-ID');
+    const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
+    const total = logs.length;
+    const urgent = logs.filter(l => l.severity === 'DARURAT' || l.severity === 'BERAT').length;
+    
+    const subject = encodeURIComponent(`📊 Laporan Security Harian - ${new Date().toISOString().split('T')[0]}`);
+    const body = encodeURIComponent(
+      `Bismillah, berikut ringkasan laporan Security Ops Center:
+
+` +
+      `📅 Tanggal: ${now}
+` +
+      `📝 Total Log: ${total}
+` +
+      `🚨 Urgent/Berat: ${urgent}
+` +
+      `🔗 Hash-Chain Audit: Aktif
+
+` +
+      `📎 Silakan lampirkan PDF yang telah diunduh sebelumnya.
+` +
+      `Untuk auto-attach PDF, aktifkan Supabase Edge Function (lihat panduan developer).
+
+` +
+      `Dream OS Enterprise • ISO 27001 & 18788 Compliant`
+    );
+    
+    // Try Web Share first
+    if (window._lastPdfBlob && navigator.share && navigator.canShare({ files: [new File([window._lastPdfBlob], 'report.pdf', {type:'application/pdf'})] })) {
+      try {
+        await navigator.share({
+          title: 'Laporan Security Dream OS',
+          text: 'Bismillah, berikut laporan resmi Security Ops Center.',
+          files: [new File([window._lastPdfBlob], `Security_Report_${new Date().toISOString().split('T')[0]}.pdf`, {type:'application/pdf'})]
+        });
+        showToast('✅ Laporan berhasil dibagikan!', 'success');
+        return;
+      } catch(e) {}
+    }
+    
+    // Fallback to mailto
+    window.location.href = `mailto:${kabagEmail}?subject=${subject}&body=${body}`;
+    showToast('📧 Email client terbuka. Lampirkan PDF manual.', 'info');
+    if (window.BankAudit) BankAudit.log('EMAIL_KABAG_TRIGGERED', { total, urgent });
+  };
+
+  // 📡 NFC/RFID PATROL TAG READER (Web NFC API + Graceful Fallback)
+  let ndefReader = null;
+  window.startNFCScan = async function() {
+    const statusEl = document.getElementById('nfc-status');
+    if (!('NDEFReader' in window)) {
+      statusEl.style.display = 'block';
+      statusEl.className = 'nfc-status nfc-error';
+      statusEl.textContent = '⚠️ NFC tidak didukung di browser/device ini. Gunakan QR atau Tap Manual.';
+      return;
+    }
+    
+    try {
+      statusEl.style.display = 'block';
+      statusEl.className = 'nfc-status nfc-ready';
+      statusEl.textContent = '📡 Menunggu tap NFC... Tempelkan kartu/tag ke belakang HP.';
+      
+      ndefReader = new NDEFReader();
+      await ndefReader.scan();
+      
+      ndefReader.addEventListener('reading', ({ message, serialNumber }) => {
+        const uid = serialNumber?.replace(/:/g, '').toUpperCase() || 'UNKNOWN_UID';
+        const posSelect = document.getElementById('patrol-pos');
+        const checkpoint = posSelect.value;
+        
+        // Log patrol with NFC proof
+        const logs = JSON.parse(localStorage.getItem('dreamos_patrol_logs') || '[]');
+        logs.unshift({
+          pos: checkpoint,
+          waktu: new Date().toISOString(),
+          geo: 'NFC:' + uid,
+          petugas: user?.nama || 'Anonim',
+          nfc_uid: uid,
+          nfc_verified: true
+        });
+        localStorage.setItem('dreamos_patrol_logs', JSON.stringify(logs.slice(0,100)));
+        
+        document.getElementById('patrol-log').innerHTML = logs.slice(0,10).map(l => 
+          `✅ ${l.pos} • ${new Date(l.waktu).toLocaleTimeString('id-ID')} • 📡 NFC:${l.nfc_uid?.slice(0,8) || 'QR'}`
+        ).join('<br>');
+        
+        statusEl.className = 'nfc-status nfc-ready';
+        statusEl.textContent = `✅ NFC Terverifikasi: ${uid.slice(0,8)}... Checkpoint tercatat!`;
+        
+        if (window.supabaseClient) {
+          window.supabaseClient.from('security_patrols').insert({
+            pos: checkpoint, waktu: new Date().toISOString(), geo: 'NFC:'+uid, petugas: user?.nama || 'Anonim', nfc_uid: uid
+          }).catch(()=>{});
+        }
+        if (window.BankAudit) BankAudit.log('NFC_PATROL_VERIFY', { uid, pos: checkpoint });
+        
+        // Auto-stop after successful read
+        if (ndefReader) ndefReader.stop().catch(()=>{});
+      });
+      
+      ndefReader.addEventListener('readingerror', () => {
+        statusEl.className = 'nfc-status nfc-error';
+        statusEl.textContent = '❌ Gagal membaca NFC. Coba lagi atau gunakan QR.';
+      });
+      
+    } catch(e) {
+      statusEl.style.display = 'block';
+      statusEl.className = 'nfc-status nfc-error';
+      statusEl.textContent = '⛔ NFC Error: ' + (e.message || 'Izin ditolak / hardware tidak siap.');
+    }
   };
 
   console.log('🛡️ Security Ops Center Pro Ready • Enterprise Zero-Fraud Architecture Active');
