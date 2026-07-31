@@ -1,579 +1,93 @@
-<style>
-  :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
-  * { box-sizing: border-box; }
-  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
-  .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,157,0.1); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
-  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.875rem; }
-  .btn { min-height: 44px; padding: 0.6rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8125rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-success { background: #10b981; color: #fff; }
-  .btn-danger { background: var(--warning); color: #fff; }
-  .btn-warning { background: var(--gold); color: #000; }
-  .btn-purple { background: var(--purple); color: #fff; }
-  .input-field, textarea, select { min-height: 44px; width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.875rem; outline: none; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
-  .input-field:focus, select:focus, textarea:focus { border-color: var(--neon); }
-  .section-title { font-size: 0.9375rem; font-weight: 700; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
-  .tab-btn { min-height: 44px; padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.8125rem; background: rgba(30,41,59,0.5); color: #cbd5e1; transition: 0.2s; }
-  .tab-btn.active { background: rgba(14,165,233,0.15); color: var(--accent); }
-  .mini-stat { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.5rem; text-align: center; }
-  .mini-stat-val { font-size: 1.2rem; font-weight: 700; color: #e2e8f0; }
-  .mini-stat-label { font-size: 0.875rem; color: #cbd5e1; }
-  .task-card { background: rgba(30,41,59,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.85rem; margin-bottom: 0.75rem; border-left: 4px solid #f59e0b; }
-  .task-card.proses { border-left-color: var(--accent); }
-  .task-card.selesai { border-left-color: #10b981; }
-  .prio-badge { padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.875rem; font-weight: 600; }
-  .prio-Rendah { background: rgba(16,185,129,0.15); color: #10b981; }
-  .prio-Sedang { background: rgba(14,165,233,0.15); color: var(--accent); }
-  .prio-Tinggi { background: rgba(245,158,11,0.15); color: var(--gold); }
-  .prio-Kritis { background: rgba(239,68,68,0.15); color: var(--warning); }
-
-  .foto-preview-container { margin-top: 0.5rem; text-align: center; }
-  .foto-preview-container img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--neon); display: none; }
-  .btn-clear-foto { margin-top: 0.3rem; font-size: 0.75rem; padding: 0.3rem 0.6rem; }
-</style>
-
-<button class="back-btn" onclick="window.goHome()">← HOME</button>
-
-<div style="max-width: 900px; margin: 0 auto; padding: 3.5rem 0.8rem 5rem;">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance • Dream OS</title>
+  <style>
+    :root { --neon:#00ff9d; --accent:#0ea5e9; --warning:#e11d48; --gold:#f59e0b; }
+    * { box-sizing:border-box; }
+    body { font-family:'Inter',system-ui,sans-serif; background:#0a0e27; color:#e2e8f0; min-height:100vh; margin:0; padding:1rem; }
+    .glass { background:rgba(15,23,42,0.85); backdrop-filter:blur(16px); border:1px solid rgba(0,255,157,0.15); border-radius:16px; padding:1.25rem; margin-bottom:1rem; }
+    .back-btn { position:fixed; bottom:calc(1.5rem + env(safe-area-inset-bottom)); left:1rem; z-index:1000; background:rgba(30,41,59,0.95); border:1px solid var(--neon); color:var(--neon); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.875rem; }
+    .btn { min-height:44px; padding:0.6rem 0.85rem; border:none; border-radius:8px; font-weight:700; font-size:0.8125rem; cursor:pointer; }
+    .btn-success { background:#10b981; color:#fff; }
+    .btn-danger { background:var(--warning); color:#fff; }
+    .badge { padding:0.2rem 0.5rem; border-radius:10px; font-size:0.8125rem; font-weight:700; }
+    .badge-pending { background:rgba(245,158,11,0.2); color:#f59e0b; }
+    .badge-approved { background:rgba(16,185,129,0.2); color:#10b981; }
+    .badge-high { background:rgba(239,68,68,0.2); color:#ef4444; }
+    .task-card { background:rgba(0,0,0,0.3); border-left:4px solid var(--accent); padding:1rem; border-radius:12px; margin-bottom:0.8rem; }
+    .task-card.priority-high { border-left-color:var(--warning); }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="window.goHome()">← HOME</button>
   
-  <div class="glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-    <div>
-      <h2 style="color: var(--accent); margin: 0; font-size: 1.1rem;">🔧 Maintenance & Perawatan</h2>
-      <p style="color: #cbd5e1; font-size: 0.875rem; margin: 0;">ISO 55001 • Asset Bridge • Enterprise Grade</p>
+  <div style="max-width:920px;margin:0 auto;padding:0.5rem 0.5rem 5rem;">
+    <div class="glass">
+      <h2 style="color:var(--neon);margin:0;font-size:1.1rem;"> Maintenance Tasks</h2>
+      <p style="color:#64748b;font-size:0.875rem;">Auto-generated from K3 Reports</p>
     </div>
-    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
-      <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
-      <button class="btn btn-primary" onclick="syncToCloud()">☁️ Sync</button>
-    </div>
-  </div>
-
-  <div class="glass" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
-    <div class="mini-stat"><div class="mini-stat-val" id="stat-total">0</div><div class="mini-stat-label">Total Tugas</div></div>
-    <div class="mini-stat"><div class="mini-stat-val" id="stat-pending">0</div><div class="mini-stat-label" style="color: #f59e0b;">Pending</div></div>
-    <div class="mini-stat"><div class="mini-stat-val" id="stat-proses">0</div><div class="mini-stat-label" style="color: var(--accent);">Proses</div></div>
-    <div class="mini-stat"><div class="mini-stat-val" id="stat-done">0</div><div class="mini-stat-label" style="color: #10b981;">Selesai</div></div>
-  </div>
-
-  <div class="glass">
-    <div class="section-title" style="color: var(--accent);">➕ Buat Tugas Perawatan</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-      <input type="text" id="maint-judul" class="input-field" placeholder="Judul Pekerjaan *">
-      <input type="text" id="maint-lokasi" class="input-field" placeholder="Lokasi / Area *">
-      <select id="maint-jenis" class="input-field">
-        <option>Preventif (Rutin)</option>
-        <option>Korektif (Perbaikan)</option>
-        <option>Prediktif</option>
-      </select>
-      <select id="maint-prio" class="input-field">
-        <option>Sedang</option>
-        <option>Rendah</option>
-        <option>Tinggi</option>
-        <option>Kritis</option>
-      </select>
-      <input type="text" id="maint-petugas" class="input-field" placeholder="Nama Teknisi / Petugas *">
-      <input type="number" id="maint-biaya" class="input-field" placeholder="Estimasi Biaya (Rp)">
-    </div>
-    <textarea id="maint-desc" class="input-field" rows="3" placeholder="Deskripsi kerusakan & tindakan..."></textarea>
     
-    <div style="margin-top: 0.5rem;">
-      <label style="color: #cbd5e1; font-size: 0.8125rem; display: block; margin-bottom: 0.3rem;">📸 Foto Kerusakan (Auto-Compress ~300KB)</label>
-      <input type="file" id="maint-foto-input" accept="image/*" capture="environment" onchange="handlePhoto(this, 'maint-foto-preview')" class="input-field" style="padding: 0.5rem;">
-      <div class="foto-preview-container">
-        <img id="maint-foto-preview">
-        <button type="button" onclick="clearPhoto('maint-foto-input', 'maint-foto-preview')" class="btn btn-danger btn-clear-foto">✕ Hapus Foto</button>
-      </div>
-    </div>
-    <button class="btn btn-success" onclick="addTask()" style="width: 100%;">💾 SIMPAN TUGAS</button>
+    <div id="task-list"></div>
   </div>
 
-  <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem;">
-    <button class="tab-btn active" id="tab-active" onclick="switchTab('active')">📋 Tugas Aktif</button>
-    <button class="tab-btn" id="tab-history" onclick="switchTab('history')">📜 Riwayat</button>
-  </div>
-
-  <div id="panel-active"></div>
-  <div id="panel-history" style="display: none;"></div>
-</div>
-
-<script>
-(function() {
-  'use strict';
-
-  let currentTab = 'active';
-
-  function safeGet(key, fb) { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fb)); } catch(e) { return fb; } }
-  function safeSet(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
-  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  function updateStats() {
-    let tasks = safeGet('dreamos_maintenance_tasks', []);
-    document.getElementById('stat-total').textContent = tasks.length;
-    document.getElementById('stat-pending').textContent = tasks.filter(t => t.status === 'Pending').length;
-    document.getElementById('stat-proses').textContent = tasks.filter(t => t.status === 'Proses').length;
-    document.getElementById('stat-done').textContent = tasks.filter(t => t.status === 'Selesai').length;
-  }
-
-  function renderActive() {
-    let tasks = safeGet('dreamos_maintenance_tasks', []).filter(t => t.status !== 'Selesai');
-    let html = '';
-    if (!tasks.length) {
-      html = '<div class="glass" style="text-align: center; color: #cbd5e1; padding: 2rem;">✅ Tidak ada tugas aktif.</div>';
-    } else {
-      tasks.forEach(t => {
-        let prioClass = 'prio-' + (t.prioritas || 'Sedang');
-        let statusBorder = t.status === 'Proses' ? 'proses' : '';
-        html += '<div class="task-card ' + statusBorder + '">';
-        html += '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.4rem;">';
-        html += '<div><strong style="font-size: 0.9375rem;">' + esc(t.judul) + '</strong><br><span style="font-size: 0.875rem; color: #cbd5e1;">📍 ' + esc(t.lokasi) + ' | 👷 ' + esc(t.petugas) + '</span></div>';
-        html += '<span class="prio-badge ' + prioClass + '">' + esc(t.prioritas || 'Sedang') + '</span></div>';
-        html += '<div style="font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.3rem;">🔧 ' + esc(t.jenis || '') + ' | ' + esc(t.deskripsi || '') + '</div>';
-        if (t.biaya) html += '<div style="font-size: 0.875rem; color: var(--gold); margin-bottom: 0.2rem;">💰 Biaya: Rp ' + parseInt(t.biaya).toLocaleString('id-ID') + '</div>';
-        html += '<div style="display: flex; gap: 0.3rem; margin-top: 0.5rem;">';
-        if (t.status === 'Pending') {
-          html += '<button class="btn btn-primary" onclick="changeStatus(\'' + t.id + '\', \'Proses\')" style="flex: 1;">🔵 Mulai Proses</button>';
-          html += '<button class="btn btn-danger" onclick="deleteTask(\'' + t.id + '\')" style="flex: 0.3;">🗑️</button>';
-        } else if (t.status === 'Proses') {
-          html += '<button class="btn btn-success" onclick="changeStatus(\'' + t.id + '\', \'Selesai\')" style="flex: 1;">✅ Selesai</button>';
-        }
-        html += '</div></div>';
-      });
-    }
-    document.getElementById('panel-active').innerHTML = html;
-    updateStats();
-  }
-
-  function renderHistory() {
-    let tasks = safeGet('dreamos_maintenance_tasks', []).filter(t => t.status === 'Selesai').slice(-30);
-    let html = '';
-    if (!tasks.length) {
-      html = '<div class="glass" style="text-align: center; color: #cbd5e1; padding: 2rem;">Belum ada riwayat selesai.</div>';
-    } else {
-      tasks.reverse().forEach(t => {
-        html += '<div class="task-card selesai">';
-        html += '<div style="display: flex; justify-content: space-between;">';
-        html += '<div><strong>' + esc(t.judul) + '</strong><br><span style="font-size: 0.875rem; color: #cbd5e1;">📍 ' + esc(t.lokasi) + ' | 👷 ' + esc(t.petugas) + '</span></div>';
-        html += '<span style="font-size: 0.875rem; color: #cbd5e1;">' + (t.updatedAt ? new Date(t.updatedAt).toLocaleDateString('id-ID') : '-') + '</span></div>';
-        html += '</div>';
-      });
-    }
-    document.getElementById('panel-history').innerHTML = html;
-  }
-
-  window.switchTab = function(tab) {
-    currentTab = tab;
-    document.getElementById('tab-active').classList.toggle('active', tab === 'active');
-    document.getElementById('tab-history').classList.toggle('active', tab === 'history');
-    document.getElementById('panel-active').style.display = tab === 'active' ? 'block' : 'none';
-    document.getElementById('panel-history').style.display = tab === 'history' ? 'block' : 'none';
-    if (tab === 'history') renderHistory();
+  <script>
+  window.goHome = function() {
+    if (window.parent && typeof window.parent.goHome === 'function') window.parent.goHome();
+    else window.location.href = '../index.html';
   };
-
-  window.addTask = function() {
-    let judul = document.getElementById('maint-judul').value.trim();
-    let lokasi = document.getElementById('maint-lokasi').value.trim();
-    let petugas = document.getElementById('maint-petugas').value.trim();
-    if (!judul || !lokasi || !petugas) return alert('⚠️ Judul, Lokasi, dan Petugas wajib diisi!');
-    
-    let task = {
-      id: 'maint_' + Date.now(),
-      judul, lokasi, petugas,
-      jenis: document.getElementById('maint-jenis').value,
-      prioritas: document.getElementById('maint-prio').value,
-      biaya: document.getElementById('maint-biaya').value,
-      deskripsi: document.getElementById('maint-desc').value.trim(),
-      foto: window.currentPhoto || null,
-      status: 'Pending',
-      created_at: new Date().toISOString()
-    };
-
-    let tasks = safeGet('dreamos_maintenance_tasks', []);
-    tasks.unshift(task);
-    safeSet('dreamos_maintenance_tasks', tasks);
-    
-  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
-  window.currentPhoto = null;
   
-  window.handlePhoto = function(input, previewId) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
+  function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
+  
+  function renderTasks() {
+    var tasks = safeGet('dreamos_maintenance_tasks', []);
+    var el = document.getElementById('task-list');
     
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
-      input.value = '';
+    if (!tasks.length) {
+      el.innerHTML = '<div class="glass"><p style="text-align:center;color:#94a3b8;">Belum ada task maintenance</p></div>';
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
-        
-        const preview = document.getElementById(previewId);
-        if (preview) {
-          preview.src = window.currentPhoto;
-          preview.style.display = 'block';
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  window.clearPhoto = function(inputId, previewId) {
-    window.currentPhoto = null;
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
-    const preview = document.getElementById(previewId);
-    if (preview) preview.style.display = 'none';
-  };
-
-  renderActive();
-
-    // Sync ke Supabase
-    if (window.supabaseClient) {
-      window.supabaseClient.from('maintenance_tasks').insert(task).then(() => console.log('✅ Synced')).catch(e => { console.warn('Maintenance insert error:', e.message); if(window.OfflineQueue) window.OfflineQueue.add('maintenance_tasks','insert',task); });
-    } else if (window.OfflineQueue) {
-      window.OfflineQueue.add('maintenance_tasks', 'insert', task);
-    }
-
-    // Audit
-    if (window.BankAudit) BankAudit.log('MAINT_ADD', { judul, lokasi, prioritas: task.prioritas });
-
-    // Reset form
-    document.getElementById('maint-judul').value = '';
-    document.getElementById('maint-lokasi').value = '';
-    document.getElementById('maint-petugas').value = '';
-    document.getElementById('maint-desc').value = '';
-    clearPhoto('maint-foto-input', 'maint-foto-preview');
-    alert('✅ Tugas tersimpan!');
-  };
-
-  
-  function deductInventory(sparepartsInput) {
-    if (!sparepartsInput) return 0;
-    let totalCost = 0;
-    let inventory = safeGet('dreamos_inventory', []);
-    let parts = sparepartsInput.split(',');
-    let logDetails = [];
     
-    parts.forEach(part => {
-      let [name, qtyStr] = part.split(':');
-      if (!name || !qtyStr) return;
-      let itemName = name.trim().toLowerCase();
-      let qtyNeeded = parseInt(qtyStr.trim()) || 0;
+    var html = '';
+    tasks.forEach(function(t) {
+      var prioClass = (t.priority === 'high') ? 'priority-high' : '';
+      var badgeClass = (t.status === 'approved' || t.status === 'selesai') ? 'badge-approved' : 'badge-pending';
+      var statusText = t.status === 'approved' || t.status === 'selesai' ? '✅ Selesai' : '⏳ Pending';
       
-      let itemIdx = inventory.findIndex(i => i.nama && i.nama.toLowerCase() === itemName);
-      if (itemIdx > -1) {
-        let currentQty = parseInt(inventory[itemIdx].jumlah) || 0;
-        if (currentQty >= qtyNeeded) {
-          inventory[itemIdx].jumlah = currentQty - qtyNeeded;
-          inventory[itemIdx].updated_at = new Date().toISOString();
-          let price = parseInt(inventory[itemIdx].nilai) || 0;
-          let itemTotal = price * qtyNeeded;
-          totalCost += itemTotal;
-          logDetails.push(`${inventory[itemIdx].nama} (-${qtyNeeded}) @ Rp ${price.toLocaleString('id-ID')}`);
-          
-          // Sync ke Supabase
-          if (window.supabaseClient) {
-            window.supabaseClient.from('inventory').update({ 
-              quantity: parseInt(inventory[itemIdx].jumlah),
-              last_updated: new Date().toISOString()
-            }).eq('id', inventory[itemIdx].id).then(() => {}).catch(e => console.warn('Inv sync error:', e.message));
-          }
-        } else {
-          alert(`⚠️ Stok ${inventory[itemIdx].nama} tidak cukup! (Sisa: ${currentQty})`);
-        }
-      } else {
-        alert(`⚠️ Barang '${name.trim()}' tidak ditemukan di gudang.`);
-      }
+      html += '<div class="task-card ' + prioClass + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.5rem;">' +
+          '<h3 style="margin:0;color:var(--neon);font-size:1rem;">' + (t.judul || t.deskripsi || 'Task Maintenance') + '</h3>' +
+          '<span class="badge ' + badgeClass + '">' + statusText + '</span>' +
+        '</div>' +
+        '<p style="margin:0.3rem 0;color:#cbd5e1;font-size:0.875rem;">📍 ' + (t.lokasi || '-') + '</p>' +
+        '<p style="margin:0.3rem 0;color:#94a3b8;font-size:0.8125rem;">' + (t.deskripsi || '') + '</p>' +
+        '<div style="margin-top:0.5rem;font-size:0.75rem;color:#64748b;">' +
+          'Priority: <strong>' + (t.priority || 'medium') + '</strong> • ' +
+          'Dari K3: <strong>' + (t.k3_report_id ? 'Ya' : 'Tidak') + '</strong> • ' +
+          'Dibuat: ' + new Date(t.created_at).toLocaleDateString('id-ID') +
+        '</div>' +
+        (t.status !== 'selesai' ? '<div style="margin-top:0.5rem;"><button class="btn btn-success" onclick="markComplete(\'' + t.id + '\')">✅ Tandai Selesai</button></div>' : '') +
+      '</div>';
     });
     
-    if (logDetails.length > 0) {
-      safeSet('dreamos_inventory', inventory);
-      if (window.BankAudit) BankAudit.log('MAINT_DEDUCT_STOCK', { items: logDetails, total_cost: totalCost });
-      alert('✅ Stok gudang berhasil diperbarui! Biaya Sparepart: Rp ' + totalCost.toLocaleString('id-ID'));
-    }
-    return totalCost;
+    el.innerHTML = html;
   }
-
-  window.changeStatus = function(id, newStatus) {
-    let tasks = safeGet('dreamos_maintenance_tasks', []);
-    let idx = tasks.findIndex(t => t.id === id);
-    if (idx === -1) return;
-    
-    if (newStatus === 'Selesai') {
-      let useParts = confirm('Apakah ada penggunaan sparepart/barang dari gudang untuk tugas ini?');
-      if (useParts) {
-        let partsInput = prompt('Masukkan nama barang dan jumlah (pisahkan dengan titik dua, pisahkan banyak barang dengan koma).\nContoh: Bohlam:2, Kabel:1');
-        if (partsInput) {
-          let cost = deductInventory(partsInput);
-          tasks[idx].spareparts_used = partsInput;
-          tasks[idx].actual_cost = (parseInt(tasks[idx].biaya) || 0) + cost;
-        }
-      }
-    }
-    
-    tasks[idx].status = newStatus;
-    tasks[idx].updatedAt = new Date().toISOString();
-    safeSet('dreamos_maintenance_tasks', tasks);
-    
-  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
-  window.currentPhoto = null;
   
-  window.handlePhoto = function(input, previewId) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
-      input.value = '';
-      return;
+  window.markComplete = function(id) {
+    var tasks = safeGet('dreamos_maintenance_tasks', []);
+    var idx = tasks.findIndex(function(t) { return t.id === id; });
+    if (idx > -1) {
+      tasks[idx].status = 'selesai';
+      tasks[idx].completed_at = new Date().toISOString();
+      localStorage.setItem('dreamos_maintenance_tasks', JSON.stringify(tasks));
+      renderTasks();
+      alert('Task ditandai selesai!');
     }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
-        
-        const preview = document.getElementById(previewId);
-        if (preview) {
-          preview.src = window.currentPhoto;
-          preview.style.display = 'block';
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
   };
-
-  window.clearPhoto = function(inputId, previewId) {
-    window.currentPhoto = null;
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
-    const preview = document.getElementById(previewId);
-    if (preview) preview.style.display = 'none';
-  };
-
-  renderActive();
-
-    if (window.supabaseClient) {
-      window.supabaseClient.from('maintenance_tasks').update({ status: newStatus, updatedAt: tasks[idx].updatedAt }).eq('id', id).then(() => {}).catch(e => { console.warn('Maintenance update error:', e.message); });
-    }
-    if (window.BankAudit) BankAudit.log('MAINT_STATUS', { id, newStatus });
-  };
-
-  window.deleteTask = function(id) {
-    if (!confirm('Hapus tugas ini?')) return;
-    let tasks = safeGet('dreamos_maintenance_tasks', []);
-    tasks = tasks.filter(t => t.id !== id);
-    safeSet('dreamos_maintenance_tasks', tasks);
-    
-  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
-  window.currentPhoto = null;
   
-  window.handlePhoto = function(input, previewId) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
-      input.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
-        
-        const preview = document.getElementById(previewId);
-        if (preview) {
-          preview.src = window.currentPhoto;
-          preview.style.display = 'block';
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  window.clearPhoto = function(inputId, previewId) {
-    window.currentPhoto = null;
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
-    const preview = document.getElementById(previewId);
-    if (preview) preview.style.display = 'none';
-  };
-
-  renderActive();
-
-    if (window.supabaseClient) {
-      window.supabaseClient.from('maintenance_tasks').delete().eq('id', id).then(() => {}).catch(e => { console.warn('Maintenance delete error:', e.message); });
-    }
-    if (window.BankAudit) BankAudit.log('MAINT_DELETE', { id });
-  };
-
-  window.exportCSV = function() {
-    let tasks = safeGet('dreamos_maintenance_tasks', []);
-    let csv = 'Judul,Lokasi,Petugas,Jenis,Prioritas,Status,Biaya,Tanggal\n';
-    tasks.forEach(t => {
-      csv += '"' + esc(t.judul) + '","' + esc(t.lokasi) + '","' + esc(t.petugas) + '","' + esc(t.jenis) + '","' + esc(t.prioritas) + '","' + esc(t.status) + '",' + (t.biaya||0) + ',' + (t.created_at||'') + '\n';
-    });
-    let blob = new Blob([csv], { type: 'text/csv' });
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'maintenance_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click(); URL.revokeObjectURL(a.href);
-    alert('✅ CSV berhasil diexport!');
-  };
-
-  window.syncToCloud = async function() {
-    if (!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
-    let tasks = safeGet('dreamos_maintenance_tasks', []);
-    if (!tasks.length) return alert('⚠️ Tidak ada data untuk disync.');
-    let count = 0;
-    for (let t of tasks) {
-      try { await window.supabaseClient.from('maintenance_tasks').upsert(t); count++; } catch(e) { console.warn('Maintenance bulk sync error:', e.message); if(window.OfflineQueue) window.OfflineQueue.add('maintenance_tasks','upsert',t); }
-    }
-    alert('✅ ' + count + '/' + tasks.length + ' tugas tersync ke cloud!');
-    if (window.BankAudit) BankAudit.log('MAINT_SYNC', { total: tasks.length, success: count });
-  };
-
-  // Sync Engine
-  if (window.SyncEngine && window.supabaseClient) {
-    window.SyncEngine.subscribe('maintenance_tasks', () => { 
-  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
-  window.currentPhoto = null;
-  
-  window.handlePhoto = function(input, previewId) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
-      input.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
-        
-        const preview = document.getElementById(previewId);
-        if (preview) {
-          preview.src = window.currentPhoto;
-          preview.style.display = 'block';
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  window.clearPhoto = function(inputId, previewId) {
-    window.currentPhoto = null;
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
-    const preview = document.getElementById(previewId);
-    if (preview) preview.style.display = 'none';
-  };
-
-  renderActive(); });
-  }
-
-  // Init
-  
-  // =====  PTO: PHOTO TAKE OPTION WITH AUTO-COMPRESSION =====
-  window.currentPhoto = null;
-  
-  window.handlePhoto = function(input, previewId) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ File terlalu besar! Maksimal 5MB sebelum kompresi.');
-      input.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        window.currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
-        
-        const preview = document.getElementById(previewId);
-        if (preview) {
-          preview.src = window.currentPhoto;
-          preview.style.display = 'block';
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  window.clearPhoto = function(inputId, previewId) {
-    window.currentPhoto = null;
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
-    const preview = document.getElementById(previewId);
-    if (preview) preview.style.display = 'none';
-  };
-
-  renderActive();
-  updateStats();
-  if (window.BankAudit) BankAudit.log('ACCESS_MAINT_MODULE', { role: window.getUserRole ? window.getUserRole() : 'staff' });
-  console.log('🔧 Maintenance Ready');
-})();
-</script>
+  renderTasks();
+  </script>
+</body>
+</html>
