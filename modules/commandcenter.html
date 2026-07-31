@@ -1283,6 +1283,89 @@ window.goHomeHandler = function() {
     if (!forceSync) showToast('Data diperbarui');
   };
 
+
+  // 🌐 ENTERPRISE PRESENCE & ONLINE TRACKING ENGINE
+  let _presenceInterval = null;
+  let _onlineFetchInterval = null;
+
+  async function registerSession() {
+    if (!window.supabaseClient || !currentUser?.id) return;
+    try {
+      const device = navigator.userAgent.match(/Mobile|Android|iPhone|iPad|Windows|Macintosh|Linux/)?.[0] || 'Web';
+      await window.supabaseClient.from('user_sessions').upsert({
+        user_id: currentUser.id,
+        email: currentUser.email,
+        nama: currentUser.nama || currentUser.email.split('@')[0],
+        role: currentUser.role || 'staff',
+        last_seen: new Date().toISOString(),
+        device_info: device
+      });
+    } catch(e) { /* Silent fail if offline */ }
+  }
+
+  function startPresenceHeartbeat() {
+    if (_presenceInterval) clearInterval(_presenceInterval);
+    registerSession();
+    _presenceInterval = setInterval(registerSession, 30000); // Update tiap 30 detik
+  }
+
+  async function fetchOnlineUsers() {
+    const container = document.getElementById('online-users-list');
+    const countEl = document.getElementById('online-count');
+    if (!container) return;
+
+    if (!window.supabaseClient) {
+      container.innerHTML = '<p style="color:#f59e0b;text-align:center;padding:1rem;">📡 Mode Offline: Tracking cloud tidak aktif.</p>';
+      if(countEl) countEl.textContent = '-';
+      return;
+    }
+
+    try {
+      // User dianggap online jika heartbeat < 2 menit lalu
+      const twoMinsAgo = new Date(Date.now() - 120000).toISOString();
+      const { data, error } = await window.supabaseClient
+        .from('user_sessions')
+        .select('*')
+        .gte('last_seen', twoMinsAgo)
+        .order('last_seen', { ascending: false });
+
+      if (error) throw error;
+
+      if (countEl) countEl.textContent = data?.length || 0;
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:1rem;">Tidak ada user online saat ini.</p>';
+        return;
+      }
+
+      container.innerHTML = data.map(u => `
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <span style="width:8px;height:8px;background:#10b981;border-radius:50%;box-shadow:0 0 6px #10b981;"></span>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:0.85rem;">${esc(u.nama || u.email)}</div>
+            <div style="font-size:0.7rem;color:#94a3b8;">${u.role} • ${u.device_info || 'Web'}</div>
+          </div>
+          <div style="font-size:0.65rem;color:#64748b;">${new Date(u.last_seen).toLocaleTimeString('id-ID')}</div>
+        </div>
+      `).join('');
+
+      // Log aktivitas login baru (hanya jika belum tercatat di sesi ini)
+      if (!window._onlineNotified) {
+        window._onlineNotified = true;
+        logActivity('USER_ONLINE', `${currentUser.nama || currentUser.email} login dari ${navigator.userAgent.match(/Mobile|Android|iPhone|Windows/)?.[0] || 'Web'}`);
+      }
+    } catch(e) {
+      console.warn('⚠️ Fetch online users failed:', e.message);
+    }
+  }
+
+  // Cleanup saat tab ditutup / logout
+  window.addEventListener('beforeunload', async () => {
+    if (window.supabaseClient && currentUser?.id) {
+      try { await window.supabaseClient.from('user_sessions').delete().eq('user_id', currentUser.id); } catch(e){}
+    }
+  });
+
   // ===== INIT =====
   document.getElementById('sync-status').textContent = window.supabaseClient ? ' Online' : '🟡 Local';
   
