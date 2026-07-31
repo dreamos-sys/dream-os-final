@@ -140,34 +140,44 @@
     }
 
     async function loadPersonilList() {
-      // Load from users database
+      // 1. Cek apakah ada daftar personil yang disimpan manual
+      const savedPersonil = JSON.parse(localStorage.getItem('dreamos_security_personil') || 'null');
+      if (savedPersonil && Array.isArray(savedPersonil) && savedPersonil.length > 0) {
+        window.personilList = savedPersonil.sort();
+        return;
+      }
+
+      // 2. Ambil SEMUA user dari database agar TIDAK ADA yang hilang dari matriks
       const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
       
-      // Filter only security personnel (role = security or komandan_regu)
       window.personilList = users
-        .filter(u => ['security', 'komandan_regu'].includes(u.role))
         .map(u => u.nama || u.email.split('@')[0])
+        .filter((v, i, a) => a.indexOf(v) === i) // ambil nama unik
         .sort();
       
-      // If empty, try load from Supabase
+      // 3. Jika kosong, coba ambil SEMUA dari Supabase
       if (window.personilList.length === 0 && window.supabaseClient) {
         try {
           const { data, error } = await window.supabaseClient
             .from('users')
-            .select('nama, role')
-            .in('role', ['security', 'komandan_regu']);
+            .select('nama, email');
           
           if (!error && data) {
-            window.personilList = data.map(u => u.nama || u.email.split('@')[0]).sort();
+            window.personilList = data.map(u => u.nama || u.email.split('@')[0])
+              .filter((v, i, a) => a.indexOf(v) === i).sort();
           }
         } catch(e) {
           console.warn('Failed to load personil from Supabase:', e);
         }
       }
       
-      // Fallback: use sample data if still empty
+      // 4. Fallback: gunakan data lengkap jika masih kosong (termasuk Pak Hanung & Pak Erwin)
       if (window.personilList.length === 0) {
-        window.personilList = ['SUDARSONO', 'MARHUSIN', 'HERIYATNO', 'SUNARKO', 'HARIYANSAHC', 'AGUS SUTISNA', 'DONIH'];
+        window.personilList = [
+          'SUDARSONO', 'MARHUSIN', 'HERIYATNO', 'SUNARKO', 
+          'HARIYANSAHC', 'AGUS SUTISNA', 'DONIH', 
+          'HANUNG BUDIANTO, S.E.', 'ERWINSYAH'
+        ];
       }
     }
 
