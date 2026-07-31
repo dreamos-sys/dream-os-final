@@ -297,6 +297,88 @@
   </div>
 
 <script>
+
+  // ===== 🚦 SYNC THROTTLE & BATCH MANAGER (Anti-Rate-Limit) =====
+  const SyncThrottle = (function() {
+    const queue = [];
+    let timer = null;
+    let isProcessing = false;
+    const FLUSH_DELAY = 600;   // jeda antar batch (ms)
+    const BATCH_SIZE = 5;      // max payload per flush
+    const RETRY_DELAY = 1500;  // backoff kalau kena 429
+
+    async function processBatch() {
+      if (queue.length === 0) { isProcessing = false; return; }
+      isProcessing = true;
+      const batch = queue.splice(0, BATCH_SIZE);
+      let retryQueue = [];
+
+      for (const item of batch) {
+        try {
+          if (!window.supabaseClient) throw new Error('No client');
+          const res = await window.supabaseClient.from(item.table).upsert(item.data, { onConflict: item.onConflict || 'id' });
+          if (res.error) throw res.error;
+          console.log('🚦 Sync OK:', item.table, item.data.id);
+        } catch (e) {
+          const msg = String(e.message || e.status || '');
+          if (msg.includes('429') || msg.includes('rate') || msg.includes('Too Many')) {
+            console.warn('🚦 Rate limit hit. Backing off...');
+            retryQueue.push(item);
+            await new Promise(r => setTimeout(r, RETRY_DELAY));
+            continue;
+          }
+          console.warn('⚠️ Sync failed, queued offline:', e.message);
+          if (window.OfflineQueue) window.OfflineQueue.add(item.table, 'upsert', item.data);
+        }
+      }
+
+      // Retry failed items
+      queue.unshift(...retryQueue);
+
+      // Schedule next flush
+      if (queue.length > 0) {
+        timer = setTimeout(processBatch, FLUSH_DELAY);
+      } else {
+        isProcessing = false;
+      }
+    }
+
+    return {
+      push: function(table, data, opts) {
+        queue.push({ table, data, onConflict: opts?.onConflict });
+        if (!isProcessing) {
+          clearTimeout(timer);
+          timer = setTimeout(processBatch, FLUSH_DELAY);
+        }
+      },
+      flushNow: function() { return new Promise(r => { clearTimeout(timer); processBatch().then(r); }); }
+    };
+  })();
+
+  // 🔧 Debounce saveMatrix (200 klik jadi 1 paket)
+  let _matrixTimer = null;
+  const _origSaveMatrix = saveMatrix;
+  window.saveMatrix = function(data) {
+    localStorage.setItem('dreamos_matrix', JSON.stringify(data));
+    clearTimeout(_matrixTimer);
+    _matrixTimer = setTimeout(() => {
+      if (window.supabaseClient) {
+        console.log('🚦 Batching', data.length, 'matrix rows...');
+        data.forEach(row => {
+          SyncThrottle.push('security_schedules', {
+            id: (row.nama||'x') + '_' + (row.tgl||0) + '_' + (row.periode||'x'),
+            nama: row.nama,
+            divisi: row.divisi,
+            tgl: row.tgl,
+            shift: row.shift,
+            periode: row.periode || ''
+          }, { onConflict: 'id' });
+        });
+      }
+    }, 500); // debounce 500ms
+  };
+
+
 (function() {
   'use strict';
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
