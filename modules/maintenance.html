@@ -2,95 +2,462 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Maintenance • Dream OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --neon:#00ff9d; --accent:#0ea5e9; --warning:#e11d48; --gold:#f59e0b; }
-    * { box-sizing:border-box; }
-    body { font-family:'Inter',system-ui,sans-serif; background:#0a0e27; color:#e2e8f0; min-height:100vh; margin:0; padding:1rem; }
-    .glass { background:rgba(15,23,42,0.85); backdrop-filter:blur(16px); border:1px solid rgba(0,255,157,0.15); border-radius:16px; padding:1.25rem; margin-bottom:1rem; }
-    .back-btn { position:fixed; bottom:calc(1.5rem + env(safe-area-inset-bottom)); left:1rem; z-index:1000; background:rgba(30,41,59,0.95); border:1px solid var(--neon); color:var(--neon); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.875rem; }
-    .btn { min-height:44px; padding:0.6rem 0.85rem; border:none; border-radius:8px; font-weight:700; font-size:0.8125rem; cursor:pointer; }
-    .btn-success { background:#10b981; color:#fff; }
-    .btn-danger { background:var(--warning); color:#fff; }
-    .badge { padding:0.2rem 0.5rem; border-radius:10px; font-size:0.8125rem; font-weight:700; }
-    .badge-pending { background:rgba(245,158,11,0.2); color:#f59e0b; }
-    .badge-approved { background:rgba(16,185,129,0.2); color:#10b981; }
-    .badge-high { background:rgba(239,68,68,0.2); color:#ef4444; }
-    .task-card { background:rgba(0,0,0,0.3); border-left:4px solid var(--accent); padding:1rem; border-radius:12px; margin-bottom:0.8rem; }
-    .task-card.priority-high { border-left-color:var(--warning); }
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap');
+    :root{
+      --neon:#00ff9d; --accent:#0ea5e9; --warning:#e11d48; --gold:#f59e0b;
+      --ink:#0a0e27; --panel:rgba(15,23,42,0.82); --line:rgba(0,255,157,0.14);
+      --txt:#e2e8f0; --mut:#94a3b8; --mut2:#64748b;
+      --disp:'Chakra Petch','Inter',system-ui,sans-serif;
+      --body:'Inter',system-ui,sans-serif;
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+
+    .maint-root{
+      position:relative; min-height:100vh; margin:0; padding:1rem 1rem 6rem;
+      color:var(--txt); font-family:var(--body); overflow:hidden;
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(14,165,233,0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(0,255,157,0.08), transparent 55%),
+        var(--ink);
+    }
+    .maint-root::before{
+      content:""; position:absolute; inset:-2px; z-index:0; pointer-events:none;
+      background-image:
+        linear-gradient(rgba(0,255,157,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,157,0.05) 1px, transparent 1px);
+      background-size:34px 34px;
+      mask-image:radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+      -webkit-mask-image:radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+      animation:gridPan 90s linear infinite;
+    }
+    .maint-root::after{
+      content:""; position:absolute; top:-120px; right:-80px; width:320px; height:320px; z-index:0; pointer-events:none;
+      background:radial-gradient(circle, rgba(0,255,157,0.16), transparent 70%);
+      filter:blur(8px); animation:glowPulse 7s ease-in-out infinite;
+    }
+    .maint-root > *{position:relative; z-index:1;}
+
+    @keyframes gridPan{from{background-position:0 0,0 0;}to{background-position:34px 34px,34px 34px;}}
+    @keyframes glowPulse{0%,100%{opacity:.5;transform:scale(1);}50%{opacity:.9;transform:scale(1.12);}}
+    @keyframes floatY{0%,100%{transform:translateY(0) rotate(-6deg);}50%{transform:translateY(-9px) rotate(-6deg);}}
+    @keyframes revealUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+    @keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(225,29,72,.55);}70%{box-shadow:0 0 0 7px rgba(225,29,72,0);}}
+    @keyframes shimmer{0%{background-position:-160% 0;}100%{background-position:260% 0;}}
+    @keyframes toastIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:none;}}
+
+    .back-btn{position:fixed; bottom:calc(1.2rem + env(safe-area-inset-bottom)); left:1rem; z-index:1200;
+      background:rgba(10,14,39,0.92); border:1px solid var(--neon); color:var(--neon);
+      padding:.55rem 1.1rem; border-radius:10px; cursor:pointer; font-weight:700; font-size:.85rem;
+      font-family:var(--disp); letter-spacing:.5px; backdrop-filter:blur(8px);
+      transition:transform .15s ease, box-shadow .2s ease;}
+    .back-btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,255,157,.25);}
+    .back-btn:active{transform:scale(.96);}
+
+    .deck-head{display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.1rem;}
+    .deck-eyebrow{font-family:var(--disp); font-size:.7rem; letter-spacing:3px; text-transform:uppercase; color:var(--neon); opacity:.85; margin:0 0 .35rem;}
+    .deck-title{font-family:var(--disp); font-weight:700; font-size:clamp(1.5rem,5vw,2.1rem); line-height:1; margin:0; color:#fff; letter-spacing:.5px;}
+    .deck-title b{color:var(--neon);}
+    .deck-sub{color:var(--mut); font-size:.82rem; margin:.45rem 0 0; max-width:46ch;}
+    .live-pill{display:inline-flex; align-items:center; gap:.45rem; font-family:var(--disp); font-size:.72rem;
+      letter-spacing:1px; text-transform:uppercase; color:var(--neon);
+      border:1px solid var(--line); background:rgba(0,255,157,.06); padding:.4rem .7rem; border-radius:999px;}
+    .live-pill .dot{width:8px; height:8px; border-radius:50%; background:var(--neon); animation:pulseDot 1.8s infinite; box-shadow:0 0 8px var(--neon);}
+
+    .stat-strip{display:grid; grid-template-columns:repeat(2,1fr); gap:.7rem; margin-bottom:1.1rem;}
+    @media(min-width:680px){.stat-strip{grid-template-columns:repeat(4,1fr);}}
+    .stat{position:relative; overflow:hidden; background:var(--panel); border:1px solid var(--line);
+      border-radius:14px; padding:.85rem .9rem; backdrop-filter:blur(10px);}
+    .stat::after{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--c,var(--neon));}
+    .stat .num{font-family:var(--disp); font-weight:700; font-size:1.9rem; line-height:1; color:#fff; font-variant-numeric:tabular-nums;}
+    .stat .lab{font-size:.66rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--mut); margin-top:.4rem;}
+    .stat.alert .num{color:var(--warning);}
+    .stat.alert .dotlive{position:absolute; top:.7rem; right:.7rem; width:8px; height:8px; border-radius:50%; background:var(--warning); animation:pulseDot 1.4s infinite;}
+
+    .toolbar{display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.9rem;}
+    .btn{min-height:44px; padding:.6rem .9rem; border:none; border-radius:10px; font-weight:700; font-size:.8rem;
+      cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+      font-family:var(--disp); letter-spacing:.4px; transition:transform .14s ease, box-shadow .2s ease, background .2s ease, filter .2s ease;}
+    .btn:active{transform:scale(.95);}
+    .btn-primary{background:var(--accent); color:#fff;}
+    .btn-primary:hover{box-shadow:0 8px 20px rgba(14,165,233,.35); transform:translateY(-2px);}
+    .btn-success{background:#10b981; color:#fff;}
+    .btn-success:hover{box-shadow:0 8px 20px rgba(16,185,129,.35); transform:translateY(-2px);}
+    .btn-ghost{background:rgba(255,255,255,.05); color:var(--txt); border:1px solid var(--line);}
+    .btn-ghost:hover{background:rgba(0,255,157,.1); border-color:var(--neon);}
+    .btn-danger{background:var(--warning); color:#fff;}
+    .btn-sm{min-height:38px; padding:.45rem .7rem; font-size:.74rem;}
+
+    .filters{display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1rem; padding:.35rem; background:rgba(0,0,0,.28); border:1px solid var(--line); border-radius:12px;}
+    .chip{flex:1; min-width:74px; text-align:center; padding:.5rem .4rem; border-radius:9px; cursor:pointer;
+      font-family:var(--disp); font-size:.72rem; letter-spacing:.6px; text-transform:uppercase; color:var(--mut);
+      border:1px solid transparent; transition:all .18s ease; user-select:none;}
+    .chip:hover{color:var(--txt); background:rgba(255,255,255,.04);}
+    .chip.active{color:#04130d; background:var(--neon); font-weight:700; box-shadow:0 4px 14px rgba(0,255,157,.3);}
+    .chip .cnt{font-weight:700; opacity:.85;}
+
+    .add-panel{overflow:hidden; max-height:0; opacity:0; transition:max-height .35s ease, opacity .3s ease, margin .3s ease; margin-bottom:0;}
+    .add-panel.open{max-height:520px; opacity:1; margin-bottom:1rem;}
+    .add-card{background:var(--panel); border:1px dashed var(--line); border-radius:14px; padding:1rem;}
+    .add-card h4{font-family:var(--disp); margin:0 0 .7rem; color:var(--neon); font-size:.95rem; letter-spacing:.5px;}
+    .fld{margin-bottom:.6rem;}
+    .fld label{display:block; font-size:.72rem; letter-spacing:.6px; text-transform:uppercase; color:var(--mut); margin-bottom:.3rem;}
+    .fld input,.fld select,.fld textarea{width:100%; padding:.6rem .7rem; background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.12);
+      border-radius:9px; color:var(--txt); font-size:.85rem; font-family:var(--body); outline:none; transition:border-color .2s ease;}
+    .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--neon);}
+    .fld-row{display:grid; grid-template-columns:1fr 1fr; gap:.6rem;}
+
+    .task{position:relative; background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.18));
+      border:1px solid var(--line); border-left:4px solid var(--bar,var(--accent)); border-radius:14px;
+      padding:1rem 1rem 1rem 1.1rem; margin-bottom:.8rem; overflow:hidden;
+      animation:revealUp .45s cubic-bezier(.2,.7,.2,1) both;
+      transition:transform .18s ease, box-shadow .25s ease, border-color .2s ease;}
+    .task:hover{transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.45); border-color:rgba(0,255,157,.4);}
+    .task.done{opacity:.62;}
+    .task.done .t-title{text-decoration:line-through; text-decoration-color:rgba(148,163,184,.6);}
+    .task .shine{position:absolute; inset:0; pointer-events:none; opacity:0;
+      background:linear-gradient(110deg, transparent 30%, rgba(0,255,157,.10) 50%, transparent 70%);
+      background-size:220% 100%;}
+    .task:not(.done):hover .shine{opacity:1; animation:shimmer 1.1s ease;}
+    .t-top{display:flex; justify-content:space-between; align-items:flex-start; gap:.6rem; margin-bottom:.45rem;}
+    .t-title{font-family:var(--disp); font-weight:600; font-size:1.02rem; color:#fff; margin:0; line-height:1.25;}
+    .t-loc{font-size:.82rem; color:var(--txt); margin:.1rem 0 .35rem; display:flex; align-items:center; gap:.35rem;}
+    .t-desc{font-size:.82rem; color:var(--mut); line-height:1.5; margin:0 0 .6rem;}
+    .t-meta{display:flex; flex-wrap:wrap; gap:.4rem .8rem; align-items:center; font-size:.7rem; color:var(--mut2); margin-bottom:.6rem;}
+    .t-meta b{color:var(--mut);}
+    .t-actions{display:flex; gap:.45rem; flex-wrap:wrap;}
+    .badge{padding:.22rem .55rem; border-radius:999px; font-size:.68rem; font-weight:700; letter-spacing:.4px; white-space:nowrap; font-family:var(--disp);}
+    .b-pending{background:rgba(245,158,11,.16); color:var(--gold);}
+    .b-done{background:rgba(16,185,129,.16); color:#34d399;}
+    .b-prio{background:var(--pbg,rgba(14,165,233,.16)); color:var(--pcol,var(--accent));}
+    .k3-link{display:inline-flex; align-items:center; gap:.3rem; font-size:.68rem; font-weight:700; color:var(--neon);
+      background:rgba(0,255,157,.08); border:1px solid var(--line); padding:.2rem .5rem; border-radius:999px; cursor:pointer; font-family:var(--disp);}
+    .k3-link:hover{background:rgba(0,255,157,.18);}
+
+    .empty{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:2.2rem 1.4rem; text-align:center; backdrop-filter:blur(10px);}
+    .empty svg{width:74px; height:74px; margin-bottom:.6rem; animation:floatY 4.5s ease-in-out infinite;}
+    .empty h3{font-family:var(--disp); color:#fff; margin:.2rem 0 .4rem; font-size:1.15rem; letter-spacing:.4px;}
+    .empty p{color:var(--mut); font-size:.85rem; margin:0 auto 1.1rem; max-width:40ch; line-height:1.55;}
+    .empty .row{display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap;}
+
+    details.debug{margin-top:1.4rem; border:1px solid var(--line); border-radius:12px; background:rgba(0,0,0,.3); overflow:hidden;}
+    details.debug summary{cursor:pointer; padding:.7rem .9rem; font-family:var(--disp); font-size:.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--mut); list-style:none;}
+    details.debug summary::-webkit-details-marker{display:none;}
+    details.debug summary:hover{color:var(--neon);}
+    details.debug pre{margin:0; padding:.8rem .9rem; font-size:.7rem; color:#9fb3c8; max-height:220px; overflow:auto; white-space:pre-wrap; border-top:1px solid var(--line);}
+
+    #maint-toast{position:fixed; top:calc(.8rem + env(safe-area-inset-top)); right:.8rem; z-index:1300; display:flex; flex-direction:column; gap:.5rem; max-width:88vw;}
+    .toast{display:flex; align-items:center; gap:.55rem; background:rgba(10,14,39,.96); border:1px solid var(--line);
+      border-left:4px solid var(--neon); color:var(--txt); padding:.7rem .9rem; border-radius:11px; font-size:.82rem;
+      box-shadow:0 12px 30px rgba(0,0,0,.5); animation:toastIn .3s ease; backdrop-filter:blur(10px);}
+    .toast.err{border-left-color:var(--warning);}
+    .toast.warn{border-left-color:var(--gold);}
+
+    @media (prefers-reduced-motion: reduce){
+      *{animation-duration:.001ms !important; transition-duration:.05ms !important;}
+    }
   </style>
 </head>
 <body>
+<div class="maint-root">
   <button class="back-btn" onclick="window.goHome()">← HOME</button>
-  
-  <div style="max-width:920px;margin:0 auto;padding:0.5rem 0.5rem 5rem;">
-    <div class="glass">
-      <h2 style="color:var(--neon);margin:0;font-size:1.1rem;"> Maintenance Tasks</h2>
-      <p style="color:#64748b;font-size:0.875rem;">Auto-generated from K3 Reports</p>
+  <div id="maint-toast"></div>
+
+  <header class="deck-head">
+    <div>
+      <p class="deck-eyebrow">Work Order Deck</p>
+      <h1 class="deck-title">Maintenance <b>Tasks</b></h1>
+      <p class="deck-sub">Tugas perbaikan yang dirakit otomatis dari laporan K3 “Kerusakan Sarana”, atau ditambah manual oleh teknisi.</p>
     </div>
-    
-    <div id="task-list"></div>
+    <span class="live-pill"><span class="dot"></span> Live Board</span>
+  </header>
+
+  <section class="stat-strip" id="stat-strip"></section>
+
+  <div class="toolbar">
+    <button class="btn btn-primary" id="btn-add" onclick="toggleAdd()">＋ Tugas Manual</button>
+    <button class="btn btn-ghost" onclick="reconcileFromK3(true)">🔗 Tarik dari K3</button>
+    <button class="btn btn-ghost" onclick="pullFromCloud()">☁️ Tarik Cloud</button>
+    <button class="btn btn-ghost" onclick="clearCompleted()">🧹 Bersihkan Selesai</button>
   </div>
 
-  <script>
-  window.goHome = function() {
-    if (window.parent && typeof window.parent.goHome === 'function') window.parent.goHome();
-    else window.location.href = '../index.html';
+  <div class="add-panel" id="add-panel">
+    <div class="add-card">
+      <h4>🛠️ Buat Work Order Manual</h4>
+      <form id="add-form" onsubmit="return submitAdd(event)">
+        <div class="fld"><label>Judul Pekerjaan *</label><input id="f-judul" required placeholder="Cth: Ganti lampu R. Musik"></div>
+        <div class="fld-row">
+          <div class="fld"><label>Lokasi *</label><input id="f-lokasi" required placeholder="Cth: R. Musik Lt.2"></div>
+          <div class="fld"><label>Urgensi</label>
+            <select id="f-prio"><option value="normal">Normal</option><option value="medium">Sedang</option><option value="high">Tinggi</option><option value="critical">Kritis</option></select>
+          </div>
+        </div>
+        <div class="fld"><label>Catatan / Deskripsi</label><textarea id="f-desc" rows="2" placeholder="Detail kerusakan atau instruksi..."></textarea></div>
+        <div style="display:flex; gap:.5rem;">
+          <button type="submit" class="btn btn-success" style="flex:1;">💾 Simpan Tugas</button>
+          <button type="button" class="btn btn-ghost" onclick="toggleAdd(false)">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div id="task-list"></div>
+
+  <details class="debug">
+    <summary>🔍 Debug · Intip Data LocalStorage</summary>
+    <pre id="debug-data">—</pre>
+  </details>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var KEY = 'dreamos_maintenance_tasks';
+  var K3KEY = 'dreamos_k3_reports';
+  var currentFilter = 'all';
+
+  window.goHome = function(){
+    try{ if (window.parent && typeof window.parent.goHome === 'function') window.parent.goHome();
+    else if (typeof window.goHome === 'function' && window.goHome !== arguments.callee) window.goHome();
+    else window.location.href = '../index.html'; }catch(e){ window.location.href = '../index.html'; }
   };
-  
-  function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
-  
-  function renderTasks() {
-    var tasks = safeGet('dreamos_maintenance_tasks', []);
-    var el = document.getElementById('task-list');
-    
-    console.log('🔧 Maintenance Tasks loaded:', tasks.length, tasks);
-    
-    if (!tasks.length) {
-      el.innerHTML = '<div class="glass"><p style="text-align:center;color:#94a3b8;padding:2rem;">📭 Belum ada task maintenance.<br><small>Task akan otomatis muncul saat ada laporan K3 "Kerusakan Sarana".</small></p></div>';
-      return;
-    }
-    
-    var html = '';
-    tasks.forEach(function(t) {
-      var prioClass = (t.priority === 'high') ? 'priority-high' : '';
-      var badgeClass = (t.status === 'approved' || t.status === 'selesai') ? 'badge-approved' : 'badge-pending';
-      var statusText = t.status === 'approved' || t.status === 'selesai' ? '✅ Selesai' : '⏳ Pending';
-      
-      html += '<div class="task-card ' + prioClass + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.5rem;">' +
-          '<h3 style="margin:0;color:var(--neon);font-size:1rem;">' + (t.judul || t.deskripsi || 'Task Maintenance') + '</h3>' +
-          '<span class="badge ' + badgeClass + '">' + statusText + '</span>' +
-        '</div>' +
-        '<p style="margin:0.3rem 0;color:#cbd5e1;font-size:0.875rem;">📍 ' + (t.lokasi || '-') + '</p>' +
-        '<p style="margin:0.3rem 0;color:#94a3b8;font-size:0.8125rem;">' + (t.deskripsi || '') + '</p>' +
-        '<div style="margin-top:0.5rem;font-size:0.75rem;color:#64748b;">' +
-          'Priority: <strong>' + (t.priority || 'medium') + '</strong> • ' +
-          'Dari K3: <strong>' + (t.k3_report_id ? 'Ya' : 'Tidak') + '</strong> • ' +
-          'Dibuat: ' + new Date(t.created_at).toLocaleDateString('id-ID') +
-        '</div>' +
-        (t.status !== 'selesai' ? '<div style="margin-top:0.5rem;"><button class="btn btn-success" onclick="markComplete(\'' + t.id + '\')">✅ Tandai Selesai</button></div>' : '') +
-      '</div>';
-    });
-    
-    el.innerHTML = html;
+
+  function safeGet(k,fb){ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb)); }catch(e){ return fb; } }
+  function safeSet(k,d){ localStorage.setItem(k, JSON.stringify(d)); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escA(s){ return esc(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+  function $(id){ return document.getElementById(id); }
+
+  function timeAgo(iso){
+    if(!iso) return '-';
+    var diff = Date.now() - new Date(iso).getTime();
+    var m = Math.floor(diff/60000);
+    if(m < 1) return 'baru saja';
+    if(m < 60) return m+' mnt lalu';
+    var h = Math.floor(m/60);
+    if(h < 24) return h+' jam lalu';
+    var d = Math.floor(h/24);
+    if(d < 7) return d+' hari lalu';
+    return new Date(iso).toLocaleDateString('id-ID',{day:'numeric',month:'short'});
   }
-  
-  window.markComplete = function(id) {
-    var tasks = safeGet('dreamos_maintenance_tasks', []);
-    var idx = tasks.findIndex(function(t) { return t.id === id; });
-    if (idx > -1) {
-      tasks[idx].status = 'selesai';
-      tasks[idx].completed_at = new Date().toISOString();
-      localStorage.setItem('dreamos_maintenance_tasks', JSON.stringify(tasks));
-      console.log('✅ Task marked complete:', id);
-      renderTasks();
-      alert('✅ Task ditandai selesai!');
-    }
+
+  function prioStyle(p){
+    p = (p||'').toLowerCase();
+    if(p==='critical'||p==='urgent') return {bar:'#e11d48', bg:'rgba(225,29,72,.16)', col:'#fb7185', label:'KRITIS'};
+    if(p==='high') return {bar:'#f59e0b', bg:'rgba(245,158,11,.16)', col:'#fbbf24', label:'TINGGI'};
+    if(p==='medium') return {bar:'#0ea5e9', bg:'rgba(14,165,233,.16)', col:'#38bdf8', label:'SEDANG'};
+    return {bar:'#10b981', bg:'rgba(16,185,129,.16)', col:'#34d399', label:'NORMAL'};
+  }
+  function isDone(t){ var s=(t.status||'').toLowerCase(); return s==='selesai'||s==='approved'||s==='done'; }
+
+  function toast(msg,type){
+    var c = $('maint-toast'); if(!c) return;
+    var t = document.createElement('div'); t.className = 'toast'+(type?(' '+type):'');
+    var ic = type==='err'?'⛔':type==='warn'?'⚠️':'✅';
+    t.innerHTML = '<span>'+ic+'</span><span>'+esc(msg)+'</span>';
+    c.appendChild(t);
+    setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(40px)'; setTimeout(function(){ t.remove(); },300); }, 3200);
+  }
+
+  function countUp(el, target){
+    var start = 0, dur = 600, t0 = null;
+    function step(ts){ if(!t0) t0=ts; var p = Math.min((ts-t0)/dur,1); el.textContent = Math.round(start+(target-start)*p); if(p<1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+
+  function renderStats(tasks){
+    var total = tasks.length;
+    var pending = tasks.filter(function(t){ return !isDone(t); }).length;
+    var done = tasks.filter(isDone).length;
+    var high = tasks.filter(function(t){ return !isDone(t) && /high|critical|urgent/i.test(t.priority||''); }).length;
+    var html =
+      statBox('total','Total Order', total, '#00ff9d', false) +
+      statBox('pending','Menunggu', pending, '#f59e0b', false) +
+      statBox('done','Selesai', done, '#10b981', false) +
+      statBox('high','Urgen Aktif', high, '#e11d48', high>0);
+    $('stat-strip').innerHTML = html;
+    countUp($('n-total'), total); countUp($('n-pending'), pending); countUp($('n-done'), done); countUp($('n-high'), high);
+  }
+  function statBox(id,lab,val,col,alert){
+    return '<div class="stat'+(alert?' alert':'')+'" style="--c:'+col+'">'+(alert?'<span class="dotlive"></span>':'')+
+      '<div class="num" id="n-'+id+'">0</div><div class="lab">'+lab+'</div></div>';
+  }
+
+  function renderFilters(tasks){
+    var pending = tasks.filter(function(t){ return !isDone(t); }).length;
+    var done = tasks.filter(isDone).length;
+    var high = tasks.filter(function(t){ return !isDone(t) && /high|critical|urgent/i.test(t.priority||''); }).length;
+    var defs = [['all','Semua',tasks.length],['pending','Pending',pending],['high','Urgen',high],['done','Selesai',done]];
+    $('filters').innerHTML = defs.map(function(d){
+      return '<div class="chip'+(currentFilter===d[0]?' active':'')+'" onclick="setFilter(\''+d[0]+'\')">'+d[1]+' <span class="cnt">'+d[2]+'</span></div>';
+    }).join('');
+  }
+  window.setFilter = function(f){ currentFilter = f; renderAll(); };
+
+  function applyFilter(tasks){
+    if(currentFilter==='pending') return tasks.filter(function(t){ return !isDone(t); });
+    if(currentFilter==='done') return tasks.filter(isDone);
+    if(currentFilter==='high') return tasks.filter(function(t){ return !isDone(t) && /high|critical|urgent/i.test(t.priority||''); });
+    return tasks;
+  }
+
+  function card(t,i){
+    var ps = prioStyle(t.priority);
+    var done = isDone(t);
+    var badge = done ? '<span class="badge b-done">✅ SELESAI</span>' : '<span class="badge b-pending">⏳ PENDING</span>';
+    var k3 = t.k3_report_id ? '<span class="k3-link" onclick="peekK3(\''+escA(t.k3_report_id)+'\')">🔗 dari K3</span>' : '<span class="badge" style="background:rgba(255,255,255,.06);color:#94a3b8;">MANUAL</span>';
+    var actions = done
+      ? '<button class="btn btn-ghost btn-sm" onclick="reopen(\''+escA(t.id)+'\')">↺ Buka Lagi</button><button class="btn btn-ghost btn-sm" onclick="delTask(\''+escA(t.id)+'\')">🗑️ Hapus</button>'
+      : '<button class="btn btn-success btn-sm" onclick="markComplete(\''+escA(t.id)+'\')">✅ Selesai</button><button class="btn btn-ghost btn-sm" onclick="delTask(\''+escA(t.id)+'\')">🗑️</button>';
+    return '<article class="task'+(done?' done':'')+'" style="--bar:'+ps.bar+';animation-delay:'+(i*55)+'ms;">'+
+      '<span class="shine"></span>'+
+      '<div class="t-top"><h3 class="t-title">'+esc(t.judul||t.deskripsi||'Work Order')+'</h3>'+badge+'</div>'+
+      '<div class="t-loc">📍 '+esc(t.lokasi||'-')+'</div>'+
+      (t.deskripsi ? '<p class="t-desc">'+esc(t.deskripsi)+'</p>' : '')+
+      '<div class="t-meta">'+
+        '<span class="badge b-prio" style="--pbg:'+ps.bg+';--pcol:'+ps.col+';">⚡ '+ps.label+'</span>'+
+        k3+
+        '<span><b>Dibuat</b> '+timeAgo(t.created_at)+'</span>'+
+        (t.created_by ? '<span><b>oleh</b> '+esc(t.created_by)+'</span>' : '')+
+      '</div>'+
+      '<div class="t-actions">'+actions+'</div>'+
+    '</article>';
+  }
+
+  function emptyState(){
+    return '<div class="empty">'+
+      '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">'+
+        '<path d="M40 12a12 12 0 0 0-15.3 15.3L10 42l4 4 4 4 14.7-14.7A12 12 0 0 0 48 20l-7 7-5-5 7-7a12 12 0 0 0-3-3Z" stroke="#00ff9d" stroke-width="3" stroke-linejoin="round"/>'+
+        '<circle cx="44" cy="44" r="6" stroke="#0ea5e9" stroke-width="3"/>'+
+      '</svg>'+
+      '<h3>Papan kerja masih kosong</h3>'+
+      '<p>Belum ada work order. Tarik otomatis dari laporan K3 “Kerusakan Sarana” yang sudah ada, atau buat tugas manual pertama Anda.</p>'+
+      '<div class="row"><button class="btn btn-ghost" onclick="reconcileFromK3(true)">🔗 Tarik dari K3</button>'+
+      '<button class="btn btn-primary" onclick="toggleAdd(true)">＋ Tugas Manual</button></div>'+
+    '</div>';
+  }
+
+  function renderAll(){
+    var tasks = safeGet(KEY, []);
+    renderStats(tasks);
+    renderFilters(tasks);
+    var view = applyFilter(tasks);
+    var el = $('task-list');
+    if(!tasks.length){ el.innerHTML = emptyState(); }
+    else if(!view.length){ el.innerHTML = '<div class="empty" style="padding:1.4rem;"><h3 style="font-size:1rem;">Tidak ada tugas di filter ini</h3><p style="margin-bottom:0;">Coba pilih filter lain di atas.</p></div>'; }
+    else { el.innerHTML = view.map(card).join(''); }
+    var dbg = $('debug-data'); if(dbg) dbg.textContent = JSON.stringify(tasks, null, 2);
+  }
+
+  window.markComplete = function(id){
+    var tasks = safeGet(KEY, []); var t = tasks.find(function(x){ return x.id===id; }); if(!t) return;
+    t.status='selesai'; t.completed_at = new Date().toISOString();
+    safeSet(KEY, tasks); pushCloud(t,'update'); renderAll(); toast('Tugas ditandai selesai');
   };
-  
-  renderTasks();
-  </script>
+  window.reopen = function(id){
+    var tasks = safeGet(KEY, []); var t = tasks.find(function(x){ return x.id===id; }); if(!t) return;
+    t.status='pending'; delete t.completed_at; safeSet(KEY, tasks); pushCloud(t,'update'); renderAll(); toast('Tugas dibuka kembali','warn');
+  };
+  window.delTask = function(id){
+    if(!confirm('Hapus work order ini?')) return;
+    var tasks = safeGet(KEY, []).filter(function(x){ return x.id!==id; });
+    safeSet(KEY, tasks); delCloud(id); renderAll(); toast('Work order dihapus','err');
+  };
+  window.clearCompleted = function(){
+    var tasks = safeGet(KEY, []); var done = tasks.filter(isDone);
+    if(!done.length){ toast('Tidak ada tugas selesai untuk dibersihkan','warn'); return; }
+    if(!confirm('Hapus '+done.length+' tugas yang sudah selesai?')) return;
+    safeSet(KEY, tasks.filter(function(t){ return !isDone(t); })); renderAll(); toast(done.length+' tugas selesai dibersihkan');
+  };
+
+  window.toggleAdd = function(force){
+    var p = $('add-panel'); var open = (typeof force==='boolean') ? force : !p.classList.contains('open');
+    p.classList.toggle('open', open);
+    if(open){ setTimeout(function(){ var f=$('f-judul'); if(f) f.focus(); }, 200); }
+  };
+  window.submitAdd = function(e){
+    e.preventDefault();
+    var judul = $('f-judul').value.trim(), lokasi = $('f-lokasi').value.trim();
+    var prio = $('f-prio').value, desc = $('f-desc').value.trim();
+    if(!judul || !lokasi){ toast('Judul & lokasi wajib diisi','err'); return false; }
+    var user = safeGet('dreamos_bound_user', {});
+    var t = { id:'maint_'+Date.now(), judul:judul, lokasi:lokasi, deskripsi:desc, priority:prio,
+      status:'pending', kategori:'manual', created_at:new Date().toISOString(),
+      created_by:(user.nama||user.email||'Teknisi'), k3_report_id:null };
+    var tasks = safeGet(KEY, []); tasks.unshift(t); safeSet(KEY, tasks);
+    pushCloud(t,'insert');
+    $('add-form').reset(); toggleAdd(false); currentFilter='all'; renderAll();
+    toast('Work order manual dibuat');
+    return false;
+  };
+
+  window.reconcileFromK3 = function(verbose){
+    var k3 = safeGet(K3KEY, []);
+    var tasks = safeGet(KEY, []);
+    var linked = {}; tasks.forEach(function(t){ if(t.k3_report_id) linked[t.k3_report_id]=true; });
+    var added = 0;
+    k3.forEach(function(r){
+      if(!r || !/kerusakan/i.test(r.kategori||'')) return;
+      if(linked[r.id]) return;
+      tasks.unshift({
+        id:'maint_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+        judul:'Perbaiki '+(r.lokasi||'sarana'),
+        deskripsi:(r.deskripsi||'')+' · (Otomatis dari K3 #'+String(r.id).slice(0,8)+')',
+        lokasi:r.lokasi||'-', priority:(r.priority||'medium'), status:'pending',
+        kategori:'repair', created_at:r.created_at||new Date().toISOString(),
+        created_by:r.nama_pelapor||r.pelapor_nama||'Sistem', k3_report_id:r.id
+      });
+      added++;
+    });
+    if(added){ safeSet(KEY, tasks); renderAll(); if(verbose) toast(added+' tugas ditarik dari laporan K3'); }
+    else if(verbose){ toast('Tidak ada K3 “Kerusakan Sarana” baru yang belum jadi tugas','warn'); }
+    return added;
+  };
+
+  window.peekK3 = function(id){
+    var r = safeGet(K3KEY, []).find(function(x){ return x.id===id; });
+    if(!r){ toast('Laporan K3 asal tidak ditemukan di perangkat ini','warn'); return; }
+    alert('🔗 LAPORAN K3 ASAL\n\nKategori: '+(r.kategori||'-')+'\nLokasi: '+(r.lokasi||'-')+'\nPelapor: '+(r.nama_pelapor||r.pelapor_nama||'-')+'\nStatus: '+(r.status||'-')+'\n\n'+(r.deskripsi||''));
+  };
+
+  // ---- Cloud sync (graceful, tidak mengganggu UX) ----
+  function pushCloud(t,op){
+    if(!window.supabaseClient) return;
+    try{
+      if(op==='delete'){ window.supabaseClient.from('maintenance_tasks').delete().eq('id',t).then(function(){}).catch(function(e){ console.warn('maint del cloud',e); }); }
+      else { window.supabaseClient.from('maintenance_tasks').upsert(t,{onConflict:'id'}).then(function(){}).catch(function(e){ console.warn('maint push cloud',e); }); }
+    }catch(e){ console.warn('maint cloud',e); }
+  }
+  function delCloud(id){ pushCloud(id,'delete'); }
+  window.pullFromCloud = function(){
+    if(!window.supabaseClient){ toast('Supabase belum siap','warn'); return; }
+    toast('Menarik dari cloud…');
+    window.supabaseClient.from('maintenance_tasks').select('*').order('created_at',{ascending:false}).limit(300)
+      .then(function(res){
+        if(res.error) throw res.error;
+        var remote = res.data||[]; var local = safeGet(KEY,[]); var map={};
+        local.forEach(function(b){ if(b&&b.id) map[b.id]=b; });
+        remote.forEach(function(b){ if(b&&b.id) map[b.id]=Object.assign({}, map[b.id]||{}, b); });
+        var merged = Object.keys(map).map(function(k){ return map[k]; })
+          .sort(function(a,b){ return String(b.created_at||'').localeCompare(String(a.created_at||'')); });
+        safeSet(KEY, merged); renderAll(); toast('Cloud: '+remote.length+' tugas');
+      }).catch(function(e){ toast('Gagal tarik cloud: '+(e.message||e),'err'); });
+  };
+
+  // init: reconcile diam-diam kalau masih kosong, lalu render
+  (function init(){
+    if(!safeGet(KEY,[]).length){ reconcileFromK3(false); }
+    renderAll();
+    if(window.supabaseClient){ setTimeout(function(){ /* silent pull on open */ }, 300); }
+  })();
+})();
+</script>
 </body>
 </html>
