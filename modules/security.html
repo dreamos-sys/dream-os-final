@@ -6,6 +6,7 @@
   <title>Security Ops Center Pro • Dream OS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
     * { box-sizing: border-box; }
@@ -61,6 +62,22 @@
     .sig-box { background: #1e293b; border: 1px solid var(--neon); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 400px; text-align: center; }
     .sig-canvas-wrap { background: #fff; border-radius: 8px; margin: 1rem 0; touch-action: none; }
     #sig-canvas { width: 100%; height: 180px; display: block; }
+
+    /* 🛡️ ENTERPRISE ADDONS */
+    .sop-checklist { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.8rem; margin: 0.5rem 0; }
+    .sop-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.8rem; }
+    .sop-item input { width: 18px; height: 18px; accent-color: var(--neon); }
+    .sla-timer { font-family: 'Orbitron', monospace; font-weight: 800; font-size: 0.85rem; padding: 0.2rem 0.5rem; border-radius: 6px; }
+    .sla-active { background: rgba(239,68,68,0.2); color: #ef4444; animation: pulse 1.5s infinite; }
+    .sla-breach { background: #ef4444; color: #fff; }
+    .sla-safe { background: rgba(16,185,129,0.2); color: #10b981; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .fatigue-warn { background: rgba(245,158,11,0.15); border: 1px solid #f59e0b; color: #f59e0b; padding: 0.4rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem; }
+    .qr-scanner-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .qr-scanner-modal.show { display: flex; }
+    .qr-box { background: #1e293b; border: 1px solid var(--neon); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 400px; text-align: center; }
+    #qr-reader { width: 100%; min-height: 250px; background: #000; border-radius: 8px; overflow: hidden; }
+
   </style>
 </head>
 <body>
@@ -166,6 +183,7 @@
             <option>Shift Malam (19:00-07:00)</option>
           </select>
           <button onclick="exportAuditTrail()" class="btn btn-primary">📥 Export Audit Trail (ISO)</button>
+          <button onclick="exportToCSV()" class="btn btn-success">📊 Export CSV (Excel)</button>
           <button onclick="window.print()" class="btn btn-warning">🖨️ CETAK PDF</button>
         </div>
       </div>
@@ -222,6 +240,7 @@
           <option>Lapangan</option><option>Area Parkir</option><option>Pos Belakang</option>
           <option>Koridor & Saung</option><option>Area Masjid</option>
         </select>
+        <button class="btn btn-primary" onclick="openQRScanner()" style="width:100%; margin-top:0.5rem;">📷 Scan QR Checkpoint</button>
         <button class="btn btn-success" onclick="logPatrol()" style="width:100%; margin-top:0.5rem;">✅ TAP CHECKPOINT</button>
         <div id="patrol-log" style="margin-top:0.8rem; font-size:0.75rem; color:#cbd5e1; max-height:200px; overflow-y:auto;"></div>
       </div>
@@ -418,6 +437,7 @@
     tbody.innerHTML = filtered.map((x, i) => {
       const statusColor = (x.severity === 'DARURAT' || x.severity === 'BERAT') ? '#ef4444' : (x.severity === 'AMAN' ? '#10b981' : '#f59e0b');
       const ttdDisplay = (x.ttd_img_penyerah || x.ttd_penyerah) ? '<span style="color:#10b981;">✅ TTD</span>' : '<span style="color:#94a3b8;">-</span>';
+      const slaDisplay = x.sla_deadline ? `<div id="sla-${x.id}" class="sla-timer sla-safe">--</div>` : '';
       const fotoDisplay = x.foto_bukti ? `<br><img src="${x.foto_bukti}" style="max-width:80px; max-height:80px; border-radius:4px; margin-top:4px; border:1px solid #cbd5e1;">` : '';
       return `<tr>
         <td style="text-align:center; font-weight:700;">${i + 1}</td>
@@ -426,7 +446,7 @@
         <td><b>D:</b> ${esc(x.petugas)}<br><b>K:</b> ${esc(x.penerima)}</td>
         <td>${esc(x.teks || '-')}<br><small style="color:#64748b; margin-top:4px; display:block;">📦 Aset: ${esc(x.aset_serah_terima || '-')}</small></td>
         <td style="text-align:center; color:${statusColor}; font-weight:700;">${esc(x.severity || x.stat)}</td>
-        <td style="text-align:center;">${ttdDisplay}${fotoDisplay}</td>
+        <td style="text-align:center;">${ttdDisplay}${fotoDisplay}${slaDisplay ? '<br>'+slaDisplay : ''}</td>
       </tr>`;
     }).join('');
   }
@@ -458,6 +478,10 @@
       renderMatrix();
       alert('✅ ' + name + ' ditambahkan!');
     } else if (act === 'save-laporan-pro') {
+      // 🔒 SOP VALIDATION
+      const sopChecks = ['sop-1','sop-2','sop-3','sop-4','sop-5'].every(id => document.getElementById(id)?.checked);
+      if (!sopChecks) return alert('⛔ SOP Checklist belum lengkap! Centang semua item sebelum menyimpan.');
+
       const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
       const now = new Date();
       const logId = 'seclog_' + Date.now();
@@ -465,9 +489,12 @@
       const sigPenyerah = window.currentSignatures.penyerah || null;
       const sigPenerima = window.currentSignatures.penerima || null;
       const fotoBukti = window.currentLogPhoto || null;
-      const ttdRaw = `${sigPenyerah ? 'SIG_P' : 'NO'}|${sigPenerima ? 'SIG_K' : 'NO'}|${logId}|${now.toISOString()}`;
-      let ttdHash = 'N/A';
-      try { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ttdRaw)); ttdHash = Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16); } catch(e){}
+      
+      // 🔗 HASH-CHAIN AUDIT TRAIL (Tamper-Evident)
+      const prevHash = logs.length > 0 ? (logs[0].chain_hash || logs[0].ttd_hash || 'GENESIS') : 'GENESIS';
+      const ttdRaw = `${prevHash}|${sigPenyerah ? 'SIG_P' : 'NO'}|${sigPenerima ? 'SIG_K' : 'NO'}|${logId}|${now.toISOString()}`;
+      let chainHash = 'N/A';
+      try { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ttdRaw)); chainHash = Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16); } catch(e){}
 
       const entry = {
         id: logId, tanggal: now.toLocaleDateString('id-ID'), jam: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
@@ -477,9 +504,11 @@
         pos: esc(document.getElementById('lap-pos')?.value.substring(0,50) || ''),
         status: cfg.can_approve_final ? 'approved' : 'pending',
         severity: severity, aset_serah_terima: document.getElementById('lap-aset')?.value.trim() || '-',
-        ttd_hash: ttdHash, ttd_img_penyerah: sigPenyerah, ttd_img_penerima: sigPenerima, foto_bukti: fotoBukti,
+        chain_hash: chainHash, prev_hash: prevHash, ttd_img_penyerah: sigPenyerah, ttd_img_penerima: sigPenerima, foto_bukti: fotoBukti,
         teks: esc(document.getElementById('lap-teks')?.value.substring(0,500) || ''),
-        created_at: now.toISOString(), sla_deadline: severity === 'DARURAT' ? new Date(Date.now()+15*60000).toISOString() : null
+        created_at: now.toISOString(), 
+        sla_deadline: ['DARURAT','BERAT'].includes(severity) ? new Date(Date.now() + (severity==='DARURAT'?15:120)*60000).toISOString() : null,
+        sla_status: ['DARURAT','BERAT'].includes(severity) ? 'active' : 'none'
       };
 
       window.currentSignatures = { penyerah: null, penerima: null };
@@ -534,6 +563,8 @@
   initMatrix();
   checkAccess();
   renderMatrix(); renderLogs(); renderLogbook(); updateStats(); autoFillSlide();
+  window.startSLATimers();
+  window.checkFatigue();
   setInterval(updateStats, 30000);
 
   // ===== ✍️ CANVAS TTD BASAH =====
@@ -615,6 +646,88 @@
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}</style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table><script>window.print();<\/script></body></html>`);
     w.document.close();
+  };
+
+
+  // ⏱️ SLA COUNTDOWN ENGINE
+  window.startSLATimers = function() {
+    const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
+    logs.forEach(l => {
+      if (l.sla_deadline && l.sla_status === 'active') {
+        const deadline = new Date(l.sla_deadline).getTime();
+        const timerEl = document.getElementById('sla-' + l.id);
+        if (!timerEl) return;
+        const update = () => {
+          const now = Date.now();
+          const diff = deadline - now;
+          if (diff <= 0) {
+            timerEl.textContent = '⚠️ BREACH';
+            timerEl.className = 'sla-timer sla-breach';
+            l.sla_status = 'breached';
+            if (window.PhantomAlerter) window.PhantomAlerter.securityAlert(l.pos, 'SLA_BREACH', 'Respon melebihi batas waktu!');
+            clearInterval(timerEl._int);
+          } else {
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            timerEl.textContent = `${m}m ${s}s`;
+            timerEl.className = 'sla-timer sla-active';
+          }
+        };
+        update();
+        timerEl._int = setInterval(update, 1000);
+      }
+    });
+  };
+
+  // 📊 CSV EXPORT COMPLIANCE
+  window.exportToCSV = function() {
+    const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
+    const bom = '\uFEFF';
+    const headers = ['ID','Tanggal','Jam','Shift','Pos','Petugas','Penerima','Severity','Status','Aset','ChainHash','CreatedAt'];
+    const rows = logs.map(l => [l.id,l.tanggal,l.jam,l.shift,l.pos,l.petugas,l.penerima,l.severity,l.status,l.aset_serah_terima,l.chain_hash,l.created_at]);
+    const csv = bom + [headers.join(','), ...rows.map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download = `security_logs_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  };
+
+  // 📱 QR CHECKPOINT SCANNER
+  let qrScanner = null;
+  window.openQRScanner = function() {
+    document.getElementById('qr-scanner-modal').classList.add('show');
+    setTimeout(() => {
+      qrScanner = new Html5Qrcode("qr-reader");
+      qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
+        document.getElementById('patrol-pos').value = decodedText;
+        closeQRScanner();
+        logPatrol();
+      }, (err) => {});
+    }, 300);
+  };
+  window.closeQRScanner = function() {
+    if (qrScanner) { qrScanner.stop().catch(()=>{}); qrScanner.clear(); qrScanner = null; }
+    document.getElementById('qr-scanner-modal').classList.remove('show');
+  };
+
+  // ⚠️ SHIFT FATIGUE DETECTION (K3 Compliance)
+  window.checkFatigue = function() {
+    const full = getFullMatrix();
+    const period = document.getElementById('m-period')?.value;
+    const today = new Date().getDate();
+    const warnings = [];
+    const names = [...new Set(full.map(x => x.nama))];
+    names.forEach(n => {
+      const shifts = full.filter(x => x.nama === n && x.periode === period).sort((a,b) => a.tgl - b.tgl);
+      let consecutive = 0;
+      for (let i = 0; i < shifts.length; i++) {
+        if (['P','M'].includes(shifts[i].shift)) consecutive++;
+        else consecutive = 0;
+        if (consecutive >= 6) warnings.push(`${n}: ${consecutive} hari berturut tanpa libur (Risiko Fatigue)`);
+      }
+    });
+    const el = document.getElementById('fatigue-warn');
+    if (el) {
+      el.innerHTML = warnings.length ? warnings.map(w => `⚠️ ${w}`).join('<br>') : '✅ Tidak ada indikasi fatigue.';
+      el.style.display = 'block';
+    }
   };
 
   console.log('🛡️ Security Ops Center Pro Ready • Enterprise Zero-Fraud Architecture Active');
