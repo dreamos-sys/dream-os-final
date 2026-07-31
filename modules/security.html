@@ -113,6 +113,39 @@
       loadPersonilList();
       showJadwalMatriks();
       updateMetrics();
+      setupAutoTriggers();
+    }
+
+    // ===== AUTO-TRIGGERS (Slide #1, Serah Terima, etc) =====
+    function setupAutoTriggers() {
+      // 1. Trigger Slide #1 (5 detik sekali)
+      setInterval(() => {
+        const slide1 = document.getElementById('slide-1');
+        if (slide1) slide1.innerHTML = '<strong>🚨 Waktu Serah Terima Shift</strong><br>Harap lakukan serah terima shift di modul Security.';
+      }, 5000);
+
+      // 2. Serah Terima Otomatis Jam 07:00 & 19:00 WIB
+      setInterval(() => {
+        const now = new Date();
+        const hour = now.getHours();
+        const minutes = now.getMinutes();
+        const isMorning = hour === 7 && minutes >= 0 && minutes < 3;
+        const isEvening = hour === 19 && minutes >= 0 && minutes < 3;
+
+        if (isMorning || isEvening) {
+          showToast(`⏰ Serah Terima Shift ${isMorning ? 'Pagi' : 'Malam'}! Harap lakukan di modul Security.`, 'warning');
+          if (window.PhantomAlerter) PhantomAlerter.trigger('SHIFT_HANDOVER_' + (isMorning ? 'MORNING' : 'EVENING'));
+        }
+      }, 60000);
+
+      // 3. Laporan 24/7 Windows Excel
+      document.getElementById('laporan-excel').addEventListener('click', () => {
+        if (window.jspdf && window.jspdf.jsPDF) {
+          const pdf = new window.jspdf.jsPDF();
+          pdf.text('Laporan Keamanan 24/7', 10, 10);
+          pdf.save('laporan_keamanan.pdf');
+        }
+      });
     }
 
     // ===== LOAD DATA FROM SUPABASE & LOCAL =====
@@ -212,7 +245,7 @@
       
       // Generate matrix table
       html += '<div class="matrix-container">';
-      html += '<p style="font-size:.8125rem;color:var(--muted);margin-bottom:.5rem"> Putar HP ke landscape untuk melihat tabel lebih leluasa</p>';
+      html += '<p style="font-size:.8125rem;color:var(--muted);margin-bottom:.5rem">📱 Putar HP ke landscape untuk melihat tabel lebih leluasa</p>';
       html += '<table class="matrix-table">';
       html += '<thead><tr><th>Nama</th>';
       
@@ -253,7 +286,7 @@
     // ===== SHIFT TOGGLE FUNCTION =====
     window.toggleShift = function(personil, day) {
       if (!window.canEdit) {
-        showToast(' Akses Ditolak: Hanya Danru yang bisa edit jadwal', 'warn');
+        showToast('⛔ Akses Ditolak: Hanya Danru yang bisa edit jadwal', 'warn');
         return;
       }
       
@@ -281,7 +314,7 @@
     // ===== SAVE WITH CONFIRMATION =====
     window.saveSchedule = async function() {
       if (!window.canEdit) {
-        showToast(' Akses Ditolak', 'danger');
+        showToast('⛔ Akses Ditolak', 'danger');
         return;
       }
       
