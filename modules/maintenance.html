@@ -257,7 +257,7 @@
           <h1 class="vtitle" id="vh-title">Maintenance <b>Cockpit</b></h1>
           <p class="vsub" id="vh-sub"></p>
         </div>
-        <span class="live-pill"><span class="dot"></span> Live Board</span>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)reconcileK3(false); Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="Cloud.push()">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
       </div>
       <div id="view-root"></div>
       <details class="debug"><summary>🔍 Debug · Intip Data LocalStorage</summary><pre id="debug-data">—</pre></details>
@@ -521,7 +521,7 @@
       var wos=safeGet(K.wo,[]);wos.unshift(wo);safeSet(K.wo,wos);spawned++;});
     localStorage.removeItem(K.draft);
     audit('INSPECTION_SUBMIT','Putaran '+fmtDate(rec.date)+' · '+rec.completion+'% · temuan '+findings.length+(spawned?(' · WO dibuat '+spawned):''));
-    renderRail();renderView();toast('Putaran inspeksi dicatat'+(spawned?(' · '+spawned+' work order dibuat dari temuan'):''));
+    renderRail();renderView();Cloud.pushDebounced();toast('Putaran inspeksi dicatat'+(spawned?(' · '+spawned+' work order dibuat dari temuan'):''));
   };
 
   function vHistory(){
@@ -536,14 +536,14 @@
     if(!pms.length)return '<div class="empty"><h3>Belum ada jadwal perawatan</h3><p>Tambahkan aset & jadwal preventive di Daftar Aset.</p></div>';
     return '<div class="toolbar"><button class="btn btn-ghost" onclick="setView(\'assets\')">＋ Kelola Aset & Jadwal</button></div>'+pms.map(function(p){var a=A.find(function(x){return x.id===p.assetId;});var d=daysBetween(now(),p.nextDue);var hold=p.status==='hold';var cls=hold?'hold':(d<0?'over':d<=7?'soon':'');var lbl=hold?'Ditahan · Renovasi':(d<0?('Telat '+(-d)+' hari'):d===0?'Jatuh tempo hari ini':('Dalam '+d+' hari'));return '<div class="pm '+cls+'"><div class="ic">'+assetIcon(a?a.category:'')+'</div><div class="info"><div class="t">'+esc(p.title)+(a&&a.status==='maintenance'?' <span class="badge badge-renov">RENOVASI</span>':'')+'</div><div class="m">'+esc(a?a.name:'-')+' · tiap '+p.freqDays+' hari · terakhir '+fmtDate(p.lastDone)+'</div></div><div class="due"><div class="dd">'+fmtDate(p.nextDue)+'</div><div class="lbl">'+lbl+'</div></div>'+(hold?'<button class="btn btn-ghost btn-sm" disabled>⏸ Ditahan</button>':'<button class="btn btn-success btn-sm" onclick="doPM(\''+p.id+'\')">✓ Dikerjakan</button>')+'</div>';}).join('');
   }
-  window.doPM=function(id){var pms=safeGet(K.pm,[]);var p=pms.find(function(x){return x.id===id;});if(!p)return;p.lastDone=iso();p.nextDue=iso(addDays(now(),p.freqDays));var a=safeGet(K.assets,[]).find(function(x){return x.id===p.assetId;});if(a)a.lastServiceDate=iso();safeSet(K.pm,pms);safeSet(K.assets,safeGet(K.assets,[]));audit('PM_DONE',p.title+' · '+(a?a.name:''));renderRail();renderView();toast('Perawatan dicatat, jadwal berikutnya diperbarui');};
+  window.doPM=function(id){var pms=safeGet(K.pm,[]);var p=pms.find(function(x){return x.id===id;});if(!p)return;p.lastDone=iso();p.nextDue=iso(addDays(now(),p.freqDays));var a=safeGet(K.assets,[]).find(function(x){return x.id===p.assetId;});if(a)a.lastServiceDate=iso();safeSet(K.pm,pms);safeSet(K.assets,safeGet(K.assets,[]));audit('PM_DONE',p.title+' · '+(a?a.name:''));renderRail();renderView();Cloud.pushDebounced();toast('Perawatan dicatat, jadwal berikutnya diperbarui');};
 
   function vRisk(){
     var A=safeGet(K.assets,[]);var rows=A.map(function(a){return {a:a,s:assetSignals(a)};}).sort(function(x,y){return y.s.risk-x.s.risk;});
     return '<div class="tile s6" style="--c:var(--teal);margin-bottom:1rem;"><span class="shine"></span><div class="lab">Model Risiko Berbasis Kondisi (transparan)</div><p style="margin:.2rem 0 0;font-size:.8rem;color:var(--mut);line-height:1.5;">Skor = <b style="color:var(--txt)">kritikalitas</b> + <b style="color:var(--txt)">perawatan telat</b> + <b style="color:var(--txt)">sebutan di laporan K3</b> + <b style="color:var(--txt)">tingkat gagal ceklis</b> + <b style="color:var(--txt)">umur vs umur pakai</b>. Aset <span class="badge badge-renov">RENOVASI</span> diperlakukan khusus (LOTO). Klik “＋ Buat Work Order” untuk tindakan pencegahan.</p></div>'+
       rows.map(function(r){var lv=riskLevel(r.s.risk);var b=r.s.breakdown;return '<div class="asset" style="align-items:flex-start;flex-direction:column;gap:.6rem;"><div style="display:flex;gap:.8rem;align-items:center;width:100%;"><div style="font-size:1.6rem;width:42px;text-align:center;">'+assetIcon(r.a.category)+'</div>'+miniRing(r.s.health,riskColor(r.s.risk))+'<div class="am" style="flex:1;"><div class="t">'+esc(r.a.name)+(r.a.status==='maintenance'?' <span class="badge badge-renov">RENOVASI</span>':'')+' <span class="lvl" style="background:'+lv.bg+';color:'+lv.c+';">'+lv.t+'</span></div><div class="s">'+esc(r.a.location)+' · kritikalitas '+r.a.criticality+'/5 · umur '+r.s.age.toFixed(1)+' th</div></div></div><div style="display:flex;flex-wrap:wrap;gap:.4rem;font-family:var(--mono);font-size:.66rem;color:var(--mut);">krit +'+b.criticality+' · telat +'+b.overduePM+' · K3 +'+b.k3+' · gagal +'+b.failRate+' · umur +'+b.age+'</div><div style="font-size:.78rem;color:var(--mut);line-height:1.45;">💡 '+recommend(r.s,r.a.status)+'</div><div style="display:flex;gap:.4rem;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="spawnWOFromAsset(\''+r.a.id+'\')">＋ Buat Work Order</button><button class="btn btn-ghost btn-sm" onclick="setView(\'pm\')">🔁 Lihat Jadwal</button></div></div>';}).join('');
   }
-  window.spawnWOFromAsset=function(id){var a=safeGet(K.assets,[]).find(function(x){return x.id===id;});if(!a)return;var s=assetSignals(a);var wo={id:uid('maint'),judul:'Pemeriksaan pencegahan: '+a.name,deskripsi:recommend(s,a.status)+' · (dibuat dari papan risiko)',lokasi:a.location,priority:s.risk>=66?'high':'medium',status:'pending',kategori:'preventive',created_at:iso(),created_by:(user().nama||user().email||'sistem'),k3_report_id:null,source:'risk'};var wos=safeGet(K.wo,[]);wos.unshift(wo);safeSet(K.wo,wos);audit('WO_FROM_RISK',a.name);renderRail();toast('Work order pencegahan dibuat untuk '+a.name);setView('wo');};
+  window.spawnWOFromAsset=function(id){var a=safeGet(K.assets,[]).find(function(x){return x.id===id;});if(!a)return;var s=assetSignals(a);var wo={id:uid('maint'),judul:'Pemeriksaan pencegahan: '+a.name,deskripsi:recommend(s,a.status)+' · (dibuat dari papan risiko)',lokasi:a.location,priority:s.risk>=66?'high':'medium',status:'pending',kategori:'preventive',created_at:iso(),created_by:(user().nama||user().email||'sistem'),k3_report_id:null,source:'risk'};var wos=safeGet(K.wo,[]);wos.unshift(wo);safeSet(K.wo,wos);audit('WO_FROM_RISK',a.name);Cloud.pushDebounced();renderRail();toast('Work order pencegahan dibuat untuk '+a.name);setView('wo');};
 
   function prioStyle(p){p=(p||'').toLowerCase();if(p==='critical'||p==='urgent')return{bar:'#e11d48',bg:'rgba(225,29,72,.16)',col:'#fb7185',label:'KRITIS'};if(p==='high')return{bar:'#f59e0b',bg:'rgba(245,158,11,.16)',col:'#fbbf24',label:'TINGGI'};if(p==='medium')return{bar:'#0ea5e9',bg:'rgba(14,165,233,.16)',col:'#38bdf8',label:'SEDANG'};return{bar:'#10b981',bg:'rgba(16,185,129,.16)',col:'#34d399',label:'NORMAL'};}
   function isDone(w){var s=(w.status||'').toLowerCase();return s==='selesai'||s==='approved'||s==='done';}
@@ -560,11 +560,11 @@
   }
   window.setWOF=function(f){woFilter=f;renderView();};
   window.toggleWOAdd=function(force){var p=$('wo-add');if(!p)return;var open=(typeof force==='boolean')?force:!p.classList.contains('open');p.classList.toggle('open',open);};
-  window.submitWO=function(e){e.preventDefault();var t=$('wo-t').value.trim(),l=$('wo-l').value.trim();if(!t||!l){toast('Judul & lokasi wajib','err');return false;}var wo={id:uid('maint'),judul:t,lokasi:l,deskripsi:$('wo-d').value.trim(),priority:$('wo-p').value,status:'pending',kategori:'manual',created_at:iso(),created_by:(user().nama||user().email||'teknisi'),k3_report_id:null,source:'manual'};var wos=safeGet(K.wo,[]);wos.unshift(wo);safeSet(K.wo,wos);audit('WO_CREATE',t);renderRail();renderView();toast('Work order dibuat');return false;};
-  window.doneWO=function(id){var wos=safeGet(K.wo,[]);var w=wos.find(function(x){return x.id===id;});if(!w)return;w.status='selesai';w.completed_at=iso();safeSet(K.wo,wos);audit('WO_DONE',w.judul||w.id);renderRail();renderView();toast('Work order diselesaikan');};
-  window.delWO=function(id){if(!confirm('Hapus work order ini?'))return;var wos=safeGet(K.wo,[]).filter(function(x){return x.id!==id;});safeSet(K.wo,wos);audit('WO_DELETE',id);renderRail();renderView();toast('Work order dihapus','err');};
-  window.clearDoneWO=function(){var wos=safeGet(K.wo,[]),n=wos.filter(isDone).length;if(!n){toast('Tidak ada yang selesai','warn');return;}if(!confirm('Hapus '+n+' work order selesai?'))return;safeSet(K.wo,wos.filter(function(w){return !isDone(w);}));renderRail();renderView();toast(n+' work order selesai dibersihkan');};
-  window.reconcileK3=function(verbose){var k3=safeGet(K.k3,[]),wos=safeGet(K.wo,[]),linked={};wos.forEach(function(w){if(w.k3_report_id)linked[w.k3_report_id]=1;});var n=0;k3.forEach(function(r){if(!/kerusakan/i.test(r.kategori||'')||linked[r.id])return;wos.unshift({id:uid('maint'),judul:'Perbaiki '+(r.lokasi||'sarana'),deskripsi:(r.deskripsi||'')+' · (otomatis dari K3)',lokasi:r.lokasi||'-',priority:(r.priority||'medium'),status:'pending',kategori:'repair',created_at:r.created_at||iso(),created_by:r.nama_pelapor||r.pelapor_nama||'sistem',k3_report_id:r.id,source:'k3'});n++;});if(n){safeSet(K.wo,wos);audit('WO_FROM_K3',n+' tugas');renderRail();renderView();if(verbose)toast(n+' work order ditarik dari K3');}else if(verbose){toast('Tidak ada K3 “Kerusakan Sarana” baru','warn');}return n;};
+  window.submitWO=function(e){e.preventDefault();var t=$('wo-t').value.trim(),l=$('wo-l').value.trim();if(!t||!l){toast('Judul & lokasi wajib','err');return false;}var wo={id:uid('maint'),judul:t,lokasi:l,deskripsi:$('wo-d').value.trim(),priority:$('wo-p').value,status:'pending',kategori:'manual',created_at:iso(),created_by:(user().nama||user().email||'teknisi'),k3_report_id:null,source:'manual'};var wos=safeGet(K.wo,[]);wos.unshift(wo);safeSet(K.wo,wos);audit('WO_CREATE',t);renderRail();renderView();Cloud.pushDebounced();toast('Work order dibuat');return false;};
+  window.doneWO=function(id){var wos=safeGet(K.wo,[]);var w=wos.find(function(x){return x.id===id;});if(!w)return;w.status='selesai';w.completed_at=iso();safeSet(K.wo,wos);audit('WO_DONE',w.judul||w.id);renderRail();renderView();Cloud.pushDebounced();toast('Work order diselesaikan');};
+  window.delWO=function(id){if(!confirm('Hapus work order ini?'))return;var wos=safeGet(K.wo,[]).filter(function(x){return x.id!==id;});safeSet(K.wo,wos);Cloud.remove('maintenance_tasks',id);audit('WO_DELETE',id);renderRail();renderView();Cloud.pushDebounced();toast('Work order dihapus','err');};
+  window.clearDoneWO=function(){var wos=safeGet(K.wo,[]),n=wos.filter(isDone).length;if(!n){toast('Tidak ada yang selesai','warn');return;}if(!confirm('Hapus '+n+' work order selesai?'))return;var _ids=wos.filter(isDone).map(function(w){return w.id;});Cloud.removeMany('maintenance_tasks',_ids);safeSet(K.wo,wos.filter(function(w){return !isDone(w);}));renderRail();renderView();Cloud.pushDebounced();toast(n+' work order selesai dibersihkan');};
+  window.reconcileK3=function(verbose){var k3=safeGet(K.k3,[]),wos=safeGet(K.wo,[]),linked={};wos.forEach(function(w){if(w.k3_report_id)linked[w.k3_report_id]=1;});var n=0;k3.forEach(function(r){if(!/kerusakan/i.test(r.kategori||'')||linked[r.id])return;wos.unshift({id:uid('maint'),judul:'Perbaiki '+(r.lokasi||'sarana'),deskripsi:(r.deskripsi||'')+' · (otomatis dari K3)',lokasi:r.lokasi||'-',priority:(r.priority||'medium'),status:'pending',kategori:'repair',created_at:r.created_at||iso(),created_by:r.nama_pelapor||r.pelapor_nama||'sistem',k3_report_id:r.id,source:'k3'});n++;});if(n){safeSet(K.wo,wos);audit('WO_FROM_K3',n+' tugas');Cloud.pushDebounced();renderRail();renderView();if(verbose)toast(n+' work order ditarik dari K3');}else if(verbose){toast('Tidak ada K3 “Kerusakan Sarana” baru','warn');}return n;};
 
   function vAssets(){
     var A=safeGet(K.assets,[]);
@@ -575,7 +575,7 @@
     return html;
   }
   window.toggleAssetAdd=function(force){var p=$('asset-add');if(!p)return;var open=(typeof force==='boolean')?force:!p.classList.contains('open');p.classList.toggle('open',open);};
-  window.submitAsset=function(e){e.preventDefault();var n=$('as-n').value.trim(),l=$('as-l').value.trim();if(!n||!l){toast('Nama & lokasi wajib','err');return false;}var id=uid('a');var a={id:id,name:n,location:l,category:$('as-c').value,criticality:parseInt($('as-cr').value,10),installDate:iso(),expectedLifeYears:parseInt($('as-life').value,10)||10,lastServiceDate:iso(),tags:[]};var A=safeGet(K.assets,[]);A.push(a);safeSet(K.assets,A);var freq=parseInt($('as-freq').value,10)||90;var pms=safeGet(K.pm,[]);pms.push({id:uid('pm'),assetId:id,title:'Perawatan berkala '+n,freqDays:freq,lastDone:iso(),nextDue:iso(addDays(now(),freq)),status:'active'});safeSet(K.pm,pms);audit('ASSET_CREATE',n);renderRail();renderView();toast('Aset + jadwal preventive ditambahkan');return false;};
+  window.submitAsset=function(e){e.preventDefault();var n=$('as-n').value.trim(),l=$('as-l').value.trim();if(!n||!l){toast('Nama & lokasi wajib','err');return false;}var id=uid('a');var a={id:id,name:n,location:l,category:$('as-c').value,criticality:parseInt($('as-cr').value,10),installDate:iso(),expectedLifeYears:parseInt($('as-life').value,10)||10,lastServiceDate:iso(),tags:[]};var A=safeGet(K.assets,[]);A.push(a);safeSet(K.assets,A);var freq=parseInt($('as-freq').value,10)||90;var pms=safeGet(K.pm,[]);pms.push({id:uid('pm'),assetId:id,title:'Perawatan berkala '+n,freqDays:freq,lastDone:iso(),nextDue:iso(addDays(now(),freq)),status:'active'});safeSet(K.pm,pms);audit('ASSET_CREATE',n);renderRail();renderView();Cloud.pushDebounced();toast('Aset + jadwal preventive ditambahkan');return false;};
 
   function vISO(){
     var log=safeGet(K.audit,[]);
@@ -595,15 +595,62 @@
 
   function tick(){var d=now(),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0'),ss=String(d.getSeconds()).padStart(2,'0');var c=$('amb-clock');if(c)c.textContent=hh+':'+mm+':'+ss;var h=d.getHours(),sh=h<11?'Sif Pagi':h<15?'Sif Siang':'Sif Malam';var s=$('amb-shift');if(s)s.textContent=sh;var u=$('amb-user');if(u)u.textContent=(user().nama||user().email||'tamu');}
 
+  // ===== CLOUD SYNC LAYER (Supabase) =====
+  var Cloud = (function(){
+    var MAP = [
+      {k:K.assets, t:'maint_assets',              cols:['id','name','category','location','tags','criticality','installDate','expectedLifeYears','lastServiceDate','status']},
+      {k:K.pm,     t:'maint_pm',                  cols:['id','assetId','title','freqDays','lastDone','nextDue','status']},
+      {k:K.tpl,    t:'maint_checklist_templates', cols:['id','zone','assetId','label','type']},
+      {k:K.insp,   t:'maint_inspections',         cols:['id','date','inspector','items','completion','findings']},
+      {k:K.wo,     t:'maintenance_tasks',         cols:['id','judul','deskripsi','lokasi','priority','status','kategori','created_at','created_by','completed_at','k3_report_id','source']}
+    ];
+    function client(){ return window.supabaseClient || (window.parent && window.parent.supabaseClient) || null; }
+    function setStatus(s){ var e=document.getElementById('amb-sync'); if(e) e.textContent=s; }
+    function pick(row,cols){ var o={}; cols.forEach(function(k){ if(row[k]!==undefined) o[k]=row[k]; }); return o; }
+    function merge(local, remote){
+      var m={}; (local||[]).forEach(function(x){ if(x&&x.id) m[x.id]=x; });
+      (remote||[]).forEach(function(x){ if(x&&x.id) m[x.id]=Object.assign({}, m[x.id]||{}, x); });
+      return Object.keys(m).map(function(id){ return m[id]; });
+    }
+    async function pull(){
+      var cl=client(); if(!cl){ setStatus('☁️ offline'); return; }
+      setStatus('⬇️ menarik…');
+      try{
+        for(var i=0;i<MAP.length;i++){
+          var r=await cl.from(MAP[i].t).select('*').limit(2000);
+          if(r.error) throw r.error;
+          safeSet(MAP[i].k, merge(safeGet(MAP[i].k,[]), r.data||[]));
+        }
+        setStatus('🟢 tersinkron');
+      }catch(e){ console.warn('[maint] pull', e); setStatus('🟠 tarik gagal'); }
+    }
+    async function push(){
+      var cl=client(); if(!cl){ setStatus('☁️ offline'); return; }
+      setStatus('☁️ mengirim…');
+      try{
+        for(var i=0;i<MAP.length;i++){
+          var rows=safeGet(MAP[i].k,[]).map(function(r){ return pick(r, MAP[i].cols); });
+          if(rows.length){ var r=await cl.from(MAP[i].t).upsert(rows,{onConflict:'id'}); if(r.error) throw r.error; }
+        }
+        setStatus('🟢 tersinkron');
+      }catch(e){ console.warn('[maint] push', e); setStatus('🟠 kirim gagal'); }
+    }
+    async function remove(table,id){ var cl=client(); if(!cl)return; try{ await cl.from(table).delete().eq('id',id); }catch(e){ console.warn('[maint] del',e); } }
+    async function removeMany(table,ids){ if(!ids||!ids.length)return; var cl=client(); if(!cl)return; try{ await cl.from(table).delete().in('id',ids); }catch(e){ console.warn('[maint] delmany',e); } }
+    var _t=null; function pushDebounced(){ if(_t)clearTimeout(_t); _t=setTimeout(push, 900); }
+    return {pull:pull, push:push, pushDebounced:pushDebounced, remove:remove, removeMany:removeMany, setStatus:setStatus};
+  })();
+  window.Cloud = Cloud;
+
   // ---------- init (dengan versioning seed) ----------
   if(safeGet('dreamos_maint_seed_v',0)<SEED_V){
     [K.assets,K.pm,K.tpl,K.insp,K.draft].forEach(function(k){localStorage.removeItem(k);});
     safeSet('dreamos_maint_seed_v',SEED_V);
   }
   seed();
-  reconcileK3(false); // tarik K3 "Kerusakan Sarana" yg belum jadi WO (idempoten)
   renderRail(); renderView(); tick(); setInterval(tick,1000);
-  console.log('🛰️ CMMS Maintenance ready — 29 aset real (TK/SD/SMP Lama/SMP Baru/SMA/Serbaguna+Masjid), panel per lantai, status renovasi');
+  Cloud.pull().then(function(){ reconcileK3(false); Cloud.pushDebounced(); renderRail(); renderView(); });
+  console.log('🛰️ CMMS Maintenance ready — 29 aset real + cloud sync (assets/pm/templates/inspections/tasks)');
 })();
 </script>
 </body>
