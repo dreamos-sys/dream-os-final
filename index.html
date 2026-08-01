@@ -17,7 +17,7 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/dashboard.css?v=10">
+  <link rel="stylesheet" href="css/dashboard.css?v=11">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -53,7 +53,9 @@
     .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem; color: var(--neon); user-select: none; }
     .access-btn { width: 100%; padding: 1.1rem; background: #10b981; color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
     .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+    .access-btn:disabled { opacity: 0.7; cursor: not-allowed; }
     .error-msg { color: var(--warning); font-size: 0.85rem; margin-top: 0.8rem; display: none; }
+    .device-info { font-size: 0.7rem; color: #64748b; margin-top: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; }
     #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
     .header-main { padding: 1.5rem; text-align: center; margin: 1rem 1rem 0.5rem; }
     
@@ -108,6 +110,7 @@
     .toast { background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 0.7rem 1rem; border-radius: 10px; font-size: 0.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; animation: slideUp 0.3s ease; }
     .toast.error { border-left: 4px solid #ef4444; }
     .toast.success { border-left: 4px solid #10b981; }
+    .toast.warning { border-left: 4px solid #f59e0b; }
     @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
     #unified-chart-container { margin: 0 1rem 0.8rem; padding: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -115,7 +118,6 @@
     .chart-title { font-size: 0.85rem; font-weight: 800; color: var(--neon); font-family: 'Orbitron', monospace; display: flex; align-items: center; gap: 0.4rem; }
     .chart-subtitle { font-size: 0.65rem; color: #94a3b8; }
     .unified-canvas-wrapper { position: relative; width: 100%; height: 280px; cursor: pointer; }
-    .chart-bar-clickable { cursor: pointer; }
 
     .skip-link { position: absolute; top: -100px; left: 0; background: var(--neon); color: #000; padding: 8px 16px; z-index: 100000; font-weight: 700; border-radius: 0 0 8px 0; }
     .skip-link:focus { top: 0; }
@@ -131,23 +133,30 @@
     .cmd-hint { font-size: 0.65rem; color: #64748b; background: rgba(255,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 4px; }
     .cmd-footer { margin-top: 0.8rem; font-size: 0.65rem; color: #64748b; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
 
-    /* Anti-Screenshot Overlay */
     #security-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999999; align-items: center; justify-content: center; flex-direction: column; color: var(--warning); font-size: 1.2rem; font-weight: 700; }
     #security-overlay.show { display: flex; }
+
+    #idle-warning { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(239,68,68,0.9); color: white; padding: 12px 24px; border-radius: 12px; z-index: 99998; font-weight: 700; font-size: 0.9rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    #idle-warning.show { display: block; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { opacity:0; transform:translate(-50%,-20px); } to { opacity:1; transform:translate(-50%,0); } }
+
+    .rate-limit-msg { color: #f59e0b; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
   </style>
   <script src="js/bcrypt.min.js"></script>
   <script src="js/auth-security.js"></script>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" ondragstart="return false;" ondrop="return false;">
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
 
   <div id="security-overlay">
-    <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
-    <div>️ AKTIVITAS TERDETEKSI</div>
+    <div style="font-size: 3rem; margin-bottom: 1rem;">️</div>
+    <div>AKTIVITAS TERDETEKSI</div>
     <div style="font-size: 0.9rem; margin-top: 1rem; color: #94a3b8;">Screenshot & DevTools tidak diizinkan</div>
   </div>
+
+  <div id="idle-warning">️ Sesi akan berakhir dalam <span id="idle-countdown">30</span> detik!</div>
 
   <div class="pwa-install-banner" id="pwa-banner">
      Install Dream OS di HP Anda untuk akses cepat!
@@ -160,20 +169,22 @@
       <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
       <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
       <div class="input-wrapper">
-        <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
+        <input type="email" id="email-input" class="pin-input" placeholder=" EMAIL" autocomplete="email">
       </div>
       <div class="input-wrapper">
         <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
-        <span class="toggle-pin" id="toggle-pin" role="button">🔒</span>
+        <span class="toggle-pin" id="toggle-pin" role="button"></span>
       </div>
       <button class="access-btn" id="login-button">ACCESS CORE</button>
       <div class="error-msg" id="error-msg" role="alert"></div>
+      <div class="rate-limit-msg" id="rate-limit-msg"></div>
+      <div class="device-info" id="device-info">🔐 Device ID: Memuat...</div>
     </div>
   </div>
 
   <div id="notif-panel" class="notif-panel"></div>
   
-  <button class="cast-btn" onclick="openCastModal()" title="Cast & Present">📺</button>
+  <button class="cast-btn" onclick="openCastModal()" title="Cast & Present"></button>
   <div class="cast-modal" id="cast-modal">
     <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;">
       <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
@@ -192,8 +203,8 @@
       <button class="nav-item active" data-nav="home"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label" data-i18n="nav_home">Home</span></button>
       <button class="nav-item" data-mod="profile"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label" data-i18n="nav_profile">Profile</span></button>
       <button class="nav-item" data-mod="qr"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label" data-i18n="nav_qr">QR</span></button>
-      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
-      <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label" data-i18n="nav_system">System</span></button>
+      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
+      <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">️</span></div><span class="nav-label" data-i18n="nav_system">System</span></button>
     </div>
   </nav>
 
@@ -201,7 +212,7 @@
     <div class="cmd-box">
       <input type="text" id="cmd-input" class="cmd-input" placeholder="Ketik modul, aksi, atau cari..." autocomplete="off">
       <div id="cmd-list" class="cmd-list"></div>
-      <div class="cmd-footer">️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
+      <div class="cmd-footer">⌨️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
     </div>
   </div>
 
@@ -209,14 +220,21 @@
 
   <script>
     // ==========================================
-    // ️ CYBER SECURITY PROTECTION
+    // 🛡️ CYBER SECURITY PROTECTION
     // ==========================================
     
+    // Clear console logs in production
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      console.log = function() {};
+      console.warn = function() {};
+      console.error = function() {};
+      console.info = function() {};
+    }
+
     // Anti-DevTools & Anti-Screenshot
     (function() {
       const overlay = document.getElementById('security-overlay');
       
-      // Detect DevTools (F12, Ctrl+Shift+I, Ctrl+Shift+J)
       document.addEventListener('keydown', function(e) {
         if (e.key === 'F12' || 
             (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
@@ -228,13 +246,11 @@
         }
       });
 
-      // Detect right-click
       document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
         return false;
       });
 
-      // Detect screenshot (PrintScreen)
       document.addEventListener('keyup', function(e) {
         if (e.key === 'PrintScreen') {
           overlay.classList.add('show');
@@ -243,14 +259,12 @@
         }
       });
 
-      // Blur on visibility change (tab switch)
       document.addEventListener('visibilitychange', function() {
         if (document.hidden && localStorage.getItem('dreamos_session_active') === 'true') {
           if (window.BankAudit) BankAudit.log('SECURITY_ALERT', { type: 'TAB_SWITCH' });
         }
       });
 
-      // Prevent copy-paste in sensitive fields
       document.addEventListener('copy', function(e) { e.preventDefault(); });
       document.addEventListener('cut', function(e) { e.preventDefault(); });
       document.addEventListener('paste', function(e) {
@@ -258,7 +272,114 @@
           e.preventDefault();
         }
       });
+
+      // Detect browser automation
+      if (navigator.webdriver || window.__selenium_unwrapped || window.__webdriver_evaluate) {
+        if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'AUTOMATION_DETECTED' });
+        alert('⛔ Browser automation terdeteksi! Akses ditolak.');
+        window.location.href = 'about:blank';
+      }
     })();
+
+    // ==========================================
+    // 🔐 DEVICE FINGERPRINTING
+    // ==========================================
+    window.DeviceFingerprint = {
+      generate: function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('DreamOS', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('DreamOS', 4, 17);
+        const canvasFp = canvas.toDataURL();
+
+        const components = [
+          navigator.userAgent,
+          screen.width + 'x' + screen.height,
+          screen.colorDepth,
+          navigator.language,
+          new Date().getTimezoneOffset(),
+          navigator.platform,
+          canvasFp,
+          navigator.hardwareConcurrency || 0,
+          navigator.deviceMemory || 0
+        ];
+
+        const hash = components.reduce((acc, curr) => {
+          let h = 0;
+          for (let i = 0; i < curr.length; i++) {
+            h = ((h << 5) - h) + curr.charCodeAt(i);
+            h |= 0;
+          }
+          return acc + Math.abs(h).toString(16);
+        }, '');
+
+        return 'dev_' + hash.substring(0, 16);
+      },
+      get: function() {
+        let fp = localStorage.getItem('dreamos_device_fp');
+        if (!fp) {
+          fp = this.generate();
+          localStorage.setItem('dreamos_device_fp', fp);
+        }
+        return fp;
+      }
+    };
+
+    // ==========================================
+    // 🔒 RATE LIMITING & LOGIN ATTEMPTS
+    // ==========================================
+    window.LoginRateLimiter = {
+      MAX_ATTEMPTS: 5,
+      LOCKOUT_DURATION: 900000, // 15 minutes
+      STORAGE_KEY: 'dreamos_login_attempts',
+
+      getAttempts: function() {
+        try {
+          const data = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}');
+          return data;
+        } catch(e) { return {}; }
+      },
+
+      recordAttempt: function(email) {
+        const data = this.getAttempts();
+        if (!data[email]) {
+          data[email] = { count: 1, firstAttempt: Date.now(), lockedUntil: 0 };
+        } else {
+          data[email].count++;
+          if (data[email].count >= this.MAX_ATTEMPTS) {
+            data[email].lockedUntil = Date.now() + this.LOCKOUT_DURATION;
+          }
+        }
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+        return data[email];
+      },
+
+      isLocked: function(email) {
+        const data = this.getAttempts();
+        if (!data[email]) return false;
+        if (data[email].lockedUntil && Date.now() < data[email].lockedUntil) {
+          const remaining = Math.ceil((data[email].lockedUntil - Date.now()) / 60000);
+          return { locked: true, remaining: remaining };
+        }
+        if (data[email].lockedUntil && Date.now() >= data[email].lockedUntil) {
+          data[email] = { count: 0, firstAttempt: Date.now(), lockedUntil: 0 };
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+        }
+        return false;
+      },
+
+      reset: function(email) {
+        const data = this.getAttempts();
+        delete data[email];
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      }
+    };
 
     window.SecureStore = {
       _key: 'dreamos_sec_' + (window.crypto?.randomUUID?.() || Date.now()),
@@ -267,7 +388,9 @@
           const raw = JSON.stringify(v);
           const b64 = btoa(unescape(encodeURIComponent(raw)));
           localStorage.setItem(k, b64);
-          if(window.BankAudit) BankAudit.log('SECURE_STORE_WRITE', { key: k, size: raw.length });
+          if(window.BankAudit && window.getUserRole && window.getUserRole() !== 'dev') {
+            BankAudit.log('SECURE_STORE_WRITE', { key: k, size: raw.length });
+          }
         } catch(e) { console.warn('SecureStore set failed:', e); }
       },
       get(k) {
@@ -278,7 +401,12 @@
           return JSON.parse(raw);
         } catch(e) { console.warn('SecureStore get failed:', e); return null; }
       },
-      remove(k) { localStorage.removeItem(k); if(window.BankAudit) BankAudit.log('SECURE_STORE_DELETE', { key: k }); }
+      remove(k) { 
+        localStorage.removeItem(k); 
+        if(window.BankAudit && window.getUserRole && window.getUserRole() !== 'dev') {
+          BankAudit.log('SECURE_STORE_DELETE', { key: k });
+        }
+      }
     };
 
     window.hashAudit = async (data) => {
@@ -301,7 +429,7 @@
       enabled: false,
       async verify(email) {
         if (!this.enabled) return true;
-        const code = prompt(` Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
+        const code = prompt(`🔐 Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
         return code === '123456';
       }
     };
@@ -360,7 +488,7 @@
     // ==========================================
     if (typeof window.doSecureLogin !== 'function') {
       window.__dvHash = function(plain){ 
-        var h=0, s=String(plain)+'dreamos_salt_2026_secure'; 
+        var h=0, s=String(plain)+'dreamos_salt_2026_secure_v2'; 
         for(var i=0;i<s.length;i++){
           h=((h<<5)-h)+s.charCodeAt(i);
           h|=0;
@@ -386,6 +514,12 @@
         
         if(!email||!password) throw new Error('Email dan password wajib diisi');
         
+        // Check rate limiting
+        const lockStatus = window.LoginRateLimiter.isLocked(email);
+        if (lockStatus && lockStatus.locked) {
+          throw new Error(`⛔ Akun terkunci ${lockStatus.remaining} menit karena terlalu banyak percobaan login.`);
+        }
+        
         var users=[]; 
         try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }
         catch(e){}
@@ -400,18 +534,27 @@
         
         if(local && local.password_hash){
           if(!window.__dvVerify(password,local.password_hash)) {
-            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'INVALID_PASSWORD' });
-            throw new Error('Password salah');
+            const attempt = window.LoginRateLimiter.recordAttempt(email);
+            if (attempt.count >= window.LoginRateLimiter.MAX_ATTEMPTS) {
+              if(window.BankAudit) BankAudit.log('ACCOUNT_LOCKED', { email: email, reason: 'MAX_ATTEMPTS' });
+              throw new Error(`⛔ Akun terkunci 15 menit karena ${window.LoginRateLimiter.MAX_ATTEMPTS}x percobaan gagal.`);
+            }
+            const remaining = window.LoginRateLimiter.MAX_ATTEMPTS - attempt.count;
+            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'INVALID_PASSWORD', attemptsLeft: remaining });
+            throw new Error(`Password salah. Sisa percobaan: ${remaining}`);
           }
+          window.LoginRateLimiter.reset(email);
           return {source:'local',user:{id:local.id||('local_'+email),email:local.email,nama:local.nama||email.split('@')[0],role:local.role||'staff'}};
         }
         
         if(window.supabaseClient && window.supabaseClient.auth){
           var r=await window.supabaseClient.auth.signInWithPassword({email:email,password:password});
           if(r.error) {
+            const attempt = window.LoginRateLimiter.recordAttempt(email);
             if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'SUPABASE_ERROR' });
             throw new Error(r.error.message||'Login gagal');
           }
+          window.LoginRateLimiter.reset(email);
           var md=r.data.user.user_metadata||{};
           return {source:'supabase',user:{id:r.data.user.id,email:r.data.user.email,nama:md.nama||email.split('@')[0],role:md.role||'staff'}};
         }
@@ -420,7 +563,78 @@
       };
     }
 
+    // ==========================================
+    // 🔒 SINGLE DEVICE LOCK
+    // ==========================================
+    window.DeviceLock = {
+      STORAGE_KEY: 'dreamos_device_locks',
+      
+      getLocks: function() {
+        try {
+          return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}');
+        } catch(e) { return {}; }
+      },
+      
+      saveLocks: function(locks) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locks));
+      },
+      
+      lockDevice: function(userId, deviceId, userEmail) {
+        const locks = this.getLocks();
+        locks[userId] = {
+          deviceId: deviceId,
+          userEmail: userEmail,
+          lockedAt: new Date().toISOString(),
+          lastActive: new Date().toISOString()
+        };
+        this.saveLocks(locks);
+        if(window.BankAudit) BankAudit.log('DEVICE_LOCKED', { userId: userId, deviceId: deviceId });
+      },
+      
+      isDeviceLocked: function(userId, deviceId) {
+        const locks = this.getLocks();
+        const lock = locks[userId];
+        if (!lock) return { locked: false };
+        
+        // Dev bypass
+        const user = this.getUserById(userId);
+        if (user && user.role === 'dev') {
+          return { locked: false, isDev: true };
+        }
+        
+        if (lock.deviceId !== deviceId) {
+          return { 
+            locked: true, 
+            message: `⛔ Akun ini sudah login di device lain! Device ID: ${lock.deviceId.substring(0,8)}...`,
+            lockedAt: lock.lockedAt
+          };
+        }
+        
+        return { locked: false };
+      },
+      
+      releaseLock: function(userId) {
+        const locks = this.getLocks();
+        delete locks[userId];
+        this.saveLocks(locks);
+        if(window.BankAudit) BankAudit.log('DEVICE_UNLOCKED', { userId: userId });
+      },
+      
+      getUserById: function(userId) {
+        try {
+          const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+          return users.find(u => u.id === userId);
+        } catch(e) { return null; }
+      }
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
+      // Display device ID
+      const deviceInfo = document.getElementById('device-info');
+      if (deviceInfo) {
+        deviceInfo.textContent = '🔐 Device ID: ' + window.DeviceFingerprint.get().substring(0, 20) + '...';
+      }
+
       window.hapticTap = function(intensity = 'light') {
         if ('vibrate' in navigator) {
           const patterns = { light: 10, medium: 20, heavy: 30, success: [10, 50, 10], error: [30, 50, 30] };
@@ -458,6 +672,7 @@
       const emailInput = document.getElementById('email-input');
       const passwordInput = document.getElementById('password-input');
       const errorEl = document.getElementById('error-msg');
+      const rateLimitMsg = document.getElementById('rate-limit-msg');
 
       if (togglePinEl && passwordInput) {
         togglePinEl.addEventListener('click', function() {
@@ -473,23 +688,24 @@
         const email = emailInput?.value.trim() || '';
         const password = passwordInput?.value || '';
         if (errorEl) errorEl.style.display = 'none';
+        if (rateLimitMsg) rateLimitMsg.style.display = 'none';
 
         if (!email || !password) {
-          if (errorEl) { errorEl.textContent = ' Email dan password harus diisi!'; errorEl.style.display = 'block'; }
+          if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; }
           return;
         }
         if (password.length < 8) {
-          if (errorEl) { errorEl.textContent = '⛔ Password minimal 8 karakter!'; errorEl.style.display = 'block'; }
+          if (errorEl) { errorEl.textContent = ' Password minimal 8 karakter!'; errorEl.style.display = 'block'; }
           return;
         }
         
-        loginBtn.textContent = ' Connecting...'; loginBtn.disabled = true;
+        loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
 
         if (!window.supabaseClient && !initSupabase()) {
           await new Promise(r => setTimeout(r, 1500));
           if (!window.supabaseClient) {
             if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = ' ACCESS CORE'; loginBtn.disabled = false;
+            loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
             return;
           }
         }
@@ -505,11 +721,41 @@
             bound_at: new Date().toISOString()
           };
 
+          // Device Lock Check (skip for dev)
+          if (userData.role !== 'dev') {
+            const deviceId = window.DeviceFingerprint.get();
+            const lockStatus = window.DeviceLock.isDeviceLocked(userData.id, deviceId);
+            
+            if (lockStatus.locked) {
+              if (errorEl) { 
+                errorEl.textContent = lockStatus.message; 
+                errorEl.style.display = 'block'; 
+              }
+              if(window.BankAudit) BankAudit.log('DEVICE_LOCK_REJECTED', { 
+                userId: userData.id, 
+                email: userData.email,
+                currentDevice: deviceId,
+                lockedDevice: lockStatus.lockedAt
+              });
+              loginBtn.textContent = ' ACCESS CORE';
+              loginBtn.disabled = false;
+              return;
+            }
+          }
+
           localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
           localStorage.setItem('dreamos_session_active', 'true');
           
+          // Lock device for non-dev users
+          if (userData.role !== 'dev') {
+            const deviceId = window.DeviceFingerprint.get();
+            window.DeviceLock.lockDevice(userData.id, deviceId, userData.email);
+          }
+          
           if (window.BankSession) BankSession.create(userData);
-          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
+          if (window.BankAudit && userData.role !== 'dev') {
+            BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
+          }
 
           loginBtn.textContent = '✅ Success!';
           setTimeout(() => { showDashboard(); }, 500);
@@ -524,6 +770,78 @@
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
         renderDashboard();
+        startIdleTimer();
+      }
+
+      // ==========================================
+      // ⏱️ IDLE TIMER (2 MINUTES)
+      // ==========================================
+      let idleTimer = null;
+      let warningTimer = null;
+      const IDLE_TIMEOUT = 120000; // 2 minutes
+      const WARNING_BEFORE = 30000; // Warning 30 seconds before
+
+      function startIdleTimer() {
+        resetIdleTimer();
+        
+        const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart', 'mousedown', 'keydown'];
+        events.forEach(evt => {
+          window.addEventListener(evt, resetIdleTimer, { passive: true });
+        });
+      }
+
+      function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        clearTimeout(warningTimer);
+        
+        const warningEl = document.getElementById('idle-warning');
+        if (warningEl) warningEl.classList.remove('show');
+
+        idleTimer = setTimeout(() => {
+          showIdleWarning();
+          warningTimer = setTimeout(() => {
+            forceLogout();
+          }, WARNING_BEFORE);
+        }, IDLE_TIMEOUT - WARNING_BEFORE);
+      }
+
+      function showIdleWarning() {
+        const warningEl = document.getElementById('idle-warning');
+        const countdownEl = document.getElementById('idle-countdown');
+        if (warningEl && countdownEl) {
+          warningEl.classList.add('show');
+          let seconds = 30;
+          countdownEl.textContent = seconds;
+          const interval = setInterval(() => {
+            seconds--;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) clearInterval(interval);
+          }, 1000);
+        }
+      }
+
+      function forceLogout() {
+        const role = window.getUserRole();
+        if (role !== 'dev' && window.BankAudit) {
+          BankAudit.log('IDLE_TIMEOUT_LOGOUT', { 
+            email: getStoredUser().email,
+            idleTime: IDLE_TIMEOUT / 1000 + 's'
+          });
+        }
+        
+        localStorage.removeItem('dreamos_bound_user');
+        localStorage.setItem('dreamos_session_active', 'false');
+        
+        // Release device lock
+        const user = getStoredUser();
+        if (user.id && user.role !== 'dev') {
+          window.DeviceLock.releaseLock(user.id);
+        }
+        
+        sessionStorage.clear();
+        
+        window.showToast('⏱️ Sesi berakhir karena tidak aktif (2 menit). Silakan login ulang.', 'warning');
+        setTimeout(() => location.reload(), 2000);
       }
 
       window.renderDashboard = function() {
@@ -538,7 +856,6 @@
             <div class="shalawat" style="margin-bottom:0.4rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
           </div>
           
-          <!-- 📱 DASH SLIDER (7 SLIDES) - LANGSUNG DIBAWAH HEADER -->
           <div id="dash-slider" class="glass">
             <div class="slide-track" id="slide-track">
               <div class="slide-item" id="slide-1">⏳ Memuat Jadwal Security...</div>
@@ -555,11 +872,10 @@
           <div id="kpi-strip"></div>
           <div id="health-bar"></div>
 
-          <!-- 📊 SINGLE UNIFIED CANVAS CHART -->
           <div id="unified-chart-container">
             <div class="chart-header">
               <div>
-                <div class="chart-title">📊 Enterprise Live Analytics (8 Modul Utama)</div>
+                <div class="chart-title"> Enterprise Live Analytics (8 Modul Utama)</div>
                 <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js Dual-Axis (Bar & Growth Trend)</div>
               </div>
               <div style="font-size:0.65rem; color:var(--neon); background:rgba(0,255,157,0.1); padding:0.25rem 0.5rem; border-radius:6px; border:1px solid rgba(0,255,157,0.3);">LIVE SYNC</div>
@@ -569,7 +885,6 @@
             </div>
           </div>
 
-          <!-- 📱 9-GRID MODUL UTAMA -->
           <div class="module-grid" id="module-grid"></div>
 
           <div class="system-info-box glass">
@@ -583,12 +898,12 @@
         const modules = [
           { i:'🌍', n:'CMD Center', id:'cmd' },
           { i:'🛡️', n:'Security Ops', id:'security' },
-          { i:'️', n:'K3 Safety', id:'k3' },
-          { i:'', n:'Jan Indoor', id:'janitor-indoor' },
+          { i:'⚠️', n:'K3 Safety', id:'k3' },
+          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
           { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
-          { i:'📅', n:'Booking', id:'booking' },
+          { i:'', n:'Booking', id:'booking' },
           { i:'🏢', n:'Asset', id:'asset' },
-          { i:'📦', n:'Stok Gudang', id:'stok' },
+          { i:'', n:'Stok Gudang', id:'stok' },
           { i:'🔧', n:'Maintenance', id:'maintenance' }
         ];
 
@@ -738,7 +1053,7 @@
                     }
                     window.openMod(module);
                   } else {
-                    window.showToast(' Akses ditolak untuk modul ini', 'error');
+                    window.showToast('⛔ Akses ditolak untuk modul ini', 'error');
                   }
                 }
               }
@@ -749,8 +1064,6 @@
         if (!window._sliderInit) {
           window._sliderTimer = null;
           window._sliderCur = 0;
-          
-          // Touch/Swipe Support for Slider
           let touchStartX = 0;
           let touchEndX = 0;
           
@@ -824,7 +1137,6 @@
             function start() { if(window._sliderTimer) clearInterval(window._sliderTimer); window._sliderTimer = setInterval(next, 7000); }
             function stop() { if(window._sliderTimer) clearInterval(window._sliderTimer); }
 
-            // Touch events for swipe
             el.addEventListener('touchstart', function(e) {
               touchStartX = e.changedTouches[0].screenX;
               stop();
@@ -839,13 +1151,9 @@
             function handleSwipe() {
               const swipeThreshold = 50;
               const diff = touchStartX - touchEndX;
-              
               if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                  goTo(window._sliderCur + 1); // Swipe left - next
-                } else {
-                  goTo(window._sliderCur - 1); // Swipe right - prev
-                }
+                if (diff > 0) goTo(window._sliderCur + 1);
+                else goTo(window._sliderCur - 1);
               }
             }
 
@@ -871,6 +1179,7 @@
         document.getElementById('bottom-nav').style.display = 'block';
         if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
         window.scrollTo(0, 0);
+        resetIdleTimer();
       };
 
       window.openMod = function(moduleId) {
@@ -927,6 +1236,7 @@
           } catch(err) { tryFetch(paths, idx + 1); }
         }
         tryFetch(pathsToTry, 0);
+        resetIdleTimer();
       };
 
       document.getElementById('bottom-nav').addEventListener('click', function(e) {
@@ -971,30 +1281,35 @@
         if (!panel) return;
         if (panel.style.display === 'block') { panel.style.display = 'none'; } 
         else { window.DreamNotif.renderPanel(); panel.style.display = 'block'; }
+        resetIdleTimer();
       };
 
       window.handleLogout = async function() {
         if (confirm('🚪 Yakin ingin logout?')) {
+          const user = getStoredUser();
+          if (user.role !== 'dev' && window.BankAudit) {
+            BankAudit.log('MANUAL_LOGOUT', { email: user.email });
+          }
+          
           if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(()=>{});
+          
+          // Release device lock
+          if (user.id && user.role !== 'dev') {
+            window.DeviceLock.releaseLock(user.id);
+          }
+          
           localStorage.removeItem('dreamos_bound_user');
           localStorage.setItem('dreamos_session_active', 'false');
           sessionStorage.clear();
+          
+          // Clear clipboard
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText('').catch(()=>{});
+          }
+          
           window.location.href = 'index.html';
         }
       };
-
-      let idleTime = 0;
-      ['mousemove','keypress','click','scroll','touchstart'].forEach(evt => window.addEventListener(evt, () => { idleTime = 0; }));
-      setInterval(() => {
-        if (localStorage.getItem('dreamos_session_active') !== 'true') return;
-        idleTime++;
-        if (idleTime >= 30) {
-          localStorage.removeItem('dreamos_bound_user');
-          localStorage.setItem('dreamos_session_active', 'false');
-          window.showToast('⏱️ Sesi berakhir karena tidak aktif. Silakan login ulang.', 'error');
-          setTimeout(() => location.reload(), 2000);
-        }
-      }, 60000);
 
       const cmdPalette = document.getElementById('cmd-palette');
       const cmdInput = document.getElementById('cmd-input');
@@ -1004,10 +1319,10 @@
       const commands = [ 
         { id:'home', label:'🏠 Dashboard', action:()=>window.goHome() }, 
         { id:'cmd', label:'🏢 Command Center', action:()=>window.openMod('cmd') }, 
-        { id:'security', label:'️ Security Ops', action:()=>window.openMod('security') }, 
+        { id:'security', label:'🛡️ Security Ops', action:()=>window.openMod('security') }, 
         { id:'booking', label:'📅 Booking Ruangan', action:()=>window.openMod('booking') }, 
         { id:'k3', label:'⚠️ K3 Safety', action:()=>window.openMod('k3') }, 
-        { id:'setting', label:'️ System Settings', action:()=>window.openMod('setting') }, 
+        { id:'setting', label:'⚙️ System Settings', action:()=>window.openMod('setting') }, 
         { id:'logout', label:'🚪 Logout', action:()=>{ window.handleLogout(); } } 
       ];
       
