@@ -6,6 +6,7 @@
   <title>Security Ops Center Pro • Dream OS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
     * { box-sizing: border-box; }
@@ -113,6 +114,9 @@
     .journal-box h4 { margin: 0 0 0.5rem; color: var(--gold); font-size: 0.8rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; }
     .ttd-area { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.5rem; text-align: center; font-size: 0.8rem; }
     .ttd-box { padding-top: 2rem; border-top: 1px solid #334155; }
+    .log-photo-preview { display: none; margin-top: 0.5rem; text-align: center; }
+    .log-photo-preview img { max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid var(--neon); }
+    .btn-remove-photo { margin-top: 0.3rem; }
     @media print {
       #tab-laporan-harian { display: block !important; }
       .no-print { display: none !important; }
@@ -125,9 +129,7 @@
       .section-title { color: #000 !important; border-bottom: 2px solid #000 !important; }
       .glass { border: 1px solid #000 !important; background: #fff !important; }
     }
-
-
-</style>
+  </style>
 </head>
 <body>
   <button class="back-btn no-print" onclick="(window.goHomeSafe||window.goHome)()">← HOME</button>
@@ -161,7 +163,6 @@
       <button class="sec-tab" data-target="tab-patrol">🚶 Patroli</button>
       <button class="sec-tab" data-target="tab-bridge">🚨 Trigger & Slide</button>
       <button class="sec-tab" data-target="tab-laporan-harian">📋 Laporan Harian 24/7</button>
-
     </div>
 
     <!-- TAB 1: JADWAL -->
@@ -174,6 +175,7 @@
             <input id="new-name" class="bk-input" placeholder="+ Tambah Nama Personil" style="margin:0;">
             <button data-act="add-name" class="btn btn-primary" style="white-space:nowrap;">➕ Tambah</button>
           </div>
+          <button onclick="openRevisionModal()" class="btn btn-warning" style="white-space:nowrap;">📝 Revisi Cepat</button>
           <p style="font-size: 0.75rem; color:#64748b;">Klik kotak: L (Libur) → P (Pagi) → M (Malam) → CT (Cuti) → Kosong</p>
         </div>
       </div>
@@ -219,6 +221,17 @@
             <button type="button" onclick="clearLogPhoto()" class="btn btn-danger btn-remove-photo">✕ Hapus Foto</button>
           </div>
         </div>
+
+        <!-- SOP CHECKLIST - dipindah ke sini -->
+        <div class="sop-checklist" style="margin-top:0.8rem;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--neon);margin-bottom:0.4rem;">🛡️ Checklist SOP Serah Terima</div>
+          <label class="sop-item"><input type="checkbox" id="sop-1"> ✅ Aset fisik dicocokkan & berfungsi</label>
+          <label class="sop-item"><input type="checkbox" id="sop-2"> ✅ Buku register/piket lengkap & rapi</label>
+          <label class="sop-item"><input type="checkbox" id="sop-3"> ✅ Pos & peralatan keamanan siap pakai</label>
+          <label class="sop-item"><input type="checkbox" id="sop-4"> ✅ Kondisi area sudah diperiksa (K3 & keamanan)</label>
+          <label class="sop-item"><input type="checkbox" id="sop-5"> ✅ Komunikasi radio/HP lancar dengan pos lain</label>
+        </div>
+
         <button data-act="save-laporan-pro" class="btn btn-success" style="width:100%; margin-top:0.5rem;" id="save-btn">💾 SIMPAN LOG SERAH TERIMA</button>
       </div>
     </div>
@@ -238,6 +251,8 @@
           <button onclick="window.print()" class="btn btn-warning">🖨️ CETAK PDF</button>
         </div>
       </div>
+      <!-- Pencarian report -->
+      <input type="search" id="report-search" placeholder="🔍 Cari log..." class="bk-input no-print" style="width:100%;max-width:250px;margin-bottom:0.5rem;">
       <div class="print-only-header" style="display:none;">
         <h2>LAPORAN HARIAN KEAMANAN 24 JAM</h2>
         <p>DREAM OS ENTERPRISE • ISO 27001 & 18788 Compliant</p>
@@ -275,17 +290,15 @@
         <button class="btn btn-primary" onclick="addLogbookEntry()" style="width:100%; margin-top:0.5rem;">➕ Tambah ke Timeline</button>
       </div>
       <div class="glass">
-        
-      <div class="no-print" style="margin-bottom:0.8rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem;">
-        <input type="search" id="logbook-search" placeholder="🔍 Cari kegiatan..." class="bk-input" style="width:160px; padding:0.4rem; font-size:0.75rem; margin:0;">
-        <div style="display:flex; gap:0.3rem;">
-          <button onclick="exportToPDF('logbook')" class="btn btn-primary">📄 PDF</button>
-          <button onclick="shareDocument('logbook')" class="btn btn-success">📤 Share</button>
-          <button onclick="printLogbook()" class="btn btn-warning">🖨️ Print</button>
+        <div class="no-print" style="margin-bottom:0.8rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem;">
+          <input type="search" id="logbook-search" placeholder="🔍 Cari kegiatan..." class="bk-input" style="width:160px; padding:0.4rem; font-size:0.75rem; margin:0;">
+          <div style="display:flex; gap:0.3rem;">
+            <button onclick="exportToPDF('logbook', event)" class="btn btn-primary">📄 PDF</button>
+            <button onclick="shareDocument('logbook', event)" class="btn btn-success">📤 Share</button>
+            <button onclick="printLogbook()" class="btn btn-warning">🖨️ Print</button>
+          </div>
         </div>
-      </div>
-
-      <div class="section-title" style="color:var(--gold);">🕒 Timeline Kegiatan Hari Ini</div>
+        <div class="section-title" style="color:var(--gold);">🕒 Timeline Kegiatan Hari Ini</div>
         <div id="logbook-timeline" style="max-height:400px; overflow-y:auto;"></div>
         <button class="btn btn-warning no-print" onclick="printLogbook()" style="width:100%; margin-top:1rem;">🖨️ Cetak Logbook 24/7</button>
       </div>
@@ -303,10 +316,8 @@
         </select>
         <button class="btn btn-primary" onclick="openQRScanner()" style="width:100%; margin-top:0.5rem;">📷 Scan QR Checkpoint</button>
         <button class="btn btn-success" onclick="logPatrol()" style="width:100%; margin-top:0.5rem;">✅ TAP CHECKPOINT</button>
-
         <button class="btn btn-warning" onclick="startNFCScan()" style="width:100%; margin-top:0.5rem;">📡 Tap NFC Checkpoint</button>
         <div id="nfc-status" class="nfc-status" style="display:none;"></div>
-
         <div id="patrol-log" style="margin-top:0.8rem; font-size:0.75rem; color:#cbd5e1; max-height:200px; overflow-y:auto;"></div>
       </div>
     </div>
@@ -322,7 +333,7 @@
     </div>
   </div>
 
-  <!-- ✍️ SIGNATURE MODAL (Missing in original) -->
+  <!-- ✍️ SIGNATURE MODAL -->
   <div id="signature-modal" class="sig-modal">
     <div class="sig-box">
       <h3 id="sig-modal-title" style="color:var(--neon); margin:0 0 0.5rem;">✍️ Tanda Tangan</h3>
@@ -335,68 +346,167 @@
     </div>
   </div>
 
+  <!-- ✅ VERIFY MODAL -->
+  <div id="verify-modal" class="verify-modal">
+    <div class="verify-box">
+      <h3 style="color:var(--neon);margin:0 0 0.5rem;">🔍 Verifikasi Integritas Laporan</h3>
+      <div id="verify-result" class="verify-status">⏳ Memvalidasi Hash-Chain...</div>
+      <div id="verify-details" style="font-size:0.75rem;color:#94a3b8;text-align:left;margin:0.5rem 0;max-height:150px;overflow-y:auto;"></div>
+      <div id="verify-ttd-preview" style="margin:0.5rem 0;"></div>
+      <button class="btn btn-danger" onclick="closeVerifyModal()" style="width:100%;margin-top:0.5rem;">✕ Tutup</button>
+    </div>
+  </div>
+
+  <!-- ✅ FATIGUE WARNING CONTAINER -->
+  <div id="fatigue-warn" class="fatigue-warn" style="display:none;">
+    <div style="font-weight:700;margin-bottom:0.2rem;">⚠️ Peringatan Kelelahan Shift</div>
+    <div id="fatigue-list"></div>
+  </div>
+
+  <!-- 📝 REVISI CEPAT MODAL -->
+  <div id="rev-modal" class="rev-modal">
+    <div class="rev-box">
+      <h3 style="color:var(--neon);margin:0 0 0.8rem;">📝 Revisi Cepat Jadwal</h3>
+      <select id="rev-personil" class="bk-input" style="margin-bottom:0.5rem;"></select>
+      <div style="display:flex;gap:0.5rem;">
+        <input type="date" id="rev-start" class="bk-input" style="flex:1;">
+        <input type="date" id="rev-end" class="bk-input" style="flex:1;">
+      </div>
+      <select id="rev-status" class="bk-input" style="margin:0.5rem 0;">
+        <option value="L">L (Libur/Sakit)</option>
+        <option value="CT">CT (Cuti/Izin)</option>
+        <option value="P">P (Pagi)</option>
+        <option value="M">M (Malam)</option>
+        <option value="">Kosongkan</option>
+      </select>
+      <input id="rev-alasan" class="bk-input" placeholder="Alasan revisi (opsional)">
+      <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+        <button onclick="applyRevision()" class="btn btn-success" style="flex:1;">✅ Terapkan Revisi</button>
+        <button onclick="document.getElementById('rev-modal').classList.remove('show')" class="btn btn-danger">❌ Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📋 LAPORAN HARIAN 24/7 -->
+  <div id="tab-laporan-harian" class="sec-panel no-print" style="display:none;">
+    <div class="glass">
+      <div class="daily-header">
+        <h3 style="margin:0;color:var(--neon);font-size:1rem;">📋 LAPORAN HARIAN KEAMANAN 24 JAM</h3>
+        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;">
+          <input type="date" id="report-date-daily" class="bk-input" style="width:auto;padding:0.4rem;">
+          <button onclick="fillFromMatrix()" class="btn btn-primary" style="font-size:0.7rem;">🔄 Isi dari Matriks</button>
+          <button onclick="saveDailyReport()" class="btn btn-success" style="font-size:0.7rem;">💾 Simpan</button>
+          <button onclick="window.print()" class="btn btn-warning" style="font-size:0.7rem;">🖨️ Cetak</button>
+          <button onclick="resetDailyReport()" class="btn btn-danger" style="font-size:0.7rem;">🗑️ Reset</button>
+        </div>
+      </div>
+      <div class="section-title" style="color:var(--accent);">👥 FORMASI PERSONEL HARIAN</div>
+      <div style="overflow-x:auto;">
+        <table class="excel-grid">
+          <thead><tr><th style="width:30px;">NO</th><th style="width:160px;">NAMA</th><th style="width:120px;">JABATAN</th><th style="width:120px;">SHIFT PAGI</th><th style="width:120px;">SHIFT MALAM</th><th>KETERANGAN</th></tr></thead>
+          <tbody id="personnel-table-body-daily"></tbody>
+        </table>
+      </div>
+      <button onclick="addPersonnelRow()" class="btn btn-outline" style="width:100%;margin-top:0.5rem;font-size:0.7rem;">➕ Tambah Petugas</button>
+      <div class="section-title" style="color:var(--gold);margin-top:1.2rem;">🕒 JURNAL KEGIATAN 24 JAM</div>
+      <div class="journal-dual">
+        <div class="journal-box">
+          <h4>KOLOM A</h4>
+          <table class="excel-grid" style="font-size:0.7rem;">
+            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN</th><th style="width:60px;">KET</th><th style="width:30px;"></th></tr></thead>
+            <tbody id="activity-a-body-daily"></tbody>
+          </table>
+          <button onclick="addActivityRow('a')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
+        </div>
+        <div class="journal-box">
+          <h4>KOLOM B</h4>
+          <table class="excel-grid" style="font-size:0.7rem;">
+            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN</th><th style="width:60px;">KET</th><th style="width:30px;"></th></tr></thead>
+            <tbody id="activity-b-body-daily"></tbody>
+          </table>
+          <button onclick="addActivityRow('b')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
+        </div>
+      </div>
+      <div class="ttd-area">
+        <div class="ttd-box">Mengetahui,<br>Danru / Petugas Jaga<br><br><br>(___________________)</div>
+        <div class="ttd-box">Mengetahui,<br>Koordinator Umum<br><br><br>(___________________)</div>
+        <div class="ttd-box">Mengetahui,<br>Kabag Umum<br><br><br>(___________________)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ QR SCANNER MODAL -->
+  <div id="qr-scanner-modal" class="qr-scanner-modal">
+    <div class="qr-box">
+      <h3 style="color:var(--neon);margin:0 0 0.5rem;">📷 Scan QR Checkpoint</h3>
+      <div id="qr-reader" style="width:100%;min-height:250px;background:#000;border-radius:8px;overflow:hidden;"></div>
+      <button class="btn btn-danger" onclick="closeQRScanner()" style="width:100%;margin-top:0.5rem;">✕ Tutup</button>
+    </div>
+  </div>
+
 <script>
+// Toast global
+function showToast(msg, type = 'info') {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${type==='success'?'#10b981':'#0ea5e9'};color:#fff;padding:10px 20px;border-radius:8px;z-index:99999;font-weight:bold;font-size:0.9rem;`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
 
-  // ===== 🚦 SYNC THROTTLE & BATCH MANAGER (Anti-Rate-Limit) =====
-  const SyncThrottle = (function() {
-    const queue = [];
-    let timer = null;
-    let isProcessing = false;
-    const FLUSH_DELAY = 600;   // jeda antar batch (ms)
-    const BATCH_SIZE = 5;      // max payload per flush
-    const RETRY_DELAY = 1500;  // backoff kalau kena 429
+// ===== 🚦 SYNC THROTTLE & BATCH MANAGER =====
+const SyncThrottle = (function() {
+  const queue = [];
+  let timer = null;
+  let isProcessing = false;
+  const FLUSH_DELAY = 600;
+  const BATCH_SIZE = 5;
+  const RETRY_DELAY = 1500;
 
-    async function processBatch() {
-      if (queue.length === 0) { isProcessing = false; return; }
-      isProcessing = true;
-      const batch = queue.splice(0, BATCH_SIZE);
-      let retryQueue = [];
+  async function processBatch() {
+    if (queue.length === 0) { isProcessing = false; return; }
+    isProcessing = true;
+    const batch = queue.splice(0, BATCH_SIZE);
+    let retryQueue = [];
 
-      for (const item of batch) {
-        try {
-          if (!window.supabaseClient) throw new Error('No client');
-          const res = await window.supabaseClient.from(item.table).upsert(item.data, { onConflict: item.onConflict || 'id' });
-          if (res.error) throw res.error;
-          console.log('🚦 Sync OK:', item.table, item.data.id);
-        } catch (e) {
-          const msg = String(e.message || e.status || '');
-          if (msg.includes('429') || msg.includes('rate') || msg.includes('Too Many')) {
-            console.warn('🚦 Rate limit hit. Backing off...');
-            retryQueue.push(item);
-            await new Promise(r => setTimeout(r, RETRY_DELAY));
-            continue;
-          }
-          console.warn('⚠️ Sync failed, queued offline:', e.message);
-          if (window.OfflineQueue) window.OfflineQueue.add(item.table, 'upsert', item.data);
+    for (const item of batch) {
+      try {
+        if (!window.supabaseClient) throw new Error('No client');
+        const res = await window.supabaseClient.from(item.table).upsert(item.data, { onConflict: item.onConflict || 'id' });
+        if (res.error) throw res.error;
+        console.log('🚦 Sync OK:', item.table, item.data.id);
+      } catch (e) {
+        const msg = String(e.message || e.status || '');
+        if (msg.includes('429') || msg.includes('rate') || msg.includes('Too Many')) {
+          console.warn('🚦 Rate limit hit. Backing off...');
+          retryQueue.push(item);
+          await new Promise(r => setTimeout(r, RETRY_DELAY));
+          continue;
         }
-      }
-
-      // Retry failed items
-      queue.unshift(...retryQueue);
-
-      // Schedule next flush
-      if (queue.length > 0) {
-        timer = setTimeout(processBatch, FLUSH_DELAY);
-      } else {
-        isProcessing = false;
+        console.warn('⚠️ Sync failed, queued offline:', e.message);
+        if (window.OfflineQueue) window.OfflineQueue.add(item.table, 'upsert', item.data);
       }
     }
 
-    return {
-      push: function(table, data, opts) {
-        queue.push({ table, data, onConflict: opts?.onConflict });
-        if (!isProcessing) {
-          clearTimeout(timer);
-          timer = setTimeout(processBatch, FLUSH_DELAY);
-        }
-      },
-      flushNow: function() { return new Promise(r => { clearTimeout(timer); processBatch().then(r); }); }
-    };
-  })();
+    queue.unshift(...retryQueue);
+    if (queue.length > 0) {
+      timer = setTimeout(processBatch, FLUSH_DELAY);
+    } else {
+      isProcessing = false;
+    }
+  }
 
-  // 🔧 Debounce saveMatrix (200 klik jadi 1 paket)
-  
-
+  return {
+    push: function(table, data, opts) {
+      queue.push({ table, data, onConflict: opts?.onConflict });
+      if (!isProcessing) {
+        clearTimeout(timer);
+        timer = setTimeout(processBatch, FLUSH_DELAY);
+      }
+    },
+    flushNow: function() { return new Promise(r => { clearTimeout(timer); processBatch().then(r); }); }
+  };
+})();
 
 (function() {
   'use strict';
@@ -405,7 +515,6 @@
   const role = window.getUserRole ? window.getUserRole() : (user?.role || 'staff');
   document.getElementById('user-display').textContent = user ? (user.nama || 'User') : '🔒';
 
-  // 🔐 ENTERPRISE RBAC MATRIX
   const isDev = role === 'dev';
   const isDanru = user?.nama?.toUpperCase().includes('HARIYANSAH') || user?.email?.toLowerCase().includes('hariyansah');
   const isKomandanRegu = role === 'komandan_regu';
@@ -419,14 +528,10 @@
     default: { canViewAll: false, canEditMatrix: false, canApproveFinal: false, canRecommend: false, skipLogging: false }
   };
   const perms = ROLE_PERMS[role] || ROLE_PERMS.default;
-  // Override spesifik Danru
   if (isDanru) { perms.canViewAll = true; perms.canEditMatrix = true; }
-
-  console.log(`🔐 RBAC Active: Role=${role}, Danru=${isDanru}, CanEdit=${perms.canEditMatrix}, CanViewAll=${perms.canViewAll}`);
 
   function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
 
-  // 🛡️ ENTERPRISE DATA HANDLING (Zero Data Loss)
   function getFullMatrix() {
     try { return JSON.parse(localStorage.getItem('dreamos_matrix') || '[]'); }
     catch(e) { return []; }
@@ -437,7 +542,6 @@
     clearTimeout(_matrixTimer);
     _matrixTimer = setTimeout(() => {
       if (window.supabaseClient) {
-        console.log('🚦 Batching', data.length, 'matrix rows...');
         data.forEach(row => {
           SyncThrottle.push('security_schedules', {
             id: (row.nama||'x') + '_' + (row.tgl||0) + '_' + (row.periode||'x'),
@@ -504,57 +608,57 @@
   }
 
   window.renderMatrix = function() {
-  const periodEl = document.getElementById('m-period');
-  if (!periodEl) return;
-  const period = periodEl.value;
-  if (!period) return;
-  const parts = period.split('-');
-  const daysInMonth = new Date(parts[0], parts[1], 0).getDate();
-  const today = new Date();
-  const isCurrentMonth = (period === today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0'));
-  const todayDate = today.getDate();
+    const periodEl = document.getElementById('m-period');
+    if (!periodEl) return;
+    const period = periodEl.value;
+    if (!period) return;
+    const parts = period.split('-');
+    const daysInMonth = new Date(parts[0], parts[1], 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = (period === today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0'));
+    const todayDate = today.getDate();
 
-  let head = '<tr class="matrix-header-row"><th class="sticky-name matrix-sticky-name">Nama</th>';
-  for (let i = 1; i <= daysInMonth; i++) {
-    const d = new Date(parts[0], parts[1]-1, i);
-    const dayName = ['SU','MO','TU','WE','TH','FR','SA'][d.getDay()];
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    const isToday = isCurrentMonth && i === todayDate;
-    head += '<th class="' + (isWeekend ? 'weekend' : '') + (isToday ? ' today-col' : '') + '">' + i + '<span class="day-badge">' + dayName + '</span></th>';
-  }
-  head += '</tr>';
-  document.getElementById('matrix-head').innerHTML = head;
-
-  const cfg = getSecurityRoleConfig();
-  const fullData = getFullMatrix();
-  const visibleData = cfg.can_view_all ? fullData : fullData.filter(x => (x.divisi || 'UMUM') === userDivisi);
-  
-  const b = document.getElementById('matrix-body'); b.innerHTML = '';
-  const names = [...new Set(visibleData.map(x => x.nama))];
-  const cc = cfg.can_edit_shift ? 'cell-klik' : 'cell-readonly';
-  const ca = cfg.can_edit_shift ? 'onclick="toggleShift(this)"' : '';
-  
-  names.forEach(n => {
-    let row = '<tr><td class="sticky-name matrix-sticky-name" style="font-weight:700; padding:0.5rem 0.6rem; white-space:nowrap;">' + esc(n) + '</td>';
+    let head = '<tr class="matrix-header-row"><th class="sticky-name matrix-sticky-name">Nama</th>';
     for (let i = 1; i <= daysInMonth; i++) {
-      const s = fullData.find(x => x.nama === n && parseInt(x.tgl) === i && x.periode === period);
-      const sh = s ? s.shift : '';
-      const cls = sh === 'L' ? 'shift-L' : sh === 'P' ? 'shift-P' : sh === 'M' ? 'shift-M' : sh === 'CT' ? 'shift-CT' : 'shift-empty';
+      const d = new Date(parts[0], parts[1]-1, i);
+      const dayName = ['SU','MO','TU','WE','TH','FR','SA'][d.getDay()];
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
       const isToday = isCurrentMonth && i === todayDate;
-      row += '<td class="shift-cell ' + cls + (cc === 'cell-klik' ? ' cell-klik' : '') + (isToday ? ' today-col' : '') + '" data-nama="' + esc(n) + '" data-tgl="' + i + '" ' + ca + ' title="' + esc(n) + ' • ' + i + ' ' + parts[1] + '">' + sh + '</td>';
+      head += '<th class="' + (isWeekend ? 'weekend' : '') + (isToday ? ' today-col' : '') + '">' + i + '<span class="day-badge">' + dayName + '</span></th>';
     }
-    b.innerHTML += row + '</tr>';
-  });
-  autoFillSlide();
-  updateStats();
-};
+    head += '</tr>';
+    document.getElementById('matrix-head').innerHTML = head;
+
+    const cfg = getSecurityRoleConfig();
+    const fullData = getFullMatrix();
+    const visibleData = cfg.can_view_all ? fullData : fullData.filter(x => (x.divisi || 'UMUM') === userDivisi);
+    
+    const b = document.getElementById('matrix-body'); b.innerHTML = '';
+    const names = [...new Set(visibleData.map(x => x.nama))];
+    const cc = cfg.can_edit_shift ? 'cell-klik' : 'cell-readonly';
+    const ca = cfg.can_edit_shift ? 'onclick="toggleShift(this)"' : '';
+    
+    names.forEach(n => {
+      let row = '<tr><td class="sticky-name matrix-sticky-name" style="font-weight:700; padding:0.5rem 0.6rem; white-space:nowrap;">' + esc(n) + '</td>';
+      for (let i = 1; i <= daysInMonth; i++) {
+        const s = fullData.find(x => x.nama === n && parseInt(x.tgl) === i && x.periode === period);
+        const sh = s ? s.shift : '';
+        const cls = sh === 'L' ? 'shift-L' : sh === 'P' ? 'shift-P' : sh === 'M' ? 'shift-M' : sh === 'CT' ? 'shift-CT' : 'shift-empty';
+        const isToday = isCurrentMonth && i === todayDate;
+        row += '<td class="shift-cell ' + cls + (cc === 'cell-klik' ? ' cell-klik' : '') + (isToday ? ' today-col' : '') + '" data-nama="' + esc(n) + '" data-tgl="' + i + '" ' + ca + ' title="' + esc(n) + ' • ' + i + ' ' + parts[1] + '">' + sh + '</td>';
+      }
+      b.innerHTML += row + '</tr>';
+    });
+    autoFillSlide();
+    updateStats();
+  };
 
   window.toggleShift = function(el) {
     const cfg = getSecurityRoleConfig();
     if (!cfg.can_edit_shift) return alert('⛔ Akses Ditolak! Hanya Danru/Komandan/Dev yang bisa edit.');
     
     const n = el.dataset.nama, t = parseInt(el.dataset.tgl), p = document.getElementById('m-period').value;
-    const fullData = getFullMatrix(); // ✅ ALWAYS WORK ON FULL DATA
+    const fullData = getFullMatrix();
     const idx = fullData.findIndex(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p);
     const cycle = ['L', 'P', 'M', 'CT'];
     
@@ -566,7 +670,7 @@
       fullData.push({ nama: n, divisi: userDivisi, tgl: t, shift: 'L', periode: p });
     }
     
-    saveMatrix(fullData); // ✅ SAVE FULL DATA
+    saveMatrix(fullData);
     renderMatrix();
     if (window.BankAudit) BankAudit.log('MATRIX_SHIFT_CHANGE', { nama: n, tgl: t, periode: p, newShift: fullData.find(x=>x.nama===n && x.tgl===t)?.shift });
   };
@@ -575,7 +679,7 @@
     const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
     const filter = document.getElementById('filter-shift-report')?.value || 'all';
     let filtered = filter === 'all' ? logs : logs.filter(l => l.shift === filter);
-    filtered.sort((a, b) => new Date(a.created_at || (a.tanggal + ' ' + a.jam)) - new Date(b.created_at || (b.tanggal + ' ' + b.jam)));
+    filtered.sort((a, b) => new Date(b.created_at || (b.tanggal + ' ' + b.jam)) - new Date(a.created_at || (a.tanggal + ' ' + a.jam)));
 
     const tbody = document.getElementById('lap-table');
     if (!tbody) return;
@@ -596,9 +700,9 @@
         <td style="text-align:center;">${ttdDisplay}${fotoDisplay}${slaDisplay ? '<br>'+slaDisplay : ''}</td>
       </tr>`;
     }).join('');
+    setTimeout(() => window.startSLATimers(), 10);
   }
 
-// 🔧 Tab switching sederhana & stabil
   document.querySelectorAll('.sec-tab').forEach(btn => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.sec-tab').forEach(b => b.classList.remove('active'));
@@ -626,7 +730,6 @@
       renderMatrix();
       alert('✅ ' + name + ' ditambahkan!');
     } else if (act === 'save-laporan-pro') {
-      // 🔒 SOP VALIDATION
       const sopChecks = ['sop-1','sop-2','sop-3','sop-4','sop-5'].every(id => document.getElementById(id)?.checked);
       if (!sopChecks) return alert('⛔ SOP Checklist belum lengkap! Centang semua item sebelum menyimpan.');
 
@@ -638,7 +741,6 @@
       const sigPenerima = window.currentSignatures.penerima || null;
       const fotoBukti = window.currentLogPhoto || null;
       
-      // 🔗 HASH-CHAIN AUDIT TRAIL (Tamper-Evident)
       const prevHash = logs.length > 0 ? (logs[0].chain_hash || logs[0].ttd_hash || 'GENESIS') : 'GENESIS';
       const ttdRaw = `${prevHash}|${sigPenyerah ? 'SIG_P' : 'NO'}|${sigPenerima ? 'SIG_K' : 'NO'}|${logId}|${now.toISOString()}`;
       let chainHash = 'N/A';
@@ -677,7 +779,7 @@
         });
       }
       document.getElementById('lap-teks').value = '';
-      updateStats(); renderLogs();
+      updateStats(); renderLogs(); window.startSLATimers();
       alert('✅ Log tersimpan & terenkripsi!');
       document.querySelector('[data-target="tab-report"]')?.click();
     } else if (act === 'set-slide') {
@@ -710,13 +812,12 @@
 
   initMatrix();
   checkAccess();
-  console.log('🔐 RBAC & Device DNA Check executed.');
   renderMatrix(); renderLogs(); renderLogbook(); updateStats(); autoFillSlide();
   window.startSLATimers();
   window.checkFatigue();
   setInterval(updateStats, 30000);
 
-  // ===== ✍️ CANVAS TTD BASAH =====
+  // ✍️ CANVAS TTD
   let sigPad = null, currentSigTarget = null;
   window.currentSignatures = { penyerah: null, penerima: null };
   window.openSignature = function(target) {
@@ -742,7 +843,7 @@
     closeSignature();
   };
 
-  // ===== 📋 LOGBOOK & PATROL & PHOTO (Preserved & Hardened) =====
+  // 📋 LOGBOOK
   window.addLogbookEntry = function() {
     const jam = document.getElementById('lb-jam').value, jenis = document.getElementById('lb-jenis').value, uraian = document.getElementById('lb-uraian').value.trim();
     if (!jam || !uraian) return alert('Jam dan Uraian wajib diisi!');
@@ -759,6 +860,8 @@
     c.innerHTML = logs.length ? logs.map(l => `<div style="display:flex; gap:0.8rem; margin-bottom:1rem; padding:0.8rem; background:rgba(0,0,0,0.2); border-radius:8px; border-left:3px solid var(--accent);"><div style="min-width:60px; font-weight:700; color:var(--neon); text-align:center;">${l.jam}</div><div style="flex:1;"><div style="font-weight:600; font-size:0.85rem; margin-bottom:0.2rem;">${l.jenis === 'Insiden' ? '🚨' : '📌'} ${l.jenis}</div><div style="font-size:0.8rem; color:#cbd5e1;">${esc(l.uraian)}</div><div style="font-size:0.7rem; color:#64748b; margin-top:0.3rem;">Oleh: ${esc(l.petugas)}</div></div><button class="btn btn-danger" onclick="deleteLogbookEntry('${l.id}')" style="min-height:36px; padding:0.2rem 0.6rem; font-size:0.7rem;">🗑️</button></div>`).join('') : '<div style="text-align:center; color:#64748b; padding:2rem;">Belum ada kegiatan hari ini.</div>';
   };
   window.deleteLogbookEntry = function(id) { if (!confirm('Hapus?')) return; let l = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]'); l = l.filter(x => x.id !== id); localStorage.setItem('dreamos_security_logbook', JSON.stringify(l)); renderLogbook(); };
+
+  // PATROLI
   window.logPatrol = async function() {
     const pos = document.getElementById('patrol-pos').value; let geo = 'N/A';
     if (navigator.geolocation) try { const p = await new Promise((r,j) => navigator.geolocation.getCurrentPosition(r,j,{timeout:5000})); geo = `${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`; } catch(e){}
@@ -799,7 +902,6 @@
     setTimeout(() => w.print(), 300);
   };
 
-  // ⏱️ SLA COUNTDOWN ENGINE
   window.startSLATimers = function() {
     const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
     logs.forEach(l => {
@@ -829,7 +931,6 @@
     });
   };
 
-  // 📊 CSV EXPORT COMPLIANCE
   window.exportToCSV = function() {
     const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
     const bom = '\uFEFF';
@@ -839,7 +940,7 @@
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download = `security_logs_${new Date().toISOString().split('T')[0]}.csv`; a.click();
   };
 
-  // 📱 QR CHECKPOINT SCANNER
+  // QR SCANNER
   let qrScanner = null;
   window.openQRScanner = function() {
     document.getElementById('qr-scanner-modal').classList.add('show');
@@ -857,7 +958,6 @@
     document.getElementById('qr-scanner-modal').classList.remove('show');
   };
 
-  // ⚠️ SHIFT FATIGUE DETECTION (K3 Compliance)
   window.checkFatigue = function() {
     const full = getFullMatrix();
     const period = document.getElementById('m-period')?.value;
@@ -880,8 +980,6 @@
     }
   };
 
-
-  // 📚 ON-DEMAND LIBRARY LOADER (Zero-Bloat)
   async function loadDocLibs() {
     if (window.jspdf && window.html2canvas) return true;
     const load = (src) => new Promise((r,j) => { const s=document.createElement('script'); s.src=src; s.onload=r; s.onerror=j; document.head.appendChild(s); });
@@ -892,8 +990,7 @@
     } catch(e) { console.warn('⚠️ Doc libs failed:', e); return false; }
   }
 
-  // 📄 MULTI-PAGE PDF GENERATOR (Enterprise Format)
-  window.exportToPDF = async function(type) {
+  window.exportToPDF = async function(type, evt) {
     const ok = await loadDocLibs();
     if (!ok) return alert('⛔ Gagal memuat library PDF. Cek koneksi internet.');
     
@@ -901,16 +998,13 @@
     const el = document.getElementById(targetId);
     if (!el || !el.innerText.trim()) return alert('⚠️ Tidak ada data untuk di-export.');
 
-    const btnText = event?.target?.textContent || '📄 PDF';
-    if (event?.target) event.target.textContent = '⏳ Generating...';
+    const btnText = evt?.target?.textContent || '📄 PDF';
+    if (evt?.target) evt.target.textContent = '⏳ Generating...';
 
     try {
-      // Clone & apply print styles
       const clone = el.cloneNode(true);
       const wrapper = document.createElement('div');
       wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;padding:40px;font-family:"Times New Roman",serif;color:#000;';
-      
-      // Header
       const header = `<div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px;">
         <h2 style="margin:0;font-size:18pt;text-transform:uppercase;">LAPORAN ${type === 'logbook' ? 'LOGBOOK KEGIATAN' : 'MUTASI & SERAH TERIMA'} KEAMANAN</h2>
         <p style="margin:4px 0;font-size:10pt;">DREAM OS ENTERPRISE • ISO 27001 & 18788 • Generated: ${new Date().toLocaleString('id-ID')}</p>
@@ -925,7 +1019,7 @@
       const pw = pdf.internal.pageSize.getWidth();
       const ph = canvas.height * pw / canvas.width;
       const pageH = pdf.internal.pageSize.getHeight();
-      let heightLeft = ph, pos = 0, page = 1;
+      let heightLeft = ph, pos = 0;
 
       pdf.addImage(imgData, 'JPEG', 0, pos, pw, ph);
       heightLeft -= pageH;
@@ -934,10 +1028,8 @@
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, pos, pw, ph);
         heightLeft -= pageH;
-        page++;
       }
 
-      // Footer & Page Numbers
       const totalPages = pdf.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
@@ -949,26 +1041,22 @@
       document.body.removeChild(wrapper);
       const fname = `Security_${type}_${new Date().toISOString().split('T')[0]}.pdf`;
       const blob = pdf.output('blob');
-      
-      // Auto-download
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; a.click();
-      if (event?.target) event.target.textContent = btnText;
+      if (evt?.target) evt.target.textContent = btnText;
       showToast('✅ PDF berhasil dibuat & diunduh!', 'success');
       
-      // Store blob for share
       window._lastPdfBlob = blob;
       window._lastPdfName = fname;
     } catch(e) {
       console.error('PDF Error:', e);
       alert('⛔ Gagal generate PDF: ' + e.message);
-      if (event?.target) event.target.textContent = btnText;
+      if (evt?.target) evt.target.textContent = btnText;
     }
   };
 
-  // 📤 SHARE ENGINE (Web Share API + Fallback)
-  window.shareDocument = async function(type) {
+  window.shareDocument = async function(type, evt) {
     if (!window._lastPdfBlob) {
-      await window.exportToPDF(type);
+      await window.exportToPDF(type, evt);
       if (!window._lastPdfBlob) return;
     }
     const file = new File([window._lastPdfBlob], window._lastPdfName, { type: 'application/pdf' });
@@ -980,7 +1068,6 @@
         throw new Error('Share not supported');
       }
     } catch(e) {
-      // Fallback: WhatsApp + Email + Copy
       const wa = `https://wa.me/?text=${encodeURIComponent('📄 Laporan Security Dream OS\nSilakan buka PDF yang terunduh.')}`;
       const mail = `mailto:?subject=Laporan Security Dream OS&body=${encodeURIComponent('Terlampir laporan resmi Security Ops Center.')}`;
       const choice = confirm('⚠️ Browser tidak mendukung share langsung.\n\nOK = Buka WhatsApp\nCancel = Salin Link Manual');
@@ -992,11 +1079,9 @@
     }
   };
 
-  // 🔍 REAL-TIME SEARCH ENGINE
   function initSearchEngines() {
     const reportInput = document.getElementById('report-search');
     const logbookInput = document.getElementById('logbook-search');
-    
     const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
     
     if (reportInput) {
@@ -1028,7 +1113,6 @@
     }
   }
 
-  // 💾 SAVE BACKUP (JSON + LocalStorage Export)
   window.exportBackup = function() {
     const data = {
       matrix: JSON.parse(localStorage.getItem('dreamos_matrix') || '[]'),
@@ -1047,8 +1131,6 @@
     if (window.BankAudit) BankAudit.log('EXPORT_BACKUP', 'Security module full backup');
   };
 
-
-  // 🔐 DIGITAL SIGNATURE & HASH-CHAIN VERIFICATION
   window.openVerifyModal = function() {
     document.getElementById('verify-modal').classList.add('show');
     const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
@@ -1063,7 +1145,6 @@
       return;
     }
 
-    // Verifikasi log terbaru
     const latest = logs[0];
     const prevHash = logs.length > 1 ? (logs[1].chain_hash || logs[1].ttd_hash || 'GENESIS') : 'GENESIS';
     const raw = `${prevHash}|${latest.ttd_img_penyerah ? 'SIG_P' : 'NO'}|${latest.ttd_img_penerima ? 'SIG_K' : 'NO'}|${latest.id}|${latest.created_at}`;
@@ -1095,37 +1176,16 @@
   };
   window.closeVerifyModal = function() { document.getElementById('verify-modal').classList.remove('show'); };
 
-  // 📧 AUTO-EMAIL REPORT TO KABAG (Client-Side Workflow + Backend Ready)
   window.sendEmailToKabag = async function() {
-    const kabagEmail = 'kabag.umum@sekolah.sch.id'; // 🔧 GANTI DENGAN EMAIL KABAG ASLI
+    const kabagEmail = 'kabag.umum@sekolah.sch.id';
     const now = new Date().toLocaleString('id-ID');
     const logs = JSON.parse(localStorage.getItem('dreamos_piket_logs') || '[]');
     const total = logs.length;
     const urgent = logs.filter(l => l.severity === 'DARURAT' || l.severity === 'BERAT').length;
     
     const subject = encodeURIComponent(`📊 Laporan Security Harian - ${new Date().toISOString().split('T')[0]}`);
-    const body = encodeURIComponent(
-      `Bismillah, berikut ringkasan laporan Security Ops Center:
-
-` +
-      `📅 Tanggal: ${now}
-` +
-      `📝 Total Log: ${total}
-` +
-      `🚨 Urgent/Berat: ${urgent}
-` +
-      `🔗 Hash-Chain Audit: Aktif
-
-` +
-      `📎 Silakan lampirkan PDF yang telah diunduh sebelumnya.
-` +
-      `Untuk auto-attach PDF, aktifkan Supabase Edge Function (lihat panduan developer).
-
-` +
-      `Dream OS Enterprise • ISO 27001 & 18788 Compliant`
-    );
+    const body = encodeURIComponent(`Bismillah, berikut ringkasan laporan Security Ops Center:\n\n📅 Tanggal: ${now}\n📝 Total Log: ${total}\n🚨 Urgent/Berat: ${urgent}\n🔗 Hash-Chain Audit: Aktif\n\n📎 Silakan lampirkan PDF yang telah diunduh sebelumnya.\nUntuk auto-attach PDF, aktifkan Supabase Edge Function (lihat panduan developer).\n\nDream OS Enterprise • ISO 27001 & 18788 Compliant`);
     
-    // Try Web Share first
     if (window._lastPdfBlob && navigator.share && navigator.canShare({ files: [new File([window._lastPdfBlob], 'report.pdf', {type:'application/pdf'})] })) {
       try {
         await navigator.share({
@@ -1138,13 +1198,11 @@
       } catch(e) {}
     }
     
-    // Fallback to mailto
     window.location.href = `mailto:${kabagEmail}?subject=${subject}&body=${body}`;
     showToast('📧 Email client terbuka. Lampirkan PDF manual.', 'info');
     if (window.BankAudit) BankAudit.log('EMAIL_KABAG_TRIGGERED', { total, urgent });
   };
 
-  // 📡 NFC/RFID PATROL TAG READER (Web NFC API + Graceful Fallback)
   let ndefReader = null;
   window.startNFCScan = async function() {
     const statusEl = document.getElementById('nfc-status');
@@ -1168,7 +1226,6 @@
         const posSelect = document.getElementById('patrol-pos');
         const checkpoint = posSelect.value;
         
-        // Log patrol with NFC proof
         const logs = JSON.parse(localStorage.getItem('dreamos_patrol_logs') || '[]');
         logs.unshift({
           pos: checkpoint,
@@ -1193,8 +1250,6 @@
           }).catch(()=>{});
         }
         if (window.BankAudit) BankAudit.log('NFC_PATROL_VERIFY', { uid, pos: checkpoint });
-        
-        // Auto-stop after successful read
         if (ndefReader) ndefReader.stop().catch(()=>{});
       });
       
@@ -1210,8 +1265,6 @@
     }
   };
 
-
-  // 📝 REVISI CEPAT ENGINE
   window.openRevisionModal = function() {
     const select = document.getElementById('rev-personil');
     select.innerHTML = '';
@@ -1247,7 +1300,7 @@
     alert(`✅ Revisi berhasil! ${count} hari diubah untuk ${name}.`);
   };
 
-    // 📋 LAPORAN HARIAN 24/7 ENGINE (Stable, Zero-Null, Excel Mirror)
+  // ===== LAPORAN HARIAN 24/7 ENGINE (BERSIH, TANPA DUPLIKAT) =====
   const DEFAULT_PERSONNEL = [
     { nama: 'HARIYANSAHC', jabatan: 'DANRU PAM', pagi: '', malam: '', ket: '' },
     { nama: 'SUDARSONO', jabatan: 'WADAN-RU', pagi: '', malam: '', ket: '' },
@@ -1274,7 +1327,6 @@
     const key = 'dreamos_laporan_' + date;
     const saved = localStorage.getItem(key);
     const data = saved ? JSON.parse(saved) : { personnel: JSON.parse(JSON.stringify(DEFAULT_PERSONNEL)), activitiesA: [], activitiesB: [] };
-    
     renderPersonnelTable(data.personnel);
     renderActivityTable('a', data.activitiesA);
     renderActivityTable('b', data.activitiesB);
@@ -1422,138 +1474,17 @@
     loadDailyReport();
   };
 
-  // Init saat DOM siap (Hanya 1 kali, dijamin)
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.initDailyReport);
   } else {
     window.initDailyReport();
   }
 
+  // Init search engines
+  initSearchEngines();
 
   console.log('🛡️ Security Ops Center Pro Ready • Enterprise Zero-Fraud Architecture Active');
 })();
 </script>
-
-  <!-- ✅ SOP CHECKLIST CONTAINER -->
-  <div id="sop-checklist-container" class="sop-checklist" style="display:none;">
-    <div style="font-size:0.8rem;font-weight:700;color:var(--neon);margin-bottom:0.4rem;">🛡️ Checklist SOP Serah Terima</div>
-    <label class="sop-item"><input type="checkbox" id="sop-1"> ✅ Aset fisik dicocokkan & berfungsi</label>
-    <label class="sop-item"><input type="checkbox" id="sop-2"> ✅ Buku register/piket lengkap & rapi</label>
-    <label class="sop-item"><input type="checkbox" id="sop-3"> ✅ Pos & peralatan keamanan siap pakai</label>
-    <label class="sop-item"><input type="checkbox" id="sop-4"> ✅ Kondisi area sudah diperiksa (K3 & keamanan)</label>
-    <label class="sop-item"><input type="checkbox" id="sop-5"> ✅ Komunikasi radio/HP lancar dengan pos lain</label>
-  </div>
-
-  <!-- ✅ VERIFY MODAL -->
-  <div id="verify-modal" class="verify-modal">
-    <div class="verify-box">
-      <h3 style="color:var(--neon);margin:0 0 0.5rem;">🔍 Verifikasi Integritas Laporan</h3>
-      <div id="verify-result" class="verify-status">⏳ Memvalidasi Hash-Chain...</div>
-      <div id="verify-details" style="font-size:0.75rem;color:#94a3b8;text-align:left;margin:0.5rem 0;max-height:150px;overflow-y:auto;"></div>
-      <div id="verify-ttd-preview" style="margin:0.5rem 0;"></div>
-      <button class="btn btn-danger" onclick="closeVerifyModal()" style="width:100%;margin-top:0.5rem;">✕ Tutup</button>
-    </div>
-  </div>
-
-  <!-- ✅ FATIGUE WARNING CONTAINER -->
-  <div id="fatigue-warn" class="fatigue-warn" style="display:none;">
-    <div style="font-weight:700;margin-bottom:0.2rem;">⚠️ Peringatan Kelelahan Shift</div>
-    <div id="fatigue-list"></div>
-  </div>
-
-
-  <!-- 📝 REVISI CEPAT MODAL -->
-  <div id="rev-modal" class="rev-modal">
-    <div class="rev-box">
-      <h3 style="color:var(--neon);margin:0 0 0.8rem;">📝 Revisi Cepat Jadwal</h3>
-      <select id="rev-personil" class="bk-input" style="margin-bottom:0.5rem;"></select>
-      <div style="display:flex;gap:0.5rem;">
-        <input type="date" id="rev-start" class="bk-input" style="flex:1;">
-        <input type="date" id="rev-end" class="bk-input" style="flex:1;">
-      </div>
-      <select id="rev-status" class="bk-input" style="margin:0.5rem 0;">
-        <option value="L">L (Libur/Sakit)</option>
-        <option value="CT">CT (Cuti/Izin)</option>
-        <option value="P">P (Pagi)</option>
-        <option value="M">M (Malam)</option>
-        <option value="">Kosongkan</option>
-      </select>
-      <input id="rev-alasan" class="bk-input" placeholder="Alasan revisi (opsional)">
-      <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
-        <button onclick="applyRevision()" class="btn btn-success" style="flex:1;">✅ Terapkan Revisi</button>
-        <button onclick="document.getElementById('rev-modal').classList.remove('show')" class="btn btn-danger">❌ Batal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 📋 LAPORAN HARIAN 24/7 (Excel Mirror) -->
-  <div id="tab-laporan-harian" class="sec-panel no-print" style="display:none;">
-    <div class="glass">
-      <div class="daily-header">
-        <h3 style="margin:0;color:var(--neon);font-size:1rem;">📋 LAPORAN HARIAN KEAMANAN 24 JAM</h3>
-        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;">
-          <input type="date" id="report-date-daily" class="bk-input" style="width:auto;padding:0.4rem;">
-          <button onclick="fillFromMatrix()" class="btn btn-primary" style="font-size:0.7rem;">🔄 Isi dari Matriks</button>
-          <button onclick="saveDailyReport()" class="btn btn-success" style="font-size:0.7rem;">💾 Simpan</button>
-          <button onclick="window.print()" class="btn btn-warning" style="font-size:0.7rem;">🖨️ Cetak</button>
-          <button onclick="resetDailyReport()" class="btn btn-danger" style="font-size:0.7rem;">🗑️ Reset</button>
-        </div>
-      </div>
-
-      <div class="section-title" style="color:var(--accent);">👥 FORMASI PERSONEL HARIAN</div>
-      <div style="overflow-x:auto;">
-        <table class="excel-grid">
-          <thead>
-            <tr>
-              <th style="width:30px;">NO</th>
-              <th style="width:160px;">NAMA</th>
-              <th style="width:120px;">JABATAN</th>
-              <th style="width:120px;">SHIFT PAGI</th>
-              <th style="width:120px;">SHIFT MALAM</th>
-              <th>KETERANGAN</th>
-            </tr>
-          </thead>
-          <tbody id="personnel-table-body-daily"></tbody>
-        </table>
-      </div>
-      <button onclick="addPersonnelRow()" class="btn btn-outline" style="width:100%;margin-top:0.5rem;font-size:0.7rem;">➕ Tambah Petugas</button>
-
-      <div class="section-title" style="color:var(--gold);margin-top:1.2rem;">🕒 JURNAL KEGIATAN 24 JAM</div>
-      <div class="journal-dual">
-        <div class="journal-box">
-          <h4>KOLOM A</h4>
-          <table class="excel-grid" style="font-size:0.7rem;">
-            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN</th><th style="width:60px;">KET</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="activity-a-body-daily"></tbody>
-          </table>
-          <button onclick="addActivityRow('a')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
-        </div>
-        <div class="journal-box">
-          <h4>KOLOM B</h4>
-          <table class="excel-grid" style="font-size:0.7rem;">
-            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN</th><th style="width:60px;">KET</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="activity-b-body-daily"></tbody>
-          </table>
-          <button onclick="addActivityRow('b')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
-        </div>
-      </div>
-
-      <div class="ttd-area">
-        <div class="ttd-box">Mengetahui,<br>Danru / Petugas Jaga<br><br><br>(___________________)</div>
-        <div class="ttd-box">Mengetahui,<br>Koordinator Umum<br><br><br>(___________________)</div>
-        <div class="ttd-box">Mengetahui,<br>Kabag Umum<br><br><br>(___________________)</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ QR SCANNER MODAL -->
-  <div id="qr-scanner-modal" class="qr-scanner-modal">
-    <div class="qr-box">
-      <h3 style="color:var(--neon);margin:0 0 0.5rem;">📷 Scan QR Checkpoint</h3>
-      <div id="qr-reader" style="width:100%;min-height:250px;background:#000;border-radius:8px;overflow:hidden;"></div>
-      <button class="btn btn-danger" onclick="closeQRScanner()" style="width:100%;margin-top:0.5rem;">✕ Tutup</button>
-    </div>
-  </div>
-
 </body>
 </html>
