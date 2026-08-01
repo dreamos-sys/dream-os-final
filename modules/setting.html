@@ -1,429 +1,164 @@
-<style>
-  :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #f59e0b; --purple: #8b5cf6; }
-  * { box-sizing: border-box; }
-  body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
-  .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(20px); border: 1.5px solid rgba(0,255,157,0.3); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
-  .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
-  .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: 0.2s; }
-  .btn-danger { background: var(--warning); color: #fff; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-success { background: #10b981; color: #fff; }
-  .btn:hover { transform: translateY(-1px); opacity: 0.95; }
-  .tab-nav { display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap; }
-  .tab-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(30,41,59,0.7); color: #94a3b8; transition: 0.2s; white-space: nowrap; }
-  .tab-btn:hover { background: rgba(30,41,59,0.9); border-color: var(--neon); color: #e2e8f0; }
-  .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.4); }
-  .set-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
-  .set-row:last-child { border-bottom: none; }
-  .set-label { font-size: 0.8rem; color: #e2e8f0; font-weight: 600; }
-  .set-desc { font-size: 0.8125rem; color: #94a3b8; margin-top: 0.15rem; }
-  .toggle-switch { width: 48px; height: 26px; background: #334155; border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
-  .toggle-switch.on { background: var(--neon); border-color: var(--neon); box-shadow: 0 0 12px rgba(0,255,157,0.4); }
-  .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-  .toggle-switch.on::after { left: 24px; }
-  input[type=range] { width: 100px; height: 6px; -webkit-appearance: none; appearance: none; background: rgba(0,255,157,0.2); border-radius: 3px; outline: none; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--neon); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px rgba(0,255,157,0.5); }
-  .range-val { display: inline-block; min-width: 45px; text-align: center; color: var(--neon); font-weight: 700; font-size: 0.75rem; }
-  select { padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; font-size: 0.75rem; outline: none; }
-  select:focus { border-color: var(--neon); }
-  .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
-  .json-preview { margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(0,255,157,0.15); font-size: 0.8125rem; color: var(--neon); max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-</style>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise Settings • Dream OS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e27;
+      --panel: rgba(15, 23, 42, 0.85);
+      --border: #00ff9d;
+      --text: #f8fafc;
+      --text-sub: #cbd5e1;
+      --accent: #0ea5e9;
+      --warning: #ef4444;
+      --neon: #00ff9d;
+    }
 
-<button class="back-btn" onclick="goHomeSafe()">← HOME</button>
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --panel: #ffffff;
+      --border: #0284c7;
+      --text: #0f172a;
+      --text-sub: #334155;
+      --neon: #0369a1;
+    }
 
-<div style="max-width: 700px; margin: 0 auto; padding: 3.5rem 1rem 5rem;">
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
 
-  <div class="glass" style="display: flex; justify-content: space-between; align-items: center;">
-    <div>
-      <h2 style="color: var(--neon); margin: 0; font-size: 1rem;">⚙️ Enterprise Settings</h2>
-      <p style="color: #94a3b8; font-size: 0.75rem; margin: 0;">ISO 9241-171 • WCAG 2.2 AA • Bank-Grade</p><div style="font-size:0.8rem;color:var(--neon);margin-top:0.3rem;" id="setting-clock">⏱️ --:--:--</div>
+    .glass {
+      background: var(--panel);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .back-btn { position: fixed; bottom: calc(1.5rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: var(--panel); border: 1.5px solid var(--border); color: var(--text); padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 800; cursor: pointer; }
+    .btn { padding: 0.5rem 1rem; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
+    .btn-danger { background: var(--warning); color: #fff; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-success { background: #10b981; color: #fff; }
+
+    .tab-nav { display: flex; gap: 0.4rem; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 0.3rem; }
+    .tab-btn { padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text-sub); white-space: nowrap; }
+    .tab-btn.active { background: var(--neon); color: #fff; border-color: var(--neon); }
+
+    .set-row { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0; border-bottom: 1px solid rgba(150,150,150,0.15); }
+    .set-label { font-size: 0.875rem; color: var(--text); font-weight: 700; }
+    .set-desc { font-size: 0.75rem; color: var(--text-sub); margin-top: 0.15rem; }
+
+    .toggle-switch { width: 48px; height: 26px; background: #475569; border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
+    .toggle-switch.on { background: #10b981; }
+    .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.3s; }
+    .toggle-switch.on::after { left: 24px; }
+
+    input[type=range] { width: 100px; }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="goHomeSafe()">← HOME</button>
+
+  <div style="max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 5rem;">
+    <div class="glass" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="color: var(--neon); margin: 0; font-size: 1.1rem; font-weight:800;">⚙️ Enterprise Settings</h2>
+        <p style="color: var(--text-sub); font-size: 0.75rem; margin-top:0.2rem;">ISO 9241-171 • WCAG 2.2 AAA High Contrast</p>
+      </div>
+      <div style="display: flex; gap: 0.3rem;">
+        <button class="btn btn-primary" onclick="exportSettings()">📥 Export</button>
+        <button class="btn btn-success" onclick="importSettings()">📤 Import</button>
+      </div>
     </div>
-    <div style="display: flex; gap: 0.3rem;">
-      <button class="btn btn-primary" onclick="exportSettings()">📥 Export</button>
-      <button class="btn btn-success" onclick="importSettings()">📤 Import</button>
-      <button class="btn btn-danger" onclick="resetAll()">🔄 Reset</button>
+
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('display', this)">🎨 Display</button>
+      <button class="tab-btn" onclick="switchTab('access', this)">♿ Access</button>
+      <button class="tab-btn" onclick="switchTab('system', this)">📊 System</button>
     </div>
-  </div>
 
-  <div class="tab-nav">
-    <button class="tab-btn active" data-tab="display" onclick="switchTab('display', this)">🎨 Display</button>
-    <button class="tab-btn" data-tab="access" onclick="switchTab('access', this)">♿ Access</button>
-    <button class="tab-btn" data-tab="language" onclick="switchTab('language', this)">🌍 Language</button>
-    <button class="tab-btn" data-tab="system" onclick="switchTab('system', this)">📊 System</button>
-    <button class="tab-btn" data-tab="advanced" onclick="switchTab('advanced', this)">🔬 Advanced</button>
-  </div>
-
-  <!-- TAB: DISPLAY -->
-  <div id="tab-display" class="tab-content">
-    <div class="glass">
-      <div class="section-title" style="color: var(--accent);">🎨 Visual Preferences</div>
-      <div class="set-row"><div><div class="set-label">Dark Mode</div><div class="set-desc">Toggle gelap/terang (real-time ke seluruh sistem)</div></div><div class="toggle-switch on" id="tog-theme" onclick="toggleSetting('theme')"></div></div>
-      <div class="set-row"><div><div class="set-label">Font Scale</div><div class="set-desc">Perbesar/memperkecil teks global (80%-140%)</div></div><div style="display:flex;align-items:center;gap:0.5rem;"><input type="range" min="80" max="140" value="100" id="rng-font" oninput="updateFontSize(this.value)"><span class="range-val" id="val-font">100%</span></div></div>
-      <div class="set-row"><div><div class="set-label">Starfield</div><div class="set-desc">Latar belakang animasi bintang</div></div><div class="toggle-switch on" id="tog-starfield" onclick="toggleSetting('starfield')"></div></div>
-      <div class="set-row"><div><div class="set-label">Glass Intensity</div><div class="set-desc">Intensitas efek blur kaca (30%-90%)</div></div><div style="display:flex;align-items:center;gap:0.5rem;"><input type="range" min="30" max="90" value="70" id="rng-glass" oninput="updateGlass(this.value)"><span class="range-val" id="val-glass">70%</span></div></div>
-    </div>
-  </div>
-
-  <!-- TAB: ACCESS -->
-  <div id="tab-access" class="tab-content" style="display: none;">
-    <div class="glass">
-      <div class="section-title" style="color: var(--gold);">♿ Accessibility Suite</div>
-      <div class="set-row"><div><div class="set-label">High Contrast</div><div class="set-desc">Mode kontras tinggi (WCAG 2.2 AA, rasio 7:1)</div></div><div class="toggle-switch" id="tog-highContrast" onclick="toggleSetting('highContrast')"></div></div>
-      <div class="set-row"><div><div class="set-label">Reduced Motion</div><div class="set-desc">Matikan semua animasi & transisi</div></div><div class="toggle-switch" id="tog-reduceMotion" onclick="toggleSetting('reduceMotion')"></div></div>
-      <div class="set-row"><div><div class="set-label">Screen Reader</div><div class="set-desc">Aktifkan ARIA live region (pembaca layar)</div></div><div class="toggle-switch" id="tog-screenReader" onclick="toggleSetting('screenReader')"></div></div>
-    </div>
-  </div>
-
-  <!-- TAB: LANGUAGE -->
-  <div id="tab-language" class="tab-content" style="display: none;">
-    <div class="glass">
-      <div class="section-title" style="color: var(--purple);">🌍 Global Language</div>
-      <div class="set-row">
-  <div>
-    <div class="set-label">System Language</div>
-    <div class="set-desc">Pilihan manual mengunci bahasa (geo tidak menimpa)</div>
-  </div>
-  <select id="sel-lang" onchange="changeLang(this.value)">
-    <option value="id">🇮🇩 Indonesia</option>
-    <option value="en">🇬🇧 English</option>
-    <option value="ar">🇸🇦 العربية (RTL)</option>
-    <option value="zh">🇨🇳 中文</option>
-  </select>
-</div>
-<div class="set-row">
-  <div>
-    <div class="set-label">Auto-Detect</div>
-    <div class="set-desc">Timezone / browser (tanpa GPS)</div>
-  </div>
-  <div class="toggle-switch" id="tog-autoDetect" onclick="toggleSetting('autoDetect')"></div>
-</div>
-<div class="set-row">
-  <div>
-    <div class="set-label">Geo Language</div>
-    <div class="set-desc">Opsional GPS kasar — hanya jika Auto-Detect ON</div>
-  </div>
-  <div class="toggle-switch" id="tog-geoLang" onclick="toggleSetting('geoLang')"></div>
-</div>
-  </div>
-
-  
-  <!-- TAB: SYSTEM STATUS -->
-  <div id="tab-system" class="tab-content" style="display: none;">
-    <div class="glass">
-      <div class="section-title" style="color: var(--neon);">📊 System & Device Status</div>
-      
-      <!-- User Info -->
-      <div style="background:rgba(0,0,0,0.3); padding:1rem; border-radius:12px; margin-bottom:1rem; display:flex; align-items:center; gap:1rem;">
-        <div style="width:50px; height:50px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">👤</div>
-        <div>
-          <div style="font-weight:700; font-size:0.9rem;" id="sys-user-name">Loading...</div>
-          <div style="font-size:0.75rem; color:#94a3b8;" id="sys-user-role">Role: ---</div>
-          <div style="font-size:0.7rem; color:#64748b;" id="sys-user-email">---</div>
+    <div id="tab-display" class="tab-content">
+      <div class="glass">
+        <div class="set-row">
+          <div>
+            <div class="set-label">Dark Mode / Light Mode</div>
+            <div class="set-desc">Ganti tema real-time seluruh sistem</div>
+          </div>
+          <div class="toggle-switch on" id="tog-theme" onclick="toggleTheme()"></div>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="set-label">Font Scale</div>
+            <div class="set-desc">Perbesar teks global</div>
+          </div>
+          <input type="range" min="80" max="140" value="100" oninput="updateFont(this.value)">
         </div>
       </div>
+    </div>
 
-      <!-- Status Grid -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.8rem;">
-        <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.3rem;">
-          <div style="font-size:0.7rem; color:#94a3b8;">⏱️ Waktu Sistem</div>
-          <div style="font-size:1.1rem; font-weight:700; color:var(--neon);" id="sys-clock">--:--:--</div>
-        </div>
-        <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.3rem;">
-          <div style="font-size:0.7rem; color:#94a3b8;">🔋 Baterai</div>
-          <div style="font-size:1.1rem; font-weight:700; color:var(--accent);" id="sys-battery">--%</div>
-        </div>
-        <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.3rem;">
-          <div style="font-size:0.7rem; color:#94a3b8;">📡 Koneksi</div>
-          <div style="font-size:0.9rem; font-weight:700;" id="sys-connection">Checking...</div>
-        </div>
-        <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.3rem;">
-          <div style="font-size:0.7rem; color:#94a3b8;">🌐 Bahasa</div>
-          <div style="font-size:0.9rem; font-weight:700;" id="sys-lang">Indonesia</div>
+    <div id="tab-access" class="tab-content" style="display:none;">
+      <div class="glass">
+        <div class="set-row">
+          <div>
+            <div class="set-label">High Contrast ISO Mode</div>
+            <div class="set-desc">Aksen border 100% tegas untuk keterbacaan tinggi</div>
+          </div>
+          <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
         </div>
       </div>
+    </div>
 
-      <!-- Prayer Times -->
-      <div style="margin-top:1rem; padding:1rem; background:rgba(14,165,233,0.1); border:1px solid rgba(14,165,233,0.3); border-radius:12px;">
-        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">🕌 Jadwal Shalat Hari Ini</div>
-        <div style="font-size:0.85rem; font-weight:600; color:var(--accent); line-height:1.6;" id="sys-prayer">
-          Loading...
+    <div id="tab-system" class="tab-content" style="display:none;">
+      <div class="glass">
+        <div class="set-row">
+          <div><div class="set-label">Status Koneksi</div></div>
+          <strong style="color:#10b981;">🟢 Online Cloud Sync</strong>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- TAB: ADVANCED -->
-  <div id="tab-advanced" class="tab-content" style="display: none;">
-    <div class="glass">
-      <div class="section-title" style="color: var(--warning);">🔬 Advanced Options</div>
-      <div class="set-row"><div><div class="set-label">Developer Mode</div><div class="set-desc">Tampilkan info debug di console</div></div><div class="toggle-switch" id="tog-devMode" onclick="toggleSetting('devMode')"></div></div>
-      <div class="set-row"><div><div class="set-label">Auto-Save</div><div class="set-desc">Simpan otomatis setiap 30 detik</div></div><div class="toggle-switch on" id="tog-autoSave" onclick="toggleSetting('autoSave')"></div></div>
-      <div class="set-row"><div><div class="set-label">Cache Busting</div><div class="set-desc">Force reload saat startup</div></div><div class="toggle-switch" id="tog-cacheBust" onclick="toggleSetting('cacheBust')"></div></div>
-    </div>
-    <div class="glass">
-      <div class="section-title" style="color: #94a3b8;">📊 Current Configuration (JSON)</div>
-      <pre id="json-preview" class="json-preview"></pre>
-    </div>
-  </div>
-</div>
 
 <script>
-(function() {
-  'use strict';
-  function goHomeSafe(){
-    try{ if(window.parent && window.parent!==window && typeof window.parent.goHome==='function'){ window.parent.goHome(); return; } }catch(e){}
-    if(typeof window.goHome==='function'){ try{ window.goHome(); return; }catch(e){} }
-    var base = (location.pathname.indexOf('/dream-os-final/')>=0)?'/dream-os-final/':'/';
-    location.href = base + 'index.html';
-  }
-  window.goHomeSafe = goHomeSafe;
+function goHomeSafe(){ window.location.href = '../index.html'; }
 
-  // 🔒 SECURITY: Sembunyikan tab Advanced untuk non-developer (Prinsip Least Privilege)
-  const _currentUser = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-  if (_currentUser.role !== 'dev') {
-    const advBtn = document.querySelector('.tab-btn[data-tab="advanced"]');
-    const advContent = document.getElementById('tab-advanced');
-    if (advBtn) advBtn.style.display = 'none';
-    if (advContent) advContent.style.display = 'none';
-  }
-
-
-  const DEFAULTS = { theme: 'dark', fontSize: 100, highContrast: false, reduceMotion: false, screenReader: false, starfield: true, glassIntensity: 70, lang: 'id', autoDetect: false, devMode: false, autoSave: true, geoLang: false, cacheBust: false };
-
-  let state = {};
-  try { const saved = JSON.parse(localStorage.getItem('dreamos_settings') || '{}'); Object.keys(DEFAULTS).forEach(k => state[k] = (saved[k] !== undefined) ? saved[k] : DEFAULTS[k]); } catch(e) { state = JSON.parse(JSON.stringify(DEFAULTS)); }
-
-  // Auto-detect browser language
-  if (state.autoDetect) {
-    const browserLang = (navigator.language || 'id').split('-')[0];
-    if (['id', 'en', 'ar', 'zh'].includes(browserLang)) state.lang = browserLang;
-  }
-
-  function saveState() {
-    localStorage.setItem('dreamos_settings', JSON.stringify(state));
-    localStorage.setItem('dreamos_lang', state.lang);
-    applySettings();
-    updateJSONPreview();
-    if (window.BankAudit) BankAudit.log('SETTINGS_UPDATE', { theme: state.theme, lang: state.lang });
-  }
-
-  function applySettings() {
-    const root = document.documentElement;
-    const body = document.body;
-
-    // Theme
-    root.setAttribute('data-theme', state.theme);
-    body.style.background = state.theme === 'light' ? '#f0f4ff' : '#0a0e27';
-    body.style.color = state.theme === 'light' ? '#1e293b' : '#e2e8f0';
-
-    // High Contrast
-    root.setAttribute('data-high-contrast', state.highContrast ? 'true' : 'false');
-    if (state.highContrast) {
-      body.style.background = '#000000';
-      body.style.color = '#ffffff';
-    }
-
-    // Reduced Motion
-    root.setAttribute('data-reduce-motion', state.reduceMotion ? 'true' : 'false');
-
-    // Screen Reader
-    if (state.screenReader) {
-      root.setAttribute('aria-live', 'polite');
-      root.setAttribute('role', 'application');
-    } else {
-      root.removeAttribute('aria-live');
-    }
-
-    // Font Scale
-    root.style.fontSize = state.fontSize + '%';
-
-    // RTL
-    root.setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
-
-    // Starfield
-    const canvas = document.getElementById('star-field');
-    if (canvas) canvas.style.display = state.starfield ? 'block' : 'none';
-
-    // Glass Intensity
-    const alpha = (state.glassIntensity / 100).toFixed(2);
-    const bg = state.theme === 'light' ? 'rgba(240,245,255,' + alpha + ')' : 'rgba(15,23,42,' + alpha + ')';
-    root.style.setProperty('--glass-bg', bg);
-
-    // Dev Mode
-    if (state.devMode) {
-      console.log('🐛 Dev Mode Active - Settings:', JSON.stringify(state, null, 2));
-    }
-
-    console.log('🎨 Applied:', state.theme, '| Contrast:', state.highContrast, '| Motion:', !state.reduceMotion, '| Font:', state.fontSize + '%', '| Lang:', state.lang);
-    if (window.startLocaleClock) window.startLocaleClock();
-  }
-
-  function updateAllUI() {
-    const toggles = { 'theme': state.theme === 'dark', 'starfield': state.starfield, 'highContrast': state.highContrast, 'reduceMotion': state.reduceMotion, 'screenReader': state.screenReader, 'autoDetect': state.autoDetect, 'devMode': state.devMode, 'autoSave': state.autoSave, 'cacheBust': state.cacheBust };
-    Object.keys(toggles).forEach(k => { const el = document.getElementById('tog-' + k); if (el) el.classList.toggle('on', toggles[k]); });
-    const rngFont = document.getElementById('rng-font'); if (rngFont) rngFont.value = state.fontSize;
-    const valFont = document.getElementById('val-font'); if (valFont) valFont.textContent = state.fontSize + '%';
-    const rngGlass = document.getElementById('rng-glass'); if (rngGlass) rngGlass.value = state.glassIntensity;
-    const valGlass = document.getElementById('val-glass'); if (valGlass) valGlass.textContent = state.glassIntensity + '%';
-    const selLang = document.getElementById('sel-lang'); if (selLang) selLang.value = state.lang;
-    updateJSONPreview();
-  }
-
-  function updateJSONPreview() { const el = document.getElementById('json-preview'); if (el) el.textContent = JSON.stringify(state, null, 2); }
-
-  window.switchTab = function(name, btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-    if (btn) btn.classList.add('active');
-    const t = document.getElementById('tab-' + name);
-    if (t) t.style.display = 'block';
-  };
-
-  window.toggleSetting = function(key) {
-    if (key === 'theme') state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    else state[key] = !state[key];
-    updateAllUI();
-    saveState();
-    // Feedback visual kecil
-    const el = document.getElementById('tog-' + key);
-    if (el) { el.style.transform = 'scale(1.1)'; setTimeout(() => el.style.transform = '', 150); }
-    if (key === 'autoDetect' || key === 'geoLang') { if (typeof window.applyLangDetectionPolicy === 'function') window.applyLangDetectionPolicy(); }
-  };
-
-  window.updateFontSize = function(val) { state.fontSize = parseInt(val); document.getElementById('val-font').textContent = val + '%'; saveState(); };
-  window.updateGlass = function(val) { state.glassIntensity = parseInt(val); document.getElementById('val-glass').textContent = val + '%'; saveState(); };
-  window.changeLang = function(val) {
-    state.lang = val;
-    saveState();
-    if (typeof window.setLanguage === 'function') {
-      window.setLanguage(val, { fromUser: true });
-    } else {
-      window.currentLang = val;
-      localStorage.setItem('dreamos_lang', val);
-      if (typeof window.renderDashboard === 'function') window.renderDashboard();
-    }
-    try {
-      if (window.parent && typeof window.parent.setLanguage === 'function')
-        window.parent.setLanguage(val, { fromUser: true });
-    } catch (e) {}
-  };
-
-  window.resetAll = function() {
-    if (confirm('🔄 Reset semua pengaturan ke default pabrik?')) {
-      state = JSON.parse(JSON.stringify(DEFAULTS));
-      updateAllUI();
-      saveState();
-      alert('✅ Pengaturan dikembalikan ke default!');
-    }
-  };
-
-  window.exportSettings = function() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dreamos_settings_' + new Date().toISOString().split('T')[0] + '.json'; a.click(); URL.revokeObjectURL(a.href);
-    alert('✅ Pengaturan diexport!');
-  };
-
-  window.importSettings = function() {
-    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
-    input.onchange = function(e) {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        try {
-          const imported = JSON.parse(ev.target.result);
-          if (confirm('⚠️ Timpa pengaturan saat ini dengan file import?')) {
-            Object.keys(DEFAULTS).forEach(k => { if (imported[k] !== undefined) state[k] = imported[k]; });
-            updateAllUI(); saveState();
-            alert('✅ Pengaturan diimpor!');
-          }
-        } catch(e) { alert('❌ File JSON tidak valid!'); }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  };
-
-  // Init
-  updateAllUI();
-  applySettings();
-  updateJSONPreview();
-  if (window.BankAudit) BankAudit.log('ACCESS_SETTINGS_MODULE');
+function toggleTheme() {
+  const isDark = document.body.getAttribute('data-theme') !== 'light';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', newTheme);
+  document.documentElement.setAttribute('data-theme', newTheme);
+  document.getElementById('tog-theme').classList.toggle('on', !isDark);
+  localStorage.setItem('dreamos_theme', newTheme);
   
-  // ===== SYSTEM STATUS LOGIC =====
-  function updateSystemStatus() {
-    // User Info
-    try {
-      const u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-      document.getElementById('sys-user-name').textContent = u.nama || u.email || 'User';
-      document.getElementById('sys-user-role').textContent = 'Role: ' + (u.role || 'staff').toUpperCase();
-      document.getElementById('sys-user-email').textContent = u.email || '---';
-    } catch(e) {}
+  // Broadcast ke parent window jika di dlm iframe
+  try {
+    if (window.parent) window.parent.document.documentElement.setAttribute('data-theme', newTheme);
+  } catch(e) {}
+}
 
-    // Clock
-    document.getElementById('sys-clock').textContent = new Date().toLocaleTimeString('id-ID');
-    
-    // Lang
-    const langMap = {'id':'🇮🇩 Indonesia', 'en':'🇬🇧 English', 'ar':'🇸🇦 العربية', 'zh':'🇨🇳 中文'};
-    document.getElementById('sys-lang').textContent = langMap[state.lang] || state.lang;
+function updateFont(val) {
+  document.documentElement.style.fontSize = val + '%';
+  localStorage.setItem('dreamos_fontsize', val);
+}
 
-    // Battery
-    if ('getBattery' in navigator) {
-      navigator.getBattery().then(b => {
-        document.getElementById('sys-battery').textContent = (b.charging ? '⚡' : '🔋') + ' ' + Math.round(b.level * 100) + '%';
-      });
-    }
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).style.display = 'block';
+}
 
-    // Connection
-    const connEl = document.getElementById('sys-connection');
-    if (!navigator.onLine) {
-      connEl.textContent = '🔴 Offline';
-      connEl.style.color = '#ef4444';
-    } else {
-      connEl.textContent = '🟢 Online';
-      connEl.style.color = '#10b981';
-    }
-
-    // Prayer Times (Fetch if not cached today)
-    const prayerEl = document.getElementById('sys-prayer');
-    if (prayerEl.textContent === 'Loading...') {
-      fetch(`https://api.aladhan.com/v1/timings/${new Date().toISOString().split('T')[0]}?latitude=-6.2088&longitude=106.8456&method=20`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.code === 200) {
-            const t = data.data.timings;
-            prayerEl.innerHTML = `Subuh: ${t.Fajr} • Dzuhur: ${t.Dhuhr}<br>Ashar: ${t.Asr} • Maghrib: ${t.Maghrib} • Isya: ${t.Isha}`;
-          }
-        })
-        .catch(() => { prayerEl.textContent = 'Gagal memuat jadwal.'; });
-    }
-  }
-
-  // Jalankan update status saat tab system dibuka
-  const originalSwitchTab = window.switchTab;
-  window.switchTab = function(name, btn) {
-    originalSwitchTab(name, btn);
-    if (name === 'system') {
-      updateSystemStatus();
-      // Update clock setiap detik jika di tab system
-      if (!window._sysClockInterval) {
-        window._sysClockInterval = setInterval(() => {
-          if (document.getElementById('tab-system').style.display !== 'none') {
-            document.getElementById('sys-clock').textContent = new Date().toLocaleTimeString('id-ID');
-          }
-        }, 1000);
-      }
-    } else {
-      if (window._sysClockInterval) {
-        clearInterval(window._sysClockInterval);
-        window._sysClockInterval = null;
-      }
-    }
-  };
-
-  // Init system status on load
-  updateSystemStatus();
-
-  console.log('⚙️ Enterprise Settings v3.0 Ready');
+// Load saved theme
+(function() {
+  const saved = localStorage.getItem('dreamos_theme') || 'dark';
+  document.body.setAttribute('data-theme', saved);
+  document.documentElement.setAttribute('data-theme', saved);
+  const tog = document.getElementById('tog-theme');
+  if (tog) tog.classList.toggle('on', saved === 'dark');
 })();
 </script>
+</body>
+</html>
