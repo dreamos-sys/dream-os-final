@@ -160,6 +160,7 @@
       <button class="sec-tab" data-target="tab-logbook">📋 Logbook Kegiatan</button>
       <button class="sec-tab" data-target="tab-patrol">🚶 Patroli</button>
       <button class="sec-tab" data-target="tab-bridge">🚨 Trigger & Slide</button>
+      <button class="sec-tab" data-target="tab-laporan-harian">📋 Laporan Harian 24/7</button>
 
     </div>
 
@@ -1253,6 +1254,189 @@
     document.getElementById('rev-modal').classList.remove('show');
     alert(`✅ Revisi berhasil! ${count} hari diubah untuk ${name}.`);
   };
+
+  // 📋 LAPORAN HARIAN 24/7 ENGINE (Stable, Zero-Null, Excel Mirror)
+  const DEFAULT_PERSONNEL = [
+    { nama: 'HARIYANSAHC', jabatan: 'DANRU PAM', pagi: '', malam: '', ket: '' },
+    { nama: 'SUDARSONO', jabatan: 'WADAN-RU', pagi: '', malam: '', ket: '' },
+    { nama: 'HERIYATNO', jabatan: 'ANGGOTA', pagi: '', malam: '', ket: '' },
+    { nama: 'AGUS SUTISNA', jabatan: 'ANGGOTA', pagi: '', malam: '', ket: '' },
+    { nama: 'MARHUSIN', jabatan: 'ANGGOTA', pagi: '', malam: '', ket: '' },
+    { nama: 'SUNARKO', jabatan: 'ANGGOTA', pagi: '', malam: '', ket: '' },
+    { nama: 'DONIH', jabatan: 'ANGGOTA', pagi: '', malam: '', ket: '' }
+  ];
+
+  window.initDailyReport = function() {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (!dateEl.value) dateEl.value = today;
+    dateEl.addEventListener('change', loadDailyReport);
+    loadDailyReport();
+  };
+
+  window.loadDailyReport = function() {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const date = dateEl.value;
+    const key = 'dreamos_laporan_' + date;
+    const saved = localStorage.getItem(key);
+    const data = saved ? JSON.parse(saved) : { personnel: JSON.parse(JSON.stringify(DEFAULT_PERSONNEL)), activitiesA: [], activitiesB: [] };
+    
+    renderPersonnelTable(data.personnel);
+    renderActivityTable('a', data.activitiesA);
+    renderActivityTable('b', data.activitiesB);
+  };
+
+  window.renderPersonnelTable = function(rows) {
+    const tbody = document.getElementById('personnel-table-body-daily');
+    if (!tbody) return;
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td style="text-align:center;font-weight:700;">${i+1}</td>
+        <td><input value="${esc(r.nama||'')}" onchange="updatePersonnel(${i},'nama',this.value)"></td>
+        <td><input value="${esc(r.jabatan||'')}" onchange="updatePersonnel(${i},'jabatan',this.value)"></td>
+        <td><input value="${esc(r.pagi||'')}" onchange="updatePersonnel(${i},'pagi',this.value)" placeholder="07:00-19:00"></td>
+        <td><input value="${esc(r.malam||'')}" onchange="updatePersonnel(${i},'malam',this.value)" placeholder="19:00-07:00"></td>
+        <td><input value="${esc(r.ket||'')}" onchange="updatePersonnel(${i},'ket',this.value)"></td>
+      </tr>
+    `).join('');
+  };
+
+  window.renderActivityTable = function(col, rows) {
+    const tbody = document.getElementById('activity-' + col + '-body-daily');
+    if (!tbody) return;
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td><input type="time" value="${esc(r.masuk||'')}" onchange="updateActivity('${col}',${i},'masuk',this.value)"></td>
+        <td><input type="time" value="${esc(r.keluar||'')}" onchange="updateActivity('${col}',${i},'keluar',this.value)"></td>
+        <td><textarea rows="1" onchange="updateActivity('${col}',${i},'uraian',this.value)">${esc(r.uraian||'')}</textarea></td>
+        <td><input value="${esc(r.ket||'')}" onchange="updateActivity('${col}',${i},'ket',this.value)"></td>
+        <td style="text-align:center;"><button class="btn btn-danger" style="font-size:0.6rem;padding:0.15rem 0.3rem;" onclick="deleteActivity('${col}',${i})">🗑️</button></td>
+      </tr>
+    `).join('');
+  };
+
+  window.updatePersonnel = function(i, f, v) {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const key = 'dreamos_laporan_' + dateEl.value;
+    const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
+    if (!d.personnel[i]) d.personnel[i] = {};
+    d.personnel[i][f] = v;
+    localStorage.setItem(key, JSON.stringify(d));
+  };
+
+  window.updateActivity = function(col, i, f, v) {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const key = 'dreamos_laporan_' + dateEl.value;
+    const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
+    const arr = d['activities' + col.toUpperCase()] || [];
+    if (!arr[i]) arr[i] = {};
+    arr[i][f] = v;
+    localStorage.setItem(key, JSON.stringify(d));
+  };
+
+  window.addPersonnelRow = function() {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const key = 'dreamos_laporan_' + dateEl.value;
+    const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
+    d.personnel.push({ nama: '', jabatan: '', pagi: '', malam: '', ket: '' });
+    localStorage.setItem(key, JSON.stringify(d));
+    renderPersonnelTable(d.personnel);
+  };
+
+  window.addActivityRow = function(col) {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const key = 'dreamos_laporan_' + dateEl.value;
+    const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
+    const arr = d['activities' + col.toUpperCase()] || [];
+    arr.push({ masuk: '', keluar: '', uraian: '', ket: '' });
+    localStorage.setItem(key, JSON.stringify(d));
+    renderActivityTable(col, arr);
+  };
+
+  window.deleteActivity = function(col, i) {
+    if (!confirm('Hapus baris ini?')) return;
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    const key = 'dreamos_laporan_' + dateEl.value;
+    const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
+    const arr = d['activities' + col.toUpperCase()] || [];
+    arr.splice(i, 1);
+    localStorage.setItem(key, JSON.stringify(d));
+    renderActivityTable(col, arr);
+  };
+
+  window.fillFromMatrix = function() {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl || !dateEl.value) { alert('⚠️ Pilih tanggal terlebih dahulu!'); return; }
+    
+    const dateStr = dateEl.value;
+    const parts = dateStr.split('-');
+    const day = parseInt(parts[2], 10);
+    const period = parts[0] + '-' + parts[1];
+    
+    const matrix = getFullMatrix();
+    const newPersonnel = [];
+    const jobMap = {
+      'HARIYANSAHC': 'DANRU PAM', 'SUDARSONO': 'WADAN-RU',
+      'HERIYATNO': 'ANGGOTA', 'AGUS SUTISNA': 'ANGGOTA',
+      'MARHUSIN': 'ANGGOTA', 'SUNARKO': 'ANGGOTA', 'DONIH': 'ANGGOTA'
+    };
+
+    const names = [...new Set(matrix.filter(x => x.periode === period).map(x => x.nama))];
+    
+    names.forEach(nama => {
+      const shiftData = matrix.find(x => x.nama === nama && x.periode === period && parseInt(x.tgl) === day);
+      const shift = shiftData ? shiftData.shift : '';
+      const pagi = (shift === 'P') ? '07:00-19:00' : '';
+      const malam = (shift === 'M') ? '19:00-07:00' : '';
+      
+      newPersonnel.push({
+        nama: nama,
+        jabatan: jobMap[nama] || 'ANGGOTA',
+        pagi: pagi,
+        malam: malam,
+        ket: (shift === 'L') ? 'Libur' : (shift === 'CT') ? 'Cuti' : ''
+      });
+    });
+
+    if (newPersonnel.length === 0) {
+      alert('⚠️ Tidak ada data matriks untuk tanggal ini. Isi manual atau pastikan matriks sudah diisi.');
+      return;
+    }
+
+    const key = 'dreamos_laporan_' + dateStr;
+    const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
+    d.personnel = newPersonnel;
+    localStorage.setItem(key, JSON.stringify(d));
+    renderPersonnelTable(newPersonnel);
+    alert('✅ Formasi diisi otomatis dari matriks!');
+  };
+
+  window.saveDailyReport = function() {
+    alert('✅ Laporan harian tersimpan di perangkat ini.');
+  };
+
+  window.resetDailyReport = function() {
+    if (!confirm('Reset semua data tanggal ini ke default?')) return;
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) return;
+    localStorage.removeItem('dreamos_laporan_' + dateEl.value);
+    loadDailyReport();
+  };
+
+  // Init saat DOM siap
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initDailyReport);
+  } else {
+    window.initDailyReport();
+  }
+
   console.log('🛡️ Security Ops Center Pro Ready • Enterprise Zero-Fraud Architecture Active');
 })();
 </script>
@@ -1308,6 +1492,67 @@
       </div>
     </div>
   </div>
+
+  <!-- 📋 LAPORAN HARIAN 24/7 (Excel Mirror) -->
+  <div id="tab-laporan-harian" class="sec-panel no-print" style="display:none;">
+    <div class="glass">
+      <div class="daily-header">
+        <h3 style="margin:0;color:var(--neon);font-size:1rem;">📋 LAPORAN HARIAN KEAMANAN 24 JAM</h3>
+        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;">
+          <input type="date" id="report-date-daily" class="bk-input" style="width:auto;padding:0.4rem;">
+          <button onclick="fillFromMatrix()" class="btn btn-primary" style="font-size:0.7rem;">🔄 Isi dari Matriks</button>
+          <button onclick="saveDailyReport()" class="btn btn-success" style="font-size:0.7rem;">💾 Simpan</button>
+          <button onclick="window.print()" class="btn btn-warning" style="font-size:0.7rem;">🖨️ Cetak</button>
+          <button onclick="resetDailyReport()" class="btn btn-danger" style="font-size:0.7rem;">🗑️ Reset</button>
+        </div>
+      </div>
+
+      <div class="section-title" style="color:var(--accent);">👥 FORMASI PERSONEL HARIAN</div>
+      <div style="overflow-x:auto;">
+        <table class="excel-grid">
+          <thead>
+            <tr>
+              <th style="width:30px;">NO</th>
+              <th style="width:160px;">NAMA</th>
+              <th style="width:120px;">JABATAN</th>
+              <th style="width:120px;">SHIFT PAGI</th>
+              <th style="width:120px;">SHIFT MALAM</th>
+              <th>KETERANGAN</th>
+            </tr>
+          </thead>
+          <tbody id="personnel-table-body-daily"></tbody>
+        </table>
+      </div>
+      <button onclick="addPersonnelRow()" class="btn btn-outline" style="width:100%;margin-top:0.5rem;font-size:0.7rem;">➕ Tambah Petugas</button>
+
+      <div class="section-title" style="color:var(--gold);margin-top:1.2rem;">🕒 JURNAL KEGIATAN 24 JAM</div>
+      <div class="journal-dual">
+        <div class="journal-box">
+          <h4>KOLOM A</h4>
+          <table class="excel-grid" style="font-size:0.7rem;">
+            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN</th><th style="width:60px;">KET</th><th style="width:30px;"></th></tr></thead>
+            <tbody id="activity-a-body-daily"></tbody>
+          </table>
+          <button onclick="addActivityRow('a')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
+        </div>
+        <div class="journal-box">
+          <h4>KOLOM B</h4>
+          <table class="excel-grid" style="font-size:0.7rem;">
+            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN</th><th style="width:60px;">KET</th><th style="width:30px;"></th></tr></thead>
+            <tbody id="activity-b-body-daily"></tbody>
+          </table>
+          <button onclick="addActivityRow('b')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
+        </div>
+      </div>
+
+      <div class="ttd-area">
+        <div class="ttd-box">Mengetahui,<br>Danru / Petugas Jaga<br><br><br>(___________________)</div>
+        <div class="ttd-box">Mengetahui,<br>Koordinator Umum<br><br><br>(___________________)</div>
+        <div class="ttd-box">Mengetahui,<br>Kabag Umum<br><br><br>(___________________)</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ✅ QR SCANNER MODAL -->
   <div id="qr-scanner-modal" class="qr-scanner-modal">
     <div class="qr-box">
