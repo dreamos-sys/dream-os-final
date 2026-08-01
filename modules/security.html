@@ -130,7 +130,7 @@
 </style>
 </head>
 <body>
-  <button class="back-btn no-print" onclick="window.goHome()">← HOME</button>
+  <button class="back-btn no-print" onclick="(window.goHomeSafe||window.goHome)()">← HOME</button>
 
   <div style="max-width:1400px; margin:0 auto; padding:3.5rem 0.8rem 5rem;">
     <div class="glass no-print" style="display:flex; justify-content:space-between; align-items:center;">
@@ -798,7 +798,172 @@
     const today = new Date().toLocaleDateString('id-ID');
     let logs = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]').filter(l => l.tanggal === today).sort((a, b) => a.jam.localeCompare(b.jam));
     const w = window.open('', '_blank');
-    const html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}</style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table></body></html>`;
+    const html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}</style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table>
+<script>
+window.goHome = window.goHome || function () {
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+      window.parent.goHome();
+      return;
+    }
+  } catch (e) {}
+  try { if (typeof window.goHome === 'function' && window.goHome !== arguments.callee) { /* noop */ } } catch (e) {}
+  window.location.href = '../index.html';
+};
+window.goHomeSafe = window.goHome;
+</script>
+
+
+<script>
+/* Dream OS Security — RBAC + Device DNA + Realtime (patch) */
+(function () {
+  'use strict';
+  var ADMIN = ['dev', 'admin', 'kabag_umum', 'kabag', 'koordinator_umum', 'koord', 'komandan_regu'];
+  var SEC_ROLES = ADMIN.concat(['security', 'danru', 'petugas_security']);
+
+  function boundUser() {
+    try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
+    catch (e) { return {}; }
+  }
+  function roleOf() {
+    var u = boundUser();
+    var r = (u.role || (u.user_metadata && u.user_metadata.role) || 'staff') + '';
+    return r.toLowerCase();
+  }
+  window.getSecRole = roleOf;
+  window.isSecAdmin = function () { return ADMIN.indexOf(roleOf()) >= 0; };
+  window.canAccessSecurity = function () {
+    return SEC_ROLES.indexOf(roleOf()) >= 0 || window.isSecAdmin();
+  };
+
+  /** Device DNA ringan (canvas + hardware) */
+  window.getDeviceDNA = async function () {
+    try {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 24;
+      var ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#00ff9d';
+      ctx.fillText('DreamOS-DNA', 2, 2);
+      var raw = [
+        c.toDataURL(),
+        navigator.hardwareConcurrency || 0,
+        screen.width + 'x' + screen.height,
+        navigator.language || ''
+      ].join('|');
+      if (crypto && crypto.subtle) {
+        var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+        return Array.from(new Uint8Array(buf)).map(function (b) {
+          return b.toString(16).padStart(2, '0');
+        }).join('').slice(0, 32);
+      }
+      return btoa(raw).replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
+    } catch (e) {
+      return 'dna_fallback_' + String(Date.now()).slice(-8);
+    }
+  };
+
+  async function applyAccessBanner() {
+    var el = document.getElementById('sec-access-status');
+    var u = boundUser();
+    var role = roleOf();
+    var dna = await window.getDeviceDNA();
+    var stored = localStorage.getItem('dreamos_device_dna_' + (u.email || 'anon'));
+    var dnaOk = !stored || stored === dna;
+    if (!stored && u.email) localStorage.setItem('dreamos_device_dna_' + u.email, dna);
+
+    if (!window.canAccessSecurity()) {
+      if (el) {
+        el.style.background = 'rgba(239,68,68,0.15)';
+        el.style.borderColor = '#ef4444';
+        el.style.color = '#ef4444';
+        el.textContent = '⛔ RBAC: role "' + role + '" tidak diizinkan modul Security. Hubungi Kabag/Dev.';
+      }
+      document.querySelectorAll('.sec-tab, .sec-panel').forEach(function (n) {
+        if (n.id !== 'sec-access-status') n.style.opacity = '0.45';
+      });
+      return false;
+    }
+    if (el) {
+      el.style.background = dnaOk ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.15)';
+      el.style.borderColor = dnaOk ? '#10b981' : '#f59e0b';
+      el.style.color = dnaOk ? '#10b981' : '#f59e0b';
+      el.textContent = (dnaOk ? '🟢' : '🟠') + ' RBAC: ' + role.toUpperCase() +
+        ' · DNA: ' + dna.slice(0, 8) + '…' + (dnaOk ? ' (match)' : ' (device baru — bind di Profile)');
+    }
+    var adminBox = document.getElementById('admin-controls');
+    if (adminBox) adminBox.style.display = window.isSecAdmin() ? 'flex' : 'none';
+    var ud = document.getElementById('user-display');
+    if (ud) ud.textContent = (u.nama || u.email || 'Petugas') + ' · ' + role;
+    return true;
+  }
+
+  /** Supabase client dari parent */
+  function sb() {
+    try {
+      if (window.supabaseClient) return window.supabaseClient;
+      if (window.parent && window.parent.supabaseClient) {
+        window.supabaseClient = window.parent.supabaseClient;
+        return window.supabaseClient;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  /** Realtime: security logs + patrols → refresh stats lokal */
+  var rtBound = false;
+  function subscribeSecurityRealtime() {
+    var client = sb();
+    if (!client || !client.channel || rtBound) return;
+    rtBound = true;
+    try {
+      client.channel('dreamos-security-rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'security_logs' }, function () {
+          window.dispatchEvent(new CustomEvent('dreamos-security-rt', { detail: { table: 'security_logs' } }));
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'security_patrols' }, function () {
+          window.dispatchEvent(new CustomEvent('dreamos-security-rt', { detail: { table: 'security_patrols' } }));
+        })
+        .subscribe(function (st) { console.log('[security RT]', st); });
+    } catch (e) { console.warn('[security RT]', e); }
+  }
+
+  async function pullSecurityCloud() {
+    var client = sb();
+    if (!client) return;
+    try {
+      var logs = await client.from('security_logs').select('*').order('created_at', { ascending: false }).limit(100);
+      if (!logs.error && logs.data) {
+        localStorage.setItem('dreamos_security_logs', JSON.stringify(logs.data));
+      }
+    } catch (e) { console.warn(e); }
+    try {
+      var p = await client.from('security_patrols').select('*').order('waktu', { ascending: false }).limit(100);
+      if (!p.error && p.data) {
+        localStorage.setItem('dreamos_patrol_logs', JSON.stringify(p.data));
+      }
+    } catch (e) { console.warn(e); }
+  }
+
+  function bootRbacDna() {
+    applyAccessBanner();
+    pullSecurityCloud().then(subscribeSecurityRealtime);
+    var clock = document.getElementById('sec-live-clock');
+    if (clock) {
+      setInterval(function () {
+        clock.textContent = new Date().toLocaleTimeString('id-ID');
+      }, 1000);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootRbacDna);
+  else setTimeout(bootRbacDna, 50);
+
+  window.DreamSecurityAccess = { applyAccessBanner: applyAccessBanner, pullSecurityCloud: pullSecurityCloud };
+})();
+</script>
+
+</body></html>`;
     w.document.write(html);
     w.document.close();
     setTimeout(() => w.print(), 300);
@@ -1290,7 +1455,7 @@
     `).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:1rem;">Belum ada data</td></tr>';
   };
   window.renderActivityTable = function(col, rows) {
-    const tbody = document.getElementById('activity-'+col+'-body');
+    const tbody = document.getElementById('activity-'+col+'-body-daily');
     tbody.innerHTML = rows.length ? rows.map((r,i) => `
       <tr><td><input type="time" value="${esc(r.masuk||'')}" onchange="updateActivity('${col}',${i},'masuk',this.value)"></td>
       <td><input type="time" value="${esc(r.keluar||'')}" onchange="updateActivity('${col}',${i},'keluar',this.value)"></td>
@@ -1324,8 +1489,7 @@
 
 
   // 🎯 ROBUST EVENT LISTENERS FOR DAILY REPORT BUTTONS
-  document.addEventListener('DOMContentLoaded', () => {
-    // Init daily report saat DOM sudah siap (mencegah error null element)
+  function bootSecurityDaily() {
     if (typeof initDailyReport === 'function') {
       initDailyReport();
     }
@@ -1351,7 +1515,9 @@
       if (match) window.deleteActivity(match[1], parseInt(match[2]));
     });
     console.log('🎯 Daily report event listeners attached');
-  });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootSecurityDaily);
+  else bootSecurityDaily();
 
   console.log('🛡️ Security Ops Center Pro Ready • Enterprise Zero-Fraud Architecture Active');
 })();
