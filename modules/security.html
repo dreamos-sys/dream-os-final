@@ -164,6 +164,47 @@
     .qr-box { background: #1e293b; border: 1px solid var(--neon); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 400px; text-align: center; }
     #qr-reader { width: 100%; min-height: 250px; background: #000; border-radius: 8px; overflow: hidden; }
 
+  
+  /* 🎨 MATRIX UX/UI UPGRADE */
+  .matrix-header-row { background: linear-gradient(90deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9)); border-bottom: 2px solid rgba(0,255,157,0.3); }
+  .matrix-header-row th { padding: 0.5rem 0.2rem; font-size: 0.65rem; position: relative; }
+  .day-badge { display: block; font-size: 0.55rem; opacity: 0.7; margin-top: 2px; }
+  .weekend { background: rgba(245,158,11,0.12); border-radius: 4px; }
+  .today-col { background: rgba(14,165,233,0.18) !important; position: relative; }
+  .today-col::after { content: '📍'; position: absolute; top: 2px; right: 3px; font-size: 0.5rem; filter: drop-shadow(0 0 4px #0ea5e9); }
+
+  .shift-cell { 
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); 
+    border-radius: 6px; margin: 2px; position: relative; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shift-cell:hover { transform: scale(1.08); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  .shift-cell:active { transform: scale(0.92); }
+  .shift-cell::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(255,255,255,0.15), transparent 70%); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  .shift-cell:hover::before { opacity: 1; }
+
+  .shift-L { background: rgba(14,165,233,0.22); color: #0ea5e9; border: 1px solid rgba(14,165,233,0.45); }
+  .shift-P { background: rgba(16,185,129,0.22); color: #10b981; border: 1px solid rgba(16,185,129,0.45); }
+  .shift-M { background: rgba(239,68,68,0.22); color: #ef4444; border: 1px solid rgba(239,68,68,0.45); }
+  .shift-CT { background: rgba(245,158,11,0.22); color: #f59e0b; border: 1px solid rgba(245,158,11,0.45); }
+  .shift-empty { background: rgba(30,41,59,0.5); color: #64748b; border: 1px dashed rgba(255,255,255,0.12); }
+
+  .matrix-sticky-name { 
+    background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9)); 
+    backdrop-filter: blur(10px);
+    border-right: 2px solid rgba(0,255,157,0.2);
+    z-index: 10;
+  }
+
+  .shift-legend { 
+    display: flex; gap: 0.8rem; flex-wrap: wrap; padding: 0.7rem; 
+    background: rgba(15,23,42,0.7); border-radius: 12px; margin-bottom: 0.8rem;
+    border: 1px solid rgba(0,255,157,0.12);
+    font-size: 0.75rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
   </style>
 </head>
 <body>
@@ -539,39 +580,50 @@
   }
 
   window.renderMatrix = function() {
-    const periodEl = document.getElementById('m-period');
-    if (!periodEl) return;
-    const period = periodEl.value;
-    if (!period) return;
-    const parts = period.split('-');
-    const daysInMonth = new Date(parts[0], parts[1], 0).getDate();
-    let head = '<th class="sticky-name">Nama</th>';
-    for (let i = 1; i <= daysInMonth; i++) head += '<th>' + i + '</th>';
-    document.getElementById('matrix-head').innerHTML = head;
+  const periodEl = document.getElementById('m-period');
+  if (!periodEl) return;
+  const period = periodEl.value;
+  if (!period) return;
+  const parts = period.split('-');
+  const daysInMonth = new Date(parts[0], parts[1], 0).getDate();
+  const today = new Date();
+  const isCurrentMonth = (period === today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0'));
+  const todayDate = today.getDate();
 
-    const cfg = getSecurityRoleConfig();
-    const fullData = getFullMatrix();
-    // Filter HANYA untuk tampilan, tidak untuk penyimpanan
-    const visibleData = cfg.can_view_all ? fullData : fullData.filter(x => (x.divisi || 'UMUM') === userDivisi);
-    
-    const b = document.getElementById('matrix-body'); b.innerHTML = '';
-    const names = [...new Set(visibleData.map(x => x.nama))];
-    const cc = cfg.can_edit_shift ? 'cell-klik' : 'cell-readonly';
-    const ca = cfg.can_edit_shift ? 'onclick="toggleShift(this)"' : '';
-    
-    names.forEach(n => {
-      let row = '<tr><td class="sticky-name">' + esc(n) + '</td>';
-      for (let i = 1; i <= daysInMonth; i++) {
-        const s = fullData.find(x => x.nama === n && parseInt(x.tgl) === i && x.periode === period);
-        const sh = s ? s.shift : '';
-        const bg = sh === 'L' ? 'color:#0ea5e9;' : sh === 'P' ? 'color:#10b981;' : sh === 'M' ? 'color:#ef4444;' : sh === 'CT' ? 'color:#eab308;font-weight:bold;' : '';
-        row += '<td class="' + cc + '" data-nama="' + esc(n) + '" data-tgl="' + i + '" ' + ca + ' style="' + bg + '">' + esc(sh) + '</td>';
-      }
-      b.innerHTML += row + '</tr>';
-    });
-    autoFillSlide();
-    updateStats();
-  };
+  let head = '<tr class="matrix-header-row"><th class="sticky-name matrix-sticky-name">Nama</th>';
+  for (let i = 1; i <= daysInMonth; i++) {
+    const d = new Date(parts[0], parts[1]-1, i);
+    const dayName = ['SU','MO','TU','WE','TH','FR','SA'][d.getDay()];
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    const isToday = isCurrentMonth && i === todayDate;
+    head += '<th class="' + (isWeekend ? 'weekend' : '') + (isToday ? ' today-col' : '') + '">' + i + '<span class="day-badge">' + dayName + '</span></th>';
+  }
+  head += '</tr>';
+  document.getElementById('matrix-head').innerHTML = head;
+
+  const cfg = getSecurityRoleConfig();
+  const fullData = getFullMatrix();
+  const visibleData = cfg.can_view_all ? fullData : fullData.filter(x => (x.divisi || 'UMUM') === userDivisi);
+  
+  const b = document.getElementById('matrix-body'); b.innerHTML = '';
+  const names = [...new Set(visibleData.map(x => x.nama))];
+  const cc = cfg.can_edit_shift ? 'cell-klik' : 'cell-readonly';
+  const ca = cfg.can_edit_shift ? 'onclick="toggleShift(this)"' : '';
+  
+  names.forEach(n => {
+    let row = '<tr><td class="sticky-name matrix-sticky-name" style="font-weight:700; padding:0.5rem 0.6rem; white-space:nowrap;">' + esc(n) + '</td>';
+    for (let i = 1; i <= daysInMonth; i++) {
+      const s = fullData.find(x => x.nama === n && parseInt(x.tgl) === i && x.periode === period);
+      const sh = s ? s.shift : '';
+      const cls = sh === 'L' ? 'shift-L' : sh === 'P' ? 'shift-P' : sh === 'M' ? 'shift-M' : sh === 'CT' ? 'shift-CT' : 'shift-empty';
+      const isToday = isCurrentMonth && i === todayDate;
+      row += '<td class="shift-cell ' + cls + (cc === 'cell-klik' ? ' cell-klik' : '') + (isToday ? ' today-col' : '') + '" data-nama="' + esc(n) + '" data-tgl="' + i + '" ' + ca + ' title="' + esc(n) + ' • ' + i + ' ' + parts[1] + '">' + sh + '</td>';
+    }
+    b.innerHTML += row + '</tr>';
+  });
+  autoFillSlide();
+  updateStats();
+};
 
   window.toggleShift = function(el) {
     const cfg = getSecurityRoleConfig();
@@ -815,7 +867,48 @@
   const today = new Date().toLocaleDateString('id-ID');
   let logs = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]').filter(l => l.tanggal === today).sort((a, b) => a.jam.localeCompare(b.jam));
   const w = window.open('', '_blank');
-  const html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}</style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table></body></html>`;
+  const html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}
+  /* 🎨 MATRIX UX/UI UPGRADE */
+  .matrix-header-row { background: linear-gradient(90deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9)); border-bottom: 2px solid rgba(0,255,157,0.3); }
+  .matrix-header-row th { padding: 0.5rem 0.2rem; font-size: 0.65rem; position: relative; }
+  .day-badge { display: block; font-size: 0.55rem; opacity: 0.7; margin-top: 2px; }
+  .weekend { background: rgba(245,158,11,0.12); border-radius: 4px; }
+  .today-col { background: rgba(14,165,233,0.18) !important; position: relative; }
+  .today-col::after { content: '📍'; position: absolute; top: 2px; right: 3px; font-size: 0.5rem; filter: drop-shadow(0 0 4px #0ea5e9); }
+
+  .shift-cell { 
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); 
+    border-radius: 6px; margin: 2px; position: relative; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shift-cell:hover { transform: scale(1.08); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  .shift-cell:active { transform: scale(0.92); }
+  .shift-cell::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(255,255,255,0.15), transparent 70%); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  .shift-cell:hover::before { opacity: 1; }
+
+  .shift-L { background: rgba(14,165,233,0.22); color: #0ea5e9; border: 1px solid rgba(14,165,233,0.45); }
+  .shift-P { background: rgba(16,185,129,0.22); color: #10b981; border: 1px solid rgba(16,185,129,0.45); }
+  .shift-M { background: rgba(239,68,68,0.22); color: #ef4444; border: 1px solid rgba(239,68,68,0.45); }
+  .shift-CT { background: rgba(245,158,11,0.22); color: #f59e0b; border: 1px solid rgba(245,158,11,0.45); }
+  .shift-empty { background: rgba(30,41,59,0.5); color: #64748b; border: 1px dashed rgba(255,255,255,0.12); }
+
+  .matrix-sticky-name { 
+    background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9)); 
+    backdrop-filter: blur(10px);
+    border-right: 2px solid rgba(0,255,157,0.2);
+    z-index: 10;
+  }
+
+  .shift-legend { 
+    display: flex; gap: 0.8rem; flex-wrap: wrap; padding: 0.7rem; 
+    background: rgba(15,23,42,0.7); border-radius: 12px; margin-bottom: 0.8rem;
+    border: 1px solid rgba(0,255,157,0.12);
+    font-size: 0.75rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+  </style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table></body></html>`;
   w.document.write(html);
   w.document.close();
   setTimeout(() => w.print(), 300);
