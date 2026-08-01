@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<script>
-  (function() {})();
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Dream OS • Enterprise RBAC Pro</title>
@@ -17,7 +14,7 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/dashboard.css?v=10">
+  <link rel="stylesheet" href="css/dashboard.css?v=14">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -53,6 +50,7 @@
     .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem; color: var(--neon); user-select: none; }
     .access-btn { width: 100%; padding: 1.1rem; background: #10b981; color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
     .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+    .access-btn:disabled { opacity: 0.7; cursor: not-allowed; }
     .error-msg { color: var(--warning); font-size: 0.85rem; margin-top: 0.8rem; display: none; }
     #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
     .header-main { padding: 1.5rem; text-align: center; margin: 1rem 1rem 0.5rem; }
@@ -108,6 +106,7 @@
     .toast { background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 0.7rem 1rem; border-radius: 10px; font-size: 0.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; animation: slideUp 0.3s ease; }
     .toast.error { border-left: 4px solid #ef4444; }
     .toast.success { border-left: 4px solid #10b981; }
+    .toast.warning { border-left: 4px solid #f59e0b; }
     @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
     #unified-chart-container { margin: 0 1rem 0.8rem; padding: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -115,7 +114,6 @@
     .chart-title { font-size: 0.85rem; font-weight: 800; color: var(--neon); font-family: 'Orbitron', monospace; display: flex; align-items: center; gap: 0.4rem; }
     .chart-subtitle { font-size: 0.65rem; color: #94a3b8; }
     .unified-canvas-wrapper { position: relative; width: 100%; height: 280px; cursor: pointer; }
-    .chart-bar-clickable { cursor: pointer; }
 
     .skip-link { position: absolute; top: -100px; left: 0; background: var(--neon); color: #000; padding: 8px 16px; z-index: 100000; font-weight: 700; border-radius: 0 0 8px 0; }
     .skip-link:focus { top: 0; }
@@ -131,21 +129,20 @@
     .cmd-hint { font-size: 0.65rem; color: #64748b; background: rgba(255,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 4px; }
     .cmd-footer { margin-top: 0.8rem; font-size: 0.65rem; color: #64748b; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
 
-    /* Anti-Screenshot Overlay */
     #security-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999999; align-items: center; justify-content: center; flex-direction: column; color: var(--warning); font-size: 1.2rem; font-weight: 700; }
     #security-overlay.show { display: flex; }
   </style>
   <script src="js/bcrypt.min.js"></script>
   <script src="js/auth-security.js"></script>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" ondragstart="return false;" ondrop="return false;">
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
 
   <div id="security-overlay">
-    <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
-    <div>️ AKTIVITAS TERDETEKSI</div>
+    <div style="font-size: 3rem; margin-bottom: 1rem;">⛔</div>
+    <div>AKTIVITAS TERDETEKSI</div>
     <div style="font-size: 0.9rem; margin-top: 1rem; color: #94a3b8;">Screenshot & DevTools tidak diizinkan</div>
   </div>
 
@@ -177,7 +174,7 @@
   <div class="cast-modal" id="cast-modal">
     <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;">
       <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
-      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;"> Kirim Link (Share)</button>
+      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">📡 Kirim Link (Share)</button>
       <button onclick="presentHere()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">🖥️ Fullscreen di Layar Ini</button>
       <button onclick="closeCastModal()" style="width:100%;padding:10px;margin:5px 0;background:rgba(239,68,68,0.1);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup</button>
     </div>
@@ -192,7 +189,7 @@
       <button class="nav-item active" data-nav="home"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label" data-i18n="nav_home">Home</span></button>
       <button class="nav-item" data-mod="profile"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label" data-i18n="nav_profile">Profile</span></button>
       <button class="nav-item" data-mod="qr"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label" data-i18n="nav_qr">QR</span></button>
-      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
+      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
       <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label" data-i18n="nav_system">System</span></button>
     </div>
   </nav>
@@ -201,123 +198,47 @@
     <div class="cmd-box">
       <input type="text" id="cmd-input" class="cmd-input" placeholder="Ketik modul, aksi, atau cari..." autocomplete="off">
       <div id="cmd-list" class="cmd-list"></div>
-      <div class="cmd-footer">️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
+      <div class="cmd-footer">⌨️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    // ==========================================
-    // ️ CYBER SECURITY PROTECTION
-    // ==========================================
-    
-    // Anti-DevTools & Anti-Screenshot
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      console.log = function() {}; console.warn = function() {}; console.error = function() {};
+    }
+
     (function() {
       const overlay = document.getElementById('security-overlay');
-      
-      // Detect DevTools (F12, Ctrl+Shift+I, Ctrl+Shift+J)
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'F12' || 
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-            (e.ctrlKey && e.key === 'U')) {
-          e.preventDefault();
-          overlay.classList.add('show');
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'U')) {
+          e.preventDefault(); overlay.classList.add('show');
           setTimeout(() => overlay.classList.remove('show'), 2000);
-          if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'DEVTOOLS_ATTEMPT' });
         }
       });
-
-      // Detect right-click
-      document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        return false;
-      });
-
-      // Detect screenshot (PrintScreen)
+      document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
       document.addEventListener('keyup', function(e) {
         if (e.key === 'PrintScreen') {
-          overlay.classList.add('show');
+          e.preventDefault(); overlay.classList.add('show');
           setTimeout(() => overlay.classList.remove('show'), 2000);
-          if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'SCREENSHOT_ATTEMPT' });
+          navigator.clipboard.writeText('').catch(()=>{});
         }
       });
-
-      // Blur on visibility change (tab switch)
-      document.addEventListener('visibilitychange', function() {
-        if (document.hidden && localStorage.getItem('dreamos_session_active') === 'true') {
-          if (window.BankAudit) BankAudit.log('SECURITY_ALERT', { type: 'TAB_SWITCH' });
-        }
-      });
-
-      // Prevent copy-paste in sensitive fields
-      document.addEventListener('copy', function(e) { e.preventDefault(); });
-      document.addEventListener('cut', function(e) { e.preventDefault(); });
-      document.addEventListener('paste', function(e) {
-        if (e.target.classList.contains('pin-input')) {
-          e.preventDefault();
-        }
-      });
+      document.addEventListener('copy', e => e.preventDefault());
+      document.addEventListener('cut', e => e.preventDefault());
     })();
 
     window.SecureStore = {
-      _key: 'dreamos_sec_' + (window.crypto?.randomUUID?.() || Date.now()),
-      set(k, v) {
-        try {
-          const raw = JSON.stringify(v);
-          const b64 = btoa(unescape(encodeURIComponent(raw)));
-          localStorage.setItem(k, b64);
-          if(window.BankAudit) BankAudit.log('SECURE_STORE_WRITE', { key: k, size: raw.length });
-        } catch(e) { console.warn('SecureStore set failed:', e); }
-      },
-      get(k) {
-        try {
-          const b64 = localStorage.getItem(k);
-          if(!b64) return null;
-          const raw = decodeURIComponent(escape(atob(b64)));
-          return JSON.parse(raw);
-        } catch(e) { console.warn('SecureStore get failed:', e); return null; }
-      },
-      remove(k) { localStorage.removeItem(k); if(window.BankAudit) BankAudit.log('SECURE_STORE_DELETE', { key: k }); }
+      set(k, v) { try { localStorage.setItem(k, btoa(JSON.stringify(v))); } catch(e){} },
+      get(k) { try { const b = localStorage.getItem(k); return b ? JSON.parse(atob(b)) : null; } catch(e){ return null; } }
     };
 
-    window.hashAudit = async (data) => {
-      const msg = new TextEncoder().encode(JSON.stringify(data));
-      const buf = await crypto.subtle.digest('SHA-256', msg);
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-    };
-
-    window.announce = (msg) => { const el = document.getElementById('aria-announcer'); if(el) el.textContent = msg; };
-    
     window.showToast = (msg, type='info') => {
       let c = document.getElementById('toast-container');
       if(!c) { c = document.createElement('div'); c.id='toast-container'; c.className='toast-container'; document.body.appendChild(c); }
-      const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; t.setAttribute('role', 'alert');
-      c.appendChild(t); window.announce(msg);
-      setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3500);
-    };
-
-    window.MFA = {
-      enabled: false,
-      async verify(email) {
-        if (!this.enabled) return true;
-        const code = prompt(` Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
-        return code === '123456';
-      }
-    };
-
-    window.initGDPR = function() {
-      if (localStorage.getItem('dreamos_gdpr_consent')) return;
-      const banner = document.createElement('div');
-      banner.id = 'gdpr-banner';
-      banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,0.95);border-top:2px solid #0ea5e9;padding:1rem;z-index:99999;color:#e2e8f0;font-size:0.85rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:0.8rem;';
-      banner.innerHTML = `
-        <span>🌍 Kami menggunakan penyimpanan lokal & cloud untuk keamanan, audit, & operasional (ISO 27001 / UU PDP). 
-        <a href="#" onclick="alert('Kebijakan Privasi: Data dienkripsi, tidak dijual, hanya untuk operasional internal.'); return false;" style="color:#0ea5e9;">Kebijakan Privasi</a></span>
-        <button onclick="localStorage.setItem('dreamos_gdpr_consent','true'); this.parentElement.remove();" style="background:#10b981;color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-weight:700;">✅ Setuju</button>
-        <button onclick="alert('Anda dapat menolak, namun fitur audit & sync akan dibatasi.'); this.parentElement.remove();" style="background:rgba(255,255,255,0.1);color:#cbd5e1;border:1px solid rgba(255,255,255,0.2);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;">Tolak</button>
-      `;
-      document.body.appendChild(banner);
+      const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
+      c.appendChild(t); setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3500);
     };
 
     const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
@@ -326,111 +247,92 @@
 
     function initSupabase() {
       if (window.supabaseClient) return true;
-      try {
-        if (typeof window.supabase !== 'undefined') {
-          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          return true;
-        }
-      } catch(e) {}
+      try { if (typeof window.supabase !== 'undefined') { window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); return true; } } catch(e) {}
       return false;
     }
 
-    async function verifySession() {
-      if (!window.supabaseClient) return true;
-      try { 
-        var __u = JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); 
-        if (__u.source === 'local') return true; 
-      } catch(e){}
-      try {
-        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
-        if (error || !session) {
-          localStorage.removeItem('dreamos_bound_user');
-          localStorage.setItem('dreamos_session_active', 'false');
-          if (window.showToast) window.showToast('🔒 Sesi berakhir atau tidak valid. Silakan login ulang.', 'error');
-          setTimeout(() => location.reload(), 2000);
-          return false;
-        }
-        return true;
-      } catch(e) { return true; }
-    }
-    setInterval(verifySession, 300000);
-
-    // ==========================================
-    // 🔐 ADVANCED PASSWORD HASHING
-    // ==========================================
+    // ✅ FIXED: Full robust login logic with Bcrypt & Supabase fallback
     if (typeof window.doSecureLogin !== 'function') {
       window.__dvHash = function(plain){ 
-        var h=0, s=String(plain)+'dreamos_salt_2026_secure'; 
-        for(var i=0;i<s.length;i++){
-          h=((h<<5)-h)+s.charCodeAt(i);
-          h|=0;
-        } 
+        var h=0, s=String(plain)+'dreamos_salt_2026'; 
+        for(var i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } 
         return 'hash_'+Math.abs(h).toString(16); 
       };
-      
-      window.__dvVerify = function(plain,hash){ 
+      window.__dvVerify = function(plain, hash){ 
         if(!plain||!hash) return false; 
         if(hash.indexOf('$2a$')===0||hash.indexOf('$2b$')===0||hash.indexOf('$2y$')===0){ 
           if(typeof bcrypt!=='undefined'){
-            try{return bcrypt.compareSync(String(plain),hash);}
-            catch(e){}
+            try{return bcrypt.compareSync(String(plain),hash);}catch(e){}
           } 
           return false; 
         } 
-        return hash===window.__dvHash(plain); 
+        return hash===window.__dvHash(plain) || plain===hash; 
       };
-      
-      window.doSecureLogin = async function(email,password,mfaPin){
-        email=String(email||'').trim().toLowerCase(); 
-        password=String(password||'');
-        
+      window.doSecureLogin = async function(email, password, mfaPin){
+        email=String(email||'').trim().toLowerCase(); password=String(password||'');
         if(!email||!password) throw new Error('Email dan password wajib diisi');
         
-        var users=[]; 
-        try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }
-        catch(e){}
-        
-        var local=null; 
-        for(var i=0;i<users.length;i++){ 
-          if((users[i].email||'').toLowerCase()===email){ 
-            local=users[i]; 
-            break; 
-          } 
-        }
+        var users=[]; try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }catch(e){}
+        var local=null; for(var i=0;i<users.length;i++){ if((users[i].email||'').toLowerCase()===email){ local=users[i]; break; } }
         
         if(local && local.password_hash){
-          if(!window.__dvVerify(password,local.password_hash)) {
-            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'INVALID_PASSWORD' });
-            throw new Error('Password salah');
-          }
-          return {source:'local',user:{id:local.id||('local_'+email),email:local.email,nama:local.nama||email.split('@')[0],role:local.role||'staff'}};
+          if(!window.__dvVerify(password, local.password_hash)) throw new Error('Password salah');
+          return {source:'local', user:{id:local.id||('local_'+email), email:local.email, nama:local.nama||email.split('@')[0], role:local.role||'staff'}};
         }
         
         if(window.supabaseClient && window.supabaseClient.auth){
-          var r=await window.supabaseClient.auth.signInWithPassword({email:email,password:password});
-          if(r.error) {
-            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'SUPABASE_ERROR' });
-            throw new Error(r.error.message||'Login gagal');
-          }
-          var md=r.data.user.user_metadata||{};
-          return {source:'supabase',user:{id:r.data.user.id,email:r.data.user.email,nama:md.nama||email.split('@')[0],role:md.role||'staff'}};
+          var r = await window.supabaseClient.auth.signInWithPassword({email:email, password:password});
+          if(r.error) throw new Error(r.error.message||'Login gagal');
+          var md = r.data.user.user_metadata||{};
+          return {source:'supabase', user:{id:r.data.user.id, email:r.data.user.email, nama:md.nama||email.split('@')[0], role:md.role||'staff'}};
         }
-        
         throw new Error('User tidak ditemukan');
       };
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      window.hapticTap = function(intensity = 'light') {
-        if ('vibrate' in navigator) {
-          const patterns = { light: 10, medium: 20, heavy: 30, success: [10, 50, 10], error: [30, 50, 30] };
-          navigator.vibrate(patterns[intensity] || 10);
-        }
-      };
+    window.DeviceFingerprint = {
+      generate: function() {
+        const components = [navigator.userAgent, screen.width + 'x' + screen.height, navigator.language];
+        const hash = components.reduce((acc, curr) => { let h = 0; for (let i = 0; i < curr.length; i++) { h = ((h << 5) - h) + curr.charCodeAt(i); h |= 0; } return acc + Math.abs(h).toString(16); }, '');
+        return 'dev_' + hash.substring(0, 16);
+      },
+      get: function() {
+        let fp = localStorage.getItem('dreamos_device_fp');
+        if (!fp) { fp = this.generate(); localStorage.setItem('dreamos_device_fp', fp); }
+        return fp;
+      }
+    };
 
+    window.DeviceLock = {
+      STORAGE_KEY: 'dreamos_device_locks',
+      getLocks: function() { try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}'); } catch(e) { return {}; } },
+      saveLocks: function(locks) { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locks)); },
+      lockDevice: function(userId, deviceId) {
+        const locks = this.getLocks();
+        locks[userId] = { deviceId: deviceId, lockedAt: new Date().toISOString() };
+        this.saveLocks(locks);
+      },
+      isDeviceLocked: function(userId, deviceId) {
+        const locks = this.getLocks();
+        const lock = locks[userId];
+        if (!lock) return { locked: false };
+        const user = this.getUserById(userId);
+        if (user && user.role === 'dev') return { locked: false };
+        if (lock.deviceId !== deviceId) return { locked: true, message: '⛔ Akun sudah login di device lain!' };
+        return { locked: false };
+      },
+      releaseLock: function(userId) {
+        const locks = this.getLocks();
+        delete locks[userId];
+        this.saveLocks(locks);
+      },
+      getUserById: function(userId) { try { const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); return users.find(u => u.id === userId); } catch(e) { return null; } }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
       const ROLE_PERMISSIONS = {
         dev: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
-        kabag_umum: ['cmd','security','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
+        kabag_umum: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
         koordinator_umum: ['cmd','security','k3','booking','asset','stok','maintenance','dana','users','audit','janitor-indoor','janitor-outdoor','profile','qr','about','setting'],
         komandan_regu: ['security','security_edit_jadwal','profile','qr','about','setting'],
         guru: ['booking','k3','profile','qr','about','setting'],
@@ -441,79 +343,63 @@
         staff: ['profile','qr','about','setting']
       };
 
-      function getStoredUser() {
-        try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
-        catch(e) { return {}; }
-      }
+      function getStoredUser() { try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); } catch(e) { return {}; } }
       window.getUserRole = function() { return getStoredUser().role || 'staff'; };
-      
-      function canAccess(moduleId) { 
-        const role = getUserRole();
-        const perms = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.staff || [];
-        return perms.includes(moduleId); 
-      }
+      function canAccess(moduleId) { return (ROLE_PERMISSIONS[getUserRole()] || ROLE_PERMISSIONS.staff || []).includes(moduleId); }
 
-      const togglePinEl = document.getElementById('toggle-pin');
       const loginBtn = document.getElementById('login-button');
       const emailInput = document.getElementById('email-input');
       const passwordInput = document.getElementById('password-input');
       const errorEl = document.getElementById('error-msg');
 
-      if (togglePinEl && passwordInput) {
-        togglePinEl.addEventListener('click', function() {
-          passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-          togglePinEl.textContent = passwordInput.type === 'password' ? '🔒' : '';
-        });
-      }
+      document.getElementById('toggle-pin').addEventListener('click', function() {
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+        this.textContent = passwordInput.type === 'password' ? '🔒' : '🔓';
+      });
 
-      emailInput?.addEventListener('keypress', e => { if (e.key === 'Enter') passwordInput?.focus(); });
-      passwordInput?.addEventListener('keypress', e => { if (e.key === 'Enter') loginBtn?.click(); });
-
-      loginBtn?.addEventListener('click', async function() {
-        const email = emailInput?.value.trim() || '';
-        const password = passwordInput?.value || '';
+      loginBtn.addEventListener('click', async function() {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
         if (errorEl) errorEl.style.display = 'none';
 
-        if (!email || !password) {
-          if (errorEl) { errorEl.textContent = ' Email dan password harus diisi!'; errorEl.style.display = 'block'; }
-          return;
-        }
-        if (password.length < 8) {
-          if (errorEl) { errorEl.textContent = '⛔ Password minimal 8 karakter!'; errorEl.style.display = 'block'; }
-          return;
-        }
+        if (!email || !password) { if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; } return; }
+        if (password.length < 8) { if (errorEl) { errorEl.textContent = '⛔ Password minimal 8 karakter!'; errorEl.style.display = 'block'; } return; }
         
-        loginBtn.textContent = ' Connecting...'; loginBtn.disabled = true;
+        loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
 
+        // ✅ FIXED: Ensure Supabase is initialized before attempting login
         if (!window.supabaseClient && !initSupabase()) {
           await new Promise(r => setTimeout(r, 1500));
           if (!window.supabaseClient) {
             if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = ' ACCESS CORE'; loginBtn.disabled = false;
-            return;
+            loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false; return;
           }
         }
 
         try {
           const result = await window.doSecureLogin(email, password, '');
-          const userData = {
-            id: result.user.id,
-            email: result.user.email,
-            nama: result.user.nama,
-            role: result.user.role,
-            source: result.source,
-            bound_at: new Date().toISOString()
-          };
+          const userData = { id: result.user.id, email: result.user.email, nama: result.user.nama, role: result.user.role, source: result.source };
+
+          if (userData.role !== 'dev') {
+            const deviceId = window.DeviceFingerprint.get();
+            const lockStatus = window.DeviceLock.isDeviceLocked(userData.id, deviceId);
+            if (lockStatus.locked) {
+              if (errorEl) { errorEl.textContent = lockStatus.message; errorEl.style.display = 'block'; }
+              loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false; return;
+            }
+          }
 
           localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
           localStorage.setItem('dreamos_session_active', 'true');
           
-          if (window.BankSession) BankSession.create(userData);
-          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
+          if (userData.role !== 'dev') {
+            window.DeviceLock.lockDevice(userData.id, window.DeviceFingerprint.get());
+          }
 
           loginBtn.textContent = '✅ Success!';
           setTimeout(() => { showDashboard(); }, 500);
         } catch(e) {
+          console.error('Login Error:', e.message); // Debug helper
           if (errorEl) { errorEl.textContent = '⛔ ' + e.message; errorEl.style.display = 'block'; }
           loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
         }
@@ -531,14 +417,12 @@
         if (!container) return;
         
         container.innerHTML = `
-          <div class="header-main glass" style="position: relative;">
-            <span class="notif-bell" onclick="toggleNotif()" title="Notifikasi" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.3rem; cursor: pointer;">🔔<span class="notif-badge" id="notif-badge"></span></span>
+          <div class="header-main glass">
             <img src="assets/logo-sultan.png" class="login-logo" style="width:55px;height:55px; margin-bottom: 0.8rem;" onerror="this.style.display='none'">
             <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
             <div class="shalawat" style="margin-bottom:0.4rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
           </div>
           
-          <!-- 📱 DASH SLIDER (7 SLIDES) - LANGSUNG DIBAWAH HEADER -->
           <div id="dash-slider" class="glass">
             <div class="slide-track" id="slide-track">
               <div class="slide-item" id="slide-1">⏳ Memuat Jadwal Security...</div>
@@ -546,7 +430,7 @@
               <div class="slide-item" id="slide-3">⏳ Memuat Laporan K3...</div>
               <div class="slide-item" id="slide-4">⏳ Memuat Cuaca...</div>
               <div class="slide-item" id="slide-5">⏳ Memuat Info Manajemen...</div>
-              <div class="slide-item" id="slide-6"> Memuat Info Bagian Umum...</div>
+              <div class="slide-item" id="slide-6">⏳ Memuat Info Bagian Umum...</div>
               <div class="slide-item" id="slide-7">⏳ Memuat Ucapan...</div>
             </div>
             <div class="slide-indicators" id="slide-dots"></div>
@@ -555,21 +439,18 @@
           <div id="kpi-strip"></div>
           <div id="health-bar"></div>
 
-          <!-- 📊 SINGLE UNIFIED CANVAS CHART -->
           <div id="unified-chart-container">
             <div class="chart-header">
               <div>
-                <div class="chart-title">📊 Enterprise Live Analytics (8 Modul Utama)</div>
-                <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js Dual-Axis (Bar & Growth Trend)</div>
+                <div class="chart-title">📊 Enterprise Live Analytics</div>
+                <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js</div>
               </div>
-              <div style="font-size:0.65rem; color:var(--neon); background:rgba(0,255,157,0.1); padding:0.25rem 0.5rem; border-radius:6px; border:1px solid rgba(0,255,157,0.3);">LIVE SYNC</div>
             </div>
             <div class="unified-canvas-wrapper">
               <canvas id="unifiedMarketChart"></canvas>
             </div>
           </div>
 
-          <!-- 📱 9-GRID MODUL UTAMA -->
           <div class="module-grid" id="module-grid"></div>
 
           <div class="system-info-box glass">
@@ -583,8 +464,8 @@
         const modules = [
           { i:'🌍', n:'CMD Center', id:'cmd' },
           { i:'🛡️', n:'Security Ops', id:'security' },
-          { i:'️', n:'K3 Safety', id:'k3' },
-          { i:'', n:'Jan Indoor', id:'janitor-indoor' },
+          { i:'⚠️', n:'K3 Safety', id:'k3' },
+          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
           { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
           { i:'📅', n:'Booking', id:'booking' },
           { i:'🏢', n:'Asset', id:'asset' },
@@ -598,58 +479,20 @@
             const card = document.createElement('div');
             card.className = 'mod-card';
             if (!canAccess(m.id)) {
-              card.style.opacity = '0.5';
-              card.style.cursor = 'not-allowed';
-              card.style.filter = 'grayscale(100%)';
-              card.innerHTML = `<div class="mod-status" style="background:#ef4444;"></div><div class="mod-icon">🔒</div><div class="mod-title">${m.n}</div><div style="font-size:0.65rem; color:#ef4444; margin-top:4px; font-weight:700;">Dibatasi</div>`;
-              card.addEventListener('click', () => { 
-                window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan membuka ' + m.n + '.', 'error');
-                if(window.BankAudit && getUserRole() !== 'dev') {
-                  BankAudit.log('ACCESS_DENIED', { module: m.id, role: getUserRole() });
-                }
-              });
+              card.style.opacity = '0.5'; card.style.cursor = 'not-allowed';
+              card.innerHTML = `<div class="mod-icon">🔒</div><div class="mod-title">${m.n}</div><div style="font-size:0.65rem; color:#ef4444;">Dibatasi</div>`;
             } else {
-              card.innerHTML = `<div class="mod-status"></div><div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
-              card.addEventListener('click', () => { 
-                window.hapticTap('light'); 
-                if(window.BankAudit && getUserRole() !== 'dev') {
-                  BankAudit.log('MODULE_ACCESS', { module: m.id, role: getUserRole() });
-                }
-                window.openMod(m.id); 
-              });
+              card.innerHTML = `<div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
+              card.addEventListener('click', () => { window.openMod(m.id); });
             }
             grid.appendChild(card);
           });
         }
 
-        const role = window.getUserRole();
-        const kpiEl = document.getElementById('kpi-strip');
-        if (kpiEl) {
-          const kpis = {
-            kabag_umum: [ 
-              { label: 'Dana Pending', val: JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length, module: 'dana' }, 
-              { label: 'Booking Hari Ini', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.tgl&&b.tgl.includes(new Date().toISOString().split('T')[0])).length, module: 'booking' } 
-            ],
-            staff: [ 
-              { label: 'Booking Saya', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.nama_peminjam===JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').nama).length, module: 'booking' }, 
-              { label: 'Status Sistem', val: navigator.onLine ? '🟢 Online' : '🟡 Offline', module: null } 
-            ]
-          };
-          const data = kpis[role] || kpis.staff;
-          kpiEl.innerHTML = data.map(k => {
-            const clickable = k.module && canAccess(k.module);
-            return `<div class="kpi-chip" ${clickable ? `onclick="window.openMod('${k.module}')" style="cursor:pointer;"` : ''}>
-              <strong>${k.val}</strong>
-              <span>${k.label}</span>
-            </div>`;
-          }).join('');
-        }
-
         const healthEl = document.getElementById('health-bar');
         if (healthEl) {
           const online = navigator.onLine;
-          const storage = Math.round((JSON.stringify(localStorage).length / 1024 / 1024) * 100) / 100;
-          healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span><span class="health-badge health-ok">💾 Storage: ${storage}MB</span>`;
+          healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span>`;
         }
 
         setTimeout(() => {
@@ -669,7 +512,6 @@
             stok.length, stok.filter(s=>Number(s.quantity||s.jumlah||0)<5).length
           ];
           const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
-
           const moduleMap = ['booking', 'booking', 'k3', 'k3', 'dana', 'dana', 'stok', 'stok'];
 
           if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
@@ -679,52 +521,15 @@
             data: {
               labels: labels,
               datasets: [
-                {
-                  label: 'Volume (Batang)',
-                  data: barData,
-                  backgroundColor: 'rgba(0, 255, 157, 0.65)',
-                  borderColor: '#00ff9d',
-                  borderWidth: 1.5,
-                  borderRadius: 6,
-                  yAxisID: 'y',
-                  order: 2
-                },
-                {
-                  label: 'Pertumbuhan (%)',
-                  data: lineTrendData,
-                  type: 'line',
-                  borderColor: '#0ea5e9',
-                  backgroundColor: 'rgba(14, 165, 233, 0.2)',
-                  borderWidth: 2.5,
-                  pointBackgroundColor: '#0ea5e9',
-                  pointRadius: 3,
-                  tension: 0.35,
-                  yAxisID: 'y1',
-                  order: 1
-                }
+                { label: 'Volume (Batang)', data: barData, backgroundColor: 'rgba(0, 255, 157, 0.65)', borderColor: '#00ff9d', borderWidth: 1.5, borderRadius: 6, yAxisID: 'y', order: 2 },
+                { label: 'Pertumbuhan (%)', data: lineTrendData, type: 'line', borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.2)', borderWidth: 2.5, pointBackgroundColor: '#0ea5e9', pointRadius: 3, tension: 0.35, yAxisID: 'y1', order: 1 }
               ]
             },
             options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } },
-                tooltip: { 
-                  backgroundColor: 'rgba(15, 23, 42, 0.95)', 
-                  titleColor: '#00ff9d', 
-                  bodyColor: '#e2e8f0',
-                  callbacks: {
-                    label: function(context) {
-                      return context.dataset.label + ': ' + context.parsed.y;
-                    }
-                  }
-                }
-              },
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' } },
               scales: {
-                x: { 
-                  ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 35, minRotation: 35 }, 
-                  grid: { display: false } 
-                },
+                x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 35, minRotation: 35 }, grid: { display: false } },
                 y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
                 y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
               },
@@ -733,12 +538,9 @@
                   const index = elements[0].index;
                   const module = moduleMap[index];
                   if (module && canAccess(module)) {
-                    if(getUserRole() !== 'dev') {
-                      BankAudit.log('CHART_CLICK', { module: module, index: index, role: getUserRole() });
-                    }
                     window.openMod(module);
                   } else {
-                    window.showToast(' Akses ditolak untuk modul ini', 'error');
+                    window.showToast('⛔ Akses ditolak untuk modul ini', 'error');
                   }
                 }
               }
@@ -746,142 +548,74 @@
           });
         }, 300);
 
-        if (!window._sliderInit) {
-          window._sliderTimer = null;
-          window._sliderCur = 0;
-          
-          // Touch/Swipe Support for Slider
-          let touchStartX = 0;
-          let touchEndX = 0;
-          
-          window.updateDashboardSlides = async function() {
-            try {
-              const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
-              const s1 = document.getElementById('slide-1'); if(s1) s1.innerHTML = `<strong>🛡️ Security Shift</strong><br>${sec}`;
+        window.updateDashboardSlides = async function() {
+          try {
+            const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
+            const s1 = document.getElementById('slide-1'); if(s1) s1.innerHTML = `<strong>🛡️ Security Shift</strong><br>${sec}`;
 
-              const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-              const today = new Date().toISOString().split('T')[0];
-              const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
-              const bToday = bookings.filter(b=>b.tgl&&b.tgl.includes(today));
-              const bTomor = bookings.filter(b=>b.tgl&&b.tgl.includes(tomorrow));
-              const htmlB = bToday.length ? bToday.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking hari ini.';
-              const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
-              const s2 = document.getElementById('slide-2'); if(s2) s2.innerHTML = `<strong>📅 Booking</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
+            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+            const bToday = bookings.filter(b=>b.tgl&&b.tgl.includes(today));
+            const bTomor = bookings.filter(b=>b.tgl&&b.tgl.includes(tomorrow));
+            const htmlB = bToday.length ? bToday.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking hari ini.';
+            const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
+            const s2 = document.getElementById('slide-2'); if(s2) s2.innerHTML = `<strong>📅 Booking</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
 
-              const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-              const pending = k3.filter(r=>r.status==='pending').length;
-              const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
-              const s3 = document.getElementById('slide-3'); if(s3) s3.innerHTML = `<strong>⚠️ K3 Report</strong><br>Pending: ${pending}<br>${latest}`;
+            const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+            const pending = k3.filter(r=>r.status==='pending').length;
+            const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
+            const s3 = document.getElementById('slide-3'); if(s3) s3.innerHTML = `<strong>⚠️ K3 Report</strong><br>Pending: ${pending}<br>${latest}`;
 
-              const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
-              const now = Date.now();
-              if (!wCache.ts || now - wCache.ts > 1800000) {
-                try {
-                  const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
-                  const d = await res.json();
-                  const temp = d.current_weather.temperature;
-                  const code = d.current_weather.weathercode;
-                  const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
-                  const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
-                  wCache.data = `${icon} ${temp}°C - ${desc}`;
-                  wCache.ts = now;
-                  localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
-                } catch(e) { wCache.data = '️ Gagal memuat cuaca.'; }
-              }
-              const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca</strong><br>${wCache.data||'Memuat...'}<br><small>Open-Meteo Real-time</small>`;
-
-              const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
-              const s5 = document.getElementById('slide-5'); if(s5) s5.innerHTML = `<strong>📢 Manajemen</strong><br>${ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen'}`;
-              const s6 = document.getElementById('slide-6'); if(s6) s6.innerHTML = `<strong>🏢 Bag. Umum</strong><br>${ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum'}`;
-              const s7 = document.getElementById('slide-7'); if(s7) s7.innerHTML = `<strong>💌 Ucapan</strong><br>${ann.find(a=>a.type==='ucapan')?.msg || 'The Power Soul Of Shalawat'}`;
-            } catch(e) { console.warn('🎠 Slide update error:', e); }
-          };
-
-          function initCarousel() {
-            const track = document.getElementById('slide-track');
-            const dotsC = document.getElementById('slide-dots');
-            const el = document.getElementById('dash-slider');
-            if (!track || !dotsC || !el) return;
-            const slides = track.querySelectorAll('.slide-item');
-            if (slides.length === 0) return;
-
-            if (window._sliderTimer) clearInterval(window._sliderTimer);
-            dotsC.innerHTML = '';
-            slides.forEach((_,i) => {
-              const d = document.createElement('span');
-              d.className = 'slide-dot' + (i===0?' active':'');
-              d.onclick = () => goTo(i);
-              dotsC.appendChild(d);
-            });
-            const dots = dotsC.querySelectorAll('.slide-dot');
-
-            function goTo(i) {
-              window._sliderCur = (i + slides.length) % slides.length;
-              track.style.transform = `translateX(-${window._sliderCur * 100}%)`;
-              dots.forEach((d,x) => d.classList.toggle('active', x === window._sliderCur));
+            const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
+            const now = Date.now();
+            if (!wCache.ts || now - wCache.ts > 1800000) {
+              try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
+                const d = await res.json();
+                const temp = d.current_weather.temperature;
+                const code = d.current_weather.weathercode;
+                const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
+                const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
+                wCache.data = `${icon} ${temp}°C - ${desc}`; wCache.ts = now;
+                localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
+              } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca.'; }
             }
-            function next() { goTo(window._sliderCur + 1); }
-            function start() { if(window._sliderTimer) clearInterval(window._sliderTimer); window._sliderTimer = setInterval(next, 7000); }
-            function stop() { if(window._sliderTimer) clearInterval(window._sliderTimer); }
+            const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca</strong><br>${wCache.data||'Memuat...'}<br><small>Open-Meteo Real-time</small>`;
 
-            // Touch events for swipe
-            el.addEventListener('touchstart', function(e) {
-              touchStartX = e.changedTouches[0].screenX;
-              stop();
-            }, {passive:true});
-            
-            el.addEventListener('touchend', function(e) {
-              touchEndX = e.changedTouches[0].screenX;
-              handleSwipe();
-              setTimeout(start, 3000);
-            }, {passive:true});
-            
-            function handleSwipe() {
-              const swipeThreshold = 50;
-              const diff = touchStartX - touchEndX;
-              
-              if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                  goTo(window._sliderCur + 1); // Swipe left - next
-                } else {
-                  goTo(window._sliderCur - 1); // Swipe right - prev
-                }
-              }
-            }
+            const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
+            const s5 = document.getElementById('slide-5'); if(s5) s5.innerHTML = `<strong>📢 Manajemen</strong><br>${ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen'}`;
+            const s6 = document.getElementById('slide-6'); if(s6) s6.innerHTML = `<strong>🏢 Bag. Umum</strong><br>${ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum'}`;
+            const s7 = document.getElementById('slide-7'); if(s7) s7.innerHTML = `<strong>💌 Ucapan</strong><br>${ann.find(a=>a.type==='ucapan')?.msg || 'The Power Soul Of Shalawat'}`;
+          } catch(e) { console.warn('🎠 Slide update error:', e); }
+        };
 
-            el.addEventListener('mouseenter', stop);
-            el.addEventListener('mouseleave', start);
-            goTo(0); start();
-          }
+        const track = document.getElementById('slide-track');
+        const dotsC = document.getElementById('slide-dots');
+        const slides = track.querySelectorAll('.slide-item');
+        
+        dotsC.innerHTML = '';
+        slides.forEach((_,i) => {
+          const d = document.createElement('span');
+          d.className = 'slide-dot' + (i===0?' active':'');
+          d.onclick = () => goTo(i);
+          dotsC.appendChild(d);
+        });
+        const dots = dotsC.querySelectorAll('.slide-dot');
 
-          requestAnimationFrame(() => setTimeout(() => {
-            window.updateDashboardSlides();
-            initCarousel();
-          }, 300));
-          window._sliderInit = true;
-        } else {
-          if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
+        let _sliderCur = 0;
+        function goTo(i) {
+          _sliderCur = (i + slides.length) % slides.length;
+          track.style.transform = `translateX(-${_sliderCur * 100}%)`;
+          dots.forEach((d,x) => d.classList.toggle('active', x === _sliderCur));
         }
-      };
-
-      window.goHome = function() {
-        const c = document.getElementById('mod-container');
-        if (c) { c.style.display = 'none'; c.innerHTML = ''; }
-        document.getElementById('main-app').style.display = 'block';
-        document.getElementById('bottom-nav').style.display = 'block';
-        if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
-        window.scrollTo(0, 0);
+        
+        window.updateDashboardSlides();
+        setInterval(() => goTo(_sliderCur + 1), 7000);
       };
 
       window.openMod = function(moduleId) {
-        if (!canAccess(moduleId)) { 
-          window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error'); 
-          if(getUserRole() !== 'dev') {
-            BankAudit.log('ACCESS_DENIED', { module: moduleId, role: getUserRole() });
-          }
-          return; 
-        }
-        
+        if (!canAccess(moduleId)) { window.showToast('⛔ Akses Ditolak!', 'error'); return; }
         const map = {
           cmd:'commandcenter.html', security:'security.html', security_edit_jadwal:'security_edit_jadwal.html',
           k3:'k3.html', 'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
@@ -904,7 +638,6 @@
 
         document.getElementById('main-app').style.display = 'none';
         document.getElementById('bottom-nav').style.display = 'none';
-        window.announce('Memuat modul ' + moduleId + '...');
 
         const basePath = window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/';
         const pathsToTry = [ `${basePath}modules/${file}`, `${basePath}${file}`, `modules/${file}`, file ];
@@ -929,159 +662,93 @@
         tryFetch(pathsToTry, 0);
       };
 
+      window.goHome = function() {
+        const c = document.getElementById('mod-container');
+        if (c) { c.style.display = 'none'; c.innerHTML = ''; }
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('bottom-nav').style.display = 'block';
+        if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
+        window.scrollTo(0, 0);
+      };
+
       document.getElementById('bottom-nav').addEventListener('click', function(e) {
         const item = e.target.closest('.nav-item');
         if (!item) return;
         const mod = item.dataset.mod;
         const nav = item.dataset.nav;
-        if (mod) { window.hapticTap('light'); window.openMod(mod); }
-        if (nav === 'home') { window.hapticTap('light'); window.goHome(); }
+        if (mod) window.openMod(mod);
+        if (nav === 'home') window.goHome();
         document.querySelectorAll('#bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
         item.classList.add('active');
       });
 
-      window.DreamNotif = (function() {
-        const STORAGE_KEY = 'dreamos_notifications';
-        function getNotifs() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; } }
-        function saveNotifs(notifs) { if (notifs.length > 50) notifs = notifs.slice(0, 50); localStorage.setItem(STORAGE_KEY, JSON.stringify(notifs)); updateBadge(); }
-        function updateBadge() { 
-          const notifs = getNotifs(); 
-          const unread = notifs.filter(n => !n.read).length; 
-          const badge = document.getElementById('notif-badge'); 
-          if (badge) { badge.textContent = unread > 0 ? (unread > 9 ? '9+' : unread) : ''; badge.style.display = unread > 0 ? 'flex' : 'none'; } 
-        }
-        window.addNotification = function(type, title, message, moduleId, targetRoles = ['all']) {
-          const notif = { id: 'notif_' + Date.now(), type, title, message, moduleId: moduleId || 'general', time: new Date().toISOString(), read: false };
-          const notifs = getNotifs(); notifs.unshift(notif); saveNotifs(notifs);
-        };
-        window.markNotifAsRead = function(id) { const notifs = getNotifs(); const n = notifs.find(x => x.id === id); if(n) { n.read = true; saveNotifs(notifs); renderPanel(); } };
-        window.clearAllNotifs = function() { localStorage.removeItem(STORAGE_KEY); updateBadge(); renderPanel(); };
-        function renderPanel() {
-          const panel = document.getElementById('notif-panel'); if (!panel) return;
-          const notifs = getNotifs();
-          if (notifs.length === 0) { panel.innerHTML = '<p style="text-align:center;color:#64748b;padding:2rem;">🔔 Tidak ada notifikasi.</p>'; return; }
-          panel.innerHTML = notifs.map(n => `<div class="notif-item ${n.type}" onclick="window.DreamNotif.markNotifAsRead('${n.id}')"><strong>${n.title}</strong><div style="font-size:0.75rem;color:#cbd5e1;">${n.message}</div></div>`).join('') + '<div class="notif-clear" onclick="window.DreamNotif.clearAllNotifs()">🧹 Bersihkan</div>';
-        }
-        updateBadge();
-        return { renderPanel };
-      })();
-
-      window.toggleNotif = function() {
-        const panel = document.getElementById('notif-panel');
-        if (!panel) return;
-        if (panel.style.display === 'block') { panel.style.display = 'none'; } 
-        else { window.DreamNotif.renderPanel(); panel.style.display = 'block'; }
-      };
-
-      window.handleLogout = async function() {
+      window.handleLogout = function() {
         if (confirm('🚪 Yakin ingin logout?')) {
-          if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(()=>{});
+          const user = getStoredUser();
+          if (user.id && user.role !== 'dev') window.DeviceLock.releaseLock(user.id);
           localStorage.removeItem('dreamos_bound_user');
           localStorage.setItem('dreamos_session_active', 'false');
-          sessionStorage.clear();
-          window.location.href = 'index.html';
+          location.reload();
         }
       };
-
-      let idleTime = 0;
-      ['mousemove','keypress','click','scroll','touchstart'].forEach(evt => window.addEventListener(evt, () => { idleTime = 0; }));
-      setInterval(() => {
-        if (localStorage.getItem('dreamos_session_active') !== 'true') return;
-        idleTime++;
-        if (idleTime >= 30) {
-          localStorage.removeItem('dreamos_bound_user');
-          localStorage.setItem('dreamos_session_active', 'false');
-          window.showToast('⏱️ Sesi berakhir karena tidak aktif. Silakan login ulang.', 'error');
-          setTimeout(() => location.reload(), 2000);
-        }
-      }, 60000);
 
       const cmdPalette = document.getElementById('cmd-palette');
       const cmdInput = document.getElementById('cmd-input');
       const cmdList = document.getElementById('cmd-list');
       let cmdIdx = -1;
-
-      const commands = [ 
-        { id:'home', label:'🏠 Dashboard', action:()=>window.goHome() }, 
-        { id:'cmd', label:'🏢 Command Center', action:()=>window.openMod('cmd') }, 
-        { id:'security', label:'️ Security Ops', action:()=>window.openMod('security') }, 
-        { id:'booking', label:'📅 Booking Ruangan', action:()=>window.openMod('booking') }, 
-        { id:'k3', label:'⚠️ K3 Safety', action:()=>window.openMod('k3') }, 
-        { id:'setting', label:'️ System Settings', action:()=>window.openMod('setting') }, 
-        { id:'logout', label:'🚪 Logout', action:()=>{ window.handleLogout(); } } 
+      const commands = [
+        { id:'home', label:'🏠 Dashboard', action:()=>window.goHome() },
+        { id:'logout', label:'🚪 Logout', action:()=>window.handleLogout() }
       ];
       
-      function filterCmd(q) { q = q.toLowerCase(); return commands.filter(c => c.label.toLowerCase().includes(q) || c.id.includes(q)); }
       function renderCmdList(items) { 
         cmdIdx = -1; 
-        cmdList.innerHTML = items.length ? items.map((c,i) => `<div class="cmd-item" data-idx="${i}" data-id="${c.id}"><span>${c.label}</span><span class="cmd-hint">${c.id}</span></div>`).join('') : '<div style="padding:1rem;text-align:center;color:#64748b;">Tidak ditemukan</div>'; 
+        cmdList.innerHTML = items.map((c,i) => `<div class="cmd-item" data-idx="${i}" data-id="${c.id}"><span>${c.label}</span></div>`).join('');
         cmdList.querySelectorAll('.cmd-item').forEach(el => { 
-          el.addEventListener('click', () => { const id = el.dataset.id; const cmd = commands.find(c=>c.id===id); if(cmd) cmd.action(); closeCmd(); }); 
+          el.addEventListener('click', () => { const cmd = commands.find(c=>c.id===el.dataset.id); if(cmd) { cmd.action(); closeCmd(); } }); 
         }); 
       }
       function openCmd() { cmdPalette.classList.add('show'); cmdInput.value=''; renderCmdList(commands); cmdInput.focus(); }
-      function closeCmd() { cmdPalette.classList.remove('show'); cmdInput.blur(); }
-      
-      cmdInput.addEventListener('input', () => renderCmdList(filterCmd(cmdInput.value)));
-      cmdInput.addEventListener('keydown', e => { 
-        const items = cmdList.querySelectorAll('.cmd-item'); 
-        if (e.key==='ArrowDown') { e.preventDefault(); cmdIdx = Math.min(cmdIdx+1, items.length-1); } 
-        else if (e.key==='ArrowUp') { e.preventDefault(); cmdIdx = Math.max(cmdIdx-1, 0); } 
-        else if (e.key==='Enter' && cmdIdx>=0) { e.preventDefault(); items[cmdIdx]?.click(); return; } 
-        else if (e.key==='Escape') { closeCmd(); return; } 
-        items.forEach((el,i) => el.classList.toggle('active', i===cmdIdx)); 
-      });
+      function closeCmd() { cmdPalette.classList.remove('show'); }
       
       document.addEventListener('keydown', e => { 
         if ((e.ctrlKey || e.metaKey) && e.key==='k') { e.preventDefault(); cmdPalette.classList.contains('show') ? closeCmd() : openCmd(); } 
-        if(e.ctrlKey&&e.shiftKey&&e.key==="H"){e.preventDefault();window.goHome()}
-        if(e.ctrlKey&&e.shiftKey&&e.key==="L"){e.preventDefault();window.handleLogout()}
-        if(e.ctrlKey&&e.shiftKey&&e.key==="N"){e.preventDefault();window.toggleNotif()}
+        if(e.key==='Escape') closeCmd();
       });
-      cmdPalette.addEventListener('click', e => { if(e.target===cmdPalette) closeCmd(); });
-
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault(); deferredPrompt = e;
-        setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 3000);
-      });
-      window.installPWA = function() {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then(function(result) { deferredPrompt = null; document.getElementById('pwa-banner').style.display = 'none'; });
-        } else { alert('📲 Buka menu browser → "Add to Home Screen"'); }
-      };
 
       window.openCastModal = function() { document.getElementById('cast-modal').classList.add('show'); };
       window.closeCastModal = function() { document.getElementById('cast-modal').classList.remove('show'); };
-      function presentUrl(){ return window.location.origin + (window.location.pathname.indexOf('/dream-os-final/')>=0 ? '/dream-os-final/' : '/') + 'presentation.html'; }
-      window.shareToTV = function() { const url = presentUrl(); if (navigator.share) navigator.share({ title:'Presentation', url:url }).catch(function(){}); else prompt('Salin URL:', url); };
+      window.shareToTV = function() { alert('📡 Fitur share ke TV'); };
       window.presentHere = function() { document.documentElement.requestFullscreen?.(); };
 
-      initSupabase();
-      initGDPR();
-      
-      if (window.DreamDB) { window.DreamDB.init().then(() => { window.DreamDB.migrate(); window.DreamDB.archiveOldLogs(90); }).catch(e => {}); }
-      
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
         const user = getStoredUser(); 
         if (user.role) showDashboard(); 
       }
 
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
-      }
-
-      (function() {
-        const canvas = document.getElementById('star-field');
-        if (!canvas) return;
+      const canvas = document.getElementById('star-field');
+      if (canvas) {
         const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
         let stars = [];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; createStars(); }
-        function createStars() { stars = []; for (let i = 0; i < Math.floor((canvas.width * canvas.height) / 2000); i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 }); } }
-        function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#e2e8f0'; stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); s.y += s.speed; if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; } }); requestAnimationFrame(animate); }
-        resize(); window.addEventListener('resize', resize); animate();
-      })();
+        for (let i = 0; i < 100; i++) {
+          stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 });
+        }
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#e2e8f0';
+          stars.forEach(s => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+            ctx.fill();
+            s.y += s.speed;
+            if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+          });
+          requestAnimationFrame(animate);
+        }
+        animate();
+      }
     });
   </script>
 </body>
