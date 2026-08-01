@@ -160,7 +160,6 @@
       <button class="sec-tab" data-target="tab-logbook">📋 Logbook Kegiatan</button>
       <button class="sec-tab" data-target="tab-patrol">🚶 Patroli</button>
       <button class="sec-tab" data-target="tab-bridge">🚨 Trigger & Slide</button>
-      <button class="sec-tab" data-target="tab-laporan-harian">📋 Laporan Harian 24/7</button>
 
     </div>
 
@@ -598,19 +597,14 @@
     }).join('');
   }
 
-// 🔧 Tab switching yang bersih dan 100% stabil
+// 🔧 Tab switching sederhana & stabil
   document.querySelectorAll('.sec-tab').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
+    btn.addEventListener('click', function() {
       document.querySelectorAll('.sec-tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.sec-panel').forEach(p => {
-        p.style.display = 'none';
-      });
+      document.querySelectorAll('.sec-panel').forEach(p => p.style.display = 'none');
       this.classList.add('active');
       const target = document.getElementById(this.dataset.target);
-      if (target) {
-        target.style.display = 'block';
-      }
+      if (target) target.style.display = 'block';
     });
   });
 
@@ -1219,11 +1213,9 @@
   // 📋 LAPORAN HARIAN 24/7 ENGINE
   // [REMOVED DUPLICATE - using upgraded version below]
 
-  window.printDailyReport = function() {
-    window.print();
-  };
+  
 
-  // Auto-init daily report dipindahkan ke dalam DOMContentLoaded
+  
 
 
   // 📝 REVISI CEPAT ENGINE
@@ -1319,42 +1311,16 @@
 };
   window.addPersonnelRow = function() { const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); const j=JSON.parse(d||'{"personnel":[],"activitiesA":[],"activitiesB":[]}'); j.personnel.push({nama:'',jabatan:'',pagi:'',malam:'',ket:''}); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date-daily').value,JSON.stringify(j)); renderPersonnelTable(j.personnel); };
   window.addActivityRow = function(col) { const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); const j=JSON.parse(d||'{"personnel":[],"activitiesA":[],"activitiesB":[]}'); j['activities'+col.toUpperCase()].push({masuk:'',keluar:'',uraian:'',ket:''}); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date-daily').value,JSON.stringify(j)); renderActivityTable(col,j['activities'+col.toUpperCase()]); };
-  window.deleteActivity = function(col,i) { if(!confirm('Hapus?'))return; const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); const j=JSON.parse(d); j['activities'+col.toUpperCase()].splice(i,1); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date-daily').value,JSON.stringify(j)); renderActivityTable(col,j['activities'+col.toUpperCase()]); };
-  window.saveDailyReport = function() { alert('✅ Auto-save aktif. Data tersimpan di perangkat ini.'); };
-  window.resetDailyReport = function() { if(!confirm('Reset data tanggal ini?'))return; localStorage.removeItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); loadDailyReport(); };
+  
+  
+  
 
 
 
 
-  // 🎯 ROBUST EVENT LISTENERS FOR DAILY REPORT BUTTONS
-  function bootSecurityDaily() {
-    if (typeof initDailyReport === 'function') {
-      initDailyReport();
-    }
-    
-    const bindBtn = (selector, fn) => {
-      document.querySelectorAll(selector).forEach(btn => {
-        btn.addEventListener('click', fn);
-        btn.style.pointerEvents = 'auto';
-        btn.style.cursor = 'pointer';
-      });
-    };
-    bindBtn('[onclick*="saveDailyReport"]', (e) => { e.preventDefault(); window.saveDailyReport(); });
-    bindBtn('[onclick*="resetDailyReport"]', (e) => { e.preventDefault(); window.resetDailyReport(); });
-    bindBtn('[onclick*="addPersonnelRow"]', (e) => { e.preventDefault(); window.addPersonnelRow(); });
-    bindBtn('[onclick*="addActivityRow"]', (e) => { 
-      e.preventDefault(); 
-      const col = e.target.getAttribute('onclick').match(/'([ab])'/)?.[1] || 'a';
-      window.addActivityRow(col); 
-    });
-    bindBtn('[onclick*="deleteActivity"]', (e) => {
-      e.preventDefault();
-      const match = e.target.getAttribute('onclick').match(/'([ab])',(\d+)/);
-      if (match) window.deleteActivity(match[1], parseInt(match[2]));
-    });
-    console.log('🎯 Daily report event listeners attached');
+  
   }
-  function _runBootDaily(){ setTimeout(bootSecurityDaily, 0); }
+  
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _runBootDaily);
   else _runBootDaily();
 
@@ -1413,66 +1379,6 @@
       </div>
     </div>
   </div>
-
-  <!-- 📋 LAPORAN HARIAN 24/7 UPGRADE -->
-  <div id="tab-laporan-harian" class="sec-panel no-print" style="display:none;">
-    <div class="glass">
-      <div class="daily-header">
-        <h3 style="margin:0;color:var(--neon);font-size:1rem;">📋 LAPORAN HARIAN KEAMANAN 24 JAM</h3>
-        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
-          <input type="date" id="report-date-daily" class="bk-input" style="width:auto;padding:0.4rem;">
-          <button onclick="saveDailyReport()" class="btn btn-success" style="font-size:0.7rem;">💾 Simpan</button>
-          <button onclick="window.print()" class="btn btn-warning" style="font-size:0.7rem;">🖨️ Cetak</button>
-          <button onclick="resetDailyReport()" class="btn btn-danger" style="font-size:0.7rem;">🗑️ Reset</button>
-        </div>
-      </div>
-
-      <div class="section-title" style="color:var(--accent);">👥 FORMASI PERSONEL HARIAN</div>
-      <div style="overflow-x:auto;">
-        <table class="excel-grid">
-          <thead>
-            <tr>
-              <th style="width:30px;">NO</th>
-              <th style="width:160px;">NAMA PETUGAS</th>
-              <th style="width:120px;">JABATAN</th>
-              <th style="width:120px;">SHIFT PAGI</th>
-              <th style="width:120px;">SHIFT MALAM</th>
-              <th>KETERANGAN</th>
-            </tr>
-          </thead>
-          <tbody id="personnel-table-body-daily"></tbody>
-        </table>
-      </div>
-      <button onclick="addPersonnelRow()" class="btn btn-outline" style="width:100%;margin-top:0.5rem;font-size:0.7rem;">➕ Tambah Petugas</button>
-
-      <div class="section-title" style="color:var(--gold);margin-top:1.2rem;">🕒 JURNAL KEGIATAN 24 JAM</div>
-      <div class="journal-dual">
-        <div class="journal-box">
-          <h4>KOLOM A</h4>
-          <table class="excel-grid" style="font-size:0.7rem;">
-            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN KEGIATAN</th><th style="width:80px;">KET</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="activity-a-body-daily"></tbody>
-          </table>
-          <button onclick="addActivityRow('a')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
-        </div>
-        <div class="journal-box">
-          <h4>KOLOM B</h4>
-          <table class="excel-grid" style="font-size:0.7rem;">
-            <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN KEGIATAN</th><th style="width:80px;">KET</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="activity-b-body-daily"></tbody>
-          </table>
-          <button onclick="addActivityRow('b')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
-        </div>
-      </div>
-
-      <div class="ttd-area">
-        <div class="ttd-box">Mengetahui,<br>Koordinator Umum<br><br>(___________________)</div>
-        <div class="ttd-box">Mengetahui,<br>Kabag Umum<br><br>(___________________)</div>
-        <div class="ttd-box">Dibuat oleh,<br>Danru / Petugas Jaga<br><br>(___________________)</div>
-      </div>
-    </div>
-  </div>
-
   <!-- ✅ QR SCANNER MODAL -->
   <div id="qr-scanner-modal" class="qr-scanner-modal">
     <div class="qr-box">
