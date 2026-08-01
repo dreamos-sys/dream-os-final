@@ -8,7 +8,7 @@
   <style>
     :root {
       --bg: #0a0e27;
-      --panel: rgba(15, 23, 42, 0.88);
+      --panel: rgba(15, 23, 42, 0.85); /* Default Alpha */
       --border: #00ff9d;
       --text: #f8fafc;
       --text-sub: #cbd5e1;
@@ -17,20 +17,24 @@
       --neon: #00ff9d;
       --gold: #f59e0b;
       --purple: #8b5cf6;
+      --hover-bg: rgba(30, 41, 59, 0.9);
+      --box-bg: rgba(0, 0, 0, 0.3);
     }
 
     [data-theme="light"], body.light-theme {
       --bg: #f1f5f9;
-      --panel: #ffffff;
+      --panel: rgba(255, 255, 255, 0.9); /* Default Alpha */
       --border: #0284c7;
       --text: #0f172a;
-      --text-sub: #334155;
+      --text-sub: #475569;
       --neon: #0369a1;
       --accent: #0284c7;
+      --hover-bg: rgba(14, 165, 233, 0.15);
+      --box-bg: rgba(14, 165, 233, 0.05);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 90px; line-height: 1.5; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 90px; line-height: 1.5; transition: background 0.3s, color 0.3s; }
 
     .glass {
       background: var(--panel);
@@ -38,38 +42,40 @@
       border-radius: 16px;
       padding: 1.2rem;
       margin-bottom: 1rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      transition: background 0.3s;
     }
 
-    .back-btn { position: fixed; bottom: calc(1.5rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: var(--panel); border: 1.5px solid var(--border); color: var(--text); padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+    .back-btn { position: fixed; bottom: calc(1.5rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: var(--panel); border: 1.5px solid var(--border); color: var(--text); padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .btn { padding: 0.5rem 1rem; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
     .btn-danger { background: var(--warning); color: #fff; }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-success { background: #10b981; color: #fff; }
-    .btn:hover { transform: translateY(-1px); opacity: 0.95; }
+    .btn:active { transform: scale(0.95); }
 
-    .tab-nav { display: flex; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .tab-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text-sub); transition: 0.2s; white-space: nowrap; }
-    .tab-btn:hover { background: rgba(30,41,59,0.9); color: var(--text); }
-    .tab-btn.active { background: var(--neon); color: #000; border-color: var(--neon); font-weight: 800; box-shadow: 0 0 15px rgba(0,255,157,0.3); }
+    .tab-nav { display: flex; gap: 0.4rem; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 0.3rem; scrollbar-width: none; }
+    .tab-btn { padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text-sub); white-space: nowrap; transition: 0.2s; }
+    .tab-btn:hover { background: var(--hover-bg); color: var(--neon); }
+    .tab-btn.active { background: var(--neon); color: #fff !important; border-color: var(--neon); }
+    [data-theme="light"] .tab-btn.active { color: #fff !important; }
 
     .set-row { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0; border-bottom: 1px solid rgba(150,150,150,0.15); }
     .set-row:last-child { border-bottom: none; }
     .set-label { font-size: 0.875rem; color: var(--text); font-weight: 700; }
     .set-desc { font-size: 0.75rem; color: var(--text-sub); margin-top: 0.15rem; }
 
-    .toggle-switch { width: 48px; height: 26px; background: #475569; border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
-    .toggle-switch.on { background: #10b981; border-color: #10b981; box-shadow: 0 0 12px rgba(16,185,129,0.4); }
+    .toggle-switch { width: 48px; height: 26px; background: #475569; border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
+    .toggle-switch.on { background: #10b981; }
     .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .toggle-switch.on::after { left: 24px; }
 
-    input[type=range] { width: 100px; height: 6px; -webkit-appearance: none; appearance: none; background: rgba(0,255,157,0.2); border-radius: 3px; outline: none; }
+    input[type=range] { width: 100px; height: 6px; -webkit-appearance: none; background: rgba(150,150,150,0.3); border-radius: 3px; outline: none; }
     input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--neon); border-radius: 50%; cursor: pointer; }
     .range-val { display: inline-block; min-width: 45px; text-align: center; color: var(--neon); font-weight: 800; font-size: 0.75rem; }
     select { padding: 0.4rem 0.8rem; background: var(--panel); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.75rem; font-weight: 700; outline: none; }
 
-    .section-title { font-size: 0.875rem; font-weight: 800; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(150,150,150,0.15); padding-bottom: 0.5rem; }
-    .json-preview { margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1.5px solid var(--border); font-size: 0.75rem; color: var(--neon); max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .section-title { font-size: 0.875rem; font-weight: 800; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(150,150,150,0.15); padding-bottom: 0.5rem; color: var(--accent); }
+    .json-preview { margin-top: 1rem; padding: 0.8rem; background: var(--box-bg); border-radius: 12px; border: 1.5px solid var(--border); font-size: 0.75rem; color: var(--neon); max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -100,9 +106,9 @@
     <!-- TAB: DISPLAY -->
     <div id="tab-display" class="tab-content">
       <div class="glass">
-        <div class="section-title" style="color: var(--accent);">🎨 Visual Preferences</div>
+        <div class="section-title">🎨 Visual Preferences</div>
         <div class="set-row">
-          <div><div class="set-label">Dark Mode / Light Mode</div><div class="set-desc">Toggle gelap/terang (real-time ke seluruh sistem)</div></div>
+          <div><div class="set-label">Dark Mode / Light Mode</div><div class="set-desc">Ganti tema real-time seluruh sistem</div></div>
           <div class="toggle-switch on" id="tog-theme" onclick="toggleSetting('theme')"></div>
         </div>
         <div class="set-row">
@@ -113,14 +119,14 @@
           </div>
         </div>
         <div class="set-row">
-          <div><div class="set-label">Starfield</div><div class="set-desc">Latar belakang animasi bintang</div></div>
+          <div><div class="set-label">Starfield Animation</div><div class="set-desc">Latar belakang animasi bintang</div></div>
           <div class="toggle-switch on" id="tog-starfield" onclick="toggleSetting('starfield')"></div>
         </div>
         <div class="set-row">
-          <div><div class="set-label">Glass Intensity</div><div class="set-desc">Intensitas efek blur kaca (30%-90%)</div></div>
+          <div><div class="set-label">Glass Panel Intensity</div><div class="set-desc">Mengatur level transparansi kartu (30%-100%)</div></div>
           <div style="display:flex;align-items:center;gap:0.5rem;">
-            <input type="range" min="30" max="90" value="70" id="rng-glass" oninput="updateGlass(this.value)">
-            <span class="range-val" id="val-glass">70%</span>
+            <input type="range" min="30" max="100" value="85" id="rng-glass" oninput="updateGlass(this.value)">
+            <span class="range-val" id="val-glass">85%</span>
           </div>
         </div>
       </div>
@@ -131,16 +137,12 @@
       <div class="glass">
         <div class="section-title" style="color: var(--gold);">♿ Accessibility Suite</div>
         <div class="set-row">
-          <div><div class="set-label">High Contrast ISO Mode</div><div class="set-desc">Mode kontras tinggi (WCAG 2.2 AAA, rasio 7:1)</div></div>
+          <div><div class="set-label">High Contrast ISO Mode</div><div class="set-desc">Warna Solid 100% untuk keterbacaan ekstra</div></div>
           <div class="toggle-switch" id="tog-highContrast" onclick="toggleSetting('highContrast')"></div>
         </div>
         <div class="set-row">
           <div><div class="set-label">Reduced Motion</div><div class="set-desc">Matikan semua animasi & transisi</div></div>
           <div class="toggle-switch" id="tog-reduceMotion" onclick="toggleSetting('reduceMotion')"></div>
-        </div>
-        <div class="set-row">
-          <div><div class="set-label">Screen Reader Support</div><div class="set-desc">Aktifkan ARIA live region (pembaca layar)</div></div>
-          <div class="toggle-switch" id="tog-screenReader" onclick="toggleSetting('screenReader')"></div>
         </div>
       </div>
     </div>
@@ -150,7 +152,7 @@
       <div class="glass">
         <div class="section-title" style="color: var(--purple);">🌍 Global Language & Region</div>
         <div class="set-row">
-          <div><div class="set-label">System Language</div><div class="set-desc">Pilihan manual mengunci bahasa</div></div>
+          <div><div class="set-label">System Language</div><div class="set-desc">Kunci bahasa secara manual</div></div>
           <select id="sel-lang" onchange="changeLang(this.value)">
             <option value="id">🇮🇩 Indonesia</option>
             <option value="en">🇬🇧 English</option>
@@ -159,7 +161,7 @@
           </select>
         </div>
         <div class="set-row">
-          <div><div class="set-label">Auto-Detect Language</div><div class="set-desc">Deteksi otomatis timezone / browser</div></div>
+          <div><div class="set-label">Auto-Detect Timezone</div><div class="set-desc">Sesuaikan dengan waktu wilayah device</div></div>
           <div class="toggle-switch" id="tog-autoDetect" onclick="toggleSetting('autoDetect')"></div>
         </div>
       </div>
@@ -170,7 +172,7 @@
       <div class="glass">
         <div class="section-title" style="color: var(--neon);">📊 System & Device Status</div>
         
-        <div style="background:rgba(0,0,0,0.25); padding:1rem; border-radius:12px; margin-bottom:1rem; display:flex; align-items:center; gap:1rem; border:1px solid var(--border);">
+        <div style="background:var(--box-bg); padding:1rem; border-radius:12px; margin-bottom:1rem; display:flex; align-items:center; gap:1rem; border:1px solid var(--border);">
           <div style="width:45px; height:45px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">👤</div>
           <div>
             <div style="font-weight:800; font-size:0.9rem;" id="sys-user-name">Loading...</div>
@@ -181,12 +183,12 @@
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.8rem;">
           <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.2rem;">
-            <div style="font-size:0.7rem; color:var(--text-sub);">⏱️ Waktu Sistem</div>
-            <div style="font-size:1rem; font-weight:800; color:var(--neon);" id="sys-clock">--:--:--</div>
+            <div style="font-size:0.7rem; color:var(--text-sub);">⏱️ Waktu Sistem (Live)</div>
+            <div style="font-size:1.1rem; font-weight:800; color:var(--neon);" id="sys-clock">--:--:--</div>
           </div>
           <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.2rem;">
             <div style="font-size:0.7rem; color:var(--text-sub);">🔋 Status Baterai</div>
-            <div style="font-size:1rem; font-weight:800; color:var(--accent);" id="sys-battery">--%</div>
+            <div style="font-size:1.1rem; font-weight:800; color:var(--accent);" id="sys-battery">--%</div>
           </div>
           <div class="set-row" style="flex-direction:column; align-items:flex-start; gap:0.2rem;">
             <div style="font-size:0.7rem; color:var(--text-sub);">📡 Status Koneksi</div>
@@ -198,8 +200,8 @@
           </div>
         </div>
 
-        <div style="margin-top:1rem; padding:1rem; background:rgba(14,165,233,0.1); border:1px solid var(--accent); border-radius:12px;">
-          <div style="font-size:0.75rem; color:var(--text-sub); margin-bottom:0.4rem; font-weight:700;">🕌 Jadwal Shalat Hari Ini (DKI / Depok)</div>
+        <div style="margin-top:1rem; padding:1rem; background:var(--box-bg); border:1px solid var(--accent); border-radius:12px;">
+          <div style="font-size:0.75rem; color:var(--text-sub); margin-bottom:0.4rem; font-weight:700;">🕌 Jadwal Shalat Hari Ini</div>
           <div style="font-size:0.85rem; font-weight:700; color:var(--text); line-height:1.6;" id="sys-prayer">Loading jadwal...</div>
         </div>
       </div>
@@ -214,7 +216,7 @@
           <div class="toggle-switch" id="tog-devMode" onclick="toggleSetting('devMode')"></div>
         </div>
         <div class="set-row">
-          <div><div class="set-label">Auto-Save Configuration</div><div class="set-desc">Simpan otomatis setiap 30 detik</div></div>
+          <div><div class="set-label">Auto-Save Configuration</div><div class="set-desc">Simpan otomatis perubahan settings</div></div>
           <div class="toggle-switch on" id="tog-autoSave" onclick="toggleSetting('autoSave')"></div>
         </div>
       </div>
@@ -230,12 +232,12 @@
 (function() {
   'use strict';
   window.goHomeSafe = function() {
-    try { if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function'){ window.parent.goHome(); return; } }catch(e){}
+    try { if(window.parent && typeof window.parent.goHome === 'function'){ window.parent.goHome(); return; } }catch(e){}
     if(typeof window.goHome === 'function'){ try{ window.goHome(); return; }catch(e){} }
     window.location.href = '../index.html';
   };
 
-  const DEFAULTS = { theme: 'dark', fontSize: 100, highContrast: false, reduceMotion: false, screenReader: false, starfield: true, glassIntensity: 70, lang: 'id', autoDetect: false, devMode: false, autoSave: true };
+  const DEFAULTS = { theme: 'dark', fontSize: 100, highContrast: false, reduceMotion: false, starfield: true, glassIntensity: 85, lang: 'id', autoDetect: false, devMode: false, autoSave: true };
   let state = {};
 
   try {
@@ -246,30 +248,48 @@
   function saveState() {
     localStorage.setItem('dreamos_settings', JSON.stringify(state));
     localStorage.setItem('dreamos_theme', state.theme);
-    localStorage.setItem('dreamos_lang', state.lang);
     applySettings();
     updateJSONPreview();
   }
 
+  // LOGIKA UTAMA YANG SEBELUMNYA HILANG - KINI MENERAPKAN EFEK NYATA KE UI
   function applySettings() {
+    // 1. THEME ENGINE
     document.documentElement.setAttribute('data-theme', state.theme);
     document.body.setAttribute('data-theme', state.theme);
     if (state.theme === 'light') document.body.classList.add('light-theme');
     else document.body.classList.remove('light-theme');
 
+    // 2. HIGH CONTRAST
     document.documentElement.setAttribute('data-high-contrast', state.highContrast ? 'true' : 'false');
+    if (state.highContrast) {
+      document.body.style.background = state.theme === 'light' ? '#ffffff' : '#000000';
+    } else {
+      document.body.style.background = '';
+    }
+
+    // 3. FONT & LANG
     document.documentElement.style.fontSize = state.fontSize + '%';
     document.documentElement.setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
 
+    // 4. GLASS INTENSITY (MENGUBAH ALPHA/TRANSPARANSI KARTU)
+    const alpha = (state.glassIntensity / 100).toFixed(2);
+    const panelColor = state.theme === 'light' ? `rgba(255, 255, 255, ${alpha})` : `rgba(15, 23, 42, ${alpha})`;
+    document.documentElement.style.setProperty('--panel', panelColor);
+
+    // 5. STARFIELD & PARENT SYNC
     try {
       if (window.parent && window.parent.document) {
         window.parent.document.documentElement.setAttribute('data-theme', state.theme);
+        // Toggle Starfield Canvas in parent window
+        const starCanvas = window.parent.document.getElementById('star-field');
+        if (starCanvas) starCanvas.style.display = state.starfield ? 'block' : 'none';
       }
     } catch(e) {}
   }
 
   function updateAllUI() {
-    const toggles = { 'theme': state.theme === 'dark', 'starfield': state.starfield, 'highContrast': state.highContrast, 'reduceMotion': state.reduceMotion, 'screenReader': state.screenReader, 'autoDetect': state.autoDetect, 'devMode': state.devMode, 'autoSave': state.autoSave };
+    const toggles = { 'theme': state.theme === 'dark', 'starfield': state.starfield, 'highContrast': state.highContrast, 'reduceMotion': state.reduceMotion, 'autoDetect': state.autoDetect, 'devMode': state.devMode, 'autoSave': state.autoSave };
     Object.keys(toggles).forEach(k => {
       const el = document.getElementById('tog-' + k);
       if (el) el.classList.toggle('on', toggles[k]);
@@ -294,9 +314,11 @@
     if (btn) btn.classList.add('active');
     const t = document.getElementById('tab-' + name);
     if (t) t.style.display = 'block';
-    if (name === 'system') updateSystemStatus();
+    
+    if (name === 'system') updateSystemStatus(); // Panggil data system
   };
 
+  // SATU-SATUNYA FUNGSI TOGGLE (MENGHINDARI DEAD CODE / KONFLIK)
   window.toggleSetting = function(key) {
     if (key === 'theme') state.theme = state.theme === 'dark' ? 'light' : 'dark';
     else state[key] = !state[key];
@@ -340,6 +362,8 @@
     input.click();
   };
 
+  // LOGIKA SISTEM & JAM LIVE
+  let clockInterval;
   function updateSystemStatus() {
     try {
       const u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
@@ -348,7 +372,17 @@
       document.getElementById('sys-user-email').textContent = u.email || '---';
     } catch(e) {}
 
-    document.getElementById('sys-clock').textContent = new Date().toLocaleTimeString('id-ID');
+    // LIVE CLOCK FIX
+    const clockEl = document.getElementById('sys-clock');
+    if (clockEl) {
+      clockEl.textContent = new Date().toLocaleTimeString('id-ID'); // Set awal
+      if (!clockInterval) {
+        clockInterval = setInterval(() => {
+          clockEl.textContent = new Date().toLocaleTimeString('id-ID');
+        }, 1000);
+      }
+    }
+
     const langMap = {'id':'🇮🇩 Indonesia', 'en':'🇬🇧 English', 'ar':'🇸🇦 العربية', 'zh':'🇨🇳 中文'};
     document.getElementById('sys-lang').textContent = langMap[state.lang] || state.lang;
 
@@ -363,21 +397,22 @@
     else { connEl.textContent = '🟢 Online Cloud Sync'; connEl.style.color = '#10b981'; }
 
     const prayerEl = document.getElementById('sys-prayer');
-    fetch(`https://api.aladhan.com/v1/timings/${new Date().toISOString().split('T')[0]}?latitude=-6.4025&longitude=106.7942&method=20`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.code === 200) {
-          const t = data.data.timings;
-          prayerEl.innerHTML = `Subuh: ${t.Fajr} • Dzuhur: ${t.Dhuhr}<br>Ashar: ${t.Asr} • Maghrib: ${t.Maghrib} • Isya: ${t.Isha}`;
-        }
-      })
-      .catch(() => { prayerEl.textContent = 'Subuh: 04:35 • Dzuhur: 12:01 • Ashar: 15:22 • Maghrib: 18:02 • Isya: 19:14'; });
+    if (prayerEl.textContent.includes('Loading')) {
+      fetch(`https://api.aladhan.com/v1/timings/${new Date().toISOString().split('T')[0]}?latitude=-6.4025&longitude=106.7942&method=20`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.code === 200) {
+            const t = data.data.timings;
+            prayerEl.innerHTML = `Subuh: ${t.Fajr} • Dzuhur: ${t.Dhuhr}<br>Ashar: ${t.Asr} • Maghrib: ${t.Maghrib} • Isya: ${t.Isha}`;
+          }
+        })
+        .catch(() => { prayerEl.innerHTML = 'Subuh: 04:35 • Dzuhur: 12:01<br>Ashar: 15:22 • Maghrib: 18:02 • Isya: 19:14'; });
+    }
   }
 
   // Init
   updateAllUI();
   applySettings();
-  updateJSONPreview();
 })();
 </script>
 </body>
