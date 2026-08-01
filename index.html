@@ -9,7 +9,7 @@
   <title>Dream OS • Enterprise RBAC Pro</title>
   
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="X-Frame-Options" content="DENY">
   <meta name="security-policy" content="bank-grade">
   <meta name="robots" content="noindex, nofollow">
   <meta http-equiv="Content-Security-Policy" 
@@ -17,7 +17,7 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/dashboard.css?v=9">
+  <link rel="stylesheet" href="css/dashboard.css?v=10">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -39,7 +39,7 @@
   
   <style>
     :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.85); --glass-border: rgba(0, 255, 157, 0.25); }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
     body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
     canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
     .glass { position: relative; z-index: 1; background: var(--glass-bg) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 20px; transform: translate3d(0,0,0); }
@@ -84,7 +84,7 @@
     .notif-badge { position: absolute; top: -5px; right: -6px; background: #e11d48; color: white; border-radius: 50%; padding: 0.05rem 0.35rem; font-size: 0.5rem; font-weight: 700; display: none; }
     .notif-panel { position: fixed; top: 55px; right: 10px; width: 300px; max-height: 380px; overflow-y: auto; background: rgba(15,23,42,0.95); border: 1px solid #00ff9d; border-radius: 14px; z-index: 10001; display: none; padding: 0.5rem; }
   
-    #dash-slider { position: relative; overflow: hidden; margin: 0 1rem 0.8rem; min-height: 85px; border-radius: 16px; }
+    #dash-slider { position: relative; overflow: hidden; margin: 0 1rem 0.8rem; min-height: 85px; border-radius: 16px; touch-action: pan-y; }
     .slide-track { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
     .slide-item { min-width: 100%; padding: 0.9rem 1rem; text-align: center; font-size: 0.8rem; line-height: 1.4; color: #e2e8f0; }
     .slide-item strong { color: var(--neon); }
@@ -93,7 +93,9 @@
     .slide-dot.active { background: var(--neon); transform: scale(1.3); }
     
     #kpi-strip { display: flex; gap: 0.5rem; margin: 0 1rem 0.8rem; flex-wrap: wrap; }
-    .kpi-chip { flex: 1; min-width: 130px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.6rem 0.8rem; text-align: center; }
+    .kpi-chip { flex: 1; min-width: 130px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.6rem 0.8rem; text-align: center; cursor: pointer; transition: all 0.25s; }
+    .kpi-chip:active { transform: scale(0.96); }
+    .kpi-chip:hover { border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.2); }
     .kpi-chip strong { display: block; font-size: 1.05rem; color: var(--neon); }
     .kpi-chip span { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
   
@@ -112,7 +114,8 @@
     .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
     .chart-title { font-size: 0.85rem; font-weight: 800; color: var(--neon); font-family: 'Orbitron', monospace; display: flex; align-items: center; gap: 0.4rem; }
     .chart-subtitle { font-size: 0.65rem; color: #94a3b8; }
-    .unified-canvas-wrapper { position: relative; width: 100%; height: 280px; }
+    .unified-canvas-wrapper { position: relative; width: 100%; height: 280px; cursor: pointer; }
+    .chart-bar-clickable { cursor: pointer; }
 
     .skip-link { position: absolute; top: -100px; left: 0; background: var(--neon); color: #000; padding: 8px 16px; z-index: 100000; font-weight: 700; border-radius: 0 0 8px 0; }
     .skip-link:focus { top: 0; }
@@ -127,14 +130,24 @@
     .cmd-item:hover, .cmd-item.active { background: rgba(0,255,157,0.1); color: #fff; }
     .cmd-hint { font-size: 0.65rem; color: #64748b; background: rgba(255,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 4px; }
     .cmd-footer { margin-top: 0.8rem; font-size: 0.65rem; color: #64748b; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
+
+    /* Anti-Screenshot Overlay */
+    #security-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999999; align-items: center; justify-content: center; flex-direction: column; color: var(--warning); font-size: 1.2rem; font-weight: 700; }
+    #security-overlay.show { display: flex; }
   </style>
   <script src="js/bcrypt.min.js"></script>
   <script src="js/auth-security.js"></script>
 </head>
-<body>
+<body oncontextmenu="return false;">
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
+
+  <div id="security-overlay">
+    <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
+    <div>️ AKTIVITAS TERDETEKSI</div>
+    <div style="font-size: 0.9rem; margin-top: 1rem; color: #94a3b8;">Screenshot & DevTools tidak diizinkan</div>
+  </div>
 
   <div class="pwa-install-banner" id="pwa-banner">
      Install Dream OS di HP Anda untuk akses cepat!
@@ -164,7 +177,7 @@
   <div class="cast-modal" id="cast-modal">
     <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;">
       <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
-      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">📡 Kirim Link (Share)</button>
+      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;"> Kirim Link (Share)</button>
       <button onclick="presentHere()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">🖥️ Fullscreen di Layar Ini</button>
       <button onclick="closeCastModal()" style="width:100%;padding:10px;margin:5px 0;background:rgba(239,68,68,0.1);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup</button>
     </div>
@@ -179,7 +192,7 @@
       <button class="nav-item active" data-nav="home"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label" data-i18n="nav_home">Home</span></button>
       <button class="nav-item" data-mod="profile"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label" data-i18n="nav_profile">Profile</span></button>
       <button class="nav-item" data-mod="qr"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label" data-i18n="nav_qr">QR</span></button>
-      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
+      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
       <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">⚙️</span></div><span class="nav-label" data-i18n="nav_system">System</span></button>
     </div>
   </nav>
@@ -188,13 +201,65 @@
     <div class="cmd-box">
       <input type="text" id="cmd-input" class="cmd-input" placeholder="Ketik modul, aksi, atau cari..." autocomplete="off">
       <div id="cmd-list" class="cmd-list"></div>
-      <div class="cmd-footer">⌨️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
+      <div class="cmd-footer">️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
+    // ==========================================
+    // ️ CYBER SECURITY PROTECTION
+    // ==========================================
+    
+    // Anti-DevTools & Anti-Screenshot
+    (function() {
+      const overlay = document.getElementById('security-overlay');
+      
+      // Detect DevTools (F12, Ctrl+Shift+I, Ctrl+Shift+J)
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+            (e.ctrlKey && e.key === 'U')) {
+          e.preventDefault();
+          overlay.classList.add('show');
+          setTimeout(() => overlay.classList.remove('show'), 2000);
+          if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'DEVTOOLS_ATTEMPT' });
+        }
+      });
+
+      // Detect right-click
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+      });
+
+      // Detect screenshot (PrintScreen)
+      document.addEventListener('keyup', function(e) {
+        if (e.key === 'PrintScreen') {
+          overlay.classList.add('show');
+          setTimeout(() => overlay.classList.remove('show'), 2000);
+          if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'SCREENSHOT_ATTEMPT' });
+        }
+      });
+
+      // Blur on visibility change (tab switch)
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden && localStorage.getItem('dreamos_session_active') === 'true') {
+          if (window.BankAudit) BankAudit.log('SECURITY_ALERT', { type: 'TAB_SWITCH' });
+        }
+      });
+
+      // Prevent copy-paste in sensitive fields
+      document.addEventListener('copy', function(e) { e.preventDefault(); });
+      document.addEventListener('cut', function(e) { e.preventDefault(); });
+      document.addEventListener('paste', function(e) {
+        if (e.target.classList.contains('pin-input')) {
+          e.preventDefault();
+        }
+      });
+    })();
+
     window.SecureStore = {
       _key: 'dreamos_sec_' + (window.crypto?.randomUUID?.() || Date.now()),
       set(k, v) {
@@ -236,7 +301,7 @@
       enabled: false,
       async verify(email) {
         if (!this.enabled) return true;
-        const code = prompt(`🔐 Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
+        const code = prompt(` Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
         return code === '123456';
       }
     };
@@ -290,24 +355,67 @@
     }
     setInterval(verifySession, 300000);
 
+    // ==========================================
+    // 🔐 ADVANCED PASSWORD HASHING
+    // ==========================================
     if (typeof window.doSecureLogin !== 'function') {
-      window.__dvHash = function(plain){ var h=0,s=String(plain)+'dreamos_salt_2026'; for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;} return 'hash_'+Math.abs(h).toString(16); };
-      window.__dvVerify = function(plain,hash){ if(!plain||!hash) return false; if(hash.indexOf('$2a$')===0||hash.indexOf('$2b$')===0||hash.indexOf('$2y$')===0){ if(typeof bcrypt!=='undefined'){try{return bcrypt.compareSync(String(plain),hash);}catch(e){}} return false; } return hash===window.__dvHash(plain); };
+      window.__dvHash = function(plain){ 
+        var h=0, s=String(plain)+'dreamos_salt_2026_secure'; 
+        for(var i=0;i<s.length;i++){
+          h=((h<<5)-h)+s.charCodeAt(i);
+          h|=0;
+        } 
+        return 'hash_'+Math.abs(h).toString(16); 
+      };
+      
+      window.__dvVerify = function(plain,hash){ 
+        if(!plain||!hash) return false; 
+        if(hash.indexOf('$2a$')===0||hash.indexOf('$2b$')===0||hash.indexOf('$2y$')===0){ 
+          if(typeof bcrypt!=='undefined'){
+            try{return bcrypt.compareSync(String(plain),hash);}
+            catch(e){}
+          } 
+          return false; 
+        } 
+        return hash===window.__dvHash(plain); 
+      };
+      
       window.doSecureLogin = async function(email,password,mfaPin){
-        email=String(email||'').trim().toLowerCase(); password=String(password||'');
+        email=String(email||'').trim().toLowerCase(); 
+        password=String(password||'');
+        
         if(!email||!password) throw new Error('Email dan password wajib diisi');
-        var users=[]; try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }catch(e){}
-        var local=null; for(var i=0;i<users.length;i++){ if((users[i].email||'').toLowerCase()===email){ local=users[i]; break; } }
+        
+        var users=[]; 
+        try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }
+        catch(e){}
+        
+        var local=null; 
+        for(var i=0;i<users.length;i++){ 
+          if((users[i].email||'').toLowerCase()===email){ 
+            local=users[i]; 
+            break; 
+          } 
+        }
+        
         if(local && local.password_hash){
-          if(!window.__dvVerify(password,local.password_hash)) throw new Error('Password salah');
+          if(!window.__dvVerify(password,local.password_hash)) {
+            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'INVALID_PASSWORD' });
+            throw new Error('Password salah');
+          }
           return {source:'local',user:{id:local.id||('local_'+email),email:local.email,nama:local.nama||email.split('@')[0],role:local.role||'staff'}};
         }
+        
         if(window.supabaseClient && window.supabaseClient.auth){
           var r=await window.supabaseClient.auth.signInWithPassword({email:email,password:password});
-          if(r.error) throw new Error(r.error.message||'Login gagal');
+          if(r.error) {
+            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'SUPABASE_ERROR' });
+            throw new Error(r.error.message||'Login gagal');
+          }
           var md=r.data.user.user_metadata||{};
           return {source:'supabase',user:{id:r.data.user.id,email:r.data.user.email,nama:md.nama||email.split('@')[0],role:md.role||'staff'}};
         }
+        
         throw new Error('User tidak ditemukan');
       };
     }
@@ -322,7 +430,7 @@
 
       const ROLE_PERMISSIONS = {
         dev: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
-        kabag_umum: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
+        kabag_umum: ['cmd','security','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
         koordinator_umum: ['cmd','security','k3','booking','asset','stok','maintenance','dana','users','audit','janitor-indoor','janitor-outdoor','profile','qr','about','setting'],
         komandan_regu: ['security','security_edit_jadwal','profile','qr','about','setting'],
         guru: ['booking','k3','profile','qr','about','setting'],
@@ -338,7 +446,12 @@
         catch(e) { return {}; }
       }
       window.getUserRole = function() { return getStoredUser().role || 'staff'; };
-      function canAccess(moduleId) { return (ROLE_PERMISSIONS[getUserRole()] || ROLE_PERMISSIONS.staff || []).includes(moduleId); }
+      
+      function canAccess(moduleId) { 
+        const role = getUserRole();
+        const perms = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.staff || [];
+        return perms.includes(moduleId); 
+      }
 
       const togglePinEl = document.getElementById('toggle-pin');
       const loginBtn = document.getElementById('login-button');
@@ -349,7 +462,7 @@
       if (togglePinEl && passwordInput) {
         togglePinEl.addEventListener('click', function() {
           passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-          togglePinEl.textContent = passwordInput.type === 'password' ? '🔒' : '🔓';
+          togglePinEl.textContent = passwordInput.type === 'password' ? '🔒' : '';
         });
       }
 
@@ -362,7 +475,7 @@
         if (errorEl) errorEl.style.display = 'none';
 
         if (!email || !password) {
-          if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; }
+          if (errorEl) { errorEl.textContent = ' Email dan password harus diisi!'; errorEl.style.display = 'block'; }
           return;
         }
         if (password.length < 8) {
@@ -370,13 +483,13 @@
           return;
         }
         
-        loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
+        loginBtn.textContent = ' Connecting...'; loginBtn.disabled = true;
 
         if (!window.supabaseClient && !initSupabase()) {
           await new Promise(r => setTimeout(r, 1500));
           if (!window.supabaseClient) {
             if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
+            loginBtn.textContent = ' ACCESS CORE'; loginBtn.disabled = false;
             return;
           }
         }
@@ -396,7 +509,7 @@
           localStorage.setItem('dreamos_session_active', 'true');
           
           if (window.BankSession) BankSession.create(userData);
-          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source });
+          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
 
           loginBtn.textContent = '✅ Success!';
           setTimeout(() => { showDashboard(); }, 500);
@@ -433,7 +546,7 @@
               <div class="slide-item" id="slide-3">⏳ Memuat Laporan K3...</div>
               <div class="slide-item" id="slide-4">⏳ Memuat Cuaca...</div>
               <div class="slide-item" id="slide-5">⏳ Memuat Info Manajemen...</div>
-              <div class="slide-item" id="slide-6">⏳ Memuat Info Bagian Umum...</div>
+              <div class="slide-item" id="slide-6"> Memuat Info Bagian Umum...</div>
               <div class="slide-item" id="slide-7">⏳ Memuat Ucapan...</div>
             </div>
             <div class="slide-indicators" id="slide-dots"></div>
@@ -470,8 +583,8 @@
         const modules = [
           { i:'🌍', n:'CMD Center', id:'cmd' },
           { i:'🛡️', n:'Security Ops', id:'security' },
-          { i:'⚠️', n:'K3 Safety', id:'k3' },
-          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
+          { i:'️', n:'K3 Safety', id:'k3' },
+          { i:'', n:'Jan Indoor', id:'janitor-indoor' },
           { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
           { i:'📅', n:'Booking', id:'booking' },
           { i:'🏢', n:'Asset', id:'asset' },
@@ -489,10 +602,21 @@
               card.style.cursor = 'not-allowed';
               card.style.filter = 'grayscale(100%)';
               card.innerHTML = `<div class="mod-status" style="background:#ef4444;"></div><div class="mod-icon">🔒</div><div class="mod-title">${m.n}</div><div style="font-size:0.65rem; color:#ef4444; margin-top:4px; font-weight:700;">Dibatasi</div>`;
-              card.addEventListener('click', () => { window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan membuka ' + m.n + '.', 'error'); });
+              card.addEventListener('click', () => { 
+                window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan membuka ' + m.n + '.', 'error');
+                if(window.BankAudit && getUserRole() !== 'dev') {
+                  BankAudit.log('ACCESS_DENIED', { module: m.id, role: getUserRole() });
+                }
+              });
             } else {
               card.innerHTML = `<div class="mod-status"></div><div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
-              card.addEventListener('click', () => { window.hapticTap('light'); window.openMod(m.id); });
+              card.addEventListener('click', () => { 
+                window.hapticTap('light'); 
+                if(window.BankAudit && getUserRole() !== 'dev') {
+                  BankAudit.log('MODULE_ACCESS', { module: m.id, role: getUserRole() });
+                }
+                window.openMod(m.id); 
+              });
             }
             grid.appendChild(card);
           });
@@ -502,11 +626,23 @@
         const kpiEl = document.getElementById('kpi-strip');
         if (kpiEl) {
           const kpis = {
-            kabag_umum: [ { label: 'Dana Pending', val: JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length }, { label: 'Booking Hari Ini', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.tgl&&b.tgl.includes(new Date().toISOString().split('T')[0])).length } ],
-            staff: [ { label: 'Booking Saya', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.nama_peminjam===JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').nama).length }, { label: 'Status Sistem', val: navigator.onLine ? '🟢 Online' : '🟡 Offline' } ]
+            kabag_umum: [ 
+              { label: 'Dana Pending', val: JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length, module: 'dana' }, 
+              { label: 'Booking Hari Ini', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.tgl&&b.tgl.includes(new Date().toISOString().split('T')[0])).length, module: 'booking' } 
+            ],
+            staff: [ 
+              { label: 'Booking Saya', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.nama_peminjam===JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').nama).length, module: 'booking' }, 
+              { label: 'Status Sistem', val: navigator.onLine ? '🟢 Online' : '🟡 Offline', module: null } 
+            ]
           };
           const data = kpis[role] || kpis.staff;
-          kpiEl.innerHTML = data.map(k => `<div class="kpi-chip"><strong>${k.val}</strong><span>${k.label}</span></div>`).join('');
+          kpiEl.innerHTML = data.map(k => {
+            const clickable = k.module && canAccess(k.module);
+            return `<div class="kpi-chip" ${clickable ? `onclick="window.openMod('${k.module}')" style="cursor:pointer;"` : ''}>
+              <strong>${k.val}</strong>
+              <span>${k.label}</span>
+            </div>`;
+          }).join('');
         }
 
         const healthEl = document.getElementById('health-bar');
@@ -533,6 +669,8 @@
             stok.length, stok.filter(s=>Number(s.quantity||s.jumlah||0)<5).length
           ];
           const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
+
+          const moduleMap = ['booking', 'booking', 'k3', 'k3', 'dana', 'dana', 'stok', 'stok'];
 
           if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
 
@@ -571,7 +709,16 @@
               maintainAspectRatio: false,
               plugins: {
                 legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } },
-                tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' }
+                tooltip: { 
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+                  titleColor: '#00ff9d', 
+                  bodyColor: '#e2e8f0',
+                  callbacks: {
+                    label: function(context) {
+                      return context.dataset.label + ': ' + context.parsed.y;
+                    }
+                  }
+                }
               },
               scales: {
                 x: { 
@@ -580,6 +727,20 @@
                 },
                 y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
                 y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
+              },
+              onClick: (e, elements) => {
+                if (elements.length > 0) {
+                  const index = elements[0].index;
+                  const module = moduleMap[index];
+                  if (module && canAccess(module)) {
+                    if(getUserRole() !== 'dev') {
+                      BankAudit.log('CHART_CLICK', { module: module, index: index, role: getUserRole() });
+                    }
+                    window.openMod(module);
+                  } else {
+                    window.showToast(' Akses ditolak untuk modul ini', 'error');
+                  }
+                }
               }
             }
           });
@@ -588,6 +749,11 @@
         if (!window._sliderInit) {
           window._sliderTimer = null;
           window._sliderCur = 0;
+          
+          // Touch/Swipe Support for Slider
+          let touchStartX = 0;
+          let touchEndX = 0;
+          
           window.updateDashboardSlides = async function() {
             try {
               const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
@@ -620,7 +786,7 @@
                   wCache.data = `${icon} ${temp}°C - ${desc}`;
                   wCache.ts = now;
                   localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
-                } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca.'; }
+                } catch(e) { wCache.data = '️ Gagal memuat cuaca.'; }
               }
               const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca</strong><br>${wCache.data||'Memuat...'}<br><small>Open-Meteo Real-time</small>`;
 
@@ -658,10 +824,33 @@
             function start() { if(window._sliderTimer) clearInterval(window._sliderTimer); window._sliderTimer = setInterval(next, 7000); }
             function stop() { if(window._sliderTimer) clearInterval(window._sliderTimer); }
 
+            // Touch events for swipe
+            el.addEventListener('touchstart', function(e) {
+              touchStartX = e.changedTouches[0].screenX;
+              stop();
+            }, {passive:true});
+            
+            el.addEventListener('touchend', function(e) {
+              touchEndX = e.changedTouches[0].screenX;
+              handleSwipe();
+              setTimeout(start, 3000);
+            }, {passive:true});
+            
+            function handleSwipe() {
+              const swipeThreshold = 50;
+              const diff = touchStartX - touchEndX;
+              
+              if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                  goTo(window._sliderCur + 1); // Swipe left - next
+                } else {
+                  goTo(window._sliderCur - 1); // Swipe right - prev
+                }
+              }
+            }
+
             el.addEventListener('mouseenter', stop);
             el.addEventListener('mouseleave', start);
-            el.addEventListener('touchstart', stop, {passive:true});
-            el.addEventListener('touchend', () => setTimeout(start, 3000));
             goTo(0); start();
           }
 
@@ -685,7 +874,14 @@
       };
 
       window.openMod = function(moduleId) {
-        if (!canAccess(moduleId)) { window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error'); return; }
+        if (!canAccess(moduleId)) { 
+          window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error'); 
+          if(getUserRole() !== 'dev') {
+            BankAudit.log('ACCESS_DENIED', { module: moduleId, role: getUserRole() });
+          }
+          return; 
+        }
+        
         const map = {
           cmd:'commandcenter.html', security:'security.html', security_edit_jadwal:'security_edit_jadwal.html',
           k3:'k3.html', 'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
@@ -808,10 +1004,10 @@
       const commands = [ 
         { id:'home', label:'🏠 Dashboard', action:()=>window.goHome() }, 
         { id:'cmd', label:'🏢 Command Center', action:()=>window.openMod('cmd') }, 
-        { id:'security', label:'🛡️ Security Ops', action:()=>window.openMod('security') }, 
+        { id:'security', label:'️ Security Ops', action:()=>window.openMod('security') }, 
         { id:'booking', label:'📅 Booking Ruangan', action:()=>window.openMod('booking') }, 
         { id:'k3', label:'⚠️ K3 Safety', action:()=>window.openMod('k3') }, 
-        { id:'setting', label:'⚙️ System Settings', action:()=>window.openMod('setting') }, 
+        { id:'setting', label:'️ System Settings', action:()=>window.openMod('setting') }, 
         { id:'logout', label:'🚪 Logout', action:()=>{ window.handleLogout(); } } 
       ];
       
