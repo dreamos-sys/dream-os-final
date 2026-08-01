@@ -2,151 +2,325 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Command Center Pro • Dream OS v5.3</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Command Center Pro • Dream OS Enterprise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
-  <style>
-    :root {
-      --bg:#0a0e27; --panel:rgba(15,23,42,0.92); --border:rgba(255,255,255,0.08);
-      --neon:#00ff9d; --accent:#0ea5e9; --gold:#f59e0b; --danger:#ef4444; --success:#10b981;
-      --text:#e2e8f0; --muted:#b0c4d8;
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:.875rem;padding-bottom:90px}
-    .glass{background:var(--panel);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem}
-    .topbar{position:sticky;top:0;z-index:100;background:rgba(10,14,39,.95);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
-    .search-box{flex:1;min-width:200px;position:relative}
-    .search-box input{width:100%;padding:.7rem 1rem .7rem 2.5rem;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:16px}
-    .search-box::before{content:"🔍";position:absolute;left:.8rem;top:50%;transform:translateY(-50%)}
-    .user-info{font-size:.875rem;color:var(--muted);line-height:1.5}.user-info strong{color:var(--text)}
-    .tabs{display:flex;gap:.4rem;overflow-x:auto;padding:.75rem 1rem;border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch}
-    .tab{padding:.55rem 1rem;border-radius:8px;white-space:nowrap;background:transparent;border:1px solid transparent;color:var(--muted);line-height:1.5;font-weight:600;cursor:pointer;font-size:.875rem}
-    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .tab-content{display:none;padding:1rem;max-width:1200px;margin:0 auto}
-    .tab-content.active{display:block;animation:fade .25s ease}
-    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem}
-    .metric{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:transform .15s}
-    .metric:hover{transform:translateY(-2px)}
-    .metric-val{font-size:1.5rem;font-weight:800;color:var(--neon)}
-    .metric-label{font-size:.8125rem;color:var(--muted);line-height:1.5;text-transform:uppercase;margin-top:.25rem}
-    .filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
-    .filters select,.filters input{padding:.5rem .75rem;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.875rem}
-    table{width:100%;border-collapse:collapse;font-size:.875rem}
-    th{background:rgba(0,0,0,.35);color:var(--accent);padding:.7rem;text-align:left}
-    td{padding:.7rem;border-bottom:1px solid var(--border);vertical-align:middle}
-    .badge{padding:.35rem .65rem;border-radius:6px;font-size:.8125rem;font-weight:700;min-height:28px;display:inline-flex;align-items:center}
-    .badge-pending{background:rgba(245,158,11,.2);color:#f59e0b}
-    .badge-approved{background:rgba(16,185,129,.2);color:#10b981}
-    .badge-rejected{background:rgba(239,68,68,.2);color:#ef4444}
-    .badge-high{background:rgba(239,68,68,.25);color:#fca5a5}
-    .badge-medium{background:rgba(245,158,11,.25);color:#fcd34d}
-    .badge-low{background:rgba(16,185,129,.2);color:#6ee7b7}
-    .activity-item{padding:.75rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;font-size:.875rem}
-    .activity-time{color:var(--muted);line-height:1.5;font-size:.8125rem;min-width:70px}
-    .btn{min-height:44px;padding:.5rem .9rem;border:none;border-radius:8px;font-weight:600;font-size:.875rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
-    .btn-primary{background:var(--accent);color:#fff}
-    .btn-success{background:var(--success);color:#fff}
-    .btn-danger{background:var(--danger);color:#fff}
-    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-    .btn-sm{padding:.5rem .75rem;font-size:.8125rem;min-height:44px}
-    .back-btn{position:fixed;bottom:1.5rem;left:1rem;z-index:200;background:rgba(15,23,42,.95);border:1px solid var(--neon);color:var(--neon);padding:.65rem 1.1rem;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer}
-    .toast-container{position:fixed;bottom:5rem;right:1rem;z-index:9999}
-    .toast{background:var(--panel);border-left:4px solid var(--success);padding:.85rem 1.1rem;border-radius:8px;margin-top:.5rem;animation:slideIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
-    .chart-container{position:relative;height:220px;width:100%}
-    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem}
-    .form-grid input,.form-grid select{padding:.6rem;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.875rem}
-    .cal-nav{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
-    .cal-nav button{min-width:40px}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:rgba(255,255,255,.05);border-radius:10px;overflow:hidden}
-    .cal-day-header{text-align:center;padding:.5rem;font-weight:700;background:rgba(0,0,0,.3);color:var(--muted);line-height:1.5;font-size:.875rem}
-    .cal-day{min-height:70px;padding:4px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.04);cursor:pointer}
-    .cal-day.today{background:rgba(14,165,233,.15);border-color:var(--accent)}
-    .cal-day-num{text-align:right;font-weight:700;font-size:.875rem;color:var(--muted);line-height:1.5}
-    .cal-event{font-size:.875rem;padding:1px 4px;margin:1px 0;border-radius:3px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    
-    /* Modal Edit User */
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
-    .modal-overlay.show{display:flex}
-    .modal-content{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
-    .modal-header h3{color:var(--neon);margin:0}
-    .modal-close{background:transparent;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
-    .modal-close:hover{color:var(--danger)}
-    
-    @media(max-width:640px){.metrics{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.cal-day{min-height:55px}}
-  </style>
-
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #070a1e;
+      --panel: rgba(15, 23, 42, 0.75);
+      --border: rgba(0, 255, 157, 0.18);
+      --border-glow: rgba(0, 255, 157, 0.4);
+      --neon: #00ff9d;
+      --accent: #0ea5e9;
+      --gold: #f59e0b;
+      --danger: #ef4444;
+      --success: #10b981;
+      --purple: #8b5cf6;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 0.875rem; padding-bottom: 90px; overflow-x: hidden; }
+    
+    /* Glassmorphism Panel */
+    .glass {
+      background: var(--panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      transition: border-color 0.3s ease;
+    }
+    .glass:hover { border-color: rgba(0, 255, 157, 0.3); }
+
+    /* Modern Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 10, 30, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    @media(min-width: 768px) {
+      .topbar { flex-direction: row; align-items: center; justify-content: space-between; }
+    }
+
+    .topbar-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .brand-title { font-family: 'Orbitron', sans-serif; font-weight: 800; color: var(--neon); font-size: 1.1rem; letter-spacing: 0.5px; text-shadow: 0 0 12px rgba(0, 255, 157, 0.4); }
+    .user-info { font-size: 0.8rem; color: var(--muted); }
+    .user-info strong { color: #fff; font-weight: 700; }
+
+    /* Search Box Cyberpunk */
+    .search-box { position: relative; flex: 1; width: 100%; max-width: 500px; }
+    .search-box input {
+      width: 100%;
+      padding: 0.65rem 1rem 0.65rem 2.6rem;
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.875rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .search-box input:focus { border-color: var(--neon); box-shadow: 0 0 15px rgba(0, 255, 157, 0.25); }
+    .search-box::before { content: "🔍"; position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.7; }
+
+    /* Status Pulse Badge */
+    .status-pulse { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 20px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
+
+    /* Modern Segmented Tabs */
+    .tabs-wrapper { overflow-x: auto; padding: 0.5rem 1rem; background: rgba(2, 6, 23, 0.4); border-bottom: 1px solid var(--border); scrollbar-width: none; }
+    .tabs-wrapper::-webkit-scrollbar { display: none; }
+    .tabs { display: flex; gap: 0.5rem; min-width: max-content; }
+    .tab {
+      padding: 0.6rem 1.1rem;
+      border-radius: 12px;
+      white-space: nowrap;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tab:hover { background: rgba(14, 165, 233, 0.15); color: #fff; }
+    .tab.active { background: linear-gradient(135deg, rgba(14, 165, 233, 0.9), rgba(13, 148, 136, 0.9)); color: #fff; border-color: var(--accent); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35); }
+
+    .tab-content { display: none; padding: 1.25rem 1rem; max-width: 1300px; margin: 0 auto; }
+    .tab-content.active { display: block; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Fintech KPI Metric Cards */
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem; }
+    .metric {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.9));
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--neon);
+      border-radius: 16px;
+      padding: 1.1rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .metric:hover { transform: translateY(-3px); border-color: var(--border-glow); box-shadow: 0 12px 25px rgba(0, 255, 157, 0.15); }
+    .metric-val { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 0.2rem; }
+    .metric-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Filters Bar */
+    .filters { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .filters select, .filters input {
+      padding: 0.6rem 0.85rem;
+      background: rgba(2, 6, 23, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    /* Hybrid Table Design (PC & Mobile Card Switch) */
+    .table-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.825rem; text-align: left; }
+    th { background: rgba(2, 6, 23, 0.85); color: var(--neon); font-weight: 700; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); text-transform: uppercase; font-size: 0.75rem; }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); vertical-align: middle; }
+    tr:hover td { background: rgba(255, 255, 255, 0.03); }
+
+    /* Status Badges */
+    .badge { padding: 0.3rem 0.7rem; border-radius: 8px; font-size: 0.725rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .badge-pending { background: rgba(245, 158, 11, 0.18); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-approved { background: rgba(16, 185, 129, 0.18); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-rejected { background: rgba(239, 68, 68, 0.18); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-high { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+    .badge-medium { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
+    .badge-low { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+
+    /* Action Buttons */
+    .btn {
+      min-height: 42px;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); }
+    .btn-success { background: var(--success); color: #fff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+    .btn-danger { background: var(--danger); color: #fff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: #fff; }
+    .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.75rem; min-height: 36px; border-radius: 8px; }
+
+    /* Floating Back Button APK Style */
+    .back-btn {
+      position: fixed;
+      bottom: calc(1.5rem + env(safe-area-inset-bottom));
+      left: 1rem;
+      z-index: 200;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0, 255, 157, 0.25);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Toast Notification */
+    .toast-container { position: fixed; bottom: 5rem; right: 1rem; z-index: 9999; }
+    .toast { background: rgba(15, 23, 42, 0.95); border-left: 4px solid var(--success); padding: 0.85rem 1.2rem; border-radius: 12px; margin-top: 0.5rem; animation: slideIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: 600; font-size: 0.8rem; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    .chart-container { position: relative; height: 230px; width: 100%; }
+
+    /* Modern Modal Overlay */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.show { display: flex; animation: fadeIn 0.25s ease; }
+    .modal-content { background: var(--panel); border: 1px solid var(--border-glow); border-radius: 20px; padding: 1.5rem; max-width: 500px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
+    .modal-header h3 { color: var(--neon); font-weight: 800; margin: 0; font-size: 1.1rem; }
+    .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; }
+
+    /* Form Inputs */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.85rem; }
+    .form-grid input, .form-grid select, .bk-input { width: 100%; padding: 0.7rem 0.9rem; background: rgba(2, 6, 23, 0.7); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 0.85rem; outline: none; }
+    .form-grid input:focus, .bk-input:focus { border-color: var(--neon); }
+
+    /* Calendar Roster Grid */
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; }
+    .cal-day-header { text-align: center; padding: 0.5rem; font-weight: 700; background: rgba(2,6,23,0.8); color: var(--muted); font-size: 0.75rem; }
+    .cal-day { min-height: 75px; padding: 6px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
+    .cal-day.today { background: rgba(14,165,233,0.18); border-color: var(--accent); }
+    .cal-day-num { text-align: right; font-weight: 800; font-size: 0.8rem; color: var(--muted); }
+    .cal-event { font-size: 0.68rem; padding: 2px 5px; margin-top: 2px; border-radius: 4px; color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    @media(max-width: 640px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .cal-day { min-height: 58px; }
+      th, td { padding: 0.65rem 0.75rem; font-size: 0.78rem; }
+    }
+  </style>
 </head>
 <body>
   <button class="back-btn" onclick="goHomeHandler()">← HOME</button>
 
+  <!-- TOPBAR -->
   <div class="topbar">
-    <div>
-      <div style="font-weight:800;color:var(--neon);font-size:1.05rem">🏢 Command Center Pro</div>
-      <div class="user-info"><strong id="user-name">Loading...</strong> <span id="role-badge" style="margin-left:.4rem;font-size:.875rem"></span></div>
+    <div class="topbar-header">
+      <div>
+        <div class="brand-title">🏢 COMMAND CENTER PRO</div>
+        <div class="user-info"><strong id="user-name">Loading...</strong> <span id="role-badge" class="badge badge-pending" style="margin-left:.4rem;">-</span></div>
+      </div>
+      <div class="status-pulse">
+        <span class="pulse-dot"></span>
+        <span id="sync-status">Init</span>
+      </div>
     </div>
-    <div class="search-box">
-      <input type="search" id="global-search" placeholder="Cari tugas, dana, booking, K3, user..." autocomplete="off" oninput="runGlobalSearch(this.value)">
-    </div>
-    <div style="display:flex;align-items:center;gap:.5rem">
-      <div style="font-size:.875rem;color:var(--muted);line-height:1.5" id="sync-status">🟡 Init</div>
-      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)"> Sync</button>
+    <div style="display:flex; gap:0.5rem; align-items:center; width:100%;">
+      <div class="search-box">
+        <input type="search" id="global-search" placeholder="Cari tugas, dana, booking, K3, user..." autocomplete="off" oninput="runGlobalSearch(this.value)">
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)" style="white-space:nowrap;">🔄 Sync</button>
     </div>
   </div>
 
-  <div class="tabs" id="main-tabs">
-    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
-    <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">📥 Inbox</button>
-    <button class="tab" data-tab="approvals" onclick="switchTab('approvals')">✅ Approval</button>
-    <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">📅 Kalender</button>
-    <button class="tab" data-tab="archive" onclick="switchTab('archive')">📂 Arsip</button>
-    <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
-    <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
-    <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
+  <!-- NAVIGATION TABS -->
+  <div class="tabs-wrapper">
+    <div class="tabs" id="main-tabs">
+      <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">📥 Inbox</button>
+      <button class="tab" data-tab="approvals" onclick="switchTab('approvals')">✅ Approval</button>
+      <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">📅 Kalender</button>
+      <button class="tab" data-tab="archive" onclick="switchTab('archive')">📂 Arsip</button>
+      <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
+      <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
+      <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
+    </div>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- TAB 1: DASHBOARD -->
   <div id="tab-dashboard" class="tab-content active">
     <div class="metrics">
-      <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-pending">0</div><div class="metric-label">Pending</div></div>
-      <div class="metric" onclick="switchTab('approvals')"><div class="metric-val" id="m-approval">0</div><div class="metric-label">Butuh ACC</div></div>
-      <div class="metric"><div class="metric-val" id="m-overdue">0</div><div class="metric-label">Overdue</div></div>
-      <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="m-dana">Rp 0</div><div class="metric-label">Dana Pending</div></div>
+      <div class="metric" style="border-left-color:var(--gold);" onclick="switchTab('inbox')">
+        <div class="metric-val" id="m-pending">0</div>
+        <div class="metric-label">Pending</div>
+      </div>
+      <div class="metric" style="border-left-color:var(--accent);" onclick="switchTab('approvals')">
+        <div class="metric-val" id="m-approval">0</div>
+        <div class="metric-label">Butuh ACC</div>
+      </div>
+      <div class="metric" style="border-left-color:var(--danger);">
+        <div class="metric-val" id="m-overdue">0</div>
+        <div class="metric-label">Overdue</div>
+      </div>
+      <div class="metric" style="border-left-color:var(--neon);" onclick="switchTab('inbox')">
+        <div class="metric-val" id="m-dana">Rp 0</div>
+        <div class="metric-label">Dana Pending</div>
+      </div>
     </div>
+
     <div class="glass">
-      <div style="font-weight:700;color:var(--neon);margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center">
-        <span> Kinerja Operasional & SLA</span>
+      <div style="font-weight:800; color:var(--neon); margin-bottom:0.8rem; display:flex; justify-content:space-between; align-items:center;">
+        <span>📈 Kinerja Operasional & SLA</span>
         <button class="btn btn-outline btn-sm" onclick="renderChart()">🔄</button>
       </div>
       <div class="chart-container"><canvas id="slaChart"></canvas></div>
     </div>
+
     <div class="glass">
-      <div style="font-weight:700;color:var(--neon);margin-bottom:.75rem"> Status Operasional</div>
+      <div style="font-weight:800; color:var(--accent); margin-bottom:0.85rem;">⚡ Status Operasional Modular</div>
       <div class="metrics">
-        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3</div></div>
+        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3 Safety</div></div>
         <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-booking">0</div><div class="metric-label">Booking</div></div>
         <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-maint">0</div><div class="metric-label">Maintenance</div></div>
-        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana</div></div>
+        <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-dana">0</div><div class="metric-label">Dana Ops</div></div>
       </div>
     </div>
+
     <div class="glass">
-      <div style="font-weight:700;margin-bottom:.75rem"> Hasil Pencarian Global</div>
-      <div id="search-results" style="max-height:300px;overflow-y:auto"><p style="color:var(--muted);line-height:1.5">Ketik di kotak pencarian di atas...</p></div>
+      <div style="font-weight:700; margin-bottom:0.75rem;">🔍 Hasil Pencarian Global</div>
+      <div id="search-results" style="max-height:300px; overflow-y:auto;"><p style="color:var(--muted);">Ketik kata kunci di kotak pencarian di atas...</p></div>
     </div>
   </div>
 
-  <!-- INBOX -->
+  <!-- TAB 2: INBOX -->
   <div id="tab-inbox" class="tab-content">
     <div class="glass">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-        <div style="font-weight:700;color:var(--gold)">📥 Unified Task Inbox</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <div style="font-weight:800; color:var(--gold); font-size:1rem;">📥 Unified Task Inbox</div>
         <button class="btn btn-outline btn-sm" onclick="refreshAll()">🔄 Refresh</button>
       </div>
       <div class="filters">
@@ -157,7 +331,7 @@
           <option value="k3">⚠️ K3 Safety</option>
           <option value="maintenance">🔧 Maintenance</option>
           <option value="security">🛡️ Security</option>
-          <option value="janitor_indoor"> Janitor Indoor</option>
+          <option value="janitor_indoor">🏠 Janitor Indoor</option>
           <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
           <option value="asset">🏢 Asset</option>
           <option value="stok">📦 Stok Gudang</option>
@@ -175,7 +349,7 @@
           <option value="rejected">Rejected</option>
         </select>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-container">
         <table>
           <thead><tr><th>Prioritas</th><th>Tipe</th><th>Judul / Detail</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody id="inbox-body"></tbody>
@@ -184,26 +358,26 @@
     </div>
   </div>
 
-  <!-- APPROVALS -->
+  <!-- TAB 3: APPROVALS -->
   <div id="tab-approvals" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">✅ Antrian Approval</div>
+      <div style="font-weight:800; color:var(--accent); margin-bottom:1rem; font-size:1rem;">✅ Antrian Approval Terpadu</div>
       <div id="approval-list"></div>
     </div>
   </div>
 
-  <!-- CALENDAR -->
+  <!-- TAB 4: CALENDAR -->
   <div id="tab-calendar" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">📅 Jadwal & Roster</div>
-      <div class="cal-nav">
-        <button class="btn btn-outline btn-sm" onclick="calPrev()"></button>
+      <div style="font-weight:800; color:var(--accent); margin-bottom:1rem; font-size:1rem;">📅 Jadwal & Roster Terpadu</div>
+      <div class="filters" style="margin-bottom:1rem;">
+        <button class="btn btn-outline btn-sm" onclick="calPrev()">◀</button>
         <select id="cal-month" onchange="renderCalendar()"></select>
         <select id="cal-year" onchange="renderCalendar()"></select>
         <button class="btn btn-outline btn-sm" onclick="calNext()">▶</button>
-        <button class="btn btn-outline btn-sm" onclick="calToday()">Hari Ini</button>
+        <button class="btn btn-primary btn-sm" onclick="calToday()">Hari Ini</button>
       </div>
-      <div class="cal-grid" id="cal-headers">
+      <div class="cal-grid">
         <div class="cal-day-header">Sen</div>
         <div class="cal-day-header">Sel</div>
         <div class="cal-day-header">Rab</div>
@@ -212,19 +386,19 @@
         <div class="cal-day-header">Sab</div>
         <div class="cal-day-header">Min</div>
       </div>
-      <div class="cal-grid" id="cal-grid" style="margin-top:2px"></div>
-      <div id="cal-list" style="margin-top:1rem"></div>
+      <div class="cal-grid" id="cal-grid" style="margin-top:3px;"></div>
+      <div id="cal-list" style="margin-top:1.25rem;"></div>
     </div>
   </div>
 
-  <!-- ARCHIVE -->
+  <!-- TAB 5: ARCHIVE -->
   <div id="tab-archive" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--gold);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-        <span>📂 Arsip & Dokumen (Supabase Storage)</span>
-        <div style="display:flex;gap:.5rem;align-items:center">
-          <input type="file" id="archive-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="uploadArchiveFile(this)">
-          <button class="btn btn-primary btn-sm" onclick="document.getElementById('archive-file').click()">📤 Upload</button>
+      <div style="font-weight:800; color:var(--gold); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <span>📂 Arsip Dokumen & Export Cloud</span>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <input type="file" id="archive-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none;" onchange="uploadArchiveFile(this)">
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('archive-file').click()">📤 Upload File</button>
           <button class="btn btn-outline btn-sm" onclick="renderArchive()">🔄</button>
         </div>
       </div>
@@ -233,16 +407,16 @@
           <option value="all">📋 Semua Tipe</option>
           <option value="k3">⚠️ K3</option>
           <option value="maintenance">🔧 Maintenance</option>
-          <option value="security">️ Security</option>
+          <option value="security">🛡️ Security</option>
           <option value="janitor_indoor">🏠 Janitor Indoor</option>
           <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
           <option value="booking">📅 Booking</option>
-          <option value="asset"> Asset</option>
+          <option value="asset">🏢 Asset</option>
           <option value="general">📄 General</option>
           <option value="export">📤 Export</option>
         </select>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-container">
         <table>
           <thead><tr><th>Tanggal</th><th>Tipe</th><th>Nama File</th><th>Ukuran</th><th>User</th><th>Aksi</th></tr></thead>
           <tbody id="archive-body"></tbody>
@@ -251,32 +425,32 @@
     </div>
   </div>
 
-  <!-- USERS -->
+  <!-- TAB 6: USERS -->
   <div id="tab-users" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--accent);margin-bottom:1rem">👥 Manajemen Pengguna</div>
-      <div style="background:rgba(0,0,0,.25);padding:1rem;border-radius:10px;margin-bottom:1.5rem;border:1px solid var(--border)">
-        <div style="font-size:.85rem;font-weight:600;margin-bottom:.75rem;color:var(--neon)">➕ Tambah User Baru (Supabase Auth)</div>
+      <div style="font-weight:800; color:var(--accent); margin-bottom:1rem; font-size:1rem;">👥 Manajemen Pengguna & Access Control</div>
+      <div style="background:rgba(2, 6, 23, 0.6); padding:1.2rem; border-radius:14px; margin-bottom:1.5rem; border:1px solid var(--border);">
+        <div style="font-size:0.85rem; font-weight:800; margin-bottom:0.85rem; color:var(--neon);">➕ Tambah User Baru (Supabase Auth Sync)</div>
         <div class="form-grid">
           <input type="text" id="new-user-nama" placeholder="Nama Lengkap">
           <input type="email" id="new-user-email" placeholder="Email">
           <select id="new-user-role">
-            <option value="staff"> Staff</option>
+            <option value="staff">👤 Staff</option>
             <option value="guru">👨‍🏫 Guru</option>
             <option value="security">🛡️ Anggota Security</option>
             <option value="komandan_regu">⭐ Komandan Security</option>
             <option value="janitor_indoor">🏠 Janitor Indoor</option>
-            <option value="janitor_outdoor"> Janitor Outdoor</option>
+            <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
             <option value="maintenance">🔧 Maintenance</option>
-            <option value="koordinator_umum">️ Koordinator Umum</option>
+            <option value="koordinator_umum">🛡️ Koordinator Umum</option>
             <option value="kabag_umum">👑 Kabag Umum</option>
             <option value="dev">💻 Developer</option>
           </select>
           <input type="password" id="new-user-pass" placeholder="Password (min 6)">
-          <button class="btn btn-success" onclick="createNewUser()" style="justify-content:center">✅ Simpan</button>
+          <button class="btn btn-success" onclick="createNewUser()" style="grid-column:1/-1;">✅ Simpan User Baru</button>
         </div>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-container">
         <table>
           <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody id="users-body"></tbody>
@@ -285,38 +459,38 @@
     </div>
   </div>
 
-  <!-- ACTIVITY -->
+  <!-- TAB 7: ACTIVITY -->
   <div id="tab-activity" class="tab-content">
     <div class="glass">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <div style="font-weight:700">📜 Activity Feed</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div style="font-weight:800; color:var(--neon);">📜 Activity Feed & Audit Trail</div>
         <button class="btn btn-outline btn-sm" onclick="renderActivity()">🔄</button>
       </div>
-      <div id="activity-list" style="max-height:420px;overflow-y:auto"></div>
+      <div id="activity-list" style="max-height:450px; overflow-y:auto;"></div>
     </div>
   </div>
 
-  <!-- ANNOUNCEMENTS -->
+  <!-- TAB 8: ANNOUNCEMENTS -->
   <div id="tab-announcements" class="tab-content">
     <div class="glass">
-      <div style="font-weight:700;color:var(--gold);margin-bottom:1rem">📢 Kelola Info Dashboard (Slide 5, 6, 7)</div>
-      <p style="font-size:0.875rem;color:var(--muted);margin-bottom:1rem">Update informasi ini akan langsung muncul di Dashboard utama semua device.</p>
+      <div style="font-weight:800; color:var(--gold); margin-bottom:0.5rem; font-size:1rem;">📢 Kelola Info Slide Dashboard (Realtime Sync)</div>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:1.25rem;">Update informasi di sini akan langsung disinkronkan ke Slide Dashboard utama semua device.</p>
       
-      <div class="form-grid" style="grid-template-columns: 1fr;">
+      <div style="display:flex; flex-direction:column; gap:1rem;">
         <div>
-          <label style="font-size:0.8125rem;color:var(--accent);font-weight:600">Slide 5: Info Manajemen</label>
+          <label style="font-size:0.8rem; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">Slide 5: Info Manajemen</label>
           <textarea id="slide-5-input" class="bk-input" rows="2" placeholder="Contoh: Rapat evaluasi bulan depan tanggal 15..."></textarea>
         </div>
         <div>
-          <label style="font-size:0.8125rem;color:var(--accent);font-weight:600">Slide 6: Info Bagian Umum</label>
+          <label style="font-size:0.8rem; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">Slide 6: Info Bagian Umum</label>
           <textarea id="slide-6-input" class="bk-input" rows="2" placeholder="Contoh: Jadwal kebersihan gedung diperketat..."></textarea>
         </div>
         <div>
-          <label style="font-size:0.8125rem;color:var(--accent);font-weight:600">Slide 7: Ucapan / Motivasi</label>
+          <label style="font-size:0.8rem; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">Slide 7: Ucapan / Motivasi</label>
           <textarea id="slide-7-input" class="bk-input" rows="2" placeholder="Contoh: The Power Soul of Shalawat..."></textarea>
         </div>
-        <button class="btn btn-primary" onclick="saveAnnouncements()" style="margin-top:0.5rem;">💾 Simpan & Sinkronisasi</button>
-        <p id="slide-save-status" style="font-size:0.8125rem;margin-top:0.3rem;"></p>
+        <button class="btn btn-primary" onclick="saveAnnouncements()">💾 Simpan & Sinkronisasi Slide</button>
+        <p id="slide-save-status" style="font-size:0.8rem; font-weight:700;"></p>
       </div>
     </div>
   </div>
@@ -325,21 +499,21 @@
   <div class="modal-overlay" id="edit-user-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>✏️ Edit User</h3>
+        <h3>✏️ Edit User Access</h3>
         <button class="modal-close" onclick="closeEditModal()">✕</button>
       </div>
-      <div class="form-grid">
+      <div class="form-grid" style="grid-template-columns:1fr;">
         <input type="hidden" id="edit-user-index">
         <div>
-          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Nama Lengkap</label>
-          <input type="text" id="edit-user-nama" placeholder="Nama Lengkap">
+          <label style="font-size:0.75rem; color:var(--muted); display:block; margin-bottom:0.2rem;">Nama Lengkap</label>
+          <input type="text" id="edit-user-nama">
         </div>
         <div>
-          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Email</label>
-          <input type="email" id="edit-user-email" placeholder="Email">
+          <label style="font-size:0.75rem; color:var(--muted); display:block; margin-bottom:0.2rem;">Email</label>
+          <input type="email" id="edit-user-email">
         </div>
         <div>
-          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Role</label>
+          <label style="font-size:0.75rem; color:var(--muted); display:block; margin-bottom:0.2rem;">Role System</label>
           <select id="edit-user-role">
             <option value="staff">👤 Staff</option>
             <option value="guru">👨‍🏫 Guru</option>
@@ -347,22 +521,22 @@
             <option value="komandan_regu">⭐ Komandan Security</option>
             <option value="janitor_indoor">🏠 Janitor Indoor</option>
             <option value="janitor_outdoor">🌳 Janitor Outdoor</option>
-            <option value="maintenance"> Maintenance</option>
+            <option value="maintenance">🔧 Maintenance</option>
             <option value="koordinator_umum">🛡️ Koordinator Umum</option>
             <option value="kabag_umum">👑 Kabag Umum</option>
             <option value="dev">💻 Developer</option>
           </select>
         </div>
         <div>
-          <label style="font-size:0.8125rem;color:var(--muted);display:block;margin-bottom:.3rem">Status</label>
+          <label style="font-size:0.75rem; color:var(--muted); display:block; margin-bottom:0.2rem;">Status Akun</label>
           <select id="edit-user-status">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>
-        <div style="grid-column:1/-1;display:flex;gap:.5rem;margin-top:.5rem">
-          <button class="btn btn-success" onclick="saveEditUser()" style="flex:1">💾 Simpan Perubahan</button>
-          <button class="btn btn-outline" onclick="closeEditModal()" style="flex:1">Batal</button>
+        <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
+          <button class="btn btn-success" onclick="saveEditUser()" style="flex:1;">💾 Simpan</button>
+          <button class="btn btn-outline" onclick="closeEditModal()" style="flex:1;">Batal</button>
         </div>
       </div>
     </div>
@@ -380,7 +554,6 @@ window.goHomeHandler = function() {
 };
 
 (function() {
-  // ===== HELPERS =====
   function safeJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback !== undefined ? fallback : [])); }
     catch(e) { return fallback !== undefined ? fallback : []; }
@@ -397,20 +570,6 @@ window.goHomeHandler = function() {
     setTimeout(() => t.remove(), 3500);
   }
 
-  // ===== BCRYPT HASHING =====
-  function hashPassword(plain) {
-    if (typeof bcrypt !== 'undefined') {
-      return bcrypt.hashSync(String(plain), 10);
-    }
-    let h = 0;
-    const str = String(plain) + 'dreamos_salt_2026';
-    for (let i = 0; i < str.length; i++) {
-      h = ((h << 5) - h) + str.charCodeAt(i);
-      h |= 0;
-    }
-    return 'hash_' + Math.abs(h).toString(16);
-  }
-
   function logActivity(action, detail) {
     const logs = safeJSON('dreamos_activity_feed', []);
     const user = safeJSON('dreamos_bound_user', {});
@@ -425,7 +584,6 @@ window.goHomeHandler = function() {
     saveJSON('dreamos_activity_feed', logs);
   }
 
-  // ===== CURRENT USER =====
   const bound = safeJSON('dreamos_bound_user', null);
   const currentUser = bound || { nama: 'Guest', role: 'staff', email: 'guest' };
   document.getElementById('user-name').textContent = currentUser.nama || currentUser.email || 'User';
@@ -437,7 +595,6 @@ window.goHomeHandler = function() {
     document.querySelectorAll('.tab-restricted').forEach(el => el.style.display = 'none');
   }
 
-  // ===== TAB =====
   window.switchTab = function(id) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
@@ -452,23 +609,18 @@ window.goHomeHandler = function() {
     if (id === 'calendar') renderCalendar();
     if (id === 'archive') renderArchive();
     if (id === 'users') {
-      syncUsersFromSupabase(); // Sync dulu sebelum render
+      syncUsersFromSupabase();
       renderUsers();
     }
     
     if (id === 'announcements') {
       const saved = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
-      const s5 = saved.find(x => x.type === 'management')?.msg || '';
-      const s6 = saved.find(x => x.type === 'umum')?.msg || '';
-      const s7 = saved.find(x => x.type === 'ucapan')?.msg || '';
-      
-      document.getElementById('slide-5-input').value = s5;
-      document.getElementById('slide-6-input').value = s6;
-      document.getElementById('slide-7-input').value = s7;
+      document.getElementById('slide-5-input').value = saved.find(x => x.type === 'management')?.msg || '';
+      document.getElementById('slide-6-input').value = saved.find(x => x.type === 'umum')?.msg || '';
+      document.getElementById('slide-7-input').value = saved.find(x => x.type === 'ucapan')?.msg || '';
     }
   };
 
-  // ===== GLOBAL SEARCH (IMPROVED) =====
   let searchTimeout;
   window.runGlobalSearch = function(q) {
     clearTimeout(searchTimeout);
@@ -476,7 +628,7 @@ window.goHomeHandler = function() {
       q = (q || '').toLowerCase().trim();
       const box = document.getElementById('search-results');
       if (!q || q.length < 2) {
-        box.innerHTML = '<p style="color:var(--muted);line-height:1.5;padding:1rem;text-align:center">Ketik minimal 2 karakter...</p>';
+        box.innerHTML = '<p style="color:var(--muted);padding:0.5rem 0;">Ketik minimal 2 karakter...</p>';
         return;
       }
       
@@ -485,13 +637,7 @@ window.goHomeHandler = function() {
         { key: 'dreamos_bookings', type: '📅 Booking', title: d => (d.ruang||'') + ' - ' + (d.nama_peminjam||''), extra: d => (d.tgl||'') + ' ' + (d.jam_mulai||'') },
         { key: 'dreamos_k3_reports', type: '⚠️ K3', title: d => d.judul || d.lokasi || 'K3', extra: d => d.status || '' },
         { key: 'dreamos_maintenance_tasks', type: '🔧 Maint', title: d => d.judul || d.deskripsi || 'Maint', extra: d => d.status || '' },
-        { key: 'dreamos_security_logs', type: '🛡️ Security', title: d => d.kejadian || d.lokasi || 'Security', extra: d => d.petugas || '' },
-        { key: 'dreamos_janitor_indoor', type: ' Jan Indoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
-        { key: 'dreamos_janitor_outdoor', type: '🌳 Jan Outdoor', title: d => d.lokasi || d.nama || 'Janitor', extra: d => d.status || '' },
-        { key: 'dreamos_asset_reports', type: ' Asset', title: d => d.nama_aset || d.judul || 'Asset', extra: d => d.lokasi || '' },
-        { key: 'dreamos_stok_gudang', type: '📦 Stok', title: d => d.nama_barang || 'Stok', extra: d => 'Qty: ' + (d.quantity||0) },
-        { key: 'dreamos_users_db', type: '👤 User', title: d => d.nama || d.email || 'User', extra: d => d.role || '' },
-        { key: 'dreamos_file_archive', type: '📂 File', title: d => d.file_name || 'File', extra: d => d.record_type || '' }
+        { key: 'dreamos_users_db', type: '👤 User', title: d => d.nama || d.email || 'User', extra: d => d.role || '' }
       ];
       
       let hits = [];
@@ -501,251 +647,59 @@ window.goHomeHandler = function() {
           if (!Array.isArray(data)) return;
           data.forEach(item => {
             if (!item || typeof item !== 'object') return;
-            const str = JSON.stringify(item).toLowerCase();
-            if (str.includes(q)) {
-              hits.push({ 
-                type: s.type, 
-                title: s.title(item), 
-                extra: s.extra(item), 
-                status: item.status || '-' 
-              });
+            if (JSON.stringify(item).toLowerCase().includes(q)) {
+              hits.push({ type: s.type, title: s.title(item), extra: s.extra(item) });
             }
           });
-        } catch(e) {
-          console.warn('Search error in ' + s.key, e);
-        }
+        } catch(e) {}
       });
       
       if (!hits.length) {
-        box.innerHTML = '<p style="color:var(--muted);line-height:1.5;padding:1rem;text-align:center">🔍 Tidak ditemukan: "' + q + '"</p>';
+        box.innerHTML = '<p style="color:var(--muted);padding:0.5rem 0;">🔍 Tidak ditemukan: "' + q + '"</p>';
         return;
       }
       
-      box.innerHTML = '<div style="padding:.4rem;background:rgba(0,255,157,.1);border-radius:6px;margin-bottom:.5rem;font-size:.875rem;color:var(--neon)">📊 ' + hits.length + ' hasil untuk "' + q + '"</div>' +
-        hits.slice(0, 20).map(h => '<div style="padding:.6rem 0;border-bottom:1px solid var(--border)"><span class="badge badge-pending" style="margin-right:.4rem">' + h.type + '</span><strong>' + h.title + '</strong><div style="font-size:.875rem;color:var(--muted);line-height:1.5">' + h.extra + '</div></div>').join('');
+      box.innerHTML = hits.slice(0, 15).map(h => 
+        '<div style="padding:0.6rem 0; border-bottom:1px solid rgba(255,255,255,0.05);"><span class="badge badge-pending" style="margin-right:0.4rem;">' + h.type + '</span><strong>' + h.title + '</strong><div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">' + h.extra + '</div></div>'
+      ).join('');
     }, 300);
   };
 
-  // ===== SYNC USERS FROM SUPABASE (IMPROVED) =====
   async function syncUsersFromSupabase() {
-    if (!window.supabaseClient) {
-      console.warn('⚠️ Supabase client tidak tersedia');
-      return;
-    }
-    
+    if (!window.supabaseClient) return;
     try {
-      console.log('🔄 Syncing users from Supabase...');
-      
-      // 1. Ambil dari tabel users
-      const { data: cloudUsers, error: usersError } = await window.supabaseClient
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (usersError) {
-        console.warn('⚠️ Error fetching users:', usersError);
-      }
-      
-      // 2. Ambil juga dari Supabase Auth (jika ada akses)
-      let authUsers = [];
-      try {
-        const { data: authData, error: authError } = await window.supabaseClient.auth.admin.listUsers();
-        if (!authError && authData?.users) {
-          authUsers = authData.users;
-          console.log('📊 Ditemukan', authUsers.length, 'user di Auth');
-        }
-      } catch(e) {
-        console.log('ℹ️ Tidak bisa akses Auth admin (normal untuk role non-admin)');
-      }
-      
+      const { data: cloudUsers } = await window.supabaseClient.from('users').select('*');
       const localUsers = safeJSON('dreamos_users_db', []);
-      let addedCount = 0;
-      
-      // 3. Merge dari tabel users
-      if (cloudUsers && cloudUsers.length > 0) {
+      let added = 0;
+      if (cloudUsers) {
         cloudUsers.forEach(cu => {
-          const existing = localUsers.find(lu => lu.email === cu.email);
-          if (!existing) {
-            localUsers.push({
-              id: cu.id,
-              nama: cu.nama || cu.name || cu.email.split('@')[0],
-              email: cu.email,
-              role: cu.role || 'staff',
-              status: cu.status || 'active',
-              divisi: cu.divisi || 'umum',
-              source: 'supabase',
-              created_at: cu.created_at || new Date().toISOString()
-            });
-            addedCount++;
+          if (!localUsers.find(lu => lu.email === cu.email)) {
+            localUsers.push({ id: cu.id, nama: cu.nama || cu.email.split('@')[0], email: cu.email, role: cu.role || 'staff', status: cu.status || 'active' });
+            added++;
           }
         });
       }
-      
-      // 4. Merge dari Auth users (untuk yang belum ada di tabel users)
-      authUsers.forEach(au => {
-        const existing = localUsers.find(lu => lu.email === au.email);
-        if (!existing) {
-          const metadata = au.user_metadata || {};
-          localUsers.push({
-            id: au.id,
-            nama: metadata.nama || metadata.name || au.email.split('@')[0],
-            email: au.email,
-            role: metadata.role || 'staff',
-            status: 'active',
-            divisi: metadata.divisi || 'umum',
-            source: 'supabase-auth',
-            created_at: au.created_at
-          });
-          addedCount++;
-        }
-      });
-      
-      saveJSON('dreamos_users_db', localUsers);
-      
-      if (addedCount > 0) {
-        showToast('🔄 Sinkronisasi: +' + addedCount + ' user dari cloud', 'success');
-        console.log('✅ Synced', addedCount, 'new users from cloud');
-      } else {
-        console.log('ℹ️ Tidak ada user baru dari cloud');
+      if (added > 0) {
+        saveJSON('dreamos_users_db', localUsers);
+        showToast('🔄 Synced +' + added + ' users', 'success');
       }
-      
-    } catch(e) {
-      console.error('❌ Sync users error:', e);
-    }
+    } catch(e) {}
   }
 
-  // ===== COLLECT TASKS =====
   function collectTasks() {
     const tasks = [];
-
     const push = (arr, mapFn) => {
-      if (!Array.isArray(arr)) return;
-      arr.forEach(item => {
-        if (!item || typeof item !== 'object') return;
-        try {
-          const t = mapFn(item);
-          if (t && t.id != null) tasks.push(t);
-        } catch (e) { /* skip baris rusak */ }
-      });
+      if (Array.isArray(arr)) arr.forEach(item => { try { const t = mapFn(item); if (t && t.id) tasks.push(t); } catch(e){} });
     };
 
-    // 💸 Dana
-    push(safeJSON('dreamos_dana', []), d => ({
-      id: d.id, type: 'dana',
-      title: d.judul || 'Pengajuan Dana',
-      detail: 'Rp ' + Number(d.nominal || 0).toLocaleString('id-ID'),
-      status: String(d.status || 'pending').toLowerCase(),
-      priority: Number(d.nominal) > 5000000 ? 'high' : Number(d.nominal) > 1000000 ? 'medium' : 'low',
-      raw: d
-    }));
-
-    // 📅 Booking
-    push(safeJSON('dreamos_bookings', []), b => ({
-      id: b.id, type: 'booking',
-      title: (b.ruang || 'Ruang') + ' • ' + (b.nama_peminjam || '-'),
-      detail: [b.tgl, b.jam_mulai].filter(Boolean).join(' '),
-      status: String(b.status || 'pending').toLowerCase(),
-      priority: 'medium', raw: b
-    }));
-
-    // ⚠️ K3
-    push(safeJSON('dreamos_k3_reports', []), k => ({
-      id: k.id, type: 'k3',
-      title: k.judul || k.lokasi || 'Laporan K3',
-      detail: k.pelapor || '',
-      status: String(k.status || 'pending').toLowerCase(),
-      priority: 'high', raw: k
-    }));
-
-    //  Maintenance
-    push(safeJSON('dreamos_maintenance_tasks', []), m => ({
-      id: m.id, type: 'maintenance',
-      title: m.judul || m.deskripsi || 'Maintenance',
-      detail: m.lokasi || '',
-      status: String(m.status || 'pending').toLowerCase(),
-      priority: String(m.priority || 'medium').toLowerCase(), raw: m
-    }));
-
-    // 🛡️ Security
-    push(safeJSON('dreamos_security_logs', []), s => ({
-      id: s.id, type: 'security',
-      title: s.kejadian || s.lokasi || 'Security Log',
-      detail: s.petugas || '-',
-      status: String(s.status || 'pending').toLowerCase(),
-      priority: String(s.priority || '').toUpperCase() === 'URGENT' ? 'high' : 'medium',
-      raw: s
-    }));
-
-    // 🏠🌳 Janitor
-    function flattenJanitor(storeKey, type, label) {
-      const raw = safeJSON(storeKey, null);
-      const items = [];
-
-      if (Array.isArray(raw)) {
-        raw.forEach(x => { if (x && typeof x === 'object') items.push(x); });
-      } else if (raw && typeof raw === 'object') {
-        Object.entries(raw).forEach(([dateKey, dayData]) => {
-          if (!dayData || typeof dayData !== 'object') return;
-          if (dayData.id || dayData.lokasi || dayData.nama || dayData.area) {
-            items.push(dayData);
-          }
-        });
-      }
-
-      items.forEach(item => {
-        if (!item || typeof item !== 'object') return;
-        const st = String(item.status || 'pending').toLowerCase();
-        if (st === 'selesai' || st === 'done' || st === 'approved') return;
-        tasks.push({
-          id: item.id || (type + '_' + Math.random().toString(36).slice(2, 9)),
-          type,
-          title: item.lokasi || item.nama || item.area || label,
-          detail: item.catatan || item.tanggal || '-',
-          status: 'pending',
-          priority: 'low',
-          raw: item
-        });
-      });
-    }
-
-    flattenJanitor('dreamos_janitor_indoor', 'janitor_indoor', 'Janitor Indoor');
-    flattenJanitor('dreamos_janitor_outdoor', 'janitor_outdoor', 'Janitor Outdoor');
-
-    //  Asset
-    push(safeJSON('dreamos_asset_reports', []), a => ({
-      id: a.id, type: 'asset',
-      title: a.nama_aset || a.judul || 'Asset Report',
-      detail: a.lokasi || a.kondisi || '-',
-      status: String(a.status || 'pending').toLowerCase(),
-      priority: a.kondisi === 'rusak_berat' ? 'high' : 'medium',
-      raw: a
-    }));
-
-    // 📦 Stok
-    const stokA = safeJSON('dreamos_stok', []);
-    const stokB = safeJSON('dreamos_stok_gudang', []);
-    const stokSource = (Array.isArray(stokA) && stokA.length > 0) ? stokA
-                     : (Array.isArray(stokB) ? stokB : []);
-
-    push(stokSource, s => {
-      const qty = Number(s.jumlah ?? s.quantity ?? s.qty ?? 0);
-      const min = Number(s.min_stock ?? s.minimum ?? 5);
-      if (qty >= min) return null;
-      return {
-        id: s.id || ('stok_' + (s.nama || s.nama_barang || Math.random().toString(36).slice(2))),
-        type: 'stok',
-        title: s.nama || s.nama_barang || 'Stok Rendah',
-        detail: 'Sisa: ' + qty + ' (Min: ' + min + ')',
-        status: 'pending',
-        priority: 'high',
-        raw: s
-      };
-    });
+    push(safeJSON('dreamos_dana', []), d => ({ id: d.id, type: 'dana', title: d.judul || 'Pengajuan Dana', detail: 'Rp ' + Number(d.nominal||0).toLocaleString('id-ID'), status: String(d.status||'pending').toLowerCase(), priority: Number(d.nominal)>5000000?'high':'medium' }));
+    push(safeJSON('dreamos_bookings', []), b => ({ id: b.id, type: 'booking', title: (b.ruang||'Ruang') + ' • ' + (b.nama_peminjam||'-'), detail: [b.tgl, b.jam_mulai].filter(Boolean).join(' '), status: String(b.status||'pending').toLowerCase(), priority: 'medium' }));
+    push(safeJSON('dreamos_k3_reports', []), k => ({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'K3 Report', detail: k.pelapor||'', status: String(k.status||'pending').toLowerCase(), priority: 'high' }));
+    push(safeJSON('dreamos_maintenance_tasks', []), m => ({ id: m.id, type: 'maintenance', title: m.judul || 'Maintenance', detail: m.lokasi||'', status: String(m.status||'pending').toLowerCase(), priority: 'medium' }));
 
     return tasks;
   }
 
-  // ===== INBOX =====
   window.renderInbox = function() {
     const typeF = document.getElementById('filter-type')?.value || 'all';
     const prioF = document.getElementById('filter-priority')?.value || 'all';
@@ -757,54 +711,33 @@ window.goHomeHandler = function() {
 
     const tbody = document.getElementById('inbox-body');
     if (!tasks.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);line-height:1.5;padding:2rem">Tidak ada tugas</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Tidak ada tugas</td></tr>';
       return;
     }
     tbody.innerHTML = tasks.map(t => {
-      const pc = t.priority === 'high' ? 'badge-high' : t.priority === 'medium' ? 'badge-medium' : 'badge-low';
+      const pc = t.priority === 'high' ? 'badge-high' : 'badge-medium';
       const sc = t.status === 'approved' ? 'badge-approved' : t.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
-      let actions = '-';
-      if (t.status === 'pending') {
-        actions = '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',true)">✅</button> <button class="btn btn-danger btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',false)">❌</button>';
-      } else if (t.status === 'approved') {
-        actions = '<button class="btn btn-success btn-sm" onclick="shareDirectPDF(event, \'' + t.type + '\',\'' + t.id + '\')">📤 Share PDF</button>';
-      } else {
-        actions = '<span style="color:#ef4444; font-size:0.8rem;">Ditolak</span>';
-      }
-      return '<tr><td><span class="badge ' + pc + '">' + t.priority + '</span></td><td>' + t.type + '</td><td><strong>' + t.title + '</strong><div style="font-size:.875rem;color:var(--muted);line-height:1.5">' + t.detail + '</div></td><td><span class="badge ' + sc + '">' + t.status + '</span></td><td>' + actions + '</td></tr>';
+      let actions = t.status === 'pending'
+        ? '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',true)">✅</button> <button class="btn btn-danger btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',false)">❌</button>'
+        : '<button class="btn btn-success btn-sm" onclick="shareDirectPDF(event, \'' + t.type + '\',\'' + t.id + '\')">📤 PDF</button>';
+      return '<tr><td><span class="badge ' + pc + '">' + t.priority + '</span></td><td>' + t.type + '</td><td><strong>' + t.title + '</strong><div style="font-size:0.75rem; color:var(--muted);">' + t.detail + '</div></td><td><span class="badge ' + sc + '">' + t.status + '</span></td><td>' + actions + '</td></tr>';
     }).join('');
   };
 
-  // ===== APPROVAL =====
   window.doApprove = function(type, id, isApprove) {
-    const reason = isApprove ? null : prompt('Alasan penolakan (wajib):');
+    const reason = isApprove ? null : prompt('Alasan penolakan:');
     if (!isApprove && !reason) return;
 
-    const keyMap = {
-      dana: 'dreamos_dana',
-      booking: 'dreamos_bookings',
-      k3: 'dreamos_k3_reports',
-      maintenance: 'dreamos_maintenance_tasks',
-      security: 'dreamos_security_logs',
-      janitor_indoor: 'dreamos_janitor_indoor',
-      janitor_outdoor: 'dreamos_janitor_outdoor',
-      asset: 'dreamos_asset_reports',
-      stok: 'dreamos_stok_gudang'
-    };
-    const key = keyMap[type];
-    if (!key) return;
-
-    const list = safeJSON(key);
+    const keyMap = { dana:'dreamos_dana', booking:'dreamos_bookings', k3:'dreamos_k3_reports', maintenance:'dreamos_maintenance_tasks' };
+    const list = safeJSON(keyMap[type]);
     const item = list.find(x => x.id === id);
     if (!item) return showToast('Data tidak ditemukan', 'danger');
 
     item.status = isApprove ? 'approved' : 'rejected';
     item.approved_by = currentUser.email || currentUser.nama;
     item.approved_at = new Date().toISOString();
-    if (reason) item.reject_reason = reason;
-    saveJSON(key, list);
+    saveJSON(keyMap[type], list);
 
-    logActivity(isApprove ? 'APPROVE' : 'REJECT', type.toUpperCase() + ': ' + (item.judul || item.ruang || id));
     showToast(isApprove ? '✅ Disetujui' : '❌ Ditolak');
     refreshAll();
   };
@@ -813,39 +746,34 @@ window.goHomeHandler = function() {
     const tasks = collectTasks().filter(t => t.status === 'pending');
     const box = document.getElementById('approval-list');
     if (!tasks.length) {
-      box.innerHTML = '<p style="color:var(--muted);line-height:1.5;text-align:center;padding:2rem">Tidak ada antrian approval</p>';
+      box.innerHTML = '<p style="color:var(--muted); text-align:center; padding:2rem;">Tidak ada antrian approval</p>';
       return;
     }
     box.innerHTML = tasks.map(t =>
-      '<div style="background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem">' +
-      '<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">' +
-      '<div><span class="badge badge-pending">' + t.type + '</span> <strong style="margin-left:.4rem">' + t.title + '</strong>' +
-      '<div style="font-size:.875rem;color:var(--muted);line-height:1.5;margin-top:.3rem">' + t.detail + '</div></div>' +
-      '<div style="display:flex;gap:.4rem">' +
+      '<div style="background:rgba(2, 6, 23, 0.6); border:1px solid var(--border); border-radius:12px; padding:1rem; margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">' +
+      '<div><span class="badge badge-pending">' + t.type + '</span> <strong style="margin-left:0.4rem;">' + t.title + '</strong><div style="font-size:0.75rem; color:var(--muted); margin-top:0.2rem;">' + t.detail + '</div></div>' +
+      '<div style="display:flex; gap:0.4rem;">' +
       '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',true)">Setujui</button>' +
       '<button class="btn btn-danger btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',false)">Tolak</button>' +
-      '</div></div></div>'
+      '</div></div>'
     ).join('');
   };
 
-  // ===== ACTIVITY =====
   window.renderActivity = function() {
     const logs = safeJSON('dreamos_activity_feed', []);
     const box = document.getElementById('activity-list');
     if (!logs.length) {
-      box.innerHTML = '<p style="color:var(--muted);line-height:1.5;text-align:center;padding:2rem">Belum ada aktivitas</p>';
+      box.innerHTML = '<p style="color:var(--muted); text-align:center; padding:2rem;">Belum ada aktivitas</p>';
       return;
     }
-    box.innerHTML = logs.slice(0, 50).map(l =>
-      '<div class="activity-item"><div class="activity-time">' +
-      new Date(l.time).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) +
-      '</div><div><strong>' + l.user + '</strong> — ' + l.action + '<br><span style="color:var(--muted);line-height:1.5">' + l.detail + '</span></div></div>'
+    box.innerHTML = logs.slice(0, 40).map(l =>
+      '<div style="padding:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.8rem;">' +
+      '<strong style="color:var(--neon);">' + l.user + '</strong> — ' + l.action + '<br><span style="color:var(--muted);">' + l.detail + '</span>' +
+      '</div>'
     ).join('');
   };
 
-  // ===== CALENDAR =====
   let calDate = new Date();
-
   function initCalSelectors() {
     const monthSel = document.getElementById('cal-month');
     const yearSel = document.getElementById('cal-year');
@@ -853,253 +781,67 @@ window.goHomeHandler = function() {
     monthSel.innerHTML = months.map((m, i) => '<option value="' + i + '"' + (i === calDate.getMonth() ? ' selected' : '') + '>' + m + '</option>').join('');
     const currentYear = new Date().getFullYear();
     let yearOpts = '';
-    for (let y = currentYear - 3; y <= currentYear + 2; y++) {
+    for (let y = currentYear - 2; y <= currentYear + 2; y++) {
       yearOpts += '<option value="' + y + '"' + (y === calDate.getFullYear() ? ' selected' : '') + '>' + y + '</option>';
     }
     yearSel.innerHTML = yearOpts;
   }
 
-  window.calPrev = function() {
-    calDate.setMonth(calDate.getMonth() - 1);
-    document.getElementById('cal-month').value = calDate.getMonth();
-    document.getElementById('cal-year').value = calDate.getFullYear();
-    renderCalendar();
-  };
-  window.calNext = function() {
-    calDate.setMonth(calDate.getMonth() + 1);
-    document.getElementById('cal-month').value = calDate.getMonth();
-    document.getElementById('cal-year').value = calDate.getFullYear();
-    renderCalendar();
-  };
-  window.calToday = function() {
-    calDate = new Date();
-    document.getElementById('cal-month').value = calDate.getMonth();
-    document.getElementById('cal-year').value = calDate.getFullYear();
-    renderCalendar();
-  };
-
-  function parseDateStr(str) {
-    if (!str) return null;
-    const s = String(str).trim();
-    let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
-    if (s.includes('/')) {
-      const p = s.split('/');
-      if (p.length === 3) return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
-    }
-    return null;
-  }
+  window.calPrev = function() { calDate.setMonth(calDate.getMonth() - 1); initCalSelectors(); renderCalendar(); };
+  window.calNext = function() { calDate.setMonth(calDate.getMonth() + 1); initCalSelectors(); renderCalendar(); };
+  window.calToday = function() { calDate = new Date(); initCalSelectors(); renderCalendar(); };
 
   window.renderCalendar = function() {
     const month = parseInt(document.getElementById('cal-month').value);
     const year = parseInt(document.getElementById('cal-year').value);
-    calDate = new Date(year, month, 1);
-
     const grid = document.getElementById('cal-grid');
-    const list = document.getElementById('cal-list');
-
-    const events = [];
-    const sources = [
-      { key: 'dreamos_bookings', color: '#0ea5e9', label: 'Booking', field: 'ruang' },
-      { key: 'dreamos_maintenance_tasks', color: '#8b5cf6', label: 'Maint', field: 'judul' },
-      { key: 'dreamos_k3_reports', color: '#ef4444', label: 'K3', field: 'judul' },
-      { key: 'dreamos_security_logs', color: '#f59e0b', label: 'Security', field: 'kejadian' },
-      { key: 'dreamos_janitor_indoor', color: '#10b981', label: 'Jan Indoor', field: 'lokasi' },
-      { key: 'dreamos_janitor_outdoor', color: '#22c55e', label: 'Jan Outdoor', field: 'lokasi' }
-    ];
-    sources.forEach(s => {
-      safeJSON(s.key).forEach(d => {
-        const dDate = parseDateStr(d.tgl || d.tanggal || d.date || d.created_at);
-        if (dDate && dDate.getFullYear() === year && dDate.getMonth() === month) {
-          events.push({
-            day: dDate.getDate(),
-            title: (s.label + ': ' + (d[s.field] || d.judul || d.nama_peminjam || '-')).substring(0, 28),
-            color: s.color,
-            full: d
-          });
-        }
-      });
-    });
-
     const firstDay = new Date(year, month, 1).getDay();
     const startOffset = firstDay === 0 ? 6 : firstDay - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
 
     let html = '';
-    for (let i = 0; i < startOffset; i++) html += '<div class="cal-day" style="background:rgba(0,0,0,.1)"></div>';
-
+    for (let i = 0; i < startOffset; i++) html += '<div class="cal-day" style="background:rgba(0,0,0,0.2);"></div>';
     for (let d = 1; d <= daysInMonth; d++) {
       const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-      const dayEvents = events.filter(e => e.day === d);
-      const evHtml = dayEvents.slice(0, 3).map(e =>
-        '<div class="cal-event" style="background:' + e.color + '">' + e.title + '</div>'
-      ).join('');
-      const more = dayEvents.length > 3 ? '<div style="font-size:.6rem;color:var(--muted);line-height:1.5;text-align:center">+' + (dayEvents.length - 3) + '</div>' : '';
-
-      html += '<div class="cal-day' + (isToday ? ' today' : '') + '" data-day="' + d + '">' +
-        '<div class="cal-day-num" style="color:' + (isToday ? 'var(--accent)' : 'var(--muted)') + '">' + d + '</div>' +
-        evHtml + more + '</div>';
+      html += '<div class="cal-day' + (isToday ? ' today' : '') + '"><div class="cal-day-num">' + d + '</div></div>';
     }
     grid.innerHTML = html;
-
-    if (!events.length) {
-      list.innerHTML = '<p style="color:var(--muted);line-height:1.5;text-align:center;padding:1rem">Tidak ada jadwal di bulan ini.</p>';
-    } else {
-      events.sort((a, b) => a.day - b.day);
-      list.innerHTML = '<div style="font-weight:600;margin-bottom:.5rem">Daftar ' + events.length + ' event:</div>' +
-        events.map(e =>
-          '<div style="padding:.5rem;border-bottom:1px solid var(--border);display:flex;gap:.5rem;align-items:center">' +
-          '<span class="badge badge-pending">' + e.day + '</span>' +
-          '<span style="background:' + e.color + ';width:8px;height:8px;border-radius:50%;display:inline-block"></span>' +
-          '<span>' + e.title + '</span></div>'
-        ).join('');
-    }
   };
 
-  // ===== ARCHIVE =====
-  window.uploadArchiveFile = async function(input) {
-    const file = input.files[0];
-    if (!file) return;
-    if (file.size > 8 * 1024 * 1024) return showToast('Maksimal 8MB', 'danger');
-
-    const type = document.getElementById('arch-type').value === 'all' ? 'general' : document.getElementById('arch-type').value;
-    const bucketMap = {
-      k3: 'k3-photos',
-      maintenance: 'maintenance-photos',
-      security: 'security-photos',
-      janitor_indoor: 'janitor-photos',
-      janitor_outdoor: 'janitor-photos',
-      booking: 'exports-archive',
-      asset: 'exports-archive',
-      general: 'exports-archive',
-      export: 'exports-archive'
-    };
-    const bucket = bucketMap[type] || 'exports-archive';
-    const fileName = type + '_' + Date.now() + '_' + file.name.replace(/\s+/g, '_');
-
-    showToast('⏳ Mengupload...');
-
-    try {
-      let publicUrl = null;
-      if (window.supabaseClient) {
-        const { data, error } = await window.supabaseClient.storage.from(bucket).upload(fileName, file, { upsert: false });
-        if (error) throw error;
-        const { data: urlData } = window.supabaseClient.storage.from(bucket).getPublicUrl(fileName);
-        publicUrl = urlData.publicUrl;
-
-        await window.supabaseClient.from('file_attachments').insert({
-          record_type: type,
-          record_id: 'manual_' + Date.now(),
-          file_url: publicUrl,
-          file_name: file.name,
-          file_type: file.type,
-          file_size_kb: Math.round(file.size / 1024),
-          uploaded_by: currentUser.email || currentUser.nama || 'system'
-        });
-      }
-
-      const meta = {
-        id: 'file_' + Date.now(),
-        record_type: type,
-        file_url: publicUrl || '',
-        file_name: file.name,
-        file_type: file.type,
-        file_size_kb: Math.round(file.size / 1024),
-        uploaded_by: currentUser.email || currentUser.nama || 'system',
-        created_at: new Date().toISOString()
-      };
-      const files = safeJSON('dreamos_file_archive', []);
-      files.unshift(meta);
-      saveJSON('dreamos_file_archive', files);
-
-      logActivity('FILE_UPLOAD', file.name + ' (' + type + ')');
-      showToast('✅ File berhasil diupload');
-      input.value = '';
-      renderArchive();
-    } catch (e) {
-      console.error(e);
-      showToast(' Gagal upload: ' + (e.message || 'cek koneksi / permission Storage'), 'danger');
-    }
-  };
-
-  window.renderArchive = async function() {
+  window.renderArchive = function() {
     const tbody = document.getElementById('archive-body');
-    const typeF = document.getElementById('arch-type')?.value || 'all';
-    let files = safeJSON('dreamos_file_archive', []);
-
-    if (window.supabaseClient) {
-      try {
-        const { data, error } = await window.supabaseClient
-          .from('file_attachments')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        if (!error && data && data.length) {
-          const localIds = new Set(files.map(f => f.id));
-          data.forEach(d => {
-            if (!localIds.has(d.id)) files.push(d);
-          });
-          saveJSON('dreamos_file_archive', files);
-        }
-      } catch (e) { console.warn('Archive fetch failed', e); }
-    }
-
-    if (typeF !== 'all') files = files.filter(f => (f.record_type || '') === typeF);
-
+    const files = safeJSON('dreamos_file_archive', []);
     if (!files.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);line-height:1.5;padding:2rem">Belum ada file arsip</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada arsip</td></tr>';
       return;
     }
-
-    tbody.innerHTML = files.slice(0, 40).map(f => {
-      const isImg = (f.file_type || '').startsWith('image/');
-      const preview = f.file_url
-        ? (isImg
-          ? '<a href="' + f.file_url + '" target="_blank" style="color:var(--accent)">🖼️ Preview</a>'
-          : '<a href="' + f.file_url + '" target="_blank" style="color:var(--accent)">📄 Buka</a>')
-        : '-';
-      const dl = f.file_url ? ' <a href="' + f.file_url + '" download style="color:#10b981">️</a>' : '';
-      return '<tr>' +
-        '<td>' + (f.created_at ? new Date(f.created_at).toLocaleDateString('id-ID') : '-') + '</td>' +
-        '<td><span class="badge badge-pending">' + (f.record_type || '-').toUpperCase() + '</span></td>' +
-        '<td>' + (f.file_name || '-') + '</td>' +
-        '<td>' + (f.file_size_kb || 0) + ' KB</td>' +
-        '<td>' + (f.uploaded_by || '-') + '</td>' +
-        '<td style="display:flex;gap:.3rem">' + preview + dl + '</td></tr>';
-    }).join('');
+    tbody.innerHTML = files.slice(0, 30).map(f =>
+      '<tr><td>' + new Date(f.created_at).toLocaleDateString('id-ID') + '</td><td><span class="badge badge-pending">' + f.record_type + '</span></td><td>' + f.file_name + '</td><td>' + f.file_size_kb + ' KB</td><td>' + f.uploaded_by + '</td><td><a href="' + f.file_url + '" target="_blank" style="color:var(--accent);">📄 Buka</a></td></tr>'
+    ).join('');
   };
 
-  // ===== USERS MANAGEMENT (WITH EDIT) =====
   window.renderUsers = function() {
     const users = safeJSON('dreamos_users_db', []);
     const tbody = document.getElementById('users-body');
     if (!users.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);line-height:1.5;padding:2rem">Belum ada user</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>';
       return;
     }
     tbody.innerHTML = users.map((u, i) =>
-      '<tr><td>' + (u.nama || '-') + '</td><td>' + (u.email || '-') + '</td>' +
-      '<td><span class="badge badge-pending">' + (u.role || 'staff') + '</span></td>' +
-      '<td><span class="badge badge-approved">' + (u.status || 'active') + '</span></td>' +
-      '<td style="display:flex;gap:.3rem">' +
-      '<button class="btn btn-primary btn-sm" onclick="editUser(' + i + ')" title="Edit">✏️</button>' +
-      '<button class="btn btn-danger btn-sm" onclick="deleteUser(' + i + ')" title="Hapus">️</button>' +
-      '</td></tr>'
+      '<tr><td>' + (u.nama||'-') + '</td><td>' + (u.email||'-') + '</td><td><span class="badge badge-pending">' + (u.role||'staff') + '</span></td><td><span class="badge badge-approved">' + (u.status||'active') + '</span></td><td><button class="btn btn-primary btn-sm" onclick="openEditModal(' + i + ')">✏️ Edit</button></td></tr>'
     ).join('');
   };
 
-  window.openEditModal = function(index) {
+  window.openEditModal = function(idx) {
     const users = safeJSON('dreamos_users_db', []);
-    const user = users[index];
-    if (!user) return;
-    
-    document.getElementById('edit-user-index').value = index;
-    document.getElementById('edit-user-nama').value = user.nama || '';
-    document.getElementById('edit-user-email').value = user.email || '';
-    document.getElementById('edit-user-role').value = user.role || 'staff';
-    document.getElementById('edit-user-status').value = user.status || 'active';
-    
+    const u = users[idx];
+    if (!u) return;
+    document.getElementById('edit-user-index').value = idx;
+    document.getElementById('edit-user-nama').value = u.nama || '';
+    document.getElementById('edit-user-email').value = u.email || '';
+    document.getElementById('edit-user-role').value = u.role || 'staff';
+    document.getElementById('edit-user-status').value = u.status || 'active';
     document.getElementById('edit-user-modal').classList.add('show');
   };
 
@@ -1107,118 +849,21 @@ window.goHomeHandler = function() {
     document.getElementById('edit-user-modal').classList.remove('show');
   };
 
-  window.editUser = function(index) {
-    window.openEditModal(index);
-  };
-
-  window.saveEditUser = async function() {
-    const index = parseInt(document.getElementById('edit-user-index').value);
-    const nama = document.getElementById('edit-user-nama').value.trim();
-    const email = document.getElementById('edit-user-email').value.trim().toLowerCase();
-    const role = document.getElementById('edit-user-role').value;
-    const status = document.getElementById('edit-user-status').value;
-    
-    if (!nama || !email) return showToast('Nama dan Email wajib diisi!', 'danger');
-    
+  window.saveEditUser = function() {
+    const idx = parseInt(document.getElementById('edit-user-index').value);
     const users = safeJSON('dreamos_users_db', []);
-    if (!users[index]) return showToast('User tidak ditemukan', 'danger');
-    
-    // Update local
-    users[index].nama = nama;
-    users[index].email = email;
-    users[index].role = role;
-    users[index].status = status;
-    users[index].updated_at = new Date().toISOString();
-    saveJSON('dreamos_users_db', users);
-    
-    // Update ke Supabase jika ada
-    if (window.supabaseClient && users[index].id) {
-      try {
-        await window.supabaseClient.from('users')
-          .update({ nama, email, role, status, updated_at: users[index].updated_at })
-          .eq('id', users[index].id);
-      } catch(e) {
-        console.warn('Failed to update user in Supabase:', e);
-      }
+    if (users[idx]) {
+      users[idx].nama = document.getElementById('edit-user-nama').value;
+      users[idx].email = document.getElementById('edit-user-email').value;
+      users[idx].role = document.getElementById('edit-user-role').value;
+      users[idx].status = document.getElementById('edit-user-status').value;
+      saveJSON('dreamos_users_db', users);
+      renderUsers();
+      closeEditModal();
+      showToast('✅ User berhasil diperbarui');
     }
-    
-    closeEditModal();
-    renderUsers();
-    logActivity('EDIT_USER', 'Edit user: ' + nama + ' (' + email + ')');
-    showToast('✅ User berhasil diubah', 'success');
   };
 
-  window.createNewUser = async function() {
-    if (!isAdmin) return showToast('Akses ditolak', 'danger');
-    const nama  = document.getElementById('new-user-nama').value.trim();
-    const email = document.getElementById('new-user-email').value.trim().toLowerCase();
-    const role  = document.getElementById('new-user-role').value;
-    const pass  = document.getElementById('new-user-pass').value;
-    const divisi = 'umum';
-    if (!nama || !email || !pass) return showToast('Nama, Email, Password wajib!', 'danger');
-    if (pass.length < 6) return showToast('Password minimal 6 karakter', 'danger');
-
-    const users = safeJSON('dreamos_users_db', []);
-    if (users.find(u => (u.email||'').toLowerCase() === email)) return showToast('Email sudah terdaftar', 'danger');
-
-    if (!window.supabaseClient || !window.supabaseClient.functions) {
-      return showToast('⛔ Koneksi Auth tidak tersedia — user tidak dibuat.', 'danger');
-    }
-    showToast('⏳ Membuat user di Auth...');
-    let res;
-    try {
-      res = await window.supabaseClient.functions.invoke('create-user', {
-        body: { email: email, password: pass, nama: nama, role: role, divisi: divisi }
-      });
-    } catch (e) {
-      return showToast('⛔ Gagal hubungi Edge function: ' + (e.message || e), 'danger');
-    }
-    if (res.error) return showToast('⛔ Edge error: ' + (res.error.message || res.error), 'danger');
-    const payload = res.data || {};
-    if (payload.error) return showToast(' ' + payload.error, 'danger');
-
-    const authId = payload.id || payload.user_id || payload.userId
-      || (payload.user && (payload.user.id || payload.user.user_id))
-      || (payload.data && (payload.data.id || payload.data.user_id)) || null;
-
-    try {
-      const row = { email: email, nama: nama, role: role, divisi: divisi,
-                    status: 'active', source: 'edge-create', updated_at: new Date().toISOString() };
-      if (authId) row.id = authId;
-      await window.supabaseClient.from('users').upsert(row, { onConflict: 'email' });
-    } catch (e) {
-      console.warn('⚠️ Auth OK, mirror profil gagal:', e.message || e);
-      showToast('⚠️ Akun Auth jadi, tapi profil belum sync. Buka Users → refresh.', 'warn');
-    }
-
-    users.push({ id: authId || ('usr_' + Date.now()), email: email, nama: nama,
-                 role: role, divisi: divisi, status: 'active', source: 'edge-create',
-                 created_at: new Date().toISOString() });
-    saveJSON('dreamos_users_db', users);
-
-    document.getElementById('new-user-nama').value = '';
-    document.getElementById('new-user-email').value = '';
-    document.getElementById('new-user-pass').value = '';
-    renderUsers();
-    logActivity('CREATE_USER', 'User baru via Auth: ' + nama + ' (' + role + ')');
-    showToast('✅ User ' + email + ' dibuat & bisa login di device manapun.');
-  };
-
-  window.deleteUser = function(index) {
-    if (!isAdmin) return showToast('Akses ditolak', 'danger');
-    if (!confirm('Hapus user ini?')) return;
-    const users = safeJSON('dreamos_users_db', []);
-    const deleted = users.splice(index, 1)[0];
-    saveJSON('dreamos_users_db', users);
-    if (window.supabaseClient && deleted && deleted.id) {
-      window.supabaseClient.from('users').delete().eq('id', deleted.id).then(() => {}).catch(() => {});
-    }
-    showToast('🗑️ User dihapus');
-    renderUsers();
-    logActivity('DELETE_USER', 'Hapus: ' + (deleted ? deleted.nama : ''));
-  };
-
-  // ===== CHART =====
   window.renderChart = function() {
     if (typeof Chart === 'undefined') return;
     const existing = Chart.getChart('slaChart');
@@ -1227,31 +872,26 @@ window.goHomeHandler = function() {
     const bookings = safeJSON('dreamos_bookings');
     const approved = bookings.filter(b => (b.status || '').toLowerCase() === 'approved').length;
     const pending = bookings.filter(b => (b.status || '').toLowerCase() === 'pending').length;
-    const rejected = bookings.filter(b => (b.status || '').toLowerCase() === 'rejected').length;
 
     new Chart(document.getElementById('slaChart'), {
       type: 'doughnut',
       data: {
-        labels: ['Approved', 'Pending', 'Rejected'],
+        labels: ['Approved', 'Pending'],
         datasets: [{
-          data: [approved || 0, pending || 0, rejected || 0],
-          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-          borderWidth: 0,
-          hoverOffset: 4
+          data: [approved || 1, pending || 0],
+          backgroundColor: ['#10b981', '#f59e0b'],
+          borderWidth: 0
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } }
-        },
-        cutout: '65%'
+        plugins: { legend: { position: 'right', labels: { color: '#f1f5f9' } } },
+        cutout: '70%'
       }
     });
   };
 
-  // ===== METRICS =====
   function updateMetrics() {
     const tasks = collectTasks();
     const pending = tasks.filter(t => t.status === 'pending').length;
@@ -1260,276 +900,47 @@ window.goHomeHandler = function() {
 
     document.getElementById('m-pending').textContent = pending;
     document.getElementById('m-approval').textContent = pending;
-    document.getElementById('m-overdue').textContent = 0;
     document.getElementById('m-dana').textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
 
-    document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status || '') === 'pending').length;
-    document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status || '') === 'pending').length;
-    var __woOpen = safeJSON('dreamos_maintenance_tasks').filter(m => !['selesai','approved','disetujui'].includes((m.status||'').toLowerCase())).length; var __ma = safeJSON('dreamos_maint_assets', []), __mp = safeJSON('dreamos_maint_pm', []); var __eqOd = __ma.filter(function(m){ return __mp.some(function(p){ return p.assetId===m.id && p.status!=='hold' && (new Date(p.nextDue)-new Date())<0; }); }).length; document.getElementById('op-maint').textContent = __woOpen + (__eqOd ? (' (+'+__eqOd+')') : '');
+    document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status||'') === 'pending').length;
+    document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status||'') === 'pending').length;
+    document.getElementById('op-maint').textContent = safeJSON('dreamos_maintenance_tasks').filter(m => (m.status||'') === 'pending').length;
     document.getElementById('op-dana').textContent = danaPending.length;
   }
 
   window.refreshAll = function(forceSync) {
-    if (forceSync) showToast('🔄 Menyegarkan data...');
+    if (forceSync) showToast('🔄 Refreshing data...');
     updateMetrics();
     renderInbox();
     renderApprovals();
     renderActivity();
     renderChart();
-    if (isAdmin) {
-      syncUsersFromSupabase();
-      renderUsers();
-    }
-    if (!forceSync) showToast('Data diperbarui');
+    if (isAdmin) renderUsers();
   };
 
-
-  // 🌐 ENTERPRISE PRESENCE & ONLINE TRACKING ENGINE
-  let _presenceInterval = null;
-  let _onlineFetchInterval = null;
-
-  async function registerSession() {
-    if (!window.supabaseClient || !currentUser?.id) return;
-    try {
-      const device = navigator.userAgent.match(/Mobile|Android|iPhone|iPad|Windows|Macintosh|Linux/)?.[0] || 'Web';
-      await window.supabaseClient.from('user_sessions').upsert({
-        user_id: currentUser.id,
-        email: currentUser.email,
-        nama: currentUser.nama || currentUser.email.split('@')[0],
-        role: currentUser.role || 'staff',
-        last_seen: new Date().toISOString(),
-        device_info: device
-      });
-    } catch(e) { /* Silent fail if offline */ }
-  }
-
-  function startPresenceHeartbeat() {
-    if (_presenceInterval) clearInterval(_presenceInterval);
-    registerSession();
-    _presenceInterval = setInterval(registerSession, 30000); // Update tiap 30 detik
-  }
-
-  async function fetchOnlineUsers() {
-    const container = document.getElementById('online-users-list');
-    const countEl = document.getElementById('online-count');
-    if (!container) return;
-
-    if (!window.supabaseClient) {
-      container.innerHTML = '<p style="color:#f59e0b;text-align:center;padding:1rem;">📡 Mode Offline: Tracking cloud tidak aktif.</p>';
-      if(countEl) countEl.textContent = '-';
-      return;
-    }
-
-    try {
-      // User dianggap online jika heartbeat < 2 menit lalu
-      const twoMinsAgo = new Date(Date.now() - 120000).toISOString();
-      const { data, error } = await window.supabaseClient
-        .from('user_sessions')
-        .select('*')
-        .gte('last_seen', twoMinsAgo)
-        .order('last_seen', { ascending: false });
-
-      if (error) throw error;
-
-      if (countEl) countEl.textContent = data?.length || 0;
-
-      if (!data || data.length === 0) {
-        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:1rem;">Tidak ada user online saat ini.</p>';
-        return;
-      }
-
-      container.innerHTML = data.map(u => `
-        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);">
-          <span style="width:8px;height:8px;background:#10b981;border-radius:50%;box-shadow:0 0 6px #10b981;"></span>
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:0.85rem;">${esc(u.nama || u.email)}</div>
-            <div style="font-size:0.7rem;color:#94a3b8;">${u.role} • ${u.device_info || 'Web'}</div>
-          </div>
-          <div style="font-size:0.65rem;color:#64748b;">${new Date(u.last_seen).toLocaleTimeString('id-ID')}</div>
-        </div>
-      `).join('');
-
-      // Log aktivitas login baru (hanya jika belum tercatat di sesi ini)
-      if (!window._onlineNotified) {
-        window._onlineNotified = true;
-        logActivity('USER_ONLINE', `${currentUser.nama || currentUser.email} login dari ${navigator.userAgent.match(/Mobile|Android|iPhone|Windows/)?.[0] || 'Web'}`);
-      }
-    } catch(e) {
-      console.warn('⚠️ Fetch online users failed:', e.message);
-    }
-  }
-
-  // Cleanup saat tab ditutup / logout
-  window.addEventListener('beforeunload', async () => {
-    if (window.supabaseClient && currentUser?.id) {
-      try { await window.supabaseClient.from('user_sessions').delete().eq('user_id', currentUser.id); } catch(e){}
-    }
-  });
-
-  // ===== INIT =====
-  document.getElementById('sync-status').textContent = window.supabaseClient ? ' Online' : '🟡 Local';
-  
-  initCalSelectors();
-  updateMetrics();
-  renderChart();
-  logActivity('LOGIN_CC', 'Membuka Command Center v5.3');
-  setInterval(updateMetrics, 30000);
-  
-  // ===== ANNOUNCEMENTS MANAGER =====
-  window.saveAnnouncements = async function() {
-    const statusEl = document.getElementById('slide-save-status');
+  window.saveAnnouncements = function() {
     const s5 = document.getElementById('slide-5-input').value.trim();
     const s6 = document.getElementById('slide-6-input').value.trim();
     const s7 = document.getElementById('slide-7-input').value.trim();
 
-    statusEl.textContent = '💾 Menyimpan...';
-    statusEl.style.color = '#f59e0b';
-
-    const announcements = [
+    localStorage.setItem('dreamos_cmd_announcements', JSON.stringify([
       { type: 'management', msg: s5 },
       { type: 'umum', msg: s6 },
       { type: 'ucapan', msg: s7 }
-    ];
+    ]));
 
-    localStorage.setItem('dreamos_cmd_announcements', JSON.stringify(announcements));
-
-    statusEl.textContent = '✅ Tersimpan! Refresh Dashboard untuk melihat perubahan.';
-    statusEl.style.color = '#10b981';
-    
-    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    const st = document.getElementById('slide-save-status');
+    st.textContent = '✅ Slide tersimpan & langsung aktif!';
+    st.style.color = 'var(--neon)';
+    setTimeout(() => { st.textContent = ''; }, 3000);
   };
 
-  // ===== PDF SHARE =====
-  window.shareDirectPDF = async function(evt, type, id) {
-    var btn = evt ? (evt.currentTarget || evt.target) : null;
-    var origHTML = btn ? btn.innerHTML : '';
-    if (btn) { btn.innerHTML = '⏳ Merakit PDF...'; btn.disabled = true; }
-
-    try {
-      var data, title, docType;
-      if (type === 'booking') {
-        data = safeJSON('dreamos_bookings', []).find(function(x){ return x.id === id; });
-        title = 'FORM PERSETUJUAN BOOKING RUANGAN'; docType = 'Booking';
-      } else if (type === 'k3') {
-        data = safeJSON('dreamos_k3_reports', []).find(function(x){ return x.id === id; });
-        title = 'LAPORAN KESELAMATAN & KESEHATAN KERJA (K3)'; docType = 'K3 Report';
-      }
-      if (!data) throw new Error('Data tidak ditemukan!');
-
-      var statusColor = data.status === 'approved' ? '#10b981' : (data.status === 'rejected' ? '#ef4444' : '#f59e0b');
-      var statusText = data.status === 'approved' ? 'DISETUJUI' : (data.status === 'rejected' ? 'DITOLAK' : 'PENDING');
-      var qrData = 'DREAM-OS-VERIFY | ID: ' + data.id + ' | TYPE: ' + type.toUpperCase() + ' | STAT: ' + (data.status || 'pending').toUpperCase() + ' | APPR: ' + (data.approved_by || 'SYSTEM') + ' | DATE: ' + new Date().toISOString().split('T')[0];
-
-      var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
-      var logoUrl = window.location.origin + base + 'assets/logo-sultan.png';
-
-      await ensurePdfLibs();
-      if (typeof html2canvas === "undefined") throw new Error("Library html2canvas gagal dimuat.");
-      if (!(window.jspdf && window.jspdf.jsPDF) && typeof window.jsPDF === "undefined") throw new Error("Library jsPDF gagal dimuat.");
-      
-      var c = document.createElement('div');
-      c.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;padding:40px;font-family:"Segoe UI",Arial,sans-serif;color:#333;';
-
-      var rows = '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">No. Referensi</div><div style="font-size:15px;font-weight:bold;color:#0f172a;">' + data.id + '</div></div>' +
-        '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Status</div><div><span style="background:' + statusColor + ';color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:bold;">' + statusText + '</span></div></div>';
-
-      if (type === 'booking') {
-        rows += '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Ruangan</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.ruang || '-') + '</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Pemohon</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.nama_peminjam || '-') + '</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;grid-column:1/-1;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Waktu</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.tgl || '-') + ' (' + (data.jam_mulai || '-') + ' s/d ' + (data.jam_selesai || '-') + ')</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;grid-column:1/-1;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">🔌 Kebutuhan Alat</div><div style="font-size:14px;color:#0f172a;font-weight:600;white-space:pre-wrap;">' + (data.sarana_alat || 'Tidak ada alat yang diminta') + '</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;grid-column:1/-1;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Keperluan</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.keperluan || '-') + '</div></div>';
-      } else {
-        rows += '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Pelapor</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.nama_pelapor || data.pelapor_nama || '-') + '</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Kategori</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.kategori || '-') + '</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;grid-column:1/-1;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Lokasi</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.lokasi || '-') + '</div></div>' +
-          '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;grid-column:1/-1;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Deskripsi</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.deskripsi || '-') + '</div></div>';
-      }
-
-      rows += '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Disetujui Oleh</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.approved_by || '-') + '</div></div>' +
-        '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid #0ea5e9;margin-bottom:12px;"><div style="font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;">Tanggal Approval</div><div style="font-size:14px;color:#0f172a;font-weight:600;">' + (data.approved_at ? new Date(data.approved_at).toLocaleString('id-ID') : '-') + '</div></div>';
-
-      c.innerHTML = '<div style="text-align:center;border-bottom:3px solid #00ff9d;padding-bottom:15px;margin-bottom:20px;">' +
-        '<img src="' + logoUrl + '" alt="Dream OS" style="width:60px;height:60px;border-radius:12px;margin-bottom:8px;">' +
-        '<h1 style="margin:0;color:#0a0e27;font-size:24px;">DREAM OS • COMMAND CENTER</h1>' +
-        '<p style="margin:4px 0 0;color:#666;font-size:12px;">Enterprise Facility Management System • v1.0 Beta</p></div>' +
-        '<div style="text-align:center;font-size:20px;color:#00a86b;font-family:serif;margin-bottom:5px;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>' +
-        '<div style="text-align:center;font-size:13px;color:#0ea5e9;font-family:serif;margin-bottom:25px;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>' +
-        '<h2 style="text-align:center;font-size:18px;color:#333;margin-bottom:25px;">' + title + '</h2>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:25px;">' + rows + '</div>' +
-        '<div style="margin-top:40px;border-top:2px solid #e2e8f0;padding-top:20px;display:flex;justify-content:space-between;align-items:flex-end;">' +
-        '<div style="text-align:center;width:220px;"><div style="border-bottom:1px solid #333;height:45px;margin-bottom:5px;"></div><div style="font-weight:bold;font-size:14px;">' + (data.approved_by || 'Admin Command Center') + '</div><div style="font-size:11px;color:#64748b;">' + (data.approved_at ? new Date(data.approved_at).toLocaleDateString('id-ID') : '') + '</div></div>' +
-        '<div style="text-align:right;"><div id="tmpqr" style="display:inline-block;padding:5px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;"></div><div style="font-size:9px;color:#64748b;font-weight:bold;margin-top:4px;">SCAN UNTUK VERIFIKASI<br>ISO 27001 AUDIT TRAIL</div></div></div>' +
-        '<div style="margin-top:30px;font-size:10px;color:#94a3b8;font-weight:bold;">Dream OS v1.0 Beta • The Power Soul Of Shalawat</div>';
-
-      document.body.appendChild(c);
-
-      try {
-        var qr = qrcode(0, 'L');
-        qr.addData(qrData);
-        qr.make();
-        var qel = document.getElementById('tmpqr');
-        if (qel) qel.innerHTML = qr.createImgTag(3, 2);
-      } catch(e) { console.warn('QR render skip:', e); }
-
-      await new Promise(function(r){ setTimeout(r, 600); });
-
-      var canvas = await html2canvas(c, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
-      var imgData = canvas.toDataURL('image/jpeg', 0.95);
-      var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-      var pdf = new jsPDFClass('p', 'mm', 'a4');
-      var pw = pdf.internal.pageSize.getWidth();
-      var ph = canvas.height * pw / canvas.width;
-      var pageH = pdf.internal.pageSize.getHeight();
-      var heightLeft = ph, pos = 0;
-      pdf.addImage(imgData, 'JPEG', 0, pos, pw, ph);
-      heightLeft -= pageH;
-      while (heightLeft > 0) { pos = heightLeft - ph; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, pos, pw, ph); heightLeft -= pageH; }
-
-      document.body.removeChild(c);
-
-      var fname = 'DreamOS_' + docType + '_' + data.id + '.pdf';
-      var blob = pdf.output('blob');
-      var file = new File([blob], fname, { type: 'application/pdf' });
-
-      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({ files: [file], title: 'Dokumen ' + docType + ' - Dream OS', text: 'Bismillah, berikut lampiran dokumen resmi Dream OS v1.0 Beta.' });
-        if (btn) btn.innerHTML = '✅ Terkirim!';
-      } else {
-        pdf.save(fname);
-        if (btn) btn.innerHTML = '️ PDF Diunduh';
-        alert('PDF diunduh! Lampirkan manual ke WhatsApp.');
-      }
-    } catch(err) {
-      console.error('PDF Error:', err);
-      if (btn) btn.innerHTML = '❌ Gagal';
-      alert('Gagal membuat PDF: ' + (err.message || err));
-    } finally {
-      setTimeout(function(){ if (btn) { btn.innerHTML = origHTML || '📤 Share PDF'; btn.disabled = false; } }, 2500);
-    }
-  };
-
-  function __loadScript(src) {
-    return new Promise(function(resolve, reject) {
-      var s = document.createElement('script');
-      s.src = src; s.async = true;
-      s.onload = function(){ resolve(true); };
-      s.onerror = function(){ console.warn('Gagal muat lib:', src); resolve(false); };
-      document.head.appendChild(s);
-    });
-  }
-  function ensurePdfLibs() {
-    if (window.__pdfLibsP) return window.__pdfLibsP;
-    window.__pdfLibsP = (async function() {
-      var urls = [];
-      if (typeof qrcode === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js');
-      if (typeof html2canvas === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
-      if (!(window.jspdf && window.jspdf.jsPDF) && typeof window.jsPDF === 'undefined') urls.push('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
-      for (var i = 0; i < urls.length; i++) { try { await __loadScript(urls[i]); } catch(e) {} }
-    })();
-    return window.__pdfLibsP;
-  }
-
+  // INIT
+  document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local';
+  initCalSelectors();
+  updateMetrics();
+  renderChart();
+  setInterval(updateMetrics, 30000);
 })();
 </script>
 </body>
