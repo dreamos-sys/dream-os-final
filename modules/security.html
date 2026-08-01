@@ -11,7 +11,7 @@
     * { box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: #0a0e27; color: #e2e8f0; min-height: 100vh; margin: 0; }
     .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(0, 255, 157, 0.12); border-radius: 16px; padding: 1rem; margin-bottom: 0.8rem; }
-    .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 1000; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
+    .back-btn { position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 1rem; z-index: 100; background: rgba(30,41,59,0.9); border: 1px solid var(--neon); color: var(--neon); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
     .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.7rem; cursor: pointer; min-height: 44px; }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-success { background: #10b981; color: #fff; }
@@ -125,6 +125,12 @@
       .section-title { color: #000 !important; border-bottom: 2px solid #000 !important; }
       .glass { border: 1px solid #000 !important; background: #fff !important; }
     }
+
+    .sec-panel { position: relative; z-index: 1; pointer-events: auto; }
+    .sec-panel * { pointer-events: auto; }
+    .glass { position: relative; z-index: 1; }
+    .btn { position: relative; z-index: 2; cursor: pointer; }
+    .bk-input, textarea, select { position: relative; z-index: 2; }
 </style>
 </head>
 <body>
@@ -596,13 +602,27 @@
     }).join('');
   }
 
+// 🔧 Tab switching dengan event delegation yang lebih robust
   document.querySelectorAll('.sec-tab').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
       document.querySelectorAll('.sec-tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.sec-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.sec-panel').forEach(p => {
+        p.style.display = 'none';
+        p.style.visibility = 'hidden';
+      });
       this.classList.add('active');
       const target = document.getElementById(this.dataset.target);
-      if (target) target.style.display = 'block';
+      if (target) {
+        target.style.display = 'block';
+        setTimeout(() => {
+          target.style.visibility = 'visible';
+          target.querySelectorAll('.btn, .bk-input, textarea, select').forEach(el => {
+            el.style.pointerEvents = 'auto';
+          });
+        }, 50);
+      }
     });
   });
 
@@ -790,7 +810,13 @@
   const today = new Date().toLocaleDateString('id-ID');
   let logs = JSON.parse(localStorage.getItem('dreamos_security_logbook') || '[]').filter(l => l.tanggal === today).sort((a, b) => a.jam.localeCompare(b.jam));
   const w = window.open('', '_blank');
-  const html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}</style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table></body></html>`;
+  const html = `<!DOCTYPE html><html><head><title>Logbook 24/7</title><style>body{font-family:'Times New Roman',serif;padding:20px;color:#000;}h2{text-align:center;text-transform:uppercase;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}th{background:#f0f0f0;}
+    .sec-panel { position: relative; z-index: 1; pointer-events: auto; }
+    .sec-panel * { pointer-events: auto; }
+    .glass { position: relative; z-index: 1; }
+    .btn { position: relative; z-index: 2; cursor: pointer; }
+    .bk-input, textarea, select { position: relative; z-index: 2; }
+</style></head><body><h2>Logbook Kegiatan Keamanan 24 Jam</h2><p>Tanggal: ${today}</p><table><tr><th>Jam</th><th>Jenis</th><th>Uraian</th><th>Ket</th></tr>${logs.map(l=>`<tr><td>${l.jam}</td><td>${l.jenis}</td><td>${l.uraian}</td><td>${l.keterangan||'-'}</td></tr>`).join('')}</table></body></html>`;
   w.document.write(html);
   w.document.close();
   setTimeout(() => w.print(), 300);
@@ -1212,13 +1238,13 @@
   // 📋 LAPORAN HARIAN 24/7 ENGINE
   window.initDailyReport = function() {
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('report-date').value = today;
-    document.getElementById('report-date').addEventListener('change', loadDailyReport);
+    document.getElementById('report-date-daily').value = today;
+    document.getElementById('report-date-daily').addEventListener('change', loadDailyReport);
     loadDailyReport();
   };
 
   window.loadDailyReport = function() {
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
     renderPersonnelTable(data.personnel);
@@ -1226,7 +1252,7 @@
   };
 
   window.renderPersonnelTable = function(rows) {
-    const tbody = document.getElementById('personnel-table-body');
+    const tbody = document.getElementById('personnel-table-body-daily');
     if (!tbody) return;
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
@@ -1241,7 +1267,7 @@
   };
 
   window.renderActivityTable = function(rows) {
-    const tbody = document.getElementById('activity-table-body');
+    const tbody = document.getElementById('activity-table-body-daily');
     if (!tbody) return;
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
@@ -1255,7 +1281,7 @@
   };
 
   window.updatePersonnel = function(i, field, val) {
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
     if (!data.personnel[i]) data.personnel[i] = {};
@@ -1264,7 +1290,7 @@
   };
 
   window.updateActivity = function(i, field, val) {
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
     if (!data.activities[i]) data.activities[i] = {};
@@ -1273,7 +1299,7 @@
   };
 
   window.addPersonnelRow = function() {
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
     data.personnel.push({nama:'', jabatan:'', pagi:'', malam:'', ket:''});
@@ -1282,7 +1308,7 @@
   };
 
   window.addActivityRow = function() {
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
     data.activities.push({masuk:'', keluar:'', uraian:'', ket:''});
@@ -1292,7 +1318,7 @@
 
   window.deleteActivity = function(i) {
     if (!confirm('Hapus kegiatan ini?')) return;
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
     data.activities.splice(i, 1);
@@ -1306,7 +1332,7 @@
 
   window.resetDailyReport = function() {
     if (!confirm('Reset semua data tanggal ini?')) return;
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     localStorage.removeItem('dreamos_laporan_' + date);
     loadDailyReport();
   };
@@ -1360,12 +1386,12 @@
   // 📋 LAPORAN 24/7 ENGINE (UPGRADED)
   window.initDailyReport = function() {
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('report-date').value = today;
-    document.getElementById('report-date').addEventListener('change', loadDailyReport);
+    document.getElementById('report-date-daily').value = today;
+    document.getElementById('report-date-daily').addEventListener('change', loadDailyReport);
     loadDailyReport();
   };
   window.loadDailyReport = function() {
-    const date = document.getElementById('report-date').value;
+    const date = document.getElementById('report-date-daily').value;
     const key = 'dreamos_laporan_' + date;
     const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
     renderPersonnelTable(data.personnel);
@@ -1373,7 +1399,7 @@
     renderActivityTable('b', data.activitiesB);
   };
   window.renderPersonnelTable = function(rows) {
-    const tbody = document.getElementById('personnel-table-body');
+    const tbody = document.getElementById('personnel-table-body-daily');
     tbody.innerHTML = rows.length ? rows.map((r,i) => `
       <tr><td style="text-align:center;font-weight:700;">${i+1}</td>
       <td><input value="${esc(r.nama||'')}" onchange="updatePersonnel(${i},'nama',this.value)"></td>
@@ -1394,25 +1420,25 @@
     `).join('') : '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:0.8rem;">Kosong</td></tr>';
   };
   window.updatePersonnel = function(i,f,v) {
-  const key = 'dreamos_laporan_' + document.getElementById('report-date').value;
+  const key = 'dreamos_laporan_' + document.getElementById('report-date-daily').value;
   const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
   if (!d.personnel[i]) d.personnel[i] = {};
   d.personnel[i][f] = v;
   localStorage.setItem(key, JSON.stringify(d));
 };
   window.updateActivity = function(col,i,f,v) {
-  const key = 'dreamos_laporan_' + document.getElementById('report-date').value;
+  const key = 'dreamos_laporan_' + document.getElementById('report-date-daily').value;
   const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[]}');
   const arr = d['activities' + col.toUpperCase()];
   if (!arr[i]) arr[i] = {};
   arr[i][f] = v;
   localStorage.setItem(key, JSON.stringify(d));
 };
-  window.addPersonnelRow = function() { const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date').value); const j=JSON.parse(d||'{"personnel":[],"activitiesA":[],"activitiesB":[]}'); j.personnel.push({nama:'',jabatan:'',pagi:'',malam:'',ket:''}); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date').value,JSON.stringify(j)); renderPersonnelTable(j.personnel); };
-  window.addActivityRow = function(col) { const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date').value); const j=JSON.parse(d||'{"personnel":[],"activitiesA":[],"activitiesB":[]}'); j['activities'+col.toUpperCase()].push({masuk:'',keluar:'',uraian:'',ket:''}); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date').value,JSON.stringify(j)); renderActivityTable(col,j['activities'+col.toUpperCase()]); };
-  window.deleteActivity = function(col,i) { if(!confirm('Hapus?'))return; const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date').value); const j=JSON.parse(d); j['activities'+col.toUpperCase()].splice(i,1); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date').value,JSON.stringify(j)); renderActivityTable(col,j['activities'+col.toUpperCase()]); };
+  window.addPersonnelRow = function() { const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); const j=JSON.parse(d||'{"personnel":[],"activitiesA":[],"activitiesB":[]}'); j.personnel.push({nama:'',jabatan:'',pagi:'',malam:'',ket:''}); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date-daily').value,JSON.stringify(j)); renderPersonnelTable(j.personnel); };
+  window.addActivityRow = function(col) { const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); const j=JSON.parse(d||'{"personnel":[],"activitiesA":[],"activitiesB":[]}'); j['activities'+col.toUpperCase()].push({masuk:'',keluar:'',uraian:'',ket:''}); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date-daily').value,JSON.stringify(j)); renderActivityTable(col,j['activities'+col.toUpperCase()]); };
+  window.deleteActivity = function(col,i) { if(!confirm('Hapus?'))return; const d=localStorage.getItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); const j=JSON.parse(d); j['activities'+col.toUpperCase()].splice(i,1); localStorage.setItem('dreamos_laporan_'+document.getElementById('report-date-daily').value,JSON.stringify(j)); renderActivityTable(col,j['activities'+col.toUpperCase()]); };
   window.saveDailyReport = function() { alert('✅ Auto-save aktif. Data tersimpan di perangkat ini.'); };
-  window.resetDailyReport = function() { if(!confirm('Reset data tanggal ini?'))return; localStorage.removeItem('dreamos_laporan_'+document.getElementById('report-date').value); loadDailyReport(); };
+  window.resetDailyReport = function() { if(!confirm('Reset data tanggal ini?'))return; localStorage.removeItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); loadDailyReport(); };
 
 
 
@@ -1478,7 +1504,7 @@
       <div class="daily-header">
         <h3 style="margin:0;color:var(--neon);font-size:1rem;">📋 LAPORAN HARIAN KEAMANAN 24 JAM</h3>
         <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
-          <input type="date" id="report-date" class="bk-input" style="width:auto;padding:0.4rem;">
+          <input type="date" id="report-date-daily" class="bk-input" style="width:auto;padding:0.4rem;">
           <button onclick="saveDailyReport()" class="btn btn-success" style="font-size:0.7rem;">💾 Simpan</button>
           <button onclick="window.print()" class="btn btn-warning" style="font-size:0.7rem;">🖨️ Cetak</button>
           <button onclick="resetDailyReport()" class="btn btn-danger" style="font-size:0.7rem;">🗑️ Reset</button>
@@ -1498,7 +1524,7 @@
               <th>KETERANGAN</th>
             </tr>
           </thead>
-          <tbody id="personnel-table-body"></tbody>
+          <tbody id="personnel-table-body-daily"></tbody>
         </table>
       </div>
       <button onclick="addPersonnelRow()" class="btn btn-outline" style="width:100%;margin-top:0.5rem;font-size:0.7rem;">➕ Tambah Petugas</button>
@@ -1509,7 +1535,7 @@
           <h4>KOLOM A</h4>
           <table class="excel-grid" style="font-size:0.7rem;">
             <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN KEGIATAN</th><th style="width:80px;">KET</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="activity-a-body"></tbody>
+            <tbody id="activity-a-body-daily"></tbody>
           </table>
           <button onclick="addActivityRow('a')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
         </div>
@@ -1517,7 +1543,7 @@
           <h4>KOLOM B</h4>
           <table class="excel-grid" style="font-size:0.7rem;">
             <thead><tr><th style="width:50px;">MASUK</th><th style="width:50px;">KELUAR</th><th>URAIAN KEGIATAN</th><th style="width:80px;">KET</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="activity-b-body"></tbody>
+            <tbody id="activity-b-body-daily"></tbody>
           </table>
           <button onclick="addActivityRow('b')" class="btn btn-outline" style="width:100%;margin-top:0.3rem;font-size:0.65rem;">➕ Tambah</button>
         </div>
