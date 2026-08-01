@@ -7,7 +7,7 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Dream OS • Enterprise RBAC</title>
+  <title>Dream OS • Enterprise RBAC Pro</title>
   
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
@@ -18,7 +18,7 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/dashboard.css?v=6">
+  <link rel="stylesheet" href="css/dashboard.css?v=7">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -40,104 +40,83 @@
   <script src="idb-store.js?v=1"></script>
   
   <style>
-    :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.6); --glass-border: rgba(0, 255, 157, 0.2); }
+    :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.85); --glass-border: rgba(0, 255, 157, 0.25); }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
     canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
-    .glass { position: relative; z-index: 1; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 24px; transform: translate3d(0,0,0); }
+    .glass { position: relative; z-index: 1; background: var(--glass-bg) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 20px; transform: translate3d(0,0,0); }
     #login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 14, 39, 0.95); z-index: 10000; transition: opacity 0.5s; }
     .login-container { text-align: center; max-width: 400px; width: 100%; padding: 2rem; }
-    .login-logo { width: 100px; height: 100px; border-radius: 24px; margin-bottom: 2rem; }
-    .arabic { font-family: 'Scheherazade New', serif; font-size: 2.2rem; color: var(--neon); text-shadow: 0 0 30px rgba(0,255,157,0.6); margin-bottom: 0.5rem; }
-    .shalawat { font-family: 'Scheherazade New', serif; font-size: 1rem; color: var(--accent); margin-bottom: 2rem; }
-    .input-wrapper { position: relative; margin-bottom: 1.5rem; }
-    .pin-input { width: 100%; padding: 1.2rem 4rem 1.2rem 1.5rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(0,255,157,0.3); border-radius: 16px; color: var(--neon); font-family: 'Orbitron', monospace; font-size: 1.2rem; text-align: center; outline: none; }
-    .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.5rem; color: var(--neon); user-select: none; }
-    .access-btn { width: 100%; padding: 1.2rem; background: #10b981; color: white; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+    .login-logo { width: 90px; height: 90px; border-radius: 24px; margin-bottom: 1.5rem; }
+    .arabic { font-family: 'Scheherazade New', serif; font-size: 2rem; color: var(--neon); text-shadow: 0 0 25px rgba(0,255,157,0.5); margin-bottom: 0.4rem; }
+    .shalawat { font-family: 'Scheherazade New', serif; font-size: 0.95rem; color: var(--accent); margin-bottom: 1.5rem; }
+    .input-wrapper { position: relative; margin-bottom: 1.2rem; }
+    .pin-input { width: 100%; padding: 1.1rem 4rem 1.1rem 1.2rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(0,255,157,0.3); border-radius: 14px; color: var(--neon); font-family: 'Orbitron', monospace; font-size: 1.1rem; text-align: center; outline: none; }
+    .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem; color: var(--neon); user-select: none; }
+    .access-btn { width: 100%; padding: 1.1rem; background: #10b981; color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
     .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
-    .access-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-    .error-msg { color: var(--warning); font-size: 0.9rem; margin-top: 1rem; display: none; }
+    .error-msg { color: var(--warning); font-size: 0.85rem; margin-top: 0.8rem; display: none; }
     #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
-    .header-main { padding: 2rem 1.5rem 1rem; text-align: center; margin: 1.5rem; }
+    .header-main { padding: 1.5rem; text-align: center; margin: 1rem 1rem 0.5rem; }
     
-    /* 9-Grid Module Navigation */
-    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1.5rem; }
-    .mod-card { background: rgba(15, 23, 42, 0.75); border: 1px solid var(--glass-border); border-radius: 18px; padding: 1rem 0.6rem; text-align: center; cursor: pointer; position: relative; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); backdrop-filter: blur(12px); }
-    .mod-card:hover { transform: translateY(-5px); border-color: var(--neon); box-shadow: 0 12px 40px rgba(0,255,157,0.3); }
-    .mod-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
-    .mod-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--neon); }
-    .mod-status { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981; }
+    /* 9-Grid Module Navigation - Ergonomic Thumb Zone */
+    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1rem; }
+    .mod-card { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); border-radius: 16px; padding: 0.9rem 0.5rem; text-align: center; cursor: pointer; position: relative; transition: all 0.25s ease; backdrop-filter: blur(12px); }
+    .mod-card:active { transform: scale(0.96); }
+    .mod-card:hover { transform: translateY(-3px); border-color: var(--neon); box-shadow: 0 10px 30px rgba(0,255,157,0.25); }
+    .mod-icon { font-size: 2rem; margin-bottom: 0.4rem; }
+    .mod-title { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--neon); letter-spacing: 0.3px; }
+    .mod-status { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
 
-    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding: 12px 8px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); background: rgba(10, 14, 39, 0.95); border-top: 2px solid rgba(0, 255, 157, 0.3); display: none; }
-    .nav-container { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(0, 255, 157, 0.2); border-radius: 16px; cursor: pointer; transition: all 0.3s; min-height: 48px; }
-    .nav-item.active { background: rgba(0, 255, 157, 0.15); border-color: var(--neon); transform: translateY(-4px); box-shadow: 0 0 20px rgba(0,255,157,0.3); }
-    .nav-icon-wrapper { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(0, 255, 157, 0.2); border-radius: 12px; }
-    .nav-icon { font-size: 1.5rem; }
-    .nav-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #cbd5e1; }
+    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding: 10px 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); background: rgba(10, 14, 39, 0.96); border-top: 2px solid rgba(0, 255, 157, 0.3); display: none; backdrop-filter: blur(16px); }
+    .nav-container { display: flex; gap: 6px; max-width: 600px; margin: 0 auto; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 255, 157, 0.2); border-radius: 12px; cursor: pointer; transition: all 0.25s; min-height: 44px; }
+    .nav-item.active { background: rgba(0, 255, 157, 0.15); border-color: var(--neon); transform: translateY(-2px); box-shadow: 0 0 15px rgba(0,255,157,0.25); }
+    .nav-icon-wrapper { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(0, 255, 157, 0.15); border-radius: 10px; }
+    .nav-icon { font-size: 1.25rem; }
+    .nav-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #cbd5e1; }
     .nav-item.active .nav-label { color: var(--neon); }
     
-    .system-info-box { text-align: center; font-size: 0.75rem; line-height: 1.4; color: #cbd5e1; margin: 1.5rem; padding: 1.5rem; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-spinner { width: 30px; height: 30px; border: 3px solid rgba(0,255,157,0.3); border-top-color: var(--neon); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+    .system-info-box { text-align: center; font-size: 0.7rem; line-height: 1.4; color: #cbd5e1; margin: 1rem; padding: 1.2rem; }
     
-    @media screen and (max-width: 768px) {
-      input, select, textarea { font-size: 16px !important; -webkit-appearance: none; border-radius: 12px; }
-    }
-    
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-    :focus-visible { outline: 3px solid var(--neon) !important; outline-offset: 2px !important; }
-    .skip-link { position: absolute; top: -100px; left: 0; background: var(--neon); color: #000; padding: 8px 16px; z-index: 100000; font-weight: 700; border-radius: 0 0 8px 0; }
-    .skip-link:focus { top: 0; }
-    
-    .pwa-install-banner { display: none; position: fixed; bottom: 80px; left: 10px; right: 10px; background: rgba(0,255,157,0.1); border: 1px solid #00ff9d; border-radius: 12px; padding: 12px; z-index: 9999; text-align: center; }
+    .pwa-install-banner { display: none; position: fixed; bottom: 75px; left: 10px; right: 10px; background: rgba(0,255,157,0.15); border: 1px solid #00ff9d; border-radius: 12px; padding: 10px; z-index: 9999; text-align: center; }
     .pwa-install-banner.show { display: block; }
-    .cast-btn { position: fixed; bottom: 100px; right: 15px; z-index: 9998; background: rgba(0,255,157,0.2); border: 1px solid #00ff9d; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .cast-btn { position: fixed; bottom: 85px; right: 15px; z-index: 9998; background: rgba(0,255,157,0.2); border: 1px solid #00ff9d; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .cast-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; align-items: center; justify-content: center; }
     .cast-modal.show { display: flex; }
-    .notif-bell { position: relative; cursor: pointer; font-size: 1.4rem; margin-right: 0.8rem; }
-    .notif-badge { position: absolute; top: -6px; right: -8px; background: #e11d48; color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.5rem; font-weight: 700; display: none; }
-    .notif-panel { position: fixed; top: 60px; right: 10px; width: 320px; max-height: 400px; overflow-y: auto; background: rgba(15,23,42,0.95); border: 1px solid #00ff9d; border-radius: 12px; z-index: 10001; display: none; padding: 0.5rem; }
+    .notif-bell { position: relative; cursor: pointer; font-size: 1.3rem; margin-right: 0.5rem; }
+    .notif-badge { position: absolute; top: -5px; right: -6px; background: #e11d48; color: white; border-radius: 50%; padding: 0.05rem 0.35rem; font-size: 0.5rem; font-weight: 700; display: none; }
+    .notif-panel { position: fixed; top: 55px; right: 10px; width: 300px; max-height: 380px; overflow-y: auto; background: rgba(15,23,42,0.95); border: 1px solid #00ff9d; border-radius: 14px; z-index: 10001; display: none; padding: 0.5rem; }
   
-    #dash-slider { position: relative; overflow: hidden; margin: 1rem 1.5rem; min-height: 85px; border-radius: 16px; }
+    #dash-slider { position: relative; overflow: hidden; margin: 0.8rem 1rem; min-height: 80px; border-radius: 16px; }
     .slide-track { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
-    .slide-item { min-width: 100%; padding: 1rem 1.2rem; text-align: center; font-size: 0.85rem; line-height: 1.5; color: #e2e8f0; }
+    .slide-item { min-width: 100%; padding: 0.9rem 1rem; text-align: center; font-size: 0.8rem; line-height: 1.4; color: #e2e8f0; }
     .slide-item strong { color: var(--neon); }
-    .slide-indicators { display: flex; justify-content: center; gap: 6px; margin-top: 0.5rem; }
-    .slide-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: 0.3s; cursor: pointer; }
+    .slide-indicators { display: flex; justify-content: center; gap: 5px; margin-top: 0.3rem; }
+    .slide-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: 0.3s; cursor: pointer; }
     .slide-dot.active { background: var(--neon); transform: scale(1.3); }
     
-    #kpi-strip { display: flex; gap: 0.6rem; margin: 0.8rem 1.5rem; flex-wrap: wrap; }
-    .kpi-chip { flex: 1; min-width: 140px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.7rem 0.9rem; text-align: center; }
-    .kpi-chip strong { display: block; font-size: 1.1rem; color: var(--neon); }
-    .kpi-chip span { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    #kpi-strip { display: flex; gap: 0.5rem; margin: 0.8rem 1rem; flex-wrap: wrap; }
+    .kpi-chip { flex: 1; min-width: 130px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.6rem 0.8rem; text-align: center; }
+    .kpi-chip strong { display: block; font-size: 1.05rem; color: var(--neon); }
+    .kpi-chip span { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
   
-    #health-bar { display: flex; gap: 0.5rem; align-items: center; justify-content: center; margin: 0.5rem 1.5rem; font-size: 0.7rem; color: #cbd5e1; flex-wrap: wrap; }
-    .health-badge { padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 600; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+    #health-bar { display: flex; gap: 0.4rem; align-items: center; justify-content: center; margin: 0.4rem 1rem; font-size: 0.65rem; color: #cbd5e1; flex-wrap: wrap; }
+    .health-badge { padding: 0.15rem 0.4rem; border-radius: 6px; font-weight: 600; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
     .health-ok { color: #10b981; border-color: rgba(16,185,129,0.3); }
     .health-err { color: #ef4444; border-color: rgba(239,68,68,0.3); }
 
-    #cmd-palette { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 99998; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh; }
-    #cmd-palette.show { display: flex; }
-    .cmd-box { width: 90%; max-width: 520px; background: #0f172a; border: 1px solid rgba(0,255,157,0.25); border-radius: 16px; padding: 1rem; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-    .cmd-input { width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; outline: none; }
-    .cmd-list { max-height: 280px; overflow-y: auto; margin-top: 0.8rem; }
-    .cmd-item { padding: 0.7rem 0.8rem; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: #cbd5e1; font-size: 0.85rem; }
-    .cmd-item:hover, .cmd-item.active { background: rgba(0,255,157,0.1); color: #fff; }
-    .cmd-hint { font-size: 0.65rem; color: #64748b; background: rgba(255,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 4px; }
-    .cmd-footer { margin-top: 0.8rem; font-size: 0.65rem; color: #64748b; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
-
-    .toast-container { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
-    .toast { background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 0.8rem 1.2rem; border-radius: 12px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; }
+    .toast-container { position: fixed; bottom: 4.5rem; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 0.4rem; pointer-events: none; }
+    .toast { background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 0.7rem 1rem; border-radius: 10px; font-size: 0.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; }
     .toast.error { border-left: 4px solid #ef4444; }
     .toast.success { border-left: 4px solid #10b981; }
 
-    /* 📊 SINGLE UNIFIED CANVAS CHART CONTAINER (BURSA / MARKET STYLE) - FULL WIDTH */
-    #unified-chart-container { margin: 1rem 1.5rem; padding: 1.2rem; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(0, 255, 157, 0.3); border-radius: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-    .chart-title { font-size: 0.95rem; font-weight: 800; color: var(--neon); font-family: 'Orbitron', monospace; display: flex; align-items: center; gap: 0.5rem; }
-    .chart-subtitle { font-size: 0.7rem; color: #94a3b8; }
-    .unified-canvas-wrapper { position: relative; width: 100%; height: 300px; }
+    /* 📊 SINGLE UNIFIED CANVAS CHART CONTAINER (BURSA / MARKET STYLE) - PRO OPTIMIZED */
+    #unified-chart-container { margin: 0.8rem 1rem; padding: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+    .chart-title { font-size: 0.85rem; font-weight: 800; color: var(--neon); font-family: 'Orbitron', monospace; display: flex; align-items: center; gap: 0.4rem; }
+    .chart-subtitle { font-size: 0.65rem; color: #94a3b8; }
+    .unified-canvas-wrapper { position: relative; width: 100%; height: 280px; }
   </style>
   <script src="js/bcrypt.min.js"></script>
   <script src="js/auth-security.js"></script>
@@ -150,7 +129,7 @@
 
   <div class="pwa-install-banner" id="pwa-banner">
      Install Dream OS di HP Anda untuk akses cepat!
-    <button class="pwa-install-btn" onclick="installPWA()" style="background:#00ff9d;color:#000;border:none;padding:8px 16px;border-radius:8px;margin:8px 0;cursor:pointer;">Install Sekarang</button>
+    <button class="pwa-install-btn" onclick="installPWA()" style="background:#00ff9d;color:#000;border:none;padding:6px 12px;border-radius:6px;margin:6px 0;cursor:pointer;font-weight:700;">Install Sekarang</button>
   </div>
 
   <div id="login-screen">
@@ -159,26 +138,26 @@
       <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
       <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
       <div class="input-wrapper">
-        <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email" aria-label="Email address">
+        <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
       </div>
       <div class="input-wrapper">
-        <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password" aria-label="Password">
-        <span class="toggle-pin" id="toggle-pin" role="button" aria-label="Toggle password visibility">🔒</span>
+        <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
+        <span class="toggle-pin" id="toggle-pin" role="button">🔒</span>
       </div>
-      <button class="access-btn" id="login-button" aria-label="Login button"> ACCESS CORE</button>
+      <button class="access-btn" id="login-button">ACCESS CORE</button>
       <div class="error-msg" id="error-msg" role="alert"></div>
     </div>
   </div>
 
   <div id="notif-panel" class="notif-panel"></div>
   
-  <button class="cast-btn" onclick="openCastModal()" title="Cast & Present" aria-label="Cast and Present">📺</button>
+  <button class="cast-btn" onclick="openCastModal()" title="Cast & Present">📺</button>
   <div class="cast-modal" id="cast-modal">
-    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.4rem 1.2rem;max-width:440px;width:92%;text-align:center;">
+    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;">
       <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
-      <button onclick="shareToTV()" style="width:100%;padding:12px;margin:6px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;">📡 Kirim Link (Share)</button>
-      <button onclick="presentHere()" style="width:100%;padding:12px;margin:6px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;">🖥️ Fullscreen di Layar Ini</button>
-      <button onclick="closeCastModal()" style="width:100%;padding:12px;margin:6px 0;background:rgba(239,68,68,0.1);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;">✕ Tutup</button>
+      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">📡 Kirim Link (Share)</button>
+      <button onclick="presentHere()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">🖥️ Fullscreen di Layar Ini</button>
+      <button onclick="closeCastModal()" style="width:100%;padding:10px;margin:5px 0;background:rgba(239,68,68,0.1);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup</button>
     </div>
   </div>
 
@@ -227,7 +206,6 @@
         try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); } catch(e) { return {}; }
       }
       window.getUserRole = function() { return getStoredUser().role || 'staff'; };
-      function canAccess(moduleId) { return (ROLE_PERMISSIONS[window.getUserRole()] || ROLE_PERMISSIONS.staff || []).includes(moduleId); }
 
       const loginBtn = document.getElementById('login-button');
       const emailInput = document.getElementById('email-input');
@@ -253,7 +231,7 @@
           showDashboard();
         } catch(e) {
           errorEl.textContent = '⛔ ' + e.message; errorEl.style.display = 'block';
-          loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
+          loginBtn.textContent = 'ACCESS CORE'; loginBtn.disabled = false;
         }
       });
 
@@ -270,16 +248,33 @@
         
         container.innerHTML = `
           <div class="header-main glass" style="position: relative;">
-            <span class="notif-bell" onclick="toggleNotif()" title="Notifikasi" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.4rem; cursor: pointer;">🔔<span class="notif-badge" id="notif-badge"></span></span>
-            <img src="assets/logo-sultan.png" class="login-logo" style="width:60px;height:60px; margin-bottom: 1rem;" onerror="this.style.display='none'">
+            <span class="notif-bell" onclick="toggleNotif()" title="Notifikasi" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.3rem; cursor: pointer;">🔔<span class="notif-badge" id="notif-badge"></span></span>
+            <img src="assets/logo-sultan.png" class="login-logo" style="width:55px;height:55px; margin-bottom: 0.8rem;" onerror="this.style.display='none'">
             <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
-            <div class="shalawat" style="margin-bottom:0.5rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <div class="shalawat" style="margin-bottom:0.4rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
           </div>
           
           <div id="kpi-strip"></div>
           <div id="health-bar"></div>
 
-          <div id="dash-slider" class="glass">
+          <!-- 📱 9-GRID MODUL UTAMA DI ATAS (ERGONOMIC THUMB ZONE) -->
+          <div class="module-grid" id="module-grid"></div>
+
+          <!-- 📊 SINGLE UNIFIED CANVAS CHART (BURSA / MARKET STYLE) - DI BAWAH MODUL -->
+          <div id="unified-chart-container">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">📊 Enterprise Live Analytics (8 Modul Utama)</div>
+                <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js Dual-Axis (Bar & Growth Trend)</div>
+              </div>
+              <div style="font-size:0.65rem; color:var(--neon); background:rgba(0,255,157,0.1); padding:0.25rem 0.5rem; border-radius:6px; border:1px solid rgba(0,255,157,0.3);">LIVE SYNC</div>
+            </div>
+            <div class="unified-canvas-wrapper">
+              <canvas id="unifiedMarketChart"></canvas>
+            </div>
+          </div>
+
+          <div id="dash-slider" class="glass" style="margin-top:0.8rem;">
             <div class="slide-track" id="slide-track">
               <div class="slide-item" id="slide-1">⏳ Memuat Jadwal Security...</div>
               <div class="slide-item" id="slide-2">⏳ Memuat Booking...</div>
@@ -287,22 +282,6 @@
             </div>
             <div class="slide-indicators" id="slide-dots"></div>
           </div>
-
-          <!-- 📊 SINGLE UNIFIED CANVAS CHART (BURSA / MARKET STYLE) - SATU LAYAR MENYATU -->
-          <div id="unified-chart-container">
-            <div class="chart-header">
-              <div>
-                <div class="chart-title">📊 Enterprise Live Analytics (8 Modul Utama)</div>
-                <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js Dual-Axis (Bar & Growth Trend)</div>
-              </div>
-              <div style="font-size:0.7rem; color:var(--neon); background:rgba(0,255,157,0.1); padding:0.3rem 0.6rem; border-radius:8px; border:1px solid rgba(0,255,157,0.3);">LIVE SYNC</div>
-            </div>
-            <div class="unified-canvas-wrapper">
-              <canvas id="unifiedMarketChart"></canvas>
-            </div>
-          </div>
-
-          <div class="module-grid" id="module-grid"></div>
 
           <div class="system-info-box glass">
             <strong>Dream OS Enterprise RBAC v1.0 Beta</strong><br>
@@ -335,7 +314,7 @@
           });
         }
 
-        // Render Single Unified Chart
+        // Render Pro Unified Chart with X-Axis Rotation & Padding
         setTimeout(() => {
           const canvasEl = document.getElementById('unifiedMarketChart');
           if (!canvasEl || typeof Chart === 'undefined') return;
@@ -345,7 +324,7 @@
           const dana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
           const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
 
-          const labels = ['Total Booking', 'Booking Pending', 'Total K3', 'K3 Pending', 'Pengajuan Dana', 'Dana Pending', 'Total Stok', 'Stok Menipis'];
+          const labels = ['Tot Book', 'Book Pend', 'Tot K3', 'K3 Pend', 'Peng Dana', 'Dana Pend', 'Tot Stok', 'Stok Min'];
           const barData = [
             bookings.length, bookings.filter(b=>b.status==='pending').length,
             k3.length, k3.filter(k=>k.status==='pending').length,
@@ -362,7 +341,7 @@
               labels: labels,
               datasets: [
                 {
-                  label: 'Volume Modul (Batang)',
+                  label: 'Volume (Batang)',
                   data: barData,
                   backgroundColor: 'rgba(0, 255, 157, 0.65)',
                   borderColor: '#00ff9d',
@@ -372,14 +351,14 @@
                   order: 2
                 },
                 {
-                  label: 'Indeks Pertumbuhan (%)',
+                  label: 'Pertumbuhan (%)',
                   data: lineTrendData,
                   type: 'line',
                   borderColor: '#0ea5e9',
                   backgroundColor: 'rgba(14, 165, 233, 0.2)',
-                  borderWidth: 3,
+                  borderWidth: 2.5,
                   pointBackgroundColor: '#0ea5e9',
-                  pointRadius: 4,
+                  pointRadius: 3,
                   tension: 0.35,
                   yAxisID: 'y1',
                   order: 1
@@ -390,13 +369,21 @@
               responsive: true,
               maintainAspectRatio: false,
               plugins: {
-                legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 10 } } },
+                legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } },
                 tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' }
               },
               scales: {
-                x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 25 }, grid: { display: false } },
-                y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', callback: v => v + '%' }, grid: { display: false } }
+                x: { 
+                  ticks: { 
+                    color: '#94a3b8', 
+                    font: { size: 9 }, 
+                    maxRotation: 35, 
+                    minRotation: 35 
+                  }, 
+                  grid: { display: false } 
+                },
+                y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
               }
             }
           });
