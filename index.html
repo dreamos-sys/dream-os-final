@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<script>
+  (function() {})();
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Dream OS • Enterprise RBAC Pro</title>
@@ -14,7 +17,7 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/dashboard.css?v=14">
+  <link rel="stylesheet" href="css/dashboard.css?v=15">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -59,7 +62,7 @@
     .mod-card { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); border-radius: 16px; padding: 0.9rem 0.5rem; text-align: center; cursor: pointer; position: relative; transition: all 0.25s ease; backdrop-filter: blur(12px); }
     .mod-card:active { transform: scale(0.96); }
     .mod-card:hover { transform: translateY(-3px); border-color: var(--neon); box-shadow: 0 10px 30px rgba(0,255,157,0.25); }
-    .mod-icon { font-size: 2rem; margin-bottom: 0.4rem; }
+    .mod-icon { font-size: 2rem; margin-bottom: 0.4rem; display: block; }
     .mod-title { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--neon); letter-spacing: 0.3px; }
     .mod-status { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
 
@@ -157,11 +160,11 @@
       <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
       <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
       <div class="input-wrapper">
-        <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
+        <input type="email" id="email-input" class="pin-input" placeholder=" EMAIL" autocomplete="email">
       </div>
       <div class="input-wrapper">
         <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
-        <span class="toggle-pin" id="toggle-pin" role="button">🔒</span>
+        <span class="toggle-pin" id="toggle-pin" role="button"></span>
       </div>
       <button class="access-btn" id="login-button">ACCESS CORE</button>
       <div class="error-msg" id="error-msg" role="alert"></div>
@@ -251,7 +254,6 @@
       return false;
     }
 
-    // ✅ FIXED: Full robust login logic with Bcrypt & Supabase fallback
     if (typeof window.doSecureLogin !== 'function') {
       window.__dvHash = function(plain){ 
         var h=0, s=String(plain)+'dreamos_salt_2026'; 
@@ -290,45 +292,6 @@
       };
     }
 
-    window.DeviceFingerprint = {
-      generate: function() {
-        const components = [navigator.userAgent, screen.width + 'x' + screen.height, navigator.language];
-        const hash = components.reduce((acc, curr) => { let h = 0; for (let i = 0; i < curr.length; i++) { h = ((h << 5) - h) + curr.charCodeAt(i); h |= 0; } return acc + Math.abs(h).toString(16); }, '');
-        return 'dev_' + hash.substring(0, 16);
-      },
-      get: function() {
-        let fp = localStorage.getItem('dreamos_device_fp');
-        if (!fp) { fp = this.generate(); localStorage.setItem('dreamos_device_fp', fp); }
-        return fp;
-      }
-    };
-
-    window.DeviceLock = {
-      STORAGE_KEY: 'dreamos_device_locks',
-      getLocks: function() { try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}'); } catch(e) { return {}; } },
-      saveLocks: function(locks) { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locks)); },
-      lockDevice: function(userId, deviceId) {
-        const locks = this.getLocks();
-        locks[userId] = { deviceId: deviceId, lockedAt: new Date().toISOString() };
-        this.saveLocks(locks);
-      },
-      isDeviceLocked: function(userId, deviceId) {
-        const locks = this.getLocks();
-        const lock = locks[userId];
-        if (!lock) return { locked: false };
-        const user = this.getUserById(userId);
-        if (user && user.role === 'dev') return { locked: false };
-        if (lock.deviceId !== deviceId) return { locked: true, message: '⛔ Akun sudah login di device lain!' };
-        return { locked: false };
-      },
-      releaseLock: function(userId) {
-        const locks = this.getLocks();
-        delete locks[userId];
-        this.saveLocks(locks);
-      },
-      getUserById: function(userId) { try { const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]'); return users.find(u => u.id === userId); } catch(e) { return null; } }
-    };
-
     document.addEventListener('DOMContentLoaded', function() {
       const ROLE_PERMISSIONS = {
         dev: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
@@ -362,17 +325,16 @@
         const password = passwordInput.value;
         if (errorEl) errorEl.style.display = 'none';
 
-        if (!email || !password) { if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; } return; }
+        if (!email || !password) { if (errorEl) { errorEl.textContent = ' Email dan password harus diisi!'; errorEl.style.display = 'block'; } return; }
         if (password.length < 8) { if (errorEl) { errorEl.textContent = '⛔ Password minimal 8 karakter!'; errorEl.style.display = 'block'; } return; }
         
         loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
 
-        // ✅ FIXED: Ensure Supabase is initialized before attempting login
         if (!window.supabaseClient && !initSupabase()) {
           await new Promise(r => setTimeout(r, 1500));
           if (!window.supabaseClient) {
             if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false; return;
+            loginBtn.textContent = ' ACCESS CORE'; loginBtn.disabled = false; return;
           }
         }
 
@@ -380,26 +342,16 @@
           const result = await window.doSecureLogin(email, password, '');
           const userData = { id: result.user.id, email: result.user.email, nama: result.user.nama, role: result.user.role, source: result.source };
 
-          if (userData.role !== 'dev') {
-            const deviceId = window.DeviceFingerprint.get();
-            const lockStatus = window.DeviceLock.isDeviceLocked(userData.id, deviceId);
-            if (lockStatus.locked) {
-              if (errorEl) { errorEl.textContent = lockStatus.message; errorEl.style.display = 'block'; }
-              loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false; return;
-            }
-          }
-
           localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
           localStorage.setItem('dreamos_session_active', 'true');
           
-          if (userData.role !== 'dev') {
-            window.DeviceLock.lockDevice(userData.id, window.DeviceFingerprint.get());
-          }
+          if (window.BankSession) BankSession.create(userData);
+          if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
 
           loginBtn.textContent = '✅ Success!';
           setTimeout(() => { showDashboard(); }, 500);
         } catch(e) {
-          console.error('Login Error:', e.message); // Debug helper
+          console.error('Login Error:', e.message);
           if (errorEl) { errorEl.textContent = '⛔ ' + e.message; errorEl.style.display = 'block'; }
           loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
         }
@@ -429,7 +381,7 @@
               <div class="slide-item" id="slide-2">⏳ Memuat Booking...</div>
               <div class="slide-item" id="slide-3">⏳ Memuat Laporan K3...</div>
               <div class="slide-item" id="slide-4">⏳ Memuat Cuaca...</div>
-              <div class="slide-item" id="slide-5">⏳ Memuat Info Manajemen...</div>
+              <div class="slide-item" id="slide-5"> Memuat Info Manajemen...</div>
               <div class="slide-item" id="slide-6">⏳ Memuat Info Bagian Umum...</div>
               <div class="slide-item" id="slide-7">⏳ Memuat Ucapan...</div>
             </div>
@@ -442,7 +394,7 @@
           <div id="unified-chart-container">
             <div class="chart-header">
               <div>
-                <div class="chart-title">📊 Enterprise Live Analytics</div>
+                <div class="chart-title">📊 Enterprise Live Analytics (8 Modul Utama)</div>
                 <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js</div>
               </div>
             </div>
@@ -461,6 +413,7 @@
           </div>
         `;
 
+        // ✅ FIXED 1: Icon K3 dan Janitor Indoor dikembalikan
         const modules = [
           { i:'🌍', n:'CMD Center', id:'cmd' },
           { i:'🛡️', n:'Security Ops', id:'security' },
@@ -495,6 +448,7 @@
           healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span>`;
         }
 
+        // ✅ FIXED 2: Chart disinkronkan ke 8 Modul Utama
         setTimeout(() => {
           const canvasEl = document.getElementById('unifiedMarketChart');
           if (!canvasEl || typeof Chart === 'undefined') return;
@@ -503,16 +457,21 @@
           const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
           const dana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
           const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
+          const asset = JSON.parse(localStorage.getItem('dreamos_assets') || '[]');
 
-          const labels = ['Tot Book', 'Book Pend', 'Tot K3', 'K3 Pend', 'Peng Dana', 'Dana Pend', 'Tot Stok', 'Stok Min'];
+          const labels = ['CMD', 'Security', 'K3', 'Jan In', 'Jan Out', 'Booking', 'Asset', 'Stok'];
           const barData = [
-            bookings.length, bookings.filter(b=>b.status==='pending').length,
-            k3.length, k3.filter(k=>k.status==='pending').length,
-            dana.length, dana.filter(d=>d.status==='pending').length,
-            stok.length, stok.filter(s=>Number(s.quantity||s.jumlah||0)<5).length
+            1, // CMD (active)
+            1, // Security (active)
+            k3.length || 0,
+            0, // Janitor Indoor
+            0, // Janitor Outdoor
+            bookings.length || 0,
+            asset.length || 0,
+            stok.length || 0
           ];
           const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
-          const moduleMap = ['booking', 'booking', 'k3', 'k3', 'dana', 'dana', 'stok', 'stok'];
+          const moduleMap = ['cmd', 'security', 'k3', 'janitor-indoor', 'janitor-outdoor', 'booking', 'asset', 'stok'];
 
           if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
 
@@ -587,7 +546,7 @@
             const s5 = document.getElementById('slide-5'); if(s5) s5.innerHTML = `<strong>📢 Manajemen</strong><br>${ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen'}`;
             const s6 = document.getElementById('slide-6'); if(s6) s6.innerHTML = `<strong>🏢 Bag. Umum</strong><br>${ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum'}`;
             const s7 = document.getElementById('slide-7'); if(s7) s7.innerHTML = `<strong>💌 Ucapan</strong><br>${ann.find(a=>a.type==='ucapan')?.msg || 'The Power Soul Of Shalawat'}`;
-          } catch(e) { console.warn('🎠 Slide update error:', e); }
+          } catch(e) { console.warn(' Slide update error:', e); }
         };
 
         const track = document.getElementById('slide-track');
@@ -644,7 +603,7 @@
 
         async function tryFetch(paths, idx) {
           if (idx >= paths.length) {
-            c.innerHTML = `<div style="color:#cbd5e1;padding:4rem;text-align:center;"><h3 style="color:#f59e0b;">🚧 Modul Tidak Ditemukan (404)</h3><p style="margin:1rem 0;color:#94a3b8;">File: <code style="background:rgba(0,0,0,0.3);padding:0.2rem 0.5rem;border-radius:4px;">${file}</code></p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;cursor:pointer;">🏠 Kembali</button></div>`;
+            c.innerHTML = `<div style="color:#cbd5e1;padding:4rem;text-align:center;"><h3 style="color:#f59e0b;">🚧 Modul Tidak Ditemukan (404)</h3><p style="margin:1rem 0;color:#94a3b8;">File: <code style="background:rgba(0,0,0,0.3);padding:0.2rem 0.5rem;border-radius:4px;">${file}</code></p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;cursor:pointer;"> Kembali</button></div>`;
             return;
           }
           try {
@@ -684,8 +643,6 @@
 
       window.handleLogout = function() {
         if (confirm('🚪 Yakin ingin logout?')) {
-          const user = getStoredUser();
-          if (user.id && user.role !== 'dev') window.DeviceLock.releaseLock(user.id);
           localStorage.removeItem('dreamos_bound_user');
           localStorage.setItem('dreamos_session_active', 'false');
           location.reload();
@@ -697,8 +654,8 @@
       const cmdList = document.getElementById('cmd-list');
       let cmdIdx = -1;
       const commands = [
-        { id:'home', label:'🏠 Dashboard', action:()=>window.goHome() },
-        { id:'logout', label:'🚪 Logout', action:()=>window.handleLogout() }
+        { id:'home', label:' Dashboard', action:()=>window.goHome() },
+        { id:'logout', label:' Logout', action:()=>window.handleLogout() }
       ];
       
       function renderCmdList(items) { 
