@@ -963,6 +963,69 @@ window.goHomeSafe = window.goHome;
 })();
 </script>
 
+
+<script>
+(function(){
+  window.goHomeSafe = function(){
+    try {
+      if (window.parent && window.parent !== window && typeof window.parent.goHome === "function") {
+        window.parent.goHome(); return;
+      }
+    } catch(e){}
+    location.href = "../index.html";
+  };
+  if (typeof window.goHome !== "function") window.goHome = window.goHomeSafe;
+
+  var ADMIN = ["dev","admin","kabag_umum","kabag","koordinator_umum","koord","komandan_regu"];
+  var SEC = ADMIN.concat(["security","danru","petugas_security"]);
+  function bound(){ try{return JSON.parse(localStorage.getItem("dreamos_bound_user")||"{}");}catch(e){return{};} }
+  function role(){ var u=bound(); return String(u.role||(u.user_metadata&&u.user_metadata.role)||"staff").toLowerCase(); }
+  window.isSecAdmin = function(){ return ADMIN.indexOf(role())>=0; };
+  window.canAccessSecurity = function(){ return SEC.indexOf(role())>=0; };
+
+  function sb(){
+    try{
+      if(window.supabaseClient) return window.supabaseClient;
+      if(window.parent&&window.parent.supabaseClient){ window.supabaseClient=window.parent.supabaseClient; return window.supabaseClient; }
+    }catch(e){}
+    return null;
+  }
+  function banner(){
+    var el=document.getElementById("sec-access-status");
+    var ud=document.getElementById("user-display");
+    var u=bound(), r=role();
+    if(ud) ud.textContent=(u.nama||u.email||"Petugas")+" · "+r;
+    var adm=document.getElementById("admin-controls");
+    if(adm) adm.style.display=window.isSecAdmin()?"flex":"none";
+    if(!el) return;
+    if(!window.canAccessSecurity()){
+      el.style.cssText="background:rgba(239,68,68,.15);border:1px solid #ef4444;color:#ef4444;padding:.5rem;border-radius:.5rem;font-size:.75rem;margin:.8rem 0;text-align:center";
+      el.textContent="⛔ RBAC: role \""+r+"\" tidak diizinkan";
+      return;
+    }
+    el.style.cssText="background:rgba(16,185,129,.12);border:1px solid #10b981;color:#10b981;padding:.5rem;border-radius:.5rem;font-size:.75rem;margin:.8rem 0;text-align:center";
+    el.textContent="🟢 RBAC OK · "+r.toUpperCase()+(sb()?" · Cloud":" · Lokal");
+  }
+  var rt=false;
+  function realtime(){
+    var c=sb(); if(!c||!c.channel||rt) return; rt=true;
+    try{
+      c.channel("dreamos-security-rt")
+        .on("postgres_changes",{event:"*",schema:"public",table:"security_logs"},function(){})
+        .on("postgres_changes",{event:"*",schema:"public",table:"security_patrols"},function(){})
+        .subscribe(function(st){ console.log("[security RT]",st); });
+    }catch(e){ console.warn(e); }
+  }
+  function boot(){
+    banner(); realtime();
+    var clock=document.getElementById("sec-live-clock");
+    if(clock) setInterval(function(){ clock.textContent=new Date().toLocaleTimeString("id-ID"); },1000);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
+  else setTimeout(boot, 30);
+})();
+</script>
+
 </body></html>`;
     w.document.write(html);
     w.document.close();
@@ -1430,9 +1493,11 @@ window.goHomeSafe = window.goHome;
 
   // 📋 LAPORAN 24/7 ENGINE (UPGRADED)
   window.initDailyReport = function() {
+    const dateEl = document.getElementById('report-date-daily');
+    if (!dateEl) { console.warn('[security] report-date-daily missing'); return; }
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('report-date-daily').value = today;
-    document.getElementById('report-date-daily').addEventListener('change', loadDailyReport);
+    if (!dateEl.value) dateEl.value = today;
+    dateEl.onchange = loadDailyReport;
     loadDailyReport();
   };
   window.loadDailyReport = function() {
@@ -1445,6 +1510,7 @@ window.goHomeSafe = window.goHome;
   };
   window.renderPersonnelTable = function(rows) {
     const tbody = document.getElementById('personnel-table-body-daily');
+    if (!tbody) return;
     tbody.innerHTML = rows.length ? rows.map((r,i) => `
       <tr><td style="text-align:center;font-weight:700;">${i+1}</td>
       <td><input value="${esc(r.nama||'')}" onchange="updatePersonnel(${i},'nama',this.value)"></td>
@@ -1456,6 +1522,7 @@ window.goHomeSafe = window.goHome;
   };
   window.renderActivityTable = function(col, rows) {
     const tbody = document.getElementById('activity-'+col+'-body-daily');
+    if (!tbody) return;
     tbody.innerHTML = rows.length ? rows.map((r,i) => `
       <tr><td><input type="time" value="${esc(r.masuk||'')}" onchange="updateActivity('${col}',${i},'masuk',this.value)"></td>
       <td><input type="time" value="${esc(r.keluar||'')}" onchange="updateActivity('${col}',${i},'keluar',this.value)"></td>
