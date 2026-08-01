@@ -160,11 +160,11 @@
       <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
       <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
       <div class="input-wrapper">
-        <input type="email" id="email-input" class="pin-input" placeholder=" EMAIL" autocomplete="email">
+        <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL" autocomplete="email">
       </div>
       <div class="input-wrapper">
         <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
-        <span class="toggle-pin" id="toggle-pin" role="button"></span>
+        <span class="toggle-pin" id="toggle-pin" role="button">🔒</span>
       </div>
       <button class="access-btn" id="login-button">ACCESS CORE</button>
       <div class="error-msg" id="error-msg" role="alert"></div>
@@ -175,11 +175,11 @@
   
   <button class="cast-btn" onclick="openCastModal()" title="Cast & Present">📺</button>
   <div class="cast-modal" id="cast-modal">
-    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;">
-      <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
-      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">📡 Kirim Link (Share)</button>
-      <button onclick="presentHere()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">🖥️ Fullscreen di Layar Ini</button>
-      <button onclick="closeCastModal()" style="width:100%;padding:10px;margin:5px 0;background:rgba(239,68,68,0.1);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup</button>
+    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+      <h3 style="color:#00ff9d;margin:0 0 1rem;">📺 Cast & Present (Pro)</h3>
+      <button onclick="shareToTV()" style="width:100%;padding:12px;margin:5px 0;background:rgba(0,255,157,0.1);color:#e2e8f0;border:1px solid rgba(0,255,157,0.5);border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;">📡 Bagikan Link (Share API)</button>
+      <button onclick="presentHere()" style="width:100%;padding:12px;margin:5px 0;background:rgba(14,165,233,0.1);color:#e2e8f0;border:1px solid rgba(14,165,233,0.5);border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;">🖥️ Toggle Fullscreen Mode</button>
+      <button onclick="closeCastModal()" style="width:100%;padding:12px;margin:15px 0 5px;background:rgba(239,68,68,0.15);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup Panel</button>
     </div>
   </div>
 
@@ -394,7 +394,7 @@
           <div id="unified-chart-container">
             <div class="chart-header">
               <div>
-                <div class="chart-title">📊 Enterprise Live Analytics (8 Modul Utama)</div>
+                <div class="chart-title">📊 Enterprise Live Analytics (5 Modul Utama)</div>
                 <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js</div>
               </div>
             </div>
@@ -413,7 +413,6 @@
           </div>
         `;
 
-        // ✅ FIXED 1: Icon K3 dan Janitor Indoor dikembalikan
         const modules = [
           { i:'🌍', n:'CMD Center', id:'cmd' },
           { i:'🛡️', n:'Security Ops', id:'security' },
@@ -448,30 +447,26 @@
           healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span>`;
         }
 
-        // ✅ FIXED 2: Chart disinkronkan ke 8 Modul Utama
+        // 📈 PERBAIKAN: Hapus CMD, Security, Asset dari Grafik
         setTimeout(() => {
           const canvasEl = document.getElementById('unifiedMarketChart');
           if (!canvasEl || typeof Chart === 'undefined') return;
 
           const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
           const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-          const dana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
           const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
-          const asset = JSON.parse(localStorage.getItem('dreamos_assets') || '[]');
 
-          const labels = ['CMD', 'Security', 'K3', 'Jan In', 'Jan Out', 'Booking', 'Asset', 'Stok'];
+          const labels = ['K3', 'Jan In', 'Jan Out', 'Booking', 'Stok'];
           const barData = [
-            1, // CMD (active)
-            1, // Security (active)
             k3.length || 0,
             0, // Janitor Indoor
             0, // Janitor Outdoor
             bookings.length || 0,
-            asset.length || 0,
             stok.length || 0
           ];
+          
           const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
-          const moduleMap = ['cmd', 'security', 'k3', 'janitor-indoor', 'janitor-outdoor', 'booking', 'asset', 'stok'];
+          const moduleMap = ['k3', 'janitor-indoor', 'janitor-outdoor', 'booking', 'stok'];
 
           if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
 
@@ -673,10 +668,45 @@
         if(e.key==='Escape') closeCmd();
       });
 
+      // 📺 PERBAIKAN: Fungsi Lengkap Cast & Present (Share API & Fullscreen Pro)
       window.openCastModal = function() { document.getElementById('cast-modal').classList.add('show'); };
       window.closeCastModal = function() { document.getElementById('cast-modal').classList.remove('show'); };
-      window.shareToTV = function() { alert('📡 Fitur share ke TV'); };
-      window.presentHere = function() { document.documentElement.requestFullscreen?.(); };
+      
+      window.shareToTV = async function() {
+        const shareData = {
+          title: 'Dream OS Dashboard',
+          text: 'Akses Live Dashboard Dream OS Enterprise',
+          url: window.location.href
+        };
+        if (navigator.share) {
+          try {
+            await navigator.share(shareData);
+            window.showToast('✅ Link berhasil dibagikan!', 'success');
+          } catch(err) {
+            console.log('Share dibatalkan');
+          }
+        } else {
+          navigator.clipboard.writeText(window.location.href);
+          window.showToast('📋 Link disalin ke clipboard! Silakan paste di perangkat TV.', 'info');
+        }
+        window.closeCastModal();
+      };
+
+      window.presentHere = function() {
+        const docEl = document.documentElement;
+        if (!document.fullscreenElement) {
+          if (docEl.requestFullscreen) docEl.requestFullscreen();
+          else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+          else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+          window.showToast('📺 Masuk Mode Presentasi Fullscreen', 'success');
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          else if (document.msExitFullscreen) document.msExitFullscreen();
+          window.showToast('Keluar Mode Presentasi', 'info');
+        }
+        window.closeCastModal();
+      };
 
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
         const user = getStoredUser(); 
