@@ -131,6 +131,20 @@
     .glass { position: relative; z-index: 1; }
     .btn { position: relative; z-index: 2; cursor: pointer; }
     .bk-input, textarea, select { position: relative; z-index: 2; }
+
+    /* 🎯 FIX: Pastikan tombol di tab laporan harian bisa diklik */
+    #tab-laporan-harian .btn, #tab-laporan-harian button {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      position: relative;
+      z-index: 10;
+    }
+    #tab-laporan-harian .glass {
+      position: relative;
+    }
+    #tab-laporan-harian input, #tab-laporan-harian textarea, #tab-laporan-harian select {
+      pointer-events: auto !important;
+    }
 </style>
 </head>
 <body>
@@ -1236,106 +1250,7 @@
 
 
   // 📋 LAPORAN HARIAN 24/7 ENGINE
-  window.initDailyReport = function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('report-date-daily').value = today;
-    document.getElementById('report-date-daily').addEventListener('change', loadDailyReport);
-    loadDailyReport();
-  };
-
-  window.loadDailyReport = function() {
-    const date = document.getElementById('report-date-daily').value;
-    const key = 'dreamos_laporan_' + date;
-    const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
-    renderPersonnelTable(data.personnel);
-    renderActivityTable(data.activities);
-  };
-
-  window.renderPersonnelTable = function(rows) {
-    const tbody = document.getElementById('personnel-table-body-daily');
-    if (!tbody) return;
-    tbody.innerHTML = rows.map((r, i) => `
-      <tr>
-        <td style="text-align:center; font-weight:700;">${i+1}</td>
-        <td><input value="${esc(r.nama||'')}" onchange="updatePersonnel(${i},'nama',this.value)"></td>
-        <td><input value="${esc(r.jabatan||'')}" onchange="updatePersonnel(${i},'jabatan',this.value)"></td>
-        <td><input value="${esc(r.pagi||'')}" onchange="updatePersonnel(${i},'pagi',this.value)"></td>
-        <td><input value="${esc(r.malam||'')}" onchange="updatePersonnel(${i},'malam',this.value)"></td>
-        <td><input value="${esc(r.ket||'')}" onchange="updatePersonnel(${i},'ket',this.value)"></td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:1rem;">Belum ada data personel</td></tr>';
-  };
-
-  window.renderActivityTable = function(rows) {
-    const tbody = document.getElementById('activity-table-body-daily');
-    if (!tbody) return;
-    tbody.innerHTML = rows.map((r, i) => `
-      <tr>
-        <td><input type="time" value="${esc(r.masuk||'')}" onchange="updateActivity(${i},'masuk',this.value)"></td>
-        <td><input type="time" value="${esc(r.keluar||'')}" onchange="updateActivity(${i},'keluar',this.value)"></td>
-        <td><textarea rows="1" onchange="updateActivity(${i},'uraian',this.value)">${esc(r.uraian||'')}</textarea></td>
-        <td><input value="${esc(r.ket||'')}" onchange="updateActivity(${i},'ket',this.value)"></td>
-        <td style="text-align:center;"><button class="btn btn-danger" style="font-size:0.65rem; padding:0.15rem 0.3rem;" onclick="deleteActivity(${i})">🗑️</button></td>
-      </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center; color:#64748b; padding:1rem;">Belum ada kegiatan</td></tr>';
-  };
-
-  window.updatePersonnel = function(i, field, val) {
-    const date = document.getElementById('report-date-daily').value;
-    const key = 'dreamos_laporan_' + date;
-    const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
-    if (!data.personnel[i]) data.personnel[i] = {};
-    data.personnel[i][field] = val;
-    localStorage.setItem(key, JSON.stringify(data));
-  };
-
-  window.updateActivity = function(i, field, val) {
-    const date = document.getElementById('report-date-daily').value;
-    const key = 'dreamos_laporan_' + date;
-    const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
-    if (!data.activities[i]) data.activities[i] = {};
-    data.activities[i][field] = val;
-    localStorage.setItem(key, JSON.stringify(data));
-  };
-
-  window.addPersonnelRow = function() {
-    const date = document.getElementById('report-date-daily').value;
-    const key = 'dreamos_laporan_' + date;
-    const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
-    data.personnel.push({nama:'', jabatan:'', pagi:'', malam:'', ket:''});
-    localStorage.setItem(key, JSON.stringify(data));
-    renderPersonnelTable(data.personnel);
-  };
-
-  window.addActivityRow = function() {
-    const date = document.getElementById('report-date-daily').value;
-    const key = 'dreamos_laporan_' + date;
-    const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
-    data.activities.push({masuk:'', keluar:'', uraian:'', ket:''});
-    localStorage.setItem(key, JSON.stringify(data));
-    renderActivityTable(data.activities);
-  };
-
-  window.deleteActivity = function(i) {
-    if (!confirm('Hapus kegiatan ini?')) return;
-    const date = document.getElementById('report-date-daily').value;
-    const key = 'dreamos_laporan_' + date;
-    const data = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activities":[]}');
-    data.activities.splice(i, 1);
-    localStorage.setItem(key, JSON.stringify(data));
-    renderActivityTable(data.activities);
-  };
-
-  window.saveDailyReport = function() {
-    alert('✅ Laporan harian sudah auto-save di localStorage.');
-  };
-
-  window.resetDailyReport = function() {
-    if (!confirm('Reset semua data tanggal ini?')) return;
-    const date = document.getElementById('report-date-daily').value;
-    localStorage.removeItem('dreamos_laporan_' + date);
-    loadDailyReport();
-  };
+  // [REMOVED DUPLICATE - using upgraded version below]
 
   window.printDailyReport = function() {
     window.print();
@@ -1441,6 +1356,32 @@
   window.resetDailyReport = function() { if(!confirm('Reset data tanggal ini?'))return; localStorage.removeItem('dreamos_laporan_'+document.getElementById('report-date-daily').value); loadDailyReport(); };
 
 
+
+
+  // 🎯 ROBUST EVENT LISTENERS FOR DAILY REPORT BUTTONS
+  document.addEventListener('DOMContentLoaded', () => {
+    const bindBtn = (selector, fn) => {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.addEventListener('click', fn);
+        btn.style.pointerEvents = 'auto';
+        btn.style.cursor = 'pointer';
+      });
+    };
+    bindBtn('[onclick*="saveDailyReport"]', (e) => { e.preventDefault(); window.saveDailyReport(); });
+    bindBtn('[onclick*="resetDailyReport"]', (e) => { e.preventDefault(); window.resetDailyReport(); });
+    bindBtn('[onclick*="addPersonnelRow"]', (e) => { e.preventDefault(); window.addPersonnelRow(); });
+    bindBtn('[onclick*="addActivityRow"]', (e) => { 
+      e.preventDefault(); 
+      const col = e.target.getAttribute('onclick').match(/'([ab])'/)?.[1] || 'a';
+      window.addActivityRow(col); 
+    });
+    bindBtn('[onclick*="deleteActivity"]', (e) => {
+      e.preventDefault();
+      const match = e.target.getAttribute('onclick').match(/'([ab])',(\d+)/);
+      if (match) window.deleteActivity(match[1], parseInt(match[2]));
+    });
+    console.log('🎯 Daily report event listeners attached');
+  });
 
   console.log('🛡️ Security Ops Center Pro Ready • Enterprise Zero-Fraud Architecture Active');
 })();
