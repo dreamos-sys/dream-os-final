@@ -1,1403 +1,309 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<script>
-  (function() {})();
-</script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Dream OS • Enterprise RBAC Pro</title>
-  
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta name="security-policy" content="bank-grade">
-  <meta name="robots" content="noindex, nofollow">
-  <meta http-equiv="Content-Security-Policy" 
-        content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://gbigjdhifispatrrskgh.supabase.co https://api.aladhan.com https://api.open-meteo.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/dashboard.css?v=11">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
-  <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <meta name="theme-color" content="#00ff9d">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="i18n.js?v=1784856110"></script>
-  <script src="i18n-auto-translate.js"></script>
-  <script src="js/font-rtl.js"></script>
-  <script src="bank-encryption.js"></script>
-  <script src="bank-audit.js"></script>
-  <script src="bank-session.js"></script>
-  <script src="syncEngine.js"></script>
-  <script src="phantom-alerter.js"></script>
-  <script src="workflowEngine.js"></script>
-  <script src="print-wifi.js"></script>
-  <script src="idb-store.js?v=1"></script>
   
   <style>
-    :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.85); --glass-border: rgba(0, 255, 157, 0.25); }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-    body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
-    canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
-    .glass { position: relative; z-index: 1; background: var(--glass-bg) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 20px; transform: translate3d(0,0,0); }
-    #login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 14, 39, 0.95); z-index: 10000; transition: opacity 0.5s; }
+    :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --glass-bg: rgba(10, 15, 30, 0.85); }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
+    body { background: #0a0e27; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+    .glass { background: var(--glass-bg); backdrop-filter: blur(24px); border: 1px solid rgba(0,255,157,0.25); border-radius: 20px; }
+    
+    /* Anti-Screenshot Protection */
+    #security-overlay { 
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+      z-index: 999999; align-items: center; justify-content: center; 
+      flex-direction: column; color: var(--warning); font-size: 1.5rem; font-weight: 700;
+    }
+    #security-overlay.show { display: flex; }
+    
+    #blur-screen { 
+      display: none; position: fixed; inset: 0; 
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      background: rgba(0,0,0,0.8); z-index: 999998;
+    }
+    #blur-screen.show { display: block; }
+    
+    .watermark {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 3rem; color: rgba(0,255,157,0.1); pointer-events: none; z-index: 1;
+      font-family: 'Orbitron', monospace; font-weight: 700;
+    }
+
+    #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,14,39,0.95); z-index: 10000; }
     .login-container { text-align: center; max-width: 400px; width: 100%; padding: 2rem; }
-    .login-logo { width: 90px; height: 90px; border-radius: 24px; margin-bottom: 1.5rem; }
-    .arabic { font-family: 'Scheherazade New', serif; font-size: 2rem; color: var(--neon); text-shadow: 0 0 25px rgba(0,255,157,0.5); margin-bottom: 0.4rem; }
-    .shalawat { font-family: 'Scheherazade New', serif; font-size: 0.95rem; color: var(--accent); margin-bottom: 1.5rem; }
-    .input-wrapper { position: relative; margin-bottom: 1.2rem; }
-    .pin-input { width: 100%; padding: 1.1rem 4rem 1.1rem 1.2rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(0,255,157,0.3); border-radius: 14px; color: var(--neon); font-family: 'Orbitron', monospace; font-size: 1.1rem; text-align: center; outline: none; }
-    .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem; color: var(--neon); user-select: none; }
-    .access-btn { width: 100%; padding: 1.1rem; background: #10b981; color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
-    .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
-    .access-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .arabic { font-size: 2rem; color: var(--neon); margin-bottom: 0.5rem; }
+    .shalawat { font-size: 1rem; color: var(--accent); margin-bottom: 1.5rem; }
+    .pin-input { width: 100%; padding: 1rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(0,255,157,0.3); border-radius: 14px; color: var(--neon); font-family: 'Orbitron', monospace; font-size: 1.1rem; text-align: center; margin-bottom: 1rem; }
+    .access-btn { width: 100%; padding: 1rem; background: #10b981; color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 700; cursor: pointer; }
     .error-msg { color: var(--warning); font-size: 0.85rem; margin-top: 0.8rem; display: none; }
-    .device-info { font-size: 0.7rem; color: #64748b; margin-top: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; }
-    #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
-    .header-main { padding: 1.5rem; text-align: center; margin: 1rem 1rem 0.5rem; }
+    
+    #main-app { display: none; padding-bottom: 6rem; min-height: 100vh; }
+    .header-main { padding: 1.5rem; text-align: center; margin: 1rem; }
+    
+    #dash-slider { margin: 0 1rem 0.8rem; min-height: 85px; border-radius: 16px; overflow: hidden; }
+    .slide-track { display: flex; transition: transform 0.6s; }
+    .slide-item { min-width: 100%; padding: 1rem; text-align: center; }
+    .slide-item strong { color: var(--neon); }
+    
+    #health-bar { display: flex; gap: 0.5rem; justify-content: center; margin: 0 1rem 0.8rem; flex-wrap: wrap; }
+    .health-badge { padding: 0.3rem 0.6rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; }
+    .health-ok { color: #10b981; border-color: rgba(16,185,129,0.3); }
+    
+    #unified-chart-container { margin: 0 1rem 0.8rem; padding: 1rem; border-radius: 20px; }
+    .unified-canvas-wrapper { height: 280px; position: relative; }
     
     .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 0.8rem 1rem; }
-    .mod-card { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); border-radius: 16px; padding: 0.9rem 0.5rem; text-align: center; cursor: pointer; position: relative; transition: all 0.25s ease; backdrop-filter: blur(12px); }
-    .mod-card:active { transform: scale(0.96); }
-    .mod-card:hover { transform: translateY(-3px); border-color: var(--neon); box-shadow: 0 10px 30px rgba(0,255,157,0.25); }
+    .mod-card { background: rgba(15,23,42,0.8); border: 1px solid rgba(0,255,157,0.25); border-radius: 16px; padding: 1rem 0.5rem; text-align: center; cursor: pointer; }
     .mod-icon { font-size: 2rem; margin-bottom: 0.4rem; }
-    .mod-title { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--neon); letter-spacing: 0.3px; }
-    .mod-status { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
-
-    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding: 10px 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); background: rgba(10, 14, 39, 0.96); border-top: 2px solid rgba(0, 255, 157, 0.3); display: none; backdrop-filter: blur(16px); }
+    .mod-title { font-size: 0.7rem; font-weight: 800; color: var(--neon); text-transform: uppercase; }
+    
+    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; background: rgba(10,14,39,0.96); border-top: 2px solid rgba(0,255,157,0.3); display: none; }
     .nav-container { display: flex; gap: 6px; max-width: 600px; margin: 0 auto; }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 255, 157, 0.2); border-radius: 12px; cursor: pointer; transition: all 0.25s; min-height: 44px; }
-    .nav-item.active { background: rgba(0, 255, 157, 0.15); border-color: var(--neon); transform: translateY(-2px); box-shadow: 0 0 15px rgba(0,255,157,0.25); }
-    .nav-icon-wrapper { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(0, 255, 157, 0.15); border-radius: 10px; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px; background: rgba(15,23,42,0.6); border: 1px solid rgba(0,255,157,0.2); border-radius: 12px; cursor: pointer; }
+    .nav-item.active { background: rgba(0,255,157,0.15); border-color: var(--neon); }
     .nav-icon { font-size: 1.25rem; }
-    .nav-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #cbd5e1; }
+    .nav-label { font-size: 0.65rem; font-weight: 700; color: #cbd5e1; margin-top: 4px; }
     .nav-item.active .nav-label { color: var(--neon); }
-    
-    .system-info-box { text-align: center; font-size: 0.7rem; line-height: 1.4; color: #cbd5e1; margin: 1rem; padding: 1.2rem; }
-    .pwa-install-banner { display: none; position: fixed; bottom: 75px; left: 10px; right: 10px; background: rgba(0,255,157,0.15); border: 1px solid #00ff9d; border-radius: 12px; padding: 10px; z-index: 9999; text-align: center; }
-    .pwa-install-banner.show { display: block; }
-    .cast-btn { position: fixed; bottom: 85px; right: 15px; z-index: 9998; background: rgba(0,255,157,0.2); border: 1px solid #00ff9d; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .cast-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; align-items: center; justify-content: center; }
-    .cast-modal.show { display: flex; }
-    .notif-bell { position: relative; cursor: pointer; font-size: 1.3rem; margin-right: 0.5rem; }
-    .notif-badge { position: absolute; top: -5px; right: -6px; background: #e11d48; color: white; border-radius: 50%; padding: 0.05rem 0.35rem; font-size: 0.5rem; font-weight: 700; display: none; }
-    .notif-panel { position: fixed; top: 55px; right: 10px; width: 300px; max-height: 380px; overflow-y: auto; background: rgba(15,23,42,0.95); border: 1px solid #00ff9d; border-radius: 14px; z-index: 10001; display: none; padding: 0.5rem; }
-  
-    #dash-slider { position: relative; overflow: hidden; margin: 0 1rem 0.8rem; min-height: 85px; border-radius: 16px; touch-action: pan-y; }
-    .slide-track { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
-    .slide-item { min-width: 100%; padding: 0.9rem 1rem; text-align: center; font-size: 0.8rem; line-height: 1.4; color: #e2e8f0; }
-    .slide-item strong { color: var(--neon); }
-    .slide-indicators { display: flex; justify-content: center; gap: 5px; margin-top: 0.3rem; }
-    .slide-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: 0.3s; cursor: pointer; }
-    .slide-dot.active { background: var(--neon); transform: scale(1.3); }
-    
-    #kpi-strip { display: flex; gap: 0.5rem; margin: 0 1rem 0.8rem; flex-wrap: wrap; }
-    .kpi-chip { flex: 1; min-width: 130px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.6rem 0.8rem; text-align: center; cursor: pointer; transition: all 0.25s; }
-    .kpi-chip:active { transform: scale(0.96); }
-    .kpi-chip:hover { border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,157,0.2); }
-    .kpi-chip strong { display: block; font-size: 1.05rem; color: var(--neon); }
-    .kpi-chip span { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-  
-    #health-bar { display: flex; gap: 0.4rem; align-items: center; justify-content: center; margin: 0 1rem 0.8rem; font-size: 0.65rem; color: #cbd5e1; flex-wrap: wrap; }
-    .health-badge { padding: 0.15rem 0.4rem; border-radius: 6px; font-weight: 600; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
-    .health-ok { color: #10b981; border-color: rgba(16,185,129,0.3); }
-    .health-err { color: #ef4444; border-color: rgba(239,68,68,0.3); }
-
-    .toast-container { position: fixed; bottom: 4.5rem; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 0.4rem; pointer-events: none; }
-    .toast { background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 0.7rem 1rem; border-radius: 10px; font-size: 0.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; animation: slideUp 0.3s ease; }
-    .toast.error { border-left: 4px solid #ef4444; }
-    .toast.success { border-left: 4px solid #10b981; }
-    .toast.warning { border-left: 4px solid #f59e0b; }
-    @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-
-    #unified-chart-container { margin: 0 1rem 0.8rem; padding: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
-    .chart-title { font-size: 0.85rem; font-weight: 800; color: var(--neon); font-family: 'Orbitron', monospace; display: flex; align-items: center; gap: 0.4rem; }
-    .chart-subtitle { font-size: 0.65rem; color: #94a3b8; }
-    .unified-canvas-wrapper { position: relative; width: 100%; height: 280px; cursor: pointer; }
-
-    .skip-link { position: absolute; top: -100px; left: 0; background: var(--neon); color: #000; padding: 8px 16px; z-index: 100000; font-weight: 700; border-radius: 0 0 8px 0; }
-    .skip-link:focus { top: 0; }
-
-    #cmd-palette { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 99998; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh; }
-    #cmd-palette.show { display: flex; }
-    .cmd-box { width: 90%; max-width: 520px; background: #0f172a; border: 1px solid rgba(0,255,157,0.25); border-radius: 16px; padding: 1rem; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-    .cmd-input { width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; outline: none; }
-    .cmd-input:focus { border-color: var(--neon); }
-    .cmd-list { max-height: 280px; overflow-y: auto; margin-top: 0.8rem; }
-    .cmd-item { padding: 0.7rem 0.8rem; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: #cbd5e1; font-size: 0.85rem; }
-    .cmd-item:hover, .cmd-item.active { background: rgba(0,255,157,0.1); color: #fff; }
-    .cmd-hint { font-size: 0.65rem; color: #64748b; background: rgba(255,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 4px; }
-    .cmd-footer { margin-top: 0.8rem; font-size: 0.65rem; color: #64748b; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
-
-    #security-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999999; align-items: center; justify-content: center; flex-direction: column; color: var(--warning); font-size: 1.2rem; font-weight: 700; }
-    #security-overlay.show { display: flex; }
-
-    #idle-warning { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(239,68,68,0.9); color: white; padding: 12px 24px; border-radius: 12px; z-index: 99998; font-weight: 700; font-size: 0.9rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    #idle-warning.show { display: block; animation: slideDown 0.3s ease; }
-    @keyframes slideDown { from { opacity:0; transform:translate(-50%,-20px); } to { opacity:1; transform:translate(-50%,0); } }
-
-    .rate-limit-msg { color: #f59e0b; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
   </style>
-  <script src="js/bcrypt.min.js"></script>
-  <script src="js/auth-security.js"></script>
 </head>
-<body oncontextmenu="return false;" ondragstart="return false;" ondrop="return false;">
-  <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
-  <a href="#main-app" class="skip-link">Skip to Content</a>
-  <canvas id="star-field"></canvas>
+<body oncontextmenu="return false;" ondragstart="return false;">
 
+  <!-- Anti-Screenshot Overlays -->
   <div id="security-overlay">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">️</div>
-    <div>AKTIVITAS TERDETEKSI</div>
-    <div style="font-size: 0.9rem; margin-top: 1rem; color: #94a3b8;">Screenshot & DevTools tidak diizinkan</div>
+    <div style="font-size: 3rem; margin-bottom: 1rem;">⛔</div>
+    <div>SCREENSHOT TERDETEKSI!</div>
+    <div style="font-size: 0.9rem; margin-top: 1rem; color: #94a3b8;">Aktivitas telah dicatat</div>
   </div>
-
-  <div id="idle-warning">️ Sesi akan berakhir dalam <span id="idle-countdown">30</span> detik!</div>
-
-  <div class="pwa-install-banner" id="pwa-banner">
-     Install Dream OS di HP Anda untuk akses cepat!
-    <button class="pwa-install-btn" onclick="installPWA()" style="background:#00ff9d;color:#000;border:none;padding:6px 12px;border-radius:6px;margin:6px 0;cursor:pointer;font-weight:700;">Install Sekarang</button>
-  </div>
+  <div id="blur-screen"></div>
+  <div class="watermark" id="watermark">DREAM OS CONFIDENTIAL</div>
 
   <div id="login-screen">
     <div class="login-container">
-      <img src="assets/logo-sultan.png" alt="Dream OS" class="login-logo" onerror="this.style.display='none'">
       <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
       <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
-      <div class="input-wrapper">
-        <input type="email" id="email-input" class="pin-input" placeholder=" EMAIL" autocomplete="email">
-      </div>
-      <div class="input-wrapper">
-        <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD" autocomplete="current-password">
-        <span class="toggle-pin" id="toggle-pin" role="button"></span>
-      </div>
+      <input type="email" id="email-input" class="pin-input" placeholder="📧 EMAIL">
+      <input type="password" id="password-input" class="pin-input" placeholder="🔐 PASSWORD">
       <button class="access-btn" id="login-button">ACCESS CORE</button>
-      <div class="error-msg" id="error-msg" role="alert"></div>
-      <div class="rate-limit-msg" id="rate-limit-msg"></div>
-      <div class="device-info" id="device-info">🔐 Device ID: Memuat...</div>
-    </div>
-  </div>
-
-  <div id="notif-panel" class="notif-panel"></div>
-  
-  <button class="cast-btn" onclick="openCastModal()" title="Cast & Present"></button>
-  <div class="cast-modal" id="cast-modal">
-    <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;">
-      <h3 style="color:#00ff9d;margin:0 0 .2rem;">📺 Cast & Present</h3>
-      <button onclick="shareToTV()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;"> Kirim Link (Share)</button>
-      <button onclick="presentHere()" style="width:100%;padding:10px;margin:5px 0;background:rgba(0,255,157,0.05);color:#e2e8f0;border:1px solid rgba(0,255,157,0.3);border-radius:8px;cursor:pointer;font-weight:600;">🖥️ Fullscreen di Layar Ini</button>
-      <button onclick="closeCastModal()" style="width:100%;padding:10px;margin:5px 0;background:rgba(239,68,68,0.1);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup</button>
+      <div class="error-msg" id="error-msg"></div>
     </div>
   </div>
 
   <div id="main-app">
-    <div id="dashboard-container"></div>
+    <div class="header-main glass">
+      <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+      <div class="shalawat">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+    </div>
+    
+    <div id="dash-slider" class="glass">
+      <div class="slide-track" id="slide-track">
+        <div class="slide-item"><strong>️ Security</strong><br>Memuat...</div>
+        <div class="slide-item"><strong>📅 Booking</strong><br>Memuat...</div>
+        <div class="slide-item"><strong>⚠️ K3</strong><br>Memuat...</div>
+      </div>
+    </div>
+
+    <!-- ✅ HANYA 1 HEALTH BAR (NO DUPLICATE) -->
+    <div id="health-bar">
+      <span class="health-badge health-ok">🟢 Online</span>
+      <span class="health-badge health-ok">💾 Storage: 0MB</span>
+      <span class="health-badge health-ok">🔒 Secure</span>
+    </div>
+
+    <div id="unified-chart-container" class="glass">
+      <div style="margin-bottom: 0.8rem;">
+        <div style="font-size: 0.9rem; font-weight: 800; color: var(--neon);">📊 Enterprise Analytics</div>
+        <div style="font-size: 0.7rem; color: #94a3b8;">Live Sync</div>
+      </div>
+      <div class="unified-canvas-wrapper">
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+
+    <div class="module-grid">
+      <div class="mod-card"><div class="mod-icon"></div><div class="mod-title">CMD</div></div>
+      <div class="mod-card"><div class="mod-icon">🛡️</div><div class="mod-title">Security</div></div>
+      <div class="mod-card"><div class="mod-icon">⚠️</div><div class="mod-title">K3</div></div>
+      <div class="mod-card"><div class="mod-icon">🏠</div><div class="mod-title">Janitor</div></div>
+      <div class="mod-card"><div class="mod-icon">📅</div><div class="mod-title">Booking</div></div>
+      <div class="mod-card"><div class="mod-icon">📦</div><div class="mod-title">Stok</div></div>
+    </div>
   </div>
 
-  <nav id="bottom-nav" aria-label="Main navigation">
+  <nav id="bottom-nav">
     <div class="nav-container">
-      <button class="nav-item active" data-nav="home"><div class="nav-icon-wrapper"><span class="nav-icon">🏠</span></div><span class="nav-label" data-i18n="nav_home">Home</span></button>
-      <button class="nav-item" data-mod="profile"><div class="nav-icon-wrapper"><span class="nav-icon">👤</span></div><span class="nav-label" data-i18n="nav_profile">Profile</span></button>
-      <button class="nav-item" data-mod="qr"><div class="nav-icon-wrapper"><span class="nav-icon">📱</span></div><span class="nav-label" data-i18n="nav_qr">QR</span></button>
-      <button class="nav-item" data-mod="about"><div class="nav-icon-wrapper"><span class="nav-icon">ℹ️</span></div><span class="nav-label" data-i18n="nav_about">About</span></button>
-      <button class="nav-item" data-mod="setting"><div class="nav-icon-wrapper"><span class="nav-icon">️</span></div><span class="nav-label" data-i18n="nav_system">System</span></button>
+      <button class="nav-item active"><span class="nav-icon">🏠</span><span class="nav-label">HOME</span></button>
+      <button class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">PROFILE</span></button>
+      <button class="nav-item"><span class="nav-icon"></span><span class="nav-label">QR</span></button>
+      <button class="nav-item"><span class="nav-icon">ℹ️</span><span class="nav-label">ABOUT</span></button>
+      <button class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">SYSTEM</span></button>
     </div>
   </nav>
 
-  <div id="cmd-palette" role="dialog" aria-modal="true" aria-label="Quick Navigation">
-    <div class="cmd-box">
-      <input type="text" id="cmd-input" class="cmd-input" placeholder="Ketik modul, aksi, atau cari..." autocomplete="off">
-      <div id="cmd-list" class="cmd-list"></div>
-      <div class="cmd-footer">⌨️ Ctrl+K / ⌘K untuk buka • ↑↓ Navigasi • Enter Eksekusi • Esc Tutup</div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script>
     // ==========================================
-    // 🛡️ CYBER SECURITY PROTECTION
+    // 🛡️ ADVANCED ANTI-SCREENSHOT
     // ==========================================
-    
-    // Clear console logs in production
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      console.log = function() {};
-      console.warn = function() {};
-      console.error = function() {};
-      console.info = function() {};
-    }
-
-    // Anti-DevTools & Anti-Screenshot
     (function() {
       const overlay = document.getElementById('security-overlay');
-      
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'F12' || 
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-            (e.ctrlKey && e.key === 'U')) {
-          e.preventDefault();
-          overlay.classList.add('show');
-          setTimeout(() => overlay.classList.remove('show'), 2000);
-          if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'DEVTOOLS_ATTEMPT' });
-        }
-      });
+      const blur = document.getElementById('blur-screen');
+      let screenshotTimeout = null;
 
-      document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        return false;
-      });
-
-      document.addEventListener('keyup', function(e) {
-        if (e.key === 'PrintScreen') {
-          overlay.classList.add('show');
-          setTimeout(() => overlay.classList.remove('show'), 2000);
-          if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'SCREENSHOT_ATTEMPT' });
-        }
-      });
-
-      document.addEventListener('visibilitychange', function() {
-        if (document.hidden && localStorage.getItem('dreamos_session_active') === 'true') {
-          if (window.BankAudit) BankAudit.log('SECURITY_ALERT', { type: 'TAB_SWITCH' });
-        }
-      });
-
-      document.addEventListener('copy', function(e) { e.preventDefault(); });
-      document.addEventListener('cut', function(e) { e.preventDefault(); });
-      document.addEventListener('paste', function(e) {
-        if (e.target.classList.contains('pin-input')) {
-          e.preventDefault();
-        }
-      });
-
-      // Detect browser automation
-      if (navigator.webdriver || window.__selenium_unwrapped || window.__webdriver_evaluate) {
-        if (window.BankAudit) BankAudit.log('SECURITY_VIOLATION', { type: 'AUTOMATION_DETECTED' });
-        alert('⛔ Browser automation terdeteksi! Akses ditolak.');
-        window.location.href = 'about:blank';
+      function triggerSecurity(type) {
+        overlay.classList.add('show');
+        blur.classList.add('show');
+        
+        // Log attempt
+        console.warn('🚨 SECURITY ALERT:', type, 'at', new Date().toISOString());
+        
+        // Clear after 2 seconds
+        if (screenshotTimeout) clearTimeout(screenshotTimeout);
+        screenshotTimeout = setTimeout(() => {
+          overlay.classList.remove('show');
+          blur.classList.remove('show');
+        }, 2000);
       }
+
+      // Detect PrintScreen
+      document.addEventListener('keyup', (e) => {
+        if (e.key === 'PrintScreen') {
+          e.preventDefault();
+          triggerSecurity('PRINTSCREEN');
+          navigator.clipboard.writeText('').catch(()=>{});
+        }
+      });
+
+      // Detect DevTools
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key))) {
+          e.preventDefault();
+          triggerSecurity('DEVTOOLS');
+        }
+      });
+
+      // Detect visibility change (tab switch)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          blur.classList.add('show');
+        } else {
+          setTimeout(() => blur.classList.remove('show'), 1000);
+        }
+      });
+
+      // Disable right-click
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      
+      // Disable copy/cut
+      document.addEventListener('copy', e => e.preventDefault());
+      document.addEventListener('cut', e => e.preventDefault());
+
+      // Detect screenshot via canvas (some browsers)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const pixel = ctx.getImageData(0, 0, 1, 1);
+      
+      Object.defineProperty(pixel, 'data', {
+        get: function() {
+          triggerSecurity('CANVAS_READ');
+          return new Uint8ClampedArray([0,0,0,255]);
+        }
+      });
+
+      // Update watermark with timestamp
+      setInterval(() => {
+        const wm = document.getElementById('watermark');
+        if (wm) {
+          const time = new Date().toLocaleTimeString();
+          wm.textContent = `DREAM OS CONFIDENTIAL - ${time}`;
+        }
+      }, 1000);
     })();
 
     // ==========================================
-    // 🔐 DEVICE FINGERPRINTING
+    // 🔐 LOGIN SYSTEM
     // ==========================================
-    window.DeviceFingerprint = {
-      generate: function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.textBaseline = 'top';
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#f60';
-        ctx.fillRect(125, 1, 62, 20);
-        ctx.fillStyle = '#069';
-        ctx.fillText('DreamOS', 2, 15);
-        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-        ctx.fillText('DreamOS', 4, 17);
-        const canvasFp = canvas.toDataURL();
-
-        const components = [
-          navigator.userAgent,
-          screen.width + 'x' + screen.height,
-          screen.colorDepth,
-          navigator.language,
-          new Date().getTimezoneOffset(),
-          navigator.platform,
-          canvasFp,
-          navigator.hardwareConcurrency || 0,
-          navigator.deviceMemory || 0
-        ];
-
-        const hash = components.reduce((acc, curr) => {
-          let h = 0;
-          for (let i = 0; i < curr.length; i++) {
-            h = ((h << 5) - h) + curr.charCodeAt(i);
-            h |= 0;
-          }
-          return acc + Math.abs(h).toString(16);
-        }, '');
-
-        return 'dev_' + hash.substring(0, 16);
-      },
-      get: function() {
-        let fp = localStorage.getItem('dreamos_device_fp');
-        if (!fp) {
-          fp = this.generate();
-          localStorage.setItem('dreamos_device_fp', fp);
-        }
-        return fp;
-      }
-    };
-
-    // ==========================================
-    // 🔒 RATE LIMITING & LOGIN ATTEMPTS
-    // ==========================================
-    window.LoginRateLimiter = {
-      MAX_ATTEMPTS: 5,
-      LOCKOUT_DURATION: 900000, // 15 minutes
-      STORAGE_KEY: 'dreamos_login_attempts',
-
-      getAttempts: function() {
-        try {
-          const data = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}');
-          return data;
-        } catch(e) { return {}; }
-      },
-
-      recordAttempt: function(email) {
-        const data = this.getAttempts();
-        if (!data[email]) {
-          data[email] = { count: 1, firstAttempt: Date.now(), lockedUntil: 0 };
-        } else {
-          data[email].count++;
-          if (data[email].count >= this.MAX_ATTEMPTS) {
-            data[email].lockedUntil = Date.now() + this.LOCKOUT_DURATION;
-          }
-        }
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-        return data[email];
-      },
-
-      isLocked: function(email) {
-        const data = this.getAttempts();
-        if (!data[email]) return false;
-        if (data[email].lockedUntil && Date.now() < data[email].lockedUntil) {
-          const remaining = Math.ceil((data[email].lockedUntil - Date.now()) / 60000);
-          return { locked: true, remaining: remaining };
-        }
-        if (data[email].lockedUntil && Date.now() >= data[email].lockedUntil) {
-          data[email] = { count: 0, firstAttempt: Date.now(), lockedUntil: 0 };
-          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-        }
-        return false;
-      },
-
-      reset: function(email) {
-        const data = this.getAttempts();
-        delete data[email];
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-      }
-    };
-
-    window.SecureStore = {
-      _key: 'dreamos_sec_' + (window.crypto?.randomUUID?.() || Date.now()),
-      set(k, v) {
-        try {
-          const raw = JSON.stringify(v);
-          const b64 = btoa(unescape(encodeURIComponent(raw)));
-          localStorage.setItem(k, b64);
-          if(window.BankAudit && window.getUserRole && window.getUserRole() !== 'dev') {
-            BankAudit.log('SECURE_STORE_WRITE', { key: k, size: raw.length });
-          }
-        } catch(e) { console.warn('SecureStore set failed:', e); }
-      },
-      get(k) {
-        try {
-          const b64 = localStorage.getItem(k);
-          if(!b64) return null;
-          const raw = decodeURIComponent(escape(atob(b64)));
-          return JSON.parse(raw);
-        } catch(e) { console.warn('SecureStore get failed:', e); return null; }
-      },
-      remove(k) { 
-        localStorage.removeItem(k); 
-        if(window.BankAudit && window.getUserRole && window.getUserRole() !== 'dev') {
-          BankAudit.log('SECURE_STORE_DELETE', { key: k });
-        }
-      }
-    };
-
-    window.hashAudit = async (data) => {
-      const msg = new TextEncoder().encode(JSON.stringify(data));
-      const buf = await crypto.subtle.digest('SHA-256', msg);
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-    };
-
-    window.announce = (msg) => { const el = document.getElementById('aria-announcer'); if(el) el.textContent = msg; };
-    
-    window.showToast = (msg, type='info') => {
-      let c = document.getElementById('toast-container');
-      if(!c) { c = document.createElement('div'); c.id='toast-container'; c.className='toast-container'; document.body.appendChild(c); }
-      const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; t.setAttribute('role', 'alert');
-      c.appendChild(t); window.announce(msg);
-      setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3500);
-    };
-
-    window.MFA = {
-      enabled: false,
-      async verify(email) {
-        if (!this.enabled) return true;
-        const code = prompt(`🔐 Masukkan kode OTP yang dikirim ke ${email} (Simulasi Enterprise MFA):`);
-        return code === '123456';
-      }
-    };
-
-    window.initGDPR = function() {
-      if (localStorage.getItem('dreamos_gdpr_consent')) return;
-      const banner = document.createElement('div');
-      banner.id = 'gdpr-banner';
-      banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,0.95);border-top:2px solid #0ea5e9;padding:1rem;z-index:99999;color:#e2e8f0;font-size:0.85rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:0.8rem;';
-      banner.innerHTML = `
-        <span>🌍 Kami menggunakan penyimpanan lokal & cloud untuk keamanan, audit, & operasional (ISO 27001 / UU PDP). 
-        <a href="#" onclick="alert('Kebijakan Privasi: Data dienkripsi, tidak dijual, hanya untuk operasional internal.'); return false;" style="color:#0ea5e9;">Kebijakan Privasi</a></span>
-        <button onclick="localStorage.setItem('dreamos_gdpr_consent','true'); this.parentElement.remove();" style="background:#10b981;color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-weight:700;">✅ Setuju</button>
-        <button onclick="alert('Anda dapat menolak, namun fitur audit & sync akan dibatasi.'); this.parentElement.remove();" style="background:rgba(255,255,255,0.1);color:#cbd5e1;border:1px solid rgba(255,255,255,0.2);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;">Tolak</button>
-      `;
-      document.body.appendChild(banner);
-    };
-
-    const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
-    window.supabaseClient = null;
-
-    function initSupabase() {
-      if (window.supabaseClient) return true;
-      try {
-        if (typeof window.supabase !== 'undefined') {
-          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          return true;
-        }
-      } catch(e) {}
-      return false;
-    }
-
-    async function verifySession() {
-      if (!window.supabaseClient) return true;
-      try { 
-        var __u = JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); 
-        if (__u.source === 'local') return true; 
-      } catch(e){}
-      try {
-        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
-        if (error || !session) {
-          localStorage.removeItem('dreamos_bound_user');
-          localStorage.setItem('dreamos_session_active', 'false');
-          if (window.showToast) window.showToast('🔒 Sesi berakhir atau tidak valid. Silakan login ulang.', 'error');
-          setTimeout(() => location.reload(), 2000);
-          return false;
-        }
-        return true;
-      } catch(e) { return true; }
-    }
-    setInterval(verifySession, 300000);
-
-    // ==========================================
-    // 🔐 ADVANCED PASSWORD HASHING
-    // ==========================================
-    if (typeof window.doSecureLogin !== 'function') {
-      window.__dvHash = function(plain){ 
-        var h=0, s=String(plain)+'dreamos_salt_2026_secure_v2'; 
-        for(var i=0;i<s.length;i++){
-          h=((h<<5)-h)+s.charCodeAt(i);
-          h|=0;
-        } 
-        return 'hash_'+Math.abs(h).toString(16); 
-      };
-      
-      window.__dvVerify = function(plain,hash){ 
-        if(!plain||!hash) return false; 
-        if(hash.indexOf('$2a$')===0||hash.indexOf('$2b$')===0||hash.indexOf('$2y$')===0){ 
-          if(typeof bcrypt!=='undefined'){
-            try{return bcrypt.compareSync(String(plain),hash);}
-            catch(e){}
-          } 
-          return false; 
-        } 
-        return hash===window.__dvHash(plain); 
-      };
-      
-      window.doSecureLogin = async function(email,password,mfaPin){
-        email=String(email||'').trim().toLowerCase(); 
-        password=String(password||'');
-        
-        if(!email||!password) throw new Error('Email dan password wajib diisi');
-        
-        // Check rate limiting
-        const lockStatus = window.LoginRateLimiter.isLocked(email);
-        if (lockStatus && lockStatus.locked) {
-          throw new Error(`⛔ Akun terkunci ${lockStatus.remaining} menit karena terlalu banyak percobaan login.`);
-        }
-        
-        var users=[]; 
-        try{ users=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); }
-        catch(e){}
-        
-        var local=null; 
-        for(var i=0;i<users.length;i++){ 
-          if((users[i].email||'').toLowerCase()===email){ 
-            local=users[i]; 
-            break; 
-          } 
-        }
-        
-        if(local && local.password_hash){
-          if(!window.__dvVerify(password,local.password_hash)) {
-            const attempt = window.LoginRateLimiter.recordAttempt(email);
-            if (attempt.count >= window.LoginRateLimiter.MAX_ATTEMPTS) {
-              if(window.BankAudit) BankAudit.log('ACCOUNT_LOCKED', { email: email, reason: 'MAX_ATTEMPTS' });
-              throw new Error(`⛔ Akun terkunci 15 menit karena ${window.LoginRateLimiter.MAX_ATTEMPTS}x percobaan gagal.`);
-            }
-            const remaining = window.LoginRateLimiter.MAX_ATTEMPTS - attempt.count;
-            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'INVALID_PASSWORD', attemptsLeft: remaining });
-            throw new Error(`Password salah. Sisa percobaan: ${remaining}`);
-          }
-          window.LoginRateLimiter.reset(email);
-          return {source:'local',user:{id:local.id||('local_'+email),email:local.email,nama:local.nama||email.split('@')[0],role:local.role||'staff'}};
-        }
-        
-        if(window.supabaseClient && window.supabaseClient.auth){
-          var r=await window.supabaseClient.auth.signInWithPassword({email:email,password:password});
-          if(r.error) {
-            const attempt = window.LoginRateLimiter.recordAttempt(email);
-            if(window.BankAudit) BankAudit.log('LOGIN_FAILED', { email: email, reason: 'SUPABASE_ERROR' });
-            throw new Error(r.error.message||'Login gagal');
-          }
-          window.LoginRateLimiter.reset(email);
-          var md=r.data.user.user_metadata||{};
-          return {source:'supabase',user:{id:r.data.user.id,email:r.data.user.email,nama:md.nama||email.split('@')[0],role:md.role||'staff'}};
-        }
-        
-        throw new Error('User tidak ditemukan');
-      };
-    }
-
-    // ==========================================
-    // 🔒 SINGLE DEVICE LOCK
-    // ==========================================
-    window.DeviceLock = {
-      STORAGE_KEY: 'dreamos_device_locks',
-      
-      getLocks: function() {
-        try {
-          return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}');
-        } catch(e) { return {}; }
-      },
-      
-      saveLocks: function(locks) {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locks));
-      },
-      
-      lockDevice: function(userId, deviceId, userEmail) {
-        const locks = this.getLocks();
-        locks[userId] = {
-          deviceId: deviceId,
-          userEmail: userEmail,
-          lockedAt: new Date().toISOString(),
-          lastActive: new Date().toISOString()
-        };
-        this.saveLocks(locks);
-        if(window.BankAudit) BankAudit.log('DEVICE_LOCKED', { userId: userId, deviceId: deviceId });
-      },
-      
-      isDeviceLocked: function(userId, deviceId) {
-        const locks = this.getLocks();
-        const lock = locks[userId];
-        if (!lock) return { locked: false };
-        
-        // Dev bypass
-        const user = this.getUserById(userId);
-        if (user && user.role === 'dev') {
-          return { locked: false, isDev: true };
-        }
-        
-        if (lock.deviceId !== deviceId) {
-          return { 
-            locked: true, 
-            message: `⛔ Akun ini sudah login di device lain! Device ID: ${lock.deviceId.substring(0,8)}...`,
-            lockedAt: lock.lockedAt
-          };
-        }
-        
-        return { locked: false };
-      },
-      
-      releaseLock: function(userId) {
-        const locks = this.getLocks();
-        delete locks[userId];
-        this.saveLocks(locks);
-        if(window.BankAudit) BankAudit.log('DEVICE_UNLOCKED', { userId: userId });
-      },
-      
-      getUserById: function(userId) {
-        try {
-          const users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
-          return users.find(u => u.id === userId);
-        } catch(e) { return null; }
-      }
-    };
-
-    document.addEventListener('DOMContentLoaded', function() {
-      // Display device ID
-      const deviceInfo = document.getElementById('device-info');
-      if (deviceInfo) {
-        deviceInfo.textContent = '🔐 Device ID: ' + window.DeviceFingerprint.get().substring(0, 20) + '...';
-      }
-
-      window.hapticTap = function(intensity = 'light') {
-        if ('vibrate' in navigator) {
-          const patterns = { light: 10, medium: 20, heavy: 30, success: [10, 50, 10], error: [30, 50, 30] };
-          navigator.vibrate(patterns[intensity] || 10);
-        }
-      };
-
-      const ROLE_PERMISSIONS = {
-        dev: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
-        kabag_umum: ['cmd','security','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
-        koordinator_umum: ['cmd','security','k3','booking','asset','stok','maintenance','dana','users','audit','janitor-indoor','janitor-outdoor','profile','qr','about','setting'],
-        komandan_regu: ['security','security_edit_jadwal','profile','qr','about','setting'],
-        guru: ['booking','k3','profile','qr','about','setting'],
-        janitor_indoor: ['janitor-indoor','k3','profile','qr','about','setting'],
-        janitor_outdoor: ['janitor-outdoor','k3','profile','qr','about','setting'],
-        security: ['security','k3','profile','qr','about','setting'],
-        maintenance: ['maintenance','k3','profile','qr','about','setting'],
-        staff: ['profile','qr','about','setting']
-      };
-
-      function getStoredUser() {
-        try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); }
-        catch(e) { return {}; }
-      }
-      window.getUserRole = function() { return getStoredUser().role || 'staff'; };
-      
-      function canAccess(moduleId) { 
-        const role = getUserRole();
-        const perms = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.staff || [];
-        return perms.includes(moduleId); 
-      }
-
-      const togglePinEl = document.getElementById('toggle-pin');
-      const loginBtn = document.getElementById('login-button');
-      const emailInput = document.getElementById('email-input');
-      const passwordInput = document.getElementById('password-input');
+    document.getElementById('login-button').addEventListener('click', async function() {
+      const email = document.getElementById('email-input').value;
+      const password = document.getElementById('password-input').value;
       const errorEl = document.getElementById('error-msg');
-      const rateLimitMsg = document.getElementById('rate-limit-msg');
-
-      if (togglePinEl && passwordInput) {
-        togglePinEl.addEventListener('click', function() {
-          passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-          togglePinEl.textContent = passwordInput.type === 'password' ? '🔒' : '';
-        });
+      
+      if (!email || !password || password.length < 8) {
+        errorEl.textContent = '⛔ Email & Password (min 8 char) wajib!';
+        errorEl.style.display = 'block';
+        return;
       }
-
-      emailInput?.addEventListener('keypress', e => { if (e.key === 'Enter') passwordInput?.focus(); });
-      passwordInput?.addEventListener('keypress', e => { if (e.key === 'Enter') loginBtn?.click(); });
-
-      loginBtn?.addEventListener('click', async function() {
-        const email = emailInput?.value.trim() || '';
-        const password = passwordInput?.value || '';
-        if (errorEl) errorEl.style.display = 'none';
-        if (rateLimitMsg) rateLimitMsg.style.display = 'none';
-
-        if (!email || !password) {
-          if (errorEl) { errorEl.textContent = '⛔ Email dan password harus diisi!'; errorEl.style.display = 'block'; }
-          return;
-        }
-        if (password.length < 8) {
-          if (errorEl) { errorEl.textContent = ' Password minimal 8 karakter!'; errorEl.style.display = 'block'; }
-          return;
-        }
-        
-        loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
-
-        if (!window.supabaseClient && !initSupabase()) {
-          await new Promise(r => setTimeout(r, 1500));
-          if (!window.supabaseClient) {
-            if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
-            return;
-          }
-        }
-
-        try {
-          const result = await window.doSecureLogin(email, password, '');
-          const userData = {
-            id: result.user.id,
-            email: result.user.email,
-            nama: result.user.nama,
-            role: result.user.role,
-            source: result.source,
-            bound_at: new Date().toISOString()
-          };
-
-          // Device Lock Check (skip for dev)
-          if (userData.role !== 'dev') {
-            const deviceId = window.DeviceFingerprint.get();
-            const lockStatus = window.DeviceLock.isDeviceLocked(userData.id, deviceId);
-            
-            if (lockStatus.locked) {
-              if (errorEl) { 
-                errorEl.textContent = lockStatus.message; 
-                errorEl.style.display = 'block'; 
-              }
-              if(window.BankAudit) BankAudit.log('DEVICE_LOCK_REJECTED', { 
-                userId: userData.id, 
-                email: userData.email,
-                currentDevice: deviceId,
-                lockedDevice: lockStatus.lockedAt
-              });
-              loginBtn.textContent = ' ACCESS CORE';
-              loginBtn.disabled = false;
-              return;
-            }
-          }
-
-          localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
-          localStorage.setItem('dreamos_session_active', 'true');
-          
-          // Lock device for non-dev users
-          if (userData.role !== 'dev') {
-            const deviceId = window.DeviceFingerprint.get();
-            window.DeviceLock.lockDevice(userData.id, deviceId, userData.email);
-          }
-          
-          if (window.BankSession) BankSession.create(userData);
-          if (window.BankAudit && userData.role !== 'dev') {
-            BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
-          }
-
-          loginBtn.textContent = '✅ Success!';
-          setTimeout(() => { showDashboard(); }, 500);
-        } catch(e) {
-          if (errorEl) { errorEl.textContent = '⛔ ' + e.message; errorEl.style.display = 'block'; }
-          loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
-        }
-      });
-
-      function showDashboard() {
+      
+      this.textContent = ' Connecting...';
+      this.disabled = true;
+      
+      // Simulate login
+      setTimeout(() => {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
-        renderDashboard();
-        startIdleTimer();
-      }
-
-      // ==========================================
-      // ⏱️ IDLE TIMER (2 MINUTES)
-      // ==========================================
-      let idleTimer = null;
-      let warningTimer = null;
-      const IDLE_TIMEOUT = 120000; // 2 minutes
-      const WARNING_BEFORE = 30000; // Warning 30 seconds before
-
-      function startIdleTimer() {
-        resetIdleTimer();
-        
-        const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart', 'mousedown', 'keydown'];
-        events.forEach(evt => {
-          window.addEventListener(evt, resetIdleTimer, { passive: true });
-        });
-      }
-
-      function resetIdleTimer() {
-        clearTimeout(idleTimer);
-        clearTimeout(warningTimer);
-        
-        const warningEl = document.getElementById('idle-warning');
-        if (warningEl) warningEl.classList.remove('show');
-
-        idleTimer = setTimeout(() => {
-          showIdleWarning();
-          warningTimer = setTimeout(() => {
-            forceLogout();
-          }, WARNING_BEFORE);
-        }, IDLE_TIMEOUT - WARNING_BEFORE);
-      }
-
-      function showIdleWarning() {
-        const warningEl = document.getElementById('idle-warning');
-        const countdownEl = document.getElementById('idle-countdown');
-        if (warningEl && countdownEl) {
-          warningEl.classList.add('show');
-          let seconds = 30;
-          countdownEl.textContent = seconds;
-          const interval = setInterval(() => {
-            seconds--;
-            countdownEl.textContent = seconds;
-            if (seconds <= 0) clearInterval(interval);
-          }, 1000);
-        }
-      }
-
-      function forceLogout() {
-        const role = window.getUserRole();
-        if (role !== 'dev' && window.BankAudit) {
-          BankAudit.log('IDLE_TIMEOUT_LOGOUT', { 
-            email: getStoredUser().email,
-            idleTime: IDLE_TIMEOUT / 1000 + 's'
-          });
-        }
-        
-        localStorage.removeItem('dreamos_bound_user');
-        localStorage.setItem('dreamos_session_active', 'false');
-        
-        // Release device lock
-        const user = getStoredUser();
-        if (user.id && user.role !== 'dev') {
-          window.DeviceLock.releaseLock(user.id);
-        }
-        
-        sessionStorage.clear();
-        
-        window.showToast('⏱️ Sesi berakhir karena tidak aktif (2 menit). Silakan login ulang.', 'warning');
-        setTimeout(() => location.reload(), 2000);
-      }
-
-      window.renderDashboard = function() {
-        const container = document.getElementById('dashboard-container');
-        if (!container) return;
-        
-        container.innerHTML = `
-          <div class="header-main glass" style="position: relative;">
-            <span class="notif-bell" onclick="toggleNotif()" title="Notifikasi" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.3rem; cursor: pointer;">🔔<span class="notif-badge" id="notif-badge"></span></span>
-            <img src="assets/logo-sultan.png" class="login-logo" style="width:55px;height:55px; margin-bottom: 0.8rem;" onerror="this.style.display='none'">
-            <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
-            <div class="shalawat" style="margin-bottom:0.4rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
-          </div>
-          
-          <div id="dash-slider" class="glass">
-            <div class="slide-track" id="slide-track">
-              <div class="slide-item" id="slide-1">⏳ Memuat Jadwal Security...</div>
-              <div class="slide-item" id="slide-2">⏳ Memuat Booking...</div>
-              <div class="slide-item" id="slide-3">⏳ Memuat Laporan K3...</div>
-              <div class="slide-item" id="slide-4">⏳ Memuat Cuaca...</div>
-              <div class="slide-item" id="slide-5">⏳ Memuat Info Manajemen...</div>
-              <div class="slide-item" id="slide-6"> Memuat Info Bagian Umum...</div>
-              <div class="slide-item" id="slide-7">⏳ Memuat Ucapan...</div>
-            </div>
-            <div class="slide-indicators" id="slide-dots"></div>
-          </div>
-
-          <div id="kpi-strip"></div>
-          <div id="health-bar"></div>
-
-          <div id="unified-chart-container">
-            <div class="chart-header">
-              <div>
-                <div class="chart-title"> Enterprise Live Analytics (8 Modul Utama)</div>
-                <div class="chart-subtitle">Analisis Terpadu Berbasis Chart.js Dual-Axis (Bar & Growth Trend)</div>
-              </div>
-              <div style="font-size:0.65rem; color:var(--neon); background:rgba(0,255,157,0.1); padding:0.25rem 0.5rem; border-radius:6px; border:1px solid rgba(0,255,157,0.3);">LIVE SYNC</div>
-            </div>
-            <div class="unified-canvas-wrapper">
-              <canvas id="unifiedMarketChart"></canvas>
-            </div>
-          </div>
-
-          <div class="module-grid" id="module-grid"></div>
-
-          <div class="system-info-box glass">
-            <strong>Dream OS Enterprise RBAC v1.0 Beta</strong><br>
-            ISO 27001 • ISO 9001 • ISO 55001 Ready<br>
-            Engineered by Family Dream Team<br>
-            <span style="color:var(--accent);">The Power Soul Of Shalawat</span>
-          </div>
-        `;
-
-        const modules = [
-          { i:'🌍', n:'CMD Center', id:'cmd' },
-          { i:'🛡️', n:'Security Ops', id:'security' },
-          { i:'⚠️', n:'K3 Safety', id:'k3' },
-          { i:'🏠', n:'Jan Indoor', id:'janitor-indoor' },
-          { i:'🌳', n:'Jan Outdoor', id:'janitor-outdoor' },
-          { i:'', n:'Booking', id:'booking' },
-          { i:'🏢', n:'Asset', id:'asset' },
-          { i:'', n:'Stok Gudang', id:'stok' },
-          { i:'🔧', n:'Maintenance', id:'maintenance' }
-        ];
-
-        const grid = document.getElementById('module-grid');
-        if (grid) {
-          modules.forEach(m => {
-            const card = document.createElement('div');
-            card.className = 'mod-card';
-            if (!canAccess(m.id)) {
-              card.style.opacity = '0.5';
-              card.style.cursor = 'not-allowed';
-              card.style.filter = 'grayscale(100%)';
-              card.innerHTML = `<div class="mod-status" style="background:#ef4444;"></div><div class="mod-icon">🔒</div><div class="mod-title">${m.n}</div><div style="font-size:0.65rem; color:#ef4444; margin-top:4px; font-weight:700;">Dibatasi</div>`;
-              card.addEventListener('click', () => { 
-                window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan membuka ' + m.n + '.', 'error');
-                if(window.BankAudit && getUserRole() !== 'dev') {
-                  BankAudit.log('ACCESS_DENIED', { module: m.id, role: getUserRole() });
-                }
-              });
-            } else {
-              card.innerHTML = `<div class="mod-status"></div><div class="mod-icon">${m.i}</div><div class="mod-title">${m.n}</div>`;
-              card.addEventListener('click', () => { 
-                window.hapticTap('light'); 
-                if(window.BankAudit && getUserRole() !== 'dev') {
-                  BankAudit.log('MODULE_ACCESS', { module: m.id, role: getUserRole() });
-                }
-                window.openMod(m.id); 
-              });
-            }
-            grid.appendChild(card);
-          });
-        }
-
-        const role = window.getUserRole();
-        const kpiEl = document.getElementById('kpi-strip');
-        if (kpiEl) {
-          const kpis = {
-            kabag_umum: [ 
-              { label: 'Dana Pending', val: JSON.parse(localStorage.getItem('dreamos_dana')||'[]').filter(d=>d.status==='pending').length, module: 'dana' }, 
-              { label: 'Booking Hari Ini', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.tgl&&b.tgl.includes(new Date().toISOString().split('T')[0])).length, module: 'booking' } 
-            ],
-            staff: [ 
-              { label: 'Booking Saya', val: JSON.parse(localStorage.getItem('dreamos_bookings')||'[]').filter(b=>b.nama_peminjam===JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}').nama).length, module: 'booking' }, 
-              { label: 'Status Sistem', val: navigator.onLine ? '🟢 Online' : '🟡 Offline', module: null } 
-            ]
-          };
-          const data = kpis[role] || kpis.staff;
-          kpiEl.innerHTML = data.map(k => {
-            const clickable = k.module && canAccess(k.module);
-            return `<div class="kpi-chip" ${clickable ? `onclick="window.openMod('${k.module}')" style="cursor:pointer;"` : ''}>
-              <strong>${k.val}</strong>
-              <span>${k.label}</span>
-            </div>`;
-          }).join('');
-        }
-
-        const healthEl = document.getElementById('health-bar');
-        if (healthEl) {
-          const online = navigator.onLine;
-          const storage = Math.round((JSON.stringify(localStorage).length / 1024 / 1024) * 100) / 100;
-          healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span><span class="health-badge health-ok">💾 Storage: ${storage}MB</span>`;
-        }
-
-        setTimeout(() => {
-          const canvasEl = document.getElementById('unifiedMarketChart');
-          if (!canvasEl || typeof Chart === 'undefined') return;
-
-          const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-          const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-          const dana = JSON.parse(localStorage.getItem('dreamos_dana') || '[]');
-          const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
-
-          const labels = ['Tot Book', 'Book Pend', 'Tot K3', 'K3 Pend', 'Peng Dana', 'Dana Pend', 'Tot Stok', 'Stok Min'];
-          const barData = [
-            bookings.length, bookings.filter(b=>b.status==='pending').length,
-            k3.length, k3.filter(k=>k.status==='pending').length,
-            dana.length, dana.filter(d=>d.status==='pending').length,
-            stok.length, stok.filter(s=>Number(s.quantity||s.jumlah||0)<5).length
-          ];
-          const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
-
-          const moduleMap = ['booking', 'booking', 'k3', 'k3', 'dana', 'dana', 'stok', 'stok'];
-
-          if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
-
-          window._unifiedChartInstance = new Chart(canvasEl.getContext('2d'), {
-            type: 'bar',
-            data: {
-              labels: labels,
-              datasets: [
-                {
-                  label: 'Volume (Batang)',
-                  data: barData,
-                  backgroundColor: 'rgba(0, 255, 157, 0.65)',
-                  borderColor: '#00ff9d',
-                  borderWidth: 1.5,
-                  borderRadius: 6,
-                  yAxisID: 'y',
-                  order: 2
-                },
-                {
-                  label: 'Pertumbuhan (%)',
-                  data: lineTrendData,
-                  type: 'line',
-                  borderColor: '#0ea5e9',
-                  backgroundColor: 'rgba(14, 165, 233, 0.2)',
-                  borderWidth: 2.5,
-                  pointBackgroundColor: '#0ea5e9',
-                  pointRadius: 3,
-                  tension: 0.35,
-                  yAxisID: 'y1',
-                  order: 1
-                }
-              ]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } },
-                tooltip: { 
-                  backgroundColor: 'rgba(15, 23, 42, 0.95)', 
-                  titleColor: '#00ff9d', 
-                  bodyColor: '#e2e8f0',
-                  callbacks: {
-                    label: function(context) {
-                      return context.dataset.label + ': ' + context.parsed.y;
-                    }
-                  }
-                }
-              },
-              scales: {
-                x: { 
-                  ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 35, minRotation: 35 }, 
-                  grid: { display: false } 
-                },
-                y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
-              },
-              onClick: (e, elements) => {
-                if (elements.length > 0) {
-                  const index = elements[0].index;
-                  const module = moduleMap[index];
-                  if (module && canAccess(module)) {
-                    if(getUserRole() !== 'dev') {
-                      BankAudit.log('CHART_CLICK', { module: module, index: index, role: getUserRole() });
-                    }
-                    window.openMod(module);
-                  } else {
-                    window.showToast('⛔ Akses ditolak untuk modul ini', 'error');
-                  }
-                }
-              }
-            }
-          });
-        }, 300);
-
-        if (!window._sliderInit) {
-          window._sliderTimer = null;
-          window._sliderCur = 0;
-          let touchStartX = 0;
-          let touchEndX = 0;
-          
-          window.updateDashboardSlides = async function() {
-            try {
-              const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
-              const s1 = document.getElementById('slide-1'); if(s1) s1.innerHTML = `<strong>🛡️ Security Shift</strong><br>${sec}`;
-
-              const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-              const today = new Date().toISOString().split('T')[0];
-              const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
-              const bToday = bookings.filter(b=>b.tgl&&b.tgl.includes(today));
-              const bTomor = bookings.filter(b=>b.tgl&&b.tgl.includes(tomorrow));
-              const htmlB = bToday.length ? bToday.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking hari ini.';
-              const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
-              const s2 = document.getElementById('slide-2'); if(s2) s2.innerHTML = `<strong>📅 Booking</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
-
-              const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-              const pending = k3.filter(r=>r.status==='pending').length;
-              const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
-              const s3 = document.getElementById('slide-3'); if(s3) s3.innerHTML = `<strong>⚠️ K3 Report</strong><br>Pending: ${pending}<br>${latest}`;
-
-              const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
-              const now = Date.now();
-              if (!wCache.ts || now - wCache.ts > 1800000) {
-                try {
-                  const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
-                  const d = await res.json();
-                  const temp = d.current_weather.temperature;
-                  const code = d.current_weather.weathercode;
-                  const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
-                  const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
-                  wCache.data = `${icon} ${temp}°C - ${desc}`;
-                  wCache.ts = now;
-                  localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
-                } catch(e) { wCache.data = '️ Gagal memuat cuaca.'; }
-              }
-              const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca</strong><br>${wCache.data||'Memuat...'}<br><small>Open-Meteo Real-time</small>`;
-
-              const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
-              const s5 = document.getElementById('slide-5'); if(s5) s5.innerHTML = `<strong>📢 Manajemen</strong><br>${ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen'}`;
-              const s6 = document.getElementById('slide-6'); if(s6) s6.innerHTML = `<strong>🏢 Bag. Umum</strong><br>${ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum'}`;
-              const s7 = document.getElementById('slide-7'); if(s7) s7.innerHTML = `<strong>💌 Ucapan</strong><br>${ann.find(a=>a.type==='ucapan')?.msg || 'The Power Soul Of Shalawat'}`;
-            } catch(e) { console.warn('🎠 Slide update error:', e); }
-          };
-
-          function initCarousel() {
-            const track = document.getElementById('slide-track');
-            const dotsC = document.getElementById('slide-dots');
-            const el = document.getElementById('dash-slider');
-            if (!track || !dotsC || !el) return;
-            const slides = track.querySelectorAll('.slide-item');
-            if (slides.length === 0) return;
-
-            if (window._sliderTimer) clearInterval(window._sliderTimer);
-            dotsC.innerHTML = '';
-            slides.forEach((_,i) => {
-              const d = document.createElement('span');
-              d.className = 'slide-dot' + (i===0?' active':'');
-              d.onclick = () => goTo(i);
-              dotsC.appendChild(d);
-            });
-            const dots = dotsC.querySelectorAll('.slide-dot');
-
-            function goTo(i) {
-              window._sliderCur = (i + slides.length) % slides.length;
-              track.style.transform = `translateX(-${window._sliderCur * 100}%)`;
-              dots.forEach((d,x) => d.classList.toggle('active', x === window._sliderCur));
-            }
-            function next() { goTo(window._sliderCur + 1); }
-            function start() { if(window._sliderTimer) clearInterval(window._sliderTimer); window._sliderTimer = setInterval(next, 7000); }
-            function stop() { if(window._sliderTimer) clearInterval(window._sliderTimer); }
-
-            el.addEventListener('touchstart', function(e) {
-              touchStartX = e.changedTouches[0].screenX;
-              stop();
-            }, {passive:true});
-            
-            el.addEventListener('touchend', function(e) {
-              touchEndX = e.changedTouches[0].screenX;
-              handleSwipe();
-              setTimeout(start, 3000);
-            }, {passive:true});
-            
-            function handleSwipe() {
-              const swipeThreshold = 50;
-              const diff = touchStartX - touchEndX;
-              if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) goTo(window._sliderCur + 1);
-                else goTo(window._sliderCur - 1);
-              }
-            }
-
-            el.addEventListener('mouseenter', stop);
-            el.addEventListener('mouseleave', start);
-            goTo(0); start();
-          }
-
-          requestAnimationFrame(() => setTimeout(() => {
-            window.updateDashboardSlides();
-            initCarousel();
-          }, 300));
-          window._sliderInit = true;
-        } else {
-          if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
-        }
-      };
-
-      window.goHome = function() {
-        const c = document.getElementById('mod-container');
-        if (c) { c.style.display = 'none'; c.innerHTML = ''; }
-        document.getElementById('main-app').style.display = 'block';
-        document.getElementById('bottom-nav').style.display = 'block';
-        if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
-        window.scrollTo(0, 0);
-        resetIdleTimer();
-      };
-
-      window.openMod = function(moduleId) {
-        if (!canAccess(moduleId)) { 
-          window.showToast('⛔ Akses Ditolak! Role Anda tidak diizinkan.', 'error'); 
-          if(getUserRole() !== 'dev') {
-            BankAudit.log('ACCESS_DENIED', { module: moduleId, role: getUserRole() });
-          }
-          return; 
-        }
-        
-        const map = {
-          cmd:'commandcenter.html', security:'security.html', security_edit_jadwal:'security_edit_jadwal.html',
-          k3:'k3.html', 'janitor-indoor':'janitor-indoor.html', 'janitor-outdoor':'janitor-outdoor.html',
-          booking:'booking.html', asset:'asset.html', stok:'stok.html', maintenance:'maintenance.html',
-          dana:'commandcenter.html', users:'commandcenter.html', audit:'commandcenter.html',
-          profile:'profile.html', qr:'qr.html', about:'about.html', setting:'setting.html'
-        };
-        const file = map[moduleId];
-        if (!file) { window.showToast('⛔ Modul tidak dikenali.', 'error'); return; }
-
-        let c = document.getElementById('mod-container');
-        if (!c) {
-          c = document.createElement('div'); c.id = 'mod-container';
-          c.style.cssText = 'position:fixed;inset:0;z-index:9995;overflow-y:auto;background:#0a0e27 !important;padding-bottom:5rem;';
-          document.body.appendChild(c);
-        } else {
-          c.style.display = 'block';
-          c.innerHTML = '';
-        }
-
-        document.getElementById('main-app').style.display = 'none';
-        document.getElementById('bottom-nav').style.display = 'none';
-        window.announce('Memuat modul ' + moduleId + '...');
-
-        const basePath = window.location.pathname.includes('/dream-os-final/') ? '/dream-os-final/' : '/';
-        const pathsToTry = [ `${basePath}modules/${file}`, `${basePath}${file}`, `modules/${file}`, file ];
-
-        async function tryFetch(paths, idx) {
-          if (idx >= paths.length) {
-            c.innerHTML = `<div style="color:#cbd5e1;padding:4rem;text-align:center;"><h3 style="color:#f59e0b;">🚧 Modul Tidak Ditemukan (404)</h3><p style="margin:1rem 0;color:#94a3b8;">File: <code style="background:rgba(0,0,0,0.3);padding:0.2rem 0.5rem;border-radius:4px;">${file}</code></p><button onclick="window.goHome()" style="margin-top:2rem;padding:0.8rem 2rem;background:#0ea5e9;color:white;border:none;border-radius:12px;cursor:pointer;">🏠 Kembali</button></div>`;
-            return;
-          }
-          try {
-            const res = await fetch(paths[idx] + '?v=' + Date.now());
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const html = await res.text();
-            c.innerHTML = html;
-            c.querySelectorAll('script').forEach(s => {
-              const ns = document.createElement('script');
-              if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
-              document.body.appendChild(ns);
-            });
-          } catch(err) { tryFetch(paths, idx + 1); }
-        }
-        tryFetch(pathsToTry, 0);
-        resetIdleTimer();
-      };
-
-      document.getElementById('bottom-nav').addEventListener('click', function(e) {
-        const item = e.target.closest('.nav-item');
-        if (!item) return;
-        const mod = item.dataset.mod;
-        const nav = item.dataset.nav;
-        if (mod) { window.hapticTap('light'); window.openMod(mod); }
-        if (nav === 'home') { window.hapticTap('light'); window.goHome(); }
-        document.querySelectorAll('#bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
-        item.classList.add('active');
-      });
-
-      window.DreamNotif = (function() {
-        const STORAGE_KEY = 'dreamos_notifications';
-        function getNotifs() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; } }
-        function saveNotifs(notifs) { if (notifs.length > 50) notifs = notifs.slice(0, 50); localStorage.setItem(STORAGE_KEY, JSON.stringify(notifs)); updateBadge(); }
-        function updateBadge() { 
-          const notifs = getNotifs(); 
-          const unread = notifs.filter(n => !n.read).length; 
-          const badge = document.getElementById('notif-badge'); 
-          if (badge) { badge.textContent = unread > 0 ? (unread > 9 ? '9+' : unread) : ''; badge.style.display = unread > 0 ? 'flex' : 'none'; } 
-        }
-        window.addNotification = function(type, title, message, moduleId, targetRoles = ['all']) {
-          const notif = { id: 'notif_' + Date.now(), type, title, message, moduleId: moduleId || 'general', time: new Date().toISOString(), read: false };
-          const notifs = getNotifs(); notifs.unshift(notif); saveNotifs(notifs);
-        };
-        window.markNotifAsRead = function(id) { const notifs = getNotifs(); const n = notifs.find(x => x.id === id); if(n) { n.read = true; saveNotifs(notifs); renderPanel(); } };
-        window.clearAllNotifs = function() { localStorage.removeItem(STORAGE_KEY); updateBadge(); renderPanel(); };
-        function renderPanel() {
-          const panel = document.getElementById('notif-panel'); if (!panel) return;
-          const notifs = getNotifs();
-          if (notifs.length === 0) { panel.innerHTML = '<p style="text-align:center;color:#64748b;padding:2rem;">🔔 Tidak ada notifikasi.</p>'; return; }
-          panel.innerHTML = notifs.map(n => `<div class="notif-item ${n.type}" onclick="window.DreamNotif.markNotifAsRead('${n.id}')"><strong>${n.title}</strong><div style="font-size:0.75rem;color:#cbd5e1;">${n.message}</div></div>`).join('') + '<div class="notif-clear" onclick="window.DreamNotif.clearAllNotifs()">🧹 Bersihkan</div>';
-        }
-        updateBadge();
-        return { renderPanel };
-      })();
-
-      window.toggleNotif = function() {
-        const panel = document.getElementById('notif-panel');
-        if (!panel) return;
-        if (panel.style.display === 'block') { panel.style.display = 'none'; } 
-        else { window.DreamNotif.renderPanel(); panel.style.display = 'block'; }
-        resetIdleTimer();
-      };
-
-      window.handleLogout = async function() {
-        if (confirm('🚪 Yakin ingin logout?')) {
-          const user = getStoredUser();
-          if (user.role !== 'dev' && window.BankAudit) {
-            BankAudit.log('MANUAL_LOGOUT', { email: user.email });
-          }
-          
-          if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(()=>{});
-          
-          // Release device lock
-          if (user.id && user.role !== 'dev') {
-            window.DeviceLock.releaseLock(user.id);
-          }
-          
-          localStorage.removeItem('dreamos_bound_user');
-          localStorage.setItem('dreamos_session_active', 'false');
-          sessionStorage.clear();
-          
-          // Clear clipboard
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText('').catch(()=>{});
-          }
-          
-          window.location.href = 'index.html';
-        }
-      };
-
-      const cmdPalette = document.getElementById('cmd-palette');
-      const cmdInput = document.getElementById('cmd-input');
-      const cmdList = document.getElementById('cmd-list');
-      let cmdIdx = -1;
-
-      const commands = [ 
-        { id:'home', label:'🏠 Dashboard', action:()=>window.goHome() }, 
-        { id:'cmd', label:'🏢 Command Center', action:()=>window.openMod('cmd') }, 
-        { id:'security', label:'🛡️ Security Ops', action:()=>window.openMod('security') }, 
-        { id:'booking', label:'📅 Booking Ruangan', action:()=>window.openMod('booking') }, 
-        { id:'k3', label:'⚠️ K3 Safety', action:()=>window.openMod('k3') }, 
-        { id:'setting', label:'⚙️ System Settings', action:()=>window.openMod('setting') }, 
-        { id:'logout', label:'🚪 Logout', action:()=>{ window.handleLogout(); } } 
-      ];
-      
-      function filterCmd(q) { q = q.toLowerCase(); return commands.filter(c => c.label.toLowerCase().includes(q) || c.id.includes(q)); }
-      function renderCmdList(items) { 
-        cmdIdx = -1; 
-        cmdList.innerHTML = items.length ? items.map((c,i) => `<div class="cmd-item" data-idx="${i}" data-id="${c.id}"><span>${c.label}</span><span class="cmd-hint">${c.id}</span></div>`).join('') : '<div style="padding:1rem;text-align:center;color:#64748b;">Tidak ditemukan</div>'; 
-        cmdList.querySelectorAll('.cmd-item').forEach(el => { 
-          el.addEventListener('click', () => { const id = el.dataset.id; const cmd = commands.find(c=>c.id===id); if(cmd) cmd.action(); closeCmd(); }); 
-        }); 
-      }
-      function openCmd() { cmdPalette.classList.add('show'); cmdInput.value=''; renderCmdList(commands); cmdInput.focus(); }
-      function closeCmd() { cmdPalette.classList.remove('show'); cmdInput.blur(); }
-      
-      cmdInput.addEventListener('input', () => renderCmdList(filterCmd(cmdInput.value)));
-      cmdInput.addEventListener('keydown', e => { 
-        const items = cmdList.querySelectorAll('.cmd-item'); 
-        if (e.key==='ArrowDown') { e.preventDefault(); cmdIdx = Math.min(cmdIdx+1, items.length-1); } 
-        else if (e.key==='ArrowUp') { e.preventDefault(); cmdIdx = Math.max(cmdIdx-1, 0); } 
-        else if (e.key==='Enter' && cmdIdx>=0) { e.preventDefault(); items[cmdIdx]?.click(); return; } 
-        else if (e.key==='Escape') { closeCmd(); return; } 
-        items.forEach((el,i) => el.classList.toggle('active', i===cmdIdx)); 
-      });
-      
-      document.addEventListener('keydown', e => { 
-        if ((e.ctrlKey || e.metaKey) && e.key==='k') { e.preventDefault(); cmdPalette.classList.contains('show') ? closeCmd() : openCmd(); } 
-        if(e.ctrlKey&&e.shiftKey&&e.key==="H"){e.preventDefault();window.goHome()}
-        if(e.ctrlKey&&e.shiftKey&&e.key==="L"){e.preventDefault();window.handleLogout()}
-        if(e.ctrlKey&&e.shiftKey&&e.key==="N"){e.preventDefault();window.toggleNotif()}
-      });
-      cmdPalette.addEventListener('click', e => { if(e.target===cmdPalette) closeCmd(); });
-
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault(); deferredPrompt = e;
-        setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 3000);
-      });
-      window.installPWA = function() {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then(function(result) { deferredPrompt = null; document.getElementById('pwa-banner').style.display = 'none'; });
-        } else { alert('📲 Buka menu browser → "Add to Home Screen"'); }
-      };
-
-      window.openCastModal = function() { document.getElementById('cast-modal').classList.add('show'); };
-      window.closeCastModal = function() { document.getElementById('cast-modal').classList.remove('show'); };
-      function presentUrl(){ return window.location.origin + (window.location.pathname.indexOf('/dream-os-final/')>=0 ? '/dream-os-final/' : '/') + 'presentation.html'; }
-      window.shareToTV = function() { const url = presentUrl(); if (navigator.share) navigator.share({ title:'Presentation', url:url }).catch(function(){}); else prompt('Salin URL:', url); };
-      window.presentHere = function() { document.documentElement.requestFullscreen?.(); };
-
-      initSupabase();
-      initGDPR();
-      
-      if (window.DreamDB) { window.DreamDB.init().then(() => { window.DreamDB.migrate(); window.DreamDB.archiveOldLogs(90); }).catch(e => {}); }
-      
-      if (localStorage.getItem('dreamos_session_active') === 'true') { 
-        const user = getStoredUser(); 
-        if (user.role) showDashboard(); 
-      }
-
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
-      }
-
-      (function() {
-        const canvas = document.getElementById('star-field');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let stars = [];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; createStars(); }
-        function createStars() { stars = []; for (let i = 0; i < Math.floor((canvas.width * canvas.height) / 2000); i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 }); } }
-        function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#e2e8f0'; stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); s.y += s.speed; if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; } }); requestAnimationFrame(animate); }
-        resize(); window.addEventListener('resize', resize); animate();
-      })();
+        initChart();
+      }, 1000);
     });
+
+    // ==========================================
+    // 📊 CHART
+    // ==========================================
+    function initChart() {
+      const ctx = document.getElementById('chart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Book', 'K3', 'Dana', 'Stok'],
+          datasets: [{
+            label: 'Volume',
+            data: [0, 0, 0, 0],
+            backgroundColor: 'rgba(0,255,157,0.6)',
+            borderColor: '#00ff9d',
+            borderWidth: 2,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // ⏱️ IDLE TIMER (2 MINUTES)
+    // ==========================================
+    let idleTimer;
+    const IDLE_TIMEOUT = 120000; // 2 minutes
+    
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        alert('⏱️ Sesi berakhir (idle 2 menit). Login ulang!');
+        location.reload();
+      }, IDLE_TIMEOUT);
+    }
+    
+    ['mousemove', 'keypress', 'click', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetIdleTimer);
+    });
+    
+    resetIdleTimer();
   </script>
 </body>
 </html>
