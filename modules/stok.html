@@ -355,8 +355,29 @@
     el.innerHTML=used.slice(0,30).map(function(w){ return '<div class="maint-item">🛠️ <b>'+esc(w.judul||w.deskripsi||'Work Order')+'</b><div style="color:#94a3b8;margin-top:3px;">🧾 '+esc(w.consumed)+'</div><div style="color:#475569;font-size:0.66rem;margin-top:2px;">'+(w.created_at?new Date(w.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'; }).join('');
   }
 
+  function seedSparepart(){
+    if(localStorage.getItem('dreamos_stok_seeded')==='1') return;
+    var s=getInv();
+    if(s.length>0){ localStorage.setItem('dreamos_stok_seeded','1'); return; }
+    var now=iso();
+    var items=[
+      ['Kabel NYM 2x1.5mm','Elektrikal',20],['Kabel NYA 1.5mm','Elektrikal',30],
+      ['Isolasi Listrik (Roll)','Elektrikal',15],['Seal Tape (Roll)','AC/HVAC',12],
+      ['Keran Air 1/2"','Plumbing',8],['Shower Head','Plumbing',5],
+      ['Engsel Pintu','Hardware',20],['Baut + Mur (Set)','Hardware',50],
+      ['Stopkontak 16A','Elektrikal',15],['Kapasitor AC','AC/HVAC',10],
+      ['Freon R32 (kg)','AC/HVAC',6],['Modul AC (PCB)','AC/HVAC',4],
+      ['Lampu LED 18W','Elektrikal',25],['Saklar Ganda','Elektrikal',15],
+      ['Pipa PVC 1/2"','Plumbing',10],['Gembok','Hardware',6]
+    ];
+    items.forEach(function(it,i){ s.push({ id:'inv_seed_'+Date.now()+'_'+i, nama:it[0], kategori:it[1], jumlah:it[2], minimal:5, nilai:0, kondisi:'Baik', lokasi_gudang:'Gudang Umum', created_at:now }); });
+    setInv(s);
+    localStorage.setItem('dreamos_stok_seeded','1');
+    logMutation('TAMBAH','Seed sparepart awal ('+items.length+' jenis)', items.reduce(function(a,x){return a+x[2];},0), 'Gudang Umum');
+  }
   // ===== INIT =====
   document.getElementById('search-stok').addEventListener('input', function(e){ renderList(e.target.value); });
+  seedSparepart();
   applyRBAC(); renderList(); updateStats(); notifyCritical(false);
   window.addEventListener('storage', function(e){ if(e.key===INV||e.key==='dreamos_maintenance_tasks'){ renderList(document.getElementById('search-stok').value); updateStats(); renderCharts(); if(document.getElementById('panel-integrasi').style.display!=='none'){ renderKritis(); renderMaint(); } } });
   if(window.BankAudit){ try{ window.BankAudit.log('ACCESS_STOK_MODULE',{role:getRole()}); }catch(e){} }
