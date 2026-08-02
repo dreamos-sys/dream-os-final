@@ -575,52 +575,41 @@
         })();
 
                 // 🧠 SMART SECURITY CALENDAR - Auto-read jadwal 24/7
-        window.getSecurityShiftNow = function() {
-          try {
-            var jadwal = JSON.parse(localStorage.getItem('dreamos_security_jadwal') || '[]');
-            var now = new Date();
-            var hariNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-            var hari = hariNames[now.getDay()];
-            var tanggal = now.getDate();
-            var bulan = now.getMonth() + 1;
-            var tahun = now.getFullYear();
-            var jam = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-            if (jadwal.length === 0) return { hari: hari, tanggal: tanggal, bulan: bulan, tahun: tahun, jam: jam, shifts: [], active: null };
-            var jadwalHariIni = jadwal.filter(function(j) {
-              var matchHari = !j.hari || j.hari === hari || j.hari === 'Setiap Hari' || j.hari === 'all' || j.hari === '*';
-              var matchTanggal = !j.tanggal || Number(j.tanggal) === tanggal;
-              var matchBulan = !j.bulan || Number(j.bulan) === bulan;
-              var matchTahun = !j.tahun || Number(j.tahun) === tahun;
-              return matchHari && matchTanggal && matchBulan && matchTahun;
-            });
-            var activeShift = null;
-            jadwalHariIni.forEach(function(j) {
-              var mulai = j.jam_mulai || j.mulai || j.start || '00:00';
-              var selesai = j.jam_selesai || j.selesai || j.end || '23:59';
-              if (jam >= mulai && jam <= selesai) activeShift = j;
-            });
-            return { hari: hari, tanggal: tanggal, bulan: bulan, tahun: tahun, jam: jam, shifts: jadwalHariIni, active: activeShift };
-          } catch(e) { return null; }
-        };
 
-        window.updateDashboardSlides = async function() {
+                window.updateDashboardSlides = async function() {
           try {
-            // 📌 SLIDE 1: Smart Security Calendar (auto-read jadwal 24/7)
-            var secData = window.getSecurityShiftNow ? window.getSecurityShiftNow() : null;
+            // 📌 SLIDE 1: SMART SECURITY 24/7 — baca dreamos_matrix (SINKRON modul Security)
             var s1 = document.getElementById('slide-1');
             if (s1) {
-              if (secData && secData.shifts.length > 0) {
-                var activeHtml = secData.active
-                  ? '<span style="color:#10b981;font-weight:800;">🟢 AKTIF: ' + (secData.active.nama || secData.active.petugas || secData.active.regu || 'Regu ' + (secData.shifts.indexOf(secData.active)+1)) + '</span><br>⏰ ' + (secData.active.jam_mulai||secData.active.mulai||'?') + ' - ' + (secData.active.jam_selesai||secData.active.selesai||'?')
-                  : '<span style="color:#f59e0b;">🟡 Tidak ada shift aktif (' + secData.jam + ')</span>';
-                s1.innerHTML = '<strong>🛡️ Security 24/7 — ' + secData.hari + ', ' + secData.tanggal + '/' + secData.bulan + '/' + secData.tahun + '</strong><br>⏱️ ' + secData.jam + ' WIB • ' + secData.shifts.length + ' shift terjadwal<br>' + activeHtml;
+              var nowS = new Date();
+              var hariNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+              var hari = hariNames[nowS.getDay()];
+              var tglN = nowS.getDate(), blnN = nowS.getMonth()+1, thnN = nowS.getFullYear();
+              var jamN = nowS.getHours().toString().padStart(2,'0')+':'+nowS.getMinutes().toString().padStart(2,'0');
+              var periode = thnN+'-'+String(blnN).padStart(2,'0');
+              var matrix = []; try { matrix = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]'); } catch(e){}
+              var todayEntries = matrix.filter(function(x){ return x.periode===periode && parseInt(x.tgl)===tglN && (x.shift==='P'||x.shift==='M'); });
+              var pagiNames = todayEntries.filter(function(x){return x.shift==='P';}).map(function(x){return x.nama;});
+              var malamNames = todayEntries.filter(function(x){return x.shift==='M';}).map(function(x){return x.nama;});
+              var curH = nowS.getHours();
+              var isPagiActive = (curH >= 7 && curH < 19);
+              var head = '<strong>🛡️ Security 24/7 — '+hari+', '+tglN+'/'+blnN+'/'+thnN+'</strong><br>⏱️ '+jamN+' WIB';
+              if (matrix.length === 0) {
+                s1.innerHTML = head+'<br><span style="color:#f59e0b;">Belum ada matriks jadwal. Buka modul Security (Komandan Regu) untuk init.</span>';
+              } else if (todayEntries.length === 0) {
+                s1.innerHTML = head+'<br><span style="color:#f59e0b;">Tidak ada shift Pagi/Malam hari ini (Libur/Cuti).</span>';
               } else {
-                var secFallback = localStorage.getItem('dreamos_sec_today');
-                s1.innerHTML = '<strong>🛡️ Security 24/7</strong><br>' + (secFallback || 'Belum ada jadwal. Input via modul Security (Komandan Regu).');
+                var activeHtml = isPagiActive
+                  ? (pagiNames.length ? '<span style="color:#10b981;font-weight:800;">🟢 SHIFT PAGI AKTIF (07:00-19:00)</span><br>'+pagiNames.map(function(n,i){return '• '+(i+1)+'. '+n;}).join('<br>') : '<span style="color:#f59e0b;">🟡 Shift Pagi kosong</span>')
+                  : (malamNames.length ? '<span style="color:#0ea5e9;font-weight:800;">🔵 SHIFT MALAM AKTIF (19:00-07:00)</span><br>'+malamNames.map(function(n,i){return '• '+(i+1)+'. '+n;}).join('<br>') : '<span style="color:#f59e0b;">🟡 Shift Malam kosong</span>');
+                var nextHtml = isPagiActive
+                  ? (malamNames.length ? '<br><small style="color:#94a3b8;">🌙 Berikutnya (Malam 19:00): '+malamNames.join(', ')+'</small>' : '')
+                  : (pagiNames.length ? '<br><small style="color:#94a3b8;">☀️ Berikutnya (Pagi 07:00): '+pagiNames.join(', ')+'</small>' : '');
+                s1.innerHTML = head+' • '+todayEntries.length+' petugas<br>'+activeHtml+nextHtml;
               }
             }
 
-            // 📌 SLIDE 2: Booking (auto-read dari modul booking + cloud sync)
+            // 📌 SLIDE 2: Booking (auto-read modul booking + cloud sync)
             const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
             const today = new Date().toISOString().split('T')[0];
             const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
@@ -630,13 +619,13 @@
             const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
             const s2 = document.getElementById('slide-2'); if(s2) s2.innerHTML = `<strong>📅 Booking</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
 
-            // 📌 SLIDE 3: K3 (auto-read dari modul K3 + cloud sync)
+            // 📌 SLIDE 3: K3 (auto-read modul K3 + cloud sync)
             const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
             const pending = k3.filter(r=>r.status==='pending').length;
             const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
             const s3 = document.getElementById('slide-3'); if(s3) s3.innerHTML = `<strong>⚠️ K3 Report</strong><br>Pending: ${pending}<br>${latest}`;
 
-            // 📌 SLIDE 4: Weather (real-time + prediksi per jam via Open-Meteo)
+            // 📌 SLIDE 4: Weather real-time + prediksi per jam (Open-Meteo)
             const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
             const now = Date.now();
             if (!wCache.ts || now - wCache.ts > 1800000) {
@@ -857,14 +846,34 @@
         window.closeCastModal();
       };
 
-            // 🔄 AUTO-SYNC: Slide auto-update saat modul berubah (cross-tab)
+            // 🔄 AUTO-SYNC 3-LAPISAN (Pro Global Enterprise)
+      // Lapis 1: CROSS-TAB (event storage antar tab/browser)
       window.addEventListener('storage', function(e) {
-        var syncKeys = ['dreamos_security_jadwal','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang'];
+        var syncKeys = ['dreamos_matrix','dreamos_security_jadwal','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang'];
         if (syncKeys.indexOf(e.key) !== -1 && typeof window.updateDashboardSlides === 'function') {
           window.updateDashboardSlides();
         }
       });
-      // 🧠 Smart Calendar auto-refresh tiap 60 detik (ikuti jam real-time)
+      // Lapis 2: SAME-TAB (monkey-patch localStorage.setItem — modul di-inject 1 window, storage event TIDAK fire!)
+      (function(){
+        if (window.__dreamos_ls_patched) return;
+        window.__dreamos_ls_patched = true;
+        var origSet = localStorage.setItem.bind(localStorage);
+        var watchKeys = ['dreamos_matrix','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang','dreamos_security_jadwal'];
+        var deb = null;
+        localStorage.setItem = function(k, v) {
+          origSet(k, v);
+          if (watchKeys.indexOf(k) !== -1) {
+            clearTimeout(deb);
+            deb = setTimeout(function(){ if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides(); }, 400);
+          }
+        };
+      })();
+      // Lapis 3: CUSTOM EVENT dari modul (booking.html dispatch 'booking-updated', dll)
+      ['booking-updated','dreamos-notif','k3-updated','matrix-updated'].forEach(function(ev){
+        window.addEventListener(ev, function(){ if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides(); });
+      });
+      // Jaring pengaman: polling 60 detik (ikuti jam real-time untuk pergantian shift)
       setInterval(function() {
         if (localStorage.getItem('dreamos_session_active') === 'true' && typeof window.updateDashboardSlides === 'function') {
           window.updateDashboardSlides();
