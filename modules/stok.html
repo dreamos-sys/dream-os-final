@@ -169,11 +169,13 @@
   function canEdit(){ var r=getRole(); return r==='dev'||r==='kabag_umum'||r==='koordinator_umum'; }
   function loc(x){ return x.lokasi_gudang || x.lokasi || '-'; }
 
-  function logMutation(type, itemName, qty, location){
+    function logMutation(type, itemName, qty, location){
     var logs=getLog();
     var u=(function(){try{return JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');}catch(e){return {};}})();
-    logs.unshift({ type:type, item:itemName, qty:parseInt(qty)||0, location:location, user_name:u.nama||u.email||'Tidak Diketahui', role:u.role||'staff', user:getRole(), time:iso() });
-    localStorage.setItem(LOG, JSON.stringify(logs.slice(0,400)));
+    var entry={ id:'sm_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), type:type, item:itemName, qty:parseInt(qty)||0, location:location, user_name:u.nama||u.email||'Tidak Diketahui', role:u.role||'staff', user:getRole(), time:iso(), synced:false };
+    logs.unshift(entry);
+    try{ localStorage.setItem(LOG, JSON.stringify(logs.slice(0,400))); }catch(e){}
+    if(window.pushStockMovement){ try{ window.pushStockMovement(entry); }catch(e){} }
   }
 
   function applyRBAC(){
