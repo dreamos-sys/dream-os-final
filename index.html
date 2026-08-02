@@ -392,13 +392,8 @@
 
         loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
 
-        if (!window.supabaseClient && !initSupabase()) {
-          await new Promise(r => setTimeout(r, 1500));
-          if (!window.supabaseClient) {
-            if (errorEl) { errorEl.textContent = '⚠️ Gagal menghubungkan ke server.'; errorEl.style.display = 'block'; }
-            loginBtn.textContent = ' ACCESS CORE'; loginBtn.disabled = false; return;
-          }
-        }
+        // 📡 Offline-first: coba init Supabase, tapi JANGAN batalkan login lokal saat offline
+        if (!window.supabaseClient) { try { initSupabase(); } catch(e){} }
 
         try {
           const result = await window.doSecureLogin(email, password, '');
@@ -406,7 +401,16 @@
 
           localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
           localStorage.setItem('dreamos_session_active', 'true');
-          
+          // 📦 Cache kredensial (hash bcrypt) agar bisa login offline berikutnya
+          try {
+            var usersDb = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
+            var eIdx = usersDb.findIndex(function(u){ return (u.email||'').toLowerCase()===userData.email.toLowerCase(); });
+            var pHash = (typeof bcrypt!=='undefined') ? bcrypt.hashSync(password, 10) : null;
+            if (eIdx > -1) { if(pHash) usersDb[eIdx].password_hash=pHash; usersDb[eIdx].role=userData.role; usersDb[eIdx].nama=userData.nama; }
+            else if (pHash) { usersDb.push({ id:userData.id, email:userData.email, nama:userData.nama, role:userData.role, password_hash:pHash, source:userData.source }); }
+            localStorage.setItem('dreamos_users_db', JSON.stringify(usersDb));
+          } catch(e){}
+
           if (window.BankSession) BankSession.create(userData);
           if (window.BankAudit) BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: result.source, role: userData.role });
 
@@ -414,7 +418,10 @@
           setTimeout(() => { showDashboard(); }, 500);
         } catch(e) {
           console.error('Login Error:', e.message);
-          if (errorEl) { errorEl.textContent = '⛔ ' + e.message; errorEl.style.display = 'block'; }
+          var __off = !navigator.onLine || !window.supabaseClient;
+          var __msg = e.message || 'Login gagal';
+          if (__off) __msg = 'Offline — ' + __msg + '. Login online sekali dulu untuk mengaktifkan akses offline di perangkat ini.';
+          if (errorEl) { errorEl.textContent = '⛔ ' + __msg; errorEl.style.display = 'block'; }
           loginBtn.textContent = '⚡ ACCESS CORE'; loginBtn.disabled = false;
         }
       });
