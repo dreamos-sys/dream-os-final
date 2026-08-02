@@ -200,13 +200,17 @@
 
   // ===== First-come conflict =====
   function rangesOverlap(s1,e1,s2,e2) { var a=toMinutes(s1),b=toMinutes(e1),c=toMinutes(s2),d=toMinutes(e2); return a < d && b > c; }
+  function datesOverlap(s1,e1,s2,e2){ return String(s1) <= String(e2) && String(s2) <= String(e1); }
   function findConflict(nb) {
     var list = getBookings();
+    var nbEnd = nb.tgl_selesai || nb.tgl;
     for (var i=0;i<list.length;i++) {
       var b = list[i];
       if (!b || b.id === nb.id) continue;
       if (String(b.status||'').toLowerCase() === 'rejected') continue;
-      if (b.tgl !== nb.tgl || b.ruang !== nb.ruang) continue;
+      if (b.ruang !== nb.ruang) continue;
+      var bEnd = b.tgl_selesai || b.tgl;
+      if (!datesOverlap(nb.tgl, nbEnd, b.tgl, bEnd)) continue;
       if (rangesOverlap(nb.jam_mulai, nb.jam_selesai, b.jam_mulai, b.jam_selesai)) return b;
     }
     return null;
@@ -414,7 +418,7 @@
     if (dayOfWeek === 6 && !confirm('⚠️ Sabtu perlu koordinasi Kabag. Lanjutkan?')) return;
 
     var tglDisplay = tglMulai===tglSelesai ? tglMulai : (tglMulai+' s/d '+tglSelesai);
-    var newBooking = { id:'book_'+Date.now(), tgl:tglMulai, tgl_display:tglDisplay, ruang:ruang, nama_peminjam:peminjam, no_hp:nohp, divisi:divisi, jam_mulai:jamMulai, jam_selesai:jamSelesai, keperluan:keperluan, sarana_alat:saranaStr, status:'pending', created_at:new Date().toISOString(), created_by:user.email||user.id||null };
+    var newBooking = { id:'book_'+Date.now(), tgl:tglMulai, tgl_selesai:tglSelesai, tgl_display:tglDisplay, ruang:ruang, nama_peminjam:peminjam, no_hp:nohp, divisi:divisi, jam_mulai:jamMulai, jam_selesai:jamSelesai, keperluan:keperluan, sarana_alat:saranaStr, status:'pending', created_at:new Date().toISOString(), created_by:user.email||user.id||null };
 
     var conflict = findConflict(newBooking);
     if (conflict) {
@@ -459,6 +463,7 @@
     pushToCommandCenterNotif({ type:'warning', title:'Booking rejected', msg:(b.nama_peminjam||'')+' · '+(b.ruang||''), booking_id:id });
   };
   window.deleteBookingById = async function (id) {
+    if (!isAdmin()) return alert('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.');
     if (!confirm('Hapus booking ini?')) return;
     saveBookings(getBookings().filter(function(x){ return x.id!==id; })); renderBookings();
     if (window.supabaseClient) { try { await window.supabaseClient.from('bookings').delete().eq('id', id); } catch(e){} }
