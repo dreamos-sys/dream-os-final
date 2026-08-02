@@ -171,7 +171,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         currentType: 'text',
         activeTab: 'generate',
         scanner: null,
-        encryptionKey: 'dreamos_qr_2026_iso27001'
+        encryptionKey: (function(){ try{ var u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); return CryptoJS.SHA256((u.email||'anon') + 'dreamos_salt_2026').toString(); }catch(e){ return 'fallback_key'; } })()
     };
     
     function saveCodes(){ localStorage.setItem('dreamos_qr_codes', JSON.stringify(state.codes)); }
@@ -259,6 +259,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         });
         if(state.history.length>50) state.history.pop();
         saveHistory();
+        try{ if(window.BankAudit) window.BankAudit.log('QR_GENERATE', {type: type, encrypted: encrypt}); }catch(e){}
         
         if(state.activeTab==='history') renderHistory();
     }
@@ -314,6 +315,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             scans: 0
         });
         saveCodes();
+        try{ if(window.BankAudit) window.BankAudit.log('QR_SAVE', {label: label, type: state.currentType}); }catch(e){}
         alert('✅ QR Code disimpan!');
         if(state.activeTab==='codes') renderCodes();
     }

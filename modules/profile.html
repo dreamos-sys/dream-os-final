@@ -434,9 +434,7 @@
     var nama = user.nama || '';
     var mine = rows.filter(function (b) {
       var by = String(b.created_by || '').toLowerCase();
-      return (email && by === email) ||
-        (nama && b.nama_peminjam === nama) ||
-        (email && String(b.nama_peminjam || '').toLowerCase().indexOf(email.split('@')[0]) >= 0);
+      return (email && by === email) || (user.id && by === String(user.id).toLowerCase());
     });
 
     if (!mine.length) {
@@ -471,6 +469,7 @@
       if (s.error) throw new Error('Password lama salah');
       var u = await window.supabaseClient.auth.updateUser({ password: newPass });
       if (u.error) throw u.error;
+      try { var _u=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); var _i=_u.findIndex(function(x){ return (x.email||'').toLowerCase()===String(user.email||'').toLowerCase(); }); if(_i>-1){ _u[_i].password_hash=null; localStorage.setItem('dreamos_users_db', JSON.stringify(_u)); } } catch(e){}
       alert('✅ Password diubah. Login ulang.');
       await window.supabaseClient.auth.signOut().catch(function () {});
       localStorage.removeItem('dreamos_bound_user');
