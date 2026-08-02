@@ -264,6 +264,29 @@
       c.appendChild(t); setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3500);
     };
 
+    
+  // 🟢 DEV MONITOR: catat percobaan login + heartbeat presence (Gelombang 2)
+  window.logLoginAttempt = function(email, status, detail, source){
+    try {
+      var c = window.supabaseClient; if(!c) return;
+      c.from('login_attempts').insert({ id:'la_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), email:String(email||'').toLowerCase(), status:status, detail:String(detail||'').slice(0,200), source:source||'', device:(navigator.userAgent||'').slice(0,120) }).then(function(){}).catch(function(){});
+    } catch(e){}
+  };
+  window.startPresenceHeartbeat = function(){
+    if(window.__presenceTimer) return;
+    function beat(){
+      try {
+        var c=window.supabaseClient; if(!c) return;
+        if(localStorage.getItem('dreamos_session_active')!=='true') return;
+        var u={}; try{u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');}catch(e){}
+        if(!u.id) return;
+        c.from('user_presence').upsert({ user_id:String(u.id), email:u.email||'', nama:u.nama||'', role:u.role||'', last_seen:new Date().toISOString(), device:(navigator.userAgent||'').slice(0,80) }, { onConflict:'user_id' }).then(function(){}).catch(function(){});
+      } catch(e){}
+    }
+    beat();
+    window.__presenceTimer=setInterval(beat, 30000);
+  };
+
     const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
     window.supabaseClient = null;
@@ -401,6 +424,7 @@
 
           localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
           localStorage.setItem('dreamos_session_active', 'true');
+          try{ logLoginAttempt(email,'success','Login berhasil',(result&&result.source)||''); startPresenceHeartbeat(); }catch(_){}
           // 📦 Cache kredensial (hash bcrypt) agar bisa login offline berikutnya
           try {
             var usersDb = JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');
@@ -418,6 +442,7 @@
           setTimeout(() => { showDashboard(); }, 500);
         } catch(e) {
           console.error('Login Error:', e.message);
+          try{ logLoginAttempt(email,'fail',(e&&e.message)||'gagal',''); }catch(_){}
           var __off = !navigator.onLine || !window.supabaseClient;
           var __msg = e.message || 'Login gagal';
           if (__off) __msg = 'Offline — ' + __msg + '. Login online sekali dulu untuk mengaktifkan akses offline di perangkat ini.';
@@ -932,7 +957,7 @@
 
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
         const user = getStoredUser(); 
-        if (user.role) showDashboard(); 
+        if (user.role) showDashboard(); startPresenceHeartbeat(); // boot 
       }
 
       const canvas = document.getElementById('star-field');
