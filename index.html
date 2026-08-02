@@ -665,27 +665,63 @@
           } catch(e) { console.warn('🎠 Slide update error:', e); }
         };
 
+        // ===== CAROUSEL PRO: geser manual (swipe+drag) + tahan (pause on touch/hover) =====
         const track = document.getElementById('slide-track');
         const dotsC = document.getElementById('slide-dots');
-        const slides = track.querySelectorAll('.slide-item');
-        
-        dotsC.innerHTML = '';
-        slides.forEach((_,i) => {
-          const d = document.createElement('span');
-          d.className = 'slide-dot' + (i===0?' active':'');
-          d.onclick = () => goTo(i);
-          dotsC.appendChild(d);
-        });
-        const dots = dotsC.querySelectorAll('.slide-dot');
+        const el = document.getElementById('dash-slider');
+        const slides = track ? track.querySelectorAll('.slide-item') : [];
+        if (track && dotsC && el && slides.length) {
+          dotsC.innerHTML = '';
+          slides.forEach((_,i) => {
+            const d = document.createElement('span');
+            d.className = 'slide-dot' + (i===0?' active':'');
+            d.onclick = () => { goTo(i); restart(); };
+            dotsC.appendChild(d);
+          });
+          const dots = dotsC.querySelectorAll('.slide-dot');
 
-        let _sliderCur = 0;
-        function goTo(i) {
-          _sliderCur = (i + slides.length) % slides.length;
-          track.style.transform = `translateX(-${_sliderCur * 100}%)`;
-          dots.forEach((d,x) => d.classList.toggle('active', x === _sliderCur));
+          let _sliderCur = 0, _autoTimer = null, _dragging = false, _startX = 0, _deltaX = 0;
+          const SWIPE_THRESHOLD = 45, AUTO_MS = 7000;
+
+          function setTransform(px, animate) {
+            track.style.transition = animate ? 'transform 0.6s cubic-bezier(0.25,1,0.5,1)' : 'none';
+            track.style.transform = 'translateX(calc(-' + (_sliderCur * 100) + '% + ' + px + 'px))';
+          }
+          function goTo(i) {
+            _sliderCur = (i + slides.length) % slides.length;
+            setTransform(0, true);
+            dots.forEach((d,x) => d.classList.toggle('active', x === _sliderCur));
+          }
+          function next(){ goTo(_sliderCur + 1); }
+          function prev(){ goTo(_sliderCur - 1); }
+          function start(){ stop(); _autoTimer = setInterval(next, AUTO_MS); }
+          function stop(){ if (_autoTimer){ clearInterval(_autoTimer); _autoTimer = null; } }
+          function restart(){ stop(); setTimeout(start, 2500); }
+
+          function dragStart(x){ _dragging = true; _startX = x; _deltaX = 0; stop(); track.style.transition = 'none'; }
+          function dragMove(x){ if(!_dragging) return; _deltaX = x - _startX; setTransform(_deltaX, false); }
+          function dragEnd(){
+            if(!_dragging) return; _dragging = false;
+            if (_deltaX < -SWIPE_THRESHOLD) next();
+            else if (_deltaX > SWIPE_THRESHOLD) prev();
+            else setTransform(0, true);
+            _deltaX = 0; restart();
+          }
+
+          // Touch (HP): swipe + live-drag + tahan
+          el.addEventListener('touchstart', function(e){ dragStart(e.touches[0].clientX); }, {passive:true});
+          el.addEventListener('touchmove', function(e){ if(_dragging){ dragMove(e.touches[0].clientX); } }, {passive:true});
+          el.addEventListener('touchend', dragEnd, {passive:true});
+          el.addEventListener('touchcancel', dragEnd, {passive:true});
+          // Mouse (desktop/tablet): drag + hover-pause
+          el.addEventListener('mousedown', function(e){ e.preventDefault(); dragStart(e.clientX); });
+          window.addEventListener('mousemove', function(e){ if(_dragging){ dragMove(e.clientX); } });
+          window.addEventListener('mouseup', dragEnd);
+          el.addEventListener('mouseenter', stop);
+          el.addEventListener('mouseleave', function(){ if(!_dragging) start(); });
+
+          goTo(0); start();
         }
-        
-        setInterval(() => goTo(_sliderCur + 1), 7000);
       };
 
       window.openMod = function(moduleId) {
