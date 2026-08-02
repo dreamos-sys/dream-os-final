@@ -262,6 +262,27 @@
       return false;
     }
 
+    // 📡 FITUR ONLINE-FIRST SYNC: Tarik data Cloud dulu sebelum ngerender lokal
+    window.syncCloudData = async function() {
+      if (!window.supabaseClient) return false;
+      try {
+        // Asumsi nama tabel standar, biarkan failure silent kalau tabel beda (supaya tidak merusak UI)
+        const { data: bData } = await window.supabaseClient.from('bookings').select('*');
+        if (bData) localStorage.setItem('dreamos_bookings', JSON.stringify(bData));
+        
+        const { data: kData } = await window.supabaseClient.from('k3_reports').select('*');
+        if (kData) localStorage.setItem('dreamos_k3_reports', JSON.stringify(kData));
+        
+        const { data: sData } = await window.supabaseClient.from('stok_gudang').select('*');
+        if (sData) localStorage.setItem('dreamos_stok_gudang', JSON.stringify(sData));
+        
+        return true;
+      } catch (err) {
+        console.warn('Sync Cloud Failed (Offline Fallback Active):', err);
+        return false;
+      }
+    };
+
     if (typeof window.doSecureLogin !== 'function') {
       window.__dvHash = function(plain){ 
         var h=0, s=String(plain)+'dreamos_salt_2026'; 
@@ -449,65 +470,78 @@
           });
         }
 
-        const healthEl = document.getElementById('health-bar');
-        if (healthEl) {
-          const online = navigator.onLine;
-          healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span>`;
-        }
+        // 📡 MEKANISME ASYNC: Tahan render Grafik & Slider sampai cloud disinkronisasi
+        (async () => {
+          const healthEl = document.getElementById('health-bar');
+          if (navigator.onLine) {
+            if (healthEl) healthEl.innerHTML = `<span class="health-badge" style="color:#0ea5e9; border-color:rgba(14,165,233,0.3);">🔄 Syncing Cloud...</span>`;
+            
+            // Eksekusi tarikan data ke Supabase
+            await window.syncCloudData();
+            
+            if (healthEl) healthEl.innerHTML = `<span class="health-badge health-ok">🟢 Online & Synced</span>`;
+          } else {
+            if (healthEl) healthEl.innerHTML = `<span class="health-badge health-err">🔴 Offline Mode</span>`;
+          }
 
-        setTimeout(() => {
+          // 📈 Setelah Sinkron, Render Grafik dengan Data Terbaru!
           const canvasEl = document.getElementById('unifiedMarketChart');
-          if (!canvasEl || typeof Chart === 'undefined') return;
+          if (canvasEl && typeof Chart !== 'undefined') {
+            const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
+            const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
+            const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
 
-          const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
-          const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
-          const stok = JSON.parse(localStorage.getItem('dreamos_stok_gudang') || '[]');
+            const labels = ['K3', 'Jan In', 'Jan Out', 'Booking', 'Stok'];
+            const barData = [
+              k3.length || 0,
+              0, // Janitor Indoor
+              0, // Janitor Outdoor
+              bookings.length || 0,
+              stok.length || 0
+            ];
+            
+            const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
+            const moduleMap = ['k3', 'janitor-indoor', 'janitor-outdoor', 'booking', 'stok'];
 
-          const labels = ['K3', 'Jan In', 'Jan Out', 'Booking', 'Stok'];
-          const barData = [
-            k3.length || 0,
-            0, // Janitor Indoor
-            0, // Janitor Outdoor
-            bookings.length || 0,
-            stok.length || 0
-          ];
-          
-          const lineTrendData = barData.map((v, i) => Math.max(5, v * 12 + (i * 3)));
-          const moduleMap = ['k3', 'janitor-indoor', 'janitor-outdoor', 'booking', 'stok'];
+            if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
 
-          if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
-
-          window._unifiedChartInstance = new Chart(canvasEl.getContext('2d'), {
-            type: 'bar',
-            data: {
-              labels: labels,
-              datasets: [
-                { label: 'Volume (Batang)', data: barData, backgroundColor: 'rgba(0, 255, 157, 0.65)', borderColor: '#00ff9d', borderWidth: 1.5, borderRadius: 6, yAxisID: 'y', order: 2 },
-                { label: 'Pertumbuhan (%)', data: lineTrendData, type: 'line', borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.2)', borderWidth: 2.5, pointBackgroundColor: '#0ea5e9', pointRadius: 3, tension: 0.35, yAxisID: 'y1', order: 1 }
-              ]
-            },
-            options: {
-              responsive: true, maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' } },
-              scales: {
-                x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 35, minRotation: 35 }, grid: { display: false } },
-                y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
+            window._unifiedChartInstance = new Chart(canvasEl.getContext('2d'), {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [
+                  { label: 'Volume (Batang)', data: barData, backgroundColor: 'rgba(0, 255, 157, 0.65)', borderColor: '#00ff9d', borderWidth: 1.5, borderRadius: 6, yAxisID: 'y', order: 2 },
+                  { label: 'Pertumbuhan (%)', data: lineTrendData, type: 'line', borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.2)', borderWidth: 2.5, pointBackgroundColor: '#0ea5e9', pointRadius: 3, tension: 0.35, yAxisID: 'y1', order: 1 }
+                ]
               },
-              onClick: (e, elements) => {
-                if (elements.length > 0) {
-                  const index = elements[0].index;
-                  const module = moduleMap[index];
-                  if (module && canAccess(module)) {
-                    window.openMod(module);
-                  } else {
-                    window.showToast('⛔ Akses ditolak untuk modul ini', 'error');
+              options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' } },
+                scales: {
+                  x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 35, minRotation: 35 }, grid: { display: false } },
+                  y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                  y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
+                },
+                onClick: (e, elements) => {
+                  if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const module = moduleMap[index];
+                    if (module && canAccess(module)) {
+                      window.openMod(module);
+                    } else {
+                      window.showToast('⛔ Akses ditolak untuk modul ini', 'error');
+                    }
                   }
                 }
               }
-            }
-          });
-        }, 300);
+            });
+          }
+
+          // Segarkan info Teks Slider dengan data Supabase terbaru
+          if (typeof window.updateDashboardSlides === 'function') {
+            window.updateDashboardSlides();
+          }
+        })();
 
         window.updateDashboardSlides = async function() {
           try {
@@ -571,7 +605,6 @@
           dots.forEach((d,x) => d.classList.toggle('active', x === _sliderCur));
         }
         
-        window.updateDashboardSlides();
         setInterval(() => goTo(_sliderCur + 1), 7000);
       };
 
