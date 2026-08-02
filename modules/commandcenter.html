@@ -782,29 +782,29 @@ window.goHomeHandler = function() {
     } catch(e) {}
   }
 
-  window.createNewUser = function() {
+    window.createNewUser = async function() { /* cu_v2 */
     if (!isAdmin) { showToast('⛔ Hanya admin yang dapat menambah user.', 'error'); return; }
     const nama = document.getElementById('new-user-nama').value.trim();
     const email = document.getElementById('new-user-email').value.trim();
     const role = document.getElementById('new-user-role').value;
     const pass = document.getElementById('new-user-pass').value;
-
     if (!nama || !email || !pass) return showToast('Lengkapi semua input user!', 'warn');
-
+    if (pass.length < 8) return showToast('⛔ Password minimal 8 karakter!', 'warn');
     const users = safeJSON('dreamos_users_db', []);
-    if (users.find(u => u.email === email)) return showToast('Email sudah terdaftar!', 'danger');
-
-    const newUser = { id: 'usr_' + Date.now(), nama, email, role, status: 'active', password_hash: (typeof window.hashPasswordBcrypt==='function') ? window.hashPasswordBcrypt(pass) : (typeof bcrypt!=='undefined' ? bcrypt.hashSync(pass,10) : pass) };
-    users.push(newUser);
-    saveJSON('dreamos_users_db', users);
-    
-    logActivity('Tambah User', 'Menambahkan user baru: ' + nama + ' (' + role + ')');
+    if (users.find(u => (u.email||'').toLowerCase() === email.toLowerCase())) return showToast('Email sudah terdaftar!', 'danger');
+    let createdId = 'usr_' + Date.now(); let cloudOk = false;
+    try {
+      const res = await callAdminUsers('create', { email: email, password: pass, nama: nama, role: role });
+      if (res && res.id) createdId = res.id; cloudOk = true;
+    } catch (e) { console.warn('admin-users create gagal, fallback lokal:', e && e.message); }
+    pushLocalUser({ id: createdId, email: email, nama: nama, role: role, status: 'active', source: cloudOk ? 'cloud' : 'local-only', created_at: new Date().toISOString() });
+    if (window.BankAudit) { try { BankAudit.log('USER_CREATE', { email: email, role: role, cloud: cloudOk }); } catch(_){} }
     renderUsers();
-    showToast('✅ User ' + nama + ' berhasil ditambahkan!');
-
     document.getElementById('new-user-nama').value = '';
     document.getElementById('new-user-email').value = '';
     document.getElementById('new-user-pass').value = '';
+    if (cloudOk) showToast('✅ User ' + nama + ' dibuat & tersinkron cloud! (login online sekali di perangkatnya)');
+    else showToast('⚠️ User tersimpan LOKAL saja. Deploy Edge Function "admin-users" agar tersinkron & bisa login lintas perangkat.', 'warning');
   };
 
   function collectTasks() {
@@ -975,16 +975,16 @@ window.goHomeHandler = function() {
     ).join('');
   };
 
-  window.renderUsers = function() {
+    window.renderUsers = function() { /* ru_v2 */
     const users = safeJSON('dreamos_users_db', []);
     const tbody = document.getElementById('users-body');
     if (!tbody) return;
-    if (!users.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>';
-      return;
-    }
+    if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>'; return; }
     tbody.innerHTML = users.map((u, i) =>
-      '<tr><td>' + (u.nama||'-') + '</td><td>' + (u.email||'-') + '</td><td><span class="badge badge-pending">' + (u.role||'staff') + '</span></td><td><span class="badge badge-approved">' + (u.status||'active') + '</span></td><td><button class="btn btn-primary btn-sm" onclick="openEditModal(' + i + ')">✏️ Edit</button></td></tr>'
+      `<tr><td>${escU(u.nama||'-')}</td><td>${escU(u.email||'-')}</td><td><span class="badge badge-pending">${escU(u.role||'staff')}</span></td><td><span class="badge badge-approved">${escU(u.status||'active')}</span></td><td style="white-space:nowrap;">`
+      + `<button class="btn btn-primary btn-sm" onclick="openEditModal(${i})">✏️</button> `
+      + (isAdmin ? `<button class="btn btn-warning btn-sm" onclick="resetUserPassword('${escU(u.id)}')">🔑</button> <button class="btn btn-danger btn-sm" onclick="deleteUser('${escU(u.id)}')">🗑️</button>` : '')
+      + `</td></tr>`
     ).join('');
   };
 
@@ -1004,20 +1004,22 @@ window.goHomeHandler = function() {
     document.getElementById('edit-user-modal').classList.remove('show');
   };
 
-  window.saveEditUser = function() {
+    window.saveEditUser = async function() { /* seu_v2 */
     if (!isAdmin) { showToast('⛔ Hanya admin yang dapat mengubah user.', 'error'); return; }
     const idx = parseInt(document.getElementById('edit-user-index').value);
     const users = safeJSON('dreamos_users_db', []);
-    if (users[idx]) {
-      users[idx].nama = document.getElementById('edit-user-nama').value;
-      users[idx].email = document.getElementById('edit-user-email').value;
-      users[idx].role = document.getElementById('edit-user-role').value;
-      users[idx].status = document.getElementById('edit-user-status').value;
-      saveJSON('dreamos_users_db', users);
-      renderUsers();
-      closeEditModal();
-      showToast('✅ User berhasil diperbarui');
-    }
+    if (!users[idx]) return;
+    const nama = document.getElementById('edit-user-nama').value;
+    const email = document.getElementById('edit-user-email').value;
+    const role = document.getElementById('edit-user-role').value;
+    const status = document.getElementById('edit-user-status').value;
+    const id = users[idx].id; let cloudOk = false;
+    try { await callAdminUsers('update', { id: id, nama: nama, role: role, status: status }); cloudOk = true; } catch(e){ console.warn('admin-users update gagal:', e&&e.message); }
+    users[idx].nama = nama; users[idx].email = email; users[idx].role = role; users[idx].status = status;
+    saveJSON('dreamos_users_db', users);
+    if (window.BankAudit) { try { BankAudit.log('USER_UPDATE', { id: id, role: role, cloud: cloudOk }); } catch(_){} }
+    renderUsers(); closeEditModal();
+    showToast(cloudOk ? '✅ User diperbarui & tersinkron cloud' : '⚠️ Diperbarui lokal (cloud gagal / Edge Function belum aktif).', cloudOk ? 'success' : 'warning');
   };
 
   window.renderChart = function() {
@@ -1093,6 +1095,37 @@ window.goHomeHandler = function() {
     setTimeout(() => { st.textContent = ''; }, 3000);
   };
 
+  /* helpers_v2 */
+  function escU(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function pushLocalUser(u){ var users=safeJSON('dreamos_users_db',[]); var i=users.findIndex(function(x){return (x.email||'').toLowerCase()===(u.email||'').toLowerCase();}); if(i>-1) users[i]=Object.assign({},users[i],u); else users.push(u); saveJSON('dreamos_users_db',users); }
+  async function callAdminUsers(action, payload){
+    if(!window.supabaseClient) throw new Error('offline');
+    var r = await window.supabaseClient.functions.invoke('admin-users', { body: Object.assign({ action: action }, payload||{}) });
+    if(r.error) throw new Error(r.error.message || 'Edge Function error');
+    if(r.data && r.data.error) throw new Error(r.data.error);
+    return r.data;
+  }
+  window.deleteUser = async function(id){
+    if(!isAdmin){ showToast('⛔ Hanya admin yang dapat menghapus user.','error'); return; }
+    var users=safeJSON('dreamos_users_db',[]); var u=users.find(function(x){return x.id===id;});
+    if(!confirm('Hapus user '+(u?(u.nama||u.email):id)+'? Akses akan dicabut di semua perangkat.')) return;
+    var cloudOk=false; try{ await callAdminUsers('delete',{id:id}); cloudOk=true; }catch(e){ console.warn('admin-users delete gagal:', e&&e.message); }
+    saveJSON('dreamos_users_db', users.filter(function(x){return x.id!==id;}));
+    if(window.BankAudit){ try{ BankAudit.log('USER_DELETE',{id:id,cloud:cloudOk}); }catch(_){} }
+    renderUsers(); showToast(cloudOk?'✅ User dihapus & dicabut di cloud':'⚠️ User dihapus lokal (cloud gagal / Edge Function belum aktif).', cloudOk?'success':'warning');
+  };
+  window.resetUserPassword = async function(id){
+    if(!isAdmin){ showToast('⛔ Hanya admin.','error'); return; }
+    var np=prompt('Password baru untuk user ini (minimal 8 karakter):'); if(np===null) return; np=String(np);
+    if(np.length<8){ showToast('⛔ Password minimal 8 karakter!','error'); return; }
+    var users=safeJSON('dreamos_users_db',[]); var u=users.find(function(x){return x.id===id;}); var cloudOk=false;
+    try{ await callAdminUsers('reset',{id:id,password:np}); cloudOk=true; }
+    catch(e){ console.warn('admin-users reset gagal:', e&&e.message);
+      if(u&&u.password_hash){ var i=users.findIndex(function(x){return x.id===id;}); if(i>-1){ users[i].password_hash=(typeof window.hashPasswordBcrypt==='function'?window.hashPasswordBcrypt(np):np); saveJSON('dreamos_users_db',users); } }
+    }
+    if(window.BankAudit){ try{ BankAudit.log('USER_RESET_PW',{id:id,cloud:cloudOk}); }catch(_){} }
+    showToast(cloudOk?'✅ Password direset via cloud. Sampaikan password baru ke petugas.':(u&&u.password_hash?'⚠️ Cloud gagal; password lokal direset (device ini saja).':'⚠️ Gagal reset (deploy Edge Function admin-users dulu).'), cloudOk?'success':'warning');
+  };
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
   initCalSelectors();
