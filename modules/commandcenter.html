@@ -990,18 +990,22 @@ window.goHomeHandler = function() {
     ).join('');
   };
 
-    window.renderUsers = function() { /* ru_v2 */
+      window.renderUsers = function() { /* ru_v3 */
     const users = safeJSON('dreamos_users_db', []);
     const tbody = document.getElementById('users-body');
     if (!tbody) return;
     if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>'; return; }
-    tbody.innerHTML = users.map((u, i) =>
-      `<tr><td>${escU(u.nama||'-')}</td><td>${escU(u.email||'-')}</td><td><span class="badge badge-pending">${escU(u.role||'staff')}</span></td><td><span class="badge badge-approved">${escU(u.status||'active')}</span></td><td style="white-space:nowrap;">`
-      + `<button class="btn btn-primary btn-sm" onclick="openEditModal(${i})">✏️</button> `
-      + (isAdmin ? `<button class="btn btn-warning btn-sm" onclick="resetUserPassword('${escU(u.id)}')">🔑</button> <button class="btn btn-danger btn-sm" onclick="deleteUser('${escU(u.id)}')">🗑️</button>` : '')
-      + `</td></tr>`
-    ).join('');
+    tbody.innerHTML = users.map((u, i) => {
+      const tr = String(u.role||'staff');
+      const canEdit = isAdmin && canManage(tr);
+      const canDel = isDev();
+      return `<tr><td>${escU(u.nama||'-')}</td><td>${escU(u.email||'-')}</td><td><span class="badge badge-pending">${escU(tr)}</span></td><td><span class="badge badge-approved">${escU(u.status||'active')}</span></td><td style="white-space:nowrap;">`
+        + (canEdit ? `<button class="btn btn-primary btn-sm" onclick="openEditModal(${i})">✏️</button> <button class="btn btn-warning btn-sm" onclick="resetUserPassword('${escU(u.id)}')">🔑</button> ` : '')
+        + (canDel ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${escU(u.id)}')">🗑️</button>` : '')
+        + `</td></tr>`;
+    }).join('');
   };
+
 
   window.openEditModal = function(idx) {
     const users = safeJSON('dreamos_users_db', []);
@@ -1164,6 +1168,18 @@ window.goHomeHandler = function() {
   };
   setTimeout(function(){ if(!isDev()){ document.querySelectorAll('.tab-dev-only').forEach(function(el){ el.style.display='none'; }); } }, 0);
 
+  /* hier_v1 */
+  var ALL_ROLES_C = ['dev','kabag_umum','koordinator_umum','management','komite','guru','security','komandan_regu','janitor_indoor','janitor_outdoor','maintenance','staff'];
+  var MANAGEABLE_C = {
+    dev: ALL_ROLES_C,
+    kabag_umum: ALL_ROLES_C.filter(function(r){ return r!=='dev' && r!=='kabag_umum'; }),
+    koordinator_umum: ALL_ROLES_C.filter(function(r){ return ['dev','kabag_umum','koordinator_umum'].indexOf(r)<0; })
+  };
+  function _myRole(){ return window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined'&&currentUser?currentUser.role:''); }
+  function isDev(){ return _myRole()==='dev'; }
+  function canManage(targetRole){ return (MANAGEABLE_C[_myRole()]||[]).indexOf(targetRole)>=0; }
+  function restrictRoleOptions(){ var allow=MANAGEABLE_C[_myRole()]||[]; ['new-user-role','edit-user-role'].forEach(function(id){ var sel=document.getElementById(id); if(!sel)return; Array.prototype.slice.call(sel.options).slice().forEach(function(o){ if(o.value && allow.indexOf(o.value)<0){ try{o.remove();}catch(e){} } }); }); }
+  restrictRoleOptions();
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
   initCalSelectors();
