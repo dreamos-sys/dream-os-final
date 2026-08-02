@@ -791,12 +791,14 @@
     var inv=safeGet(K_INV,[]); var it=inv.find(function(x){return x.id===invId;}); if(!it)return;
     if((parseInt(it.jumlah)||0)<qty){alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)||0)+').');return;}
     it.jumlah=(parseInt(it.jumlah)||0)-qty; it.updated_at=new Date().toISOString(); safeSet(K_INV,inv);
-    // 📦 Log konsumsi sparepart → mutasi stok (Command Center Analitik + prediksi bulan depan)
+        // 📦 Log konsumsi sparepart → mutasi stok + sync cloud (Gelombang 2)
     try {
       var __sl = JSON.parse(localStorage.getItem('dreamos_stock_log') || '[]');
       var __u = (typeof user === 'function') ? user() : {};
-      __sl.unshift({ type: 'KONSUMSI', item: (it.nama || it.nama_barang || 'sparepart'), qty: qty, location: (it.lokasi_gudang || it.lokasi || 'Gudang'), user_name: (__u.nama || __u.email || 'teknisi'), role: (__u.role || 'maintenance'), user: (__u.role || 'maintenance'), time: new Date().toISOString(), wo_id: __conWo });
+      var __entry = { id: 'sm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), type: 'KONSUMSI', item: (it.nama || it.nama_barang || 'sparepart'), qty: qty, location: (it.lokasi_gudang || it.lokasi || 'Gudang'), user_name: (__u.nama || __u.email || 'teknisi'), role: (__u.role || 'maintenance'), user: (__u.role || 'maintenance'), time: new Date().toISOString(), wo_id: __conWo, synced: false };
+      __sl.unshift(__entry);
       localStorage.setItem('dreamos_stock_log', JSON.stringify(__sl.slice(0, 400)));
+      if (window.pushStockMovement) { try { window.pushStockMovement(__entry); } catch(e){} }
     } catch (e) { console.warn('[maint] stock consumption log:', e && e.message); }
     var wos=safeGet(K.wo,[]); var w=wos.find(function(x){return x.id===__conWo;});
     var note=(it.nama||it.nama_barang||'')+' ×'+qty;
