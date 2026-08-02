@@ -261,6 +261,7 @@
       <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">📅 Kalender</button>
       <button class="tab" data-tab="archive" onclick="switchTab('archive')">📂 Arsip</button>
       <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
+      <button class="tab tab-dev-only" data-tab="devmon" onclick="switchTab('devmon')">🟢 Dev Monitor</button>
       <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
       <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
       <button class="tab" data-tab="stok" onclick="switchTab('stok')">📦 Analitik Stok</button>
@@ -553,6 +554,19 @@
     </div>
   </div>
 
+  <!-- TAB: DEV MONITOR (khusus dev) -->
+  <div id="tab-devmon" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:800; color:var(--neon); margin-bottom:0.3rem;">🟢 User Online (Real-time Presence)</div>
+      <p style="font-size:0.72rem; color:var(--muted); margin-bottom:0.8rem;">User dengan heartbeat ≤ 2 menit (login via Supabase Auth / online).</p>
+      <div id="devmon-presence" style="overflow-x:auto;">Memuat...</div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800; color:var(--gold); margin-bottom:0.3rem;">📜 Log Percobaan Login (50 terakhir, lintas perangkat)</div>
+      <div id="devmon-loginlog" style="overflow-x:auto; max-height:420px;">Memuat...</div>
+    </div>
+  </div>
+
   <!-- MODAL EDIT USER -->
   <div class="modal-overlay" id="edit-user-modal">
     <div class="modal-content">
@@ -745,6 +759,7 @@ window.goHomeHandler = function() {
     const btn = document.querySelector('.tab[data-tab="' + id + '"]');
     if (btn) btn.classList.add('active');
 
+    if (id === 'devmon') { if(!isDev()){ showToast('⛔ Khusus Dev.','error'); return; } renderDevMonitor(); }
     if (id === 'inbox') renderInbox();
     if (id === 'approvals') renderApprovals();
     if (id === 'activity') renderActivity();
@@ -1126,6 +1141,29 @@ window.goHomeHandler = function() {
     if(window.BankAudit){ try{ BankAudit.log('USER_RESET_PW',{id:id,cloud:cloudOk}); }catch(_){} }
     showToast(cloudOk?'✅ Password direset via cloud. Sampaikan password baru ke petugas.':(u&&u.password_hash?'⚠️ Cloud gagal; password lokal direset (device ini saja).':'⚠️ Gagal reset (deploy Edge Function admin-users dulu).'), cloudOk?'success':'warning');
   };
+  /* dev_monitor_v2 */
+  function isDev(){ return (window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined' && currentUser ? currentUser.role : '')) === 'dev'; }
+  function fmtDT(iso){ if(!iso) return '-'; try{ return new Date(iso).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}); }catch(e){ return String(iso); } }
+  window.renderDevMonitor = async function(){
+    if(!isDev()) return;
+    var presEl=document.getElementById('devmon-presence');
+    var logEl=document.getElementById('devmon-loginlog');
+    if(!window.supabaseClient){ if(presEl)presEl.innerHTML='<p style="color:#fcd34d;">Offline — presence & log butuh koneksi cloud.</p>'; if(logEl)logEl.innerHTML=''; return; }
+    if(presEl) presEl.innerHTML='Memuat...'; if(logEl) logEl.innerHTML='Memuat...';
+    try {
+      var cutoff=new Date(Date.now()-2*60000).toISOString();
+      var rp=await window.supabaseClient.from('user_presence').select('*').gte('last_seen',cutoff).order('last_seen',{ascending:false});
+      var rows=(rp&&rp.data)||[];
+      if(presEl) presEl.innerHTML = rows.length ? ('<table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Terakhir</th><th>Device</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td><b>'+escU(r.nama||'-')+'</b></td><td>'+escU(r.email||'-')+'</td><td><span class="badge badge-pending">'+escU(r.role||'-')+'</span></td><td style="font-size:0.66rem;">'+fmtDT(r.last_seen)+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((r.device||'').slice(0,40))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">Tidak ada user online saat ini.</p>';
+    } catch(e){ if(presEl) presEl.innerHTML='<p style="color:#fca5a5;">Gagal memuat presence: '+escU(e.message||String(e))+'</p>'; }
+    try {
+      var rl=await window.supabaseClient.from('login_attempts').select('*').order('created_at',{ascending:false}).limit(50);
+      var logs=(rl&&rl.data)||[];
+      if(logEl) logEl.innerHTML = logs.length ? ('<table><thead><tr><th>Waktu</th><th>Email</th><th>Status</th><th>Detail</th><th>Source</th><th>Device</th></tr></thead><tbody>'+logs.map(function(l){ var ok=l.status==='success'; return '<tr><td style="font-size:0.66rem;white-space:nowrap;">'+fmtDT(l.created_at)+'</td><td>'+escU(l.email||'-')+'</td><td><span class="badge '+(ok?'badge-approved':'badge-rejected')+'">'+(ok?'✅ sukses':'❌ gagal')+'</span></td><td style="font-size:0.66rem;">'+escU(l.detail||'-')+'</td><td>'+escU(l.source||'-')+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((l.device||'').slice(0,28))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">Belum ada percobaan login tercatat.</p>';
+    } catch(e){ if(logEl) logEl.innerHTML='<p style="color:#fca5a5;">Gagal memuat log: '+escU(e.message||String(e))+'</p>'; }
+  };
+  setTimeout(function(){ if(!isDev()){ document.querySelectorAll('.tab-dev-only').forEach(function(el){ el.style.display='none'; }); } }, 0);
+
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
   initCalSelectors();
