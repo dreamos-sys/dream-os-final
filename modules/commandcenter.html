@@ -263,6 +263,7 @@
       <button class="tab tab-restricted" data-tab="users" onclick="switchTab('users')">👥 Users</button>
       <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
       <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
+      <button class="tab" data-tab="stok" onclick="switchTab('stok')">📦 Analitik Stok</button>
     </div>
   </div>
 
@@ -494,6 +495,62 @@
     </div>
   </div>
 
+  <!-- TAB 9: ANALITIK STOK (audit · pengambilan · prediksi) -->
+  <div id="tab-stok" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:800;color:var(--neon);font-size:1rem;margin-bottom:0.3rem;">📦 Analitik Stok Gudang — Bagian Umum</div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">Audit lengkap · Kalkulasi pengambilan per petugas · Prediksi bulan depan untuk analisa Kabag & Koordinator serta rencana belanja / pengajuan dana.</p>
+      <div style="display:flex;gap:0.4rem;background:rgba(0,0,0,0.3);padding:0.35rem;border-radius:10px;margin-bottom:1rem;">
+        <button class="btn btn-sm" id="sp-harian" onclick="setStokPeriod('harian')" style="flex:1;">📅 Harian</button>
+        <button class="btn btn-sm" id="sp-mingguan" onclick="setStokPeriod('mingguan')" style="flex:1;">🗓️ Mingguan</button>
+        <button class="btn btn-primary btn-sm" id="sp-bulanan" onclick="setStokPeriod('bulanan')" style="flex:1;">📆 Bulanan</button>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val" id="sa-count">0</div><div class="metric-label">Transaksi</div></div>
+        <div class="metric" style="border-left-color:var(--success);"><div class="metric-val" id="sa-in">0</div><div class="metric-label">Barang Masuk</div></div>
+        <div class="metric" style="border-left-color:var(--danger);"><div class="metric-val" id="sa-out">0</div><div class="metric-label">Barang Keluar</div></div>
+        <div class="metric" style="border-left-color:var(--purple);"><div class="metric-val" id="sa-users">0</div><div class="metric-label">Petugas Aktif</div></div>
+      </div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:0.8rem;">📜 Audit Log Stok — Input / Revisi / Edit / Hapus (timestamp lengkap)</div>
+      <div class="filters">
+        <select id="sa-action-filter" onchange="setStokActionFilter(this.value)">
+          <option value="all">Semua Aksi</option>
+          <option value="TAMBAH">➕ Input / Tambah</option>
+          <option value="HAPUS">🗑️ Hapus / Ambil</option>
+          <option value="EDIT">✏️ Edit / Revisi</option>
+          <option value="KONSUMSI">🔧 Konsumsi (Maintenance)</option>
+        </select>
+        <select id="sa-user-filter" onchange="setStokUserFilter(this.value)"><option value="all">Semua Petugas</option></select>
+      </div>
+      <div class="table-container"><table>
+        <thead><tr><th>Waktu (Lengkap)</th><th>Petugas</th><th>Aksi</th><th>Barang</th><th>Qty</th><th>Lokasi</th></tr></thead>
+        <tbody id="stok-audit-body"></tbody>
+      </table></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--gold);margin-bottom:0.8rem;">👥 Kalkulasi Pengambilan Stok per Petugas (Ranking)</div>
+      <div class="chart-container" style="margin-bottom:1rem;"><canvas id="stokUserChart"></canvas></div>
+      <div class="table-container"><table>
+        <thead><tr><th>Rank</th><th>Petugas</th><th>Total Qty Diambil</th><th>Transaksi</th><th>Terakhir Ambil</th></tr></thead>
+        <tbody id="stok-usercalc-body"></tbody>
+      </table></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--purple);margin-bottom:0.3rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+        <span>🔮 Prediksi Bulan Depan — Analisa & Rencana Belanja</span>
+        <button class="btn btn-success btn-sm" onclick="submitStokPlanToDana()">📤 Ajukan Rencana Belanja ke Dana</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--muted);margin-bottom:1rem;">Berdasarkan laju keluar 30 hari terakhir: <b style="color:#fca5a5;">⚠️ <span id="pred-count-cepat">0</span> cepat habis</b> · <b style="color:#fcd34d;">🟡 <span id="pred-count-waspada">0</span> waspada</b> · <b style="color:#6ee7b7;">🟢 <span id="pred-count-jarang">0</span> jarang dipakai</b>.</p>
+      <div class="chart-container" style="margin-bottom:1rem;"><canvas id="stokRunwayChart"></canvas></div>
+      <div style="font-weight:700;color:#fca5a5;margin:0.8rem 0 0.4rem;">⚠️ Barang Cepat Habis (runway &lt; 30 hari) — Prioritas Belanja</div>
+      <div class="table-container" id="pred-cepat"></div>
+      <div style="font-weight:700;color:#6ee7b7;margin:1rem 0 0.4rem;">🟢 Barang Jarang Dipakai (tidak ada keluar 30 hari) — Evaluasi Overstock</div>
+      <div class="table-container" id="pred-jarang"></div>
+    </div>
+  </div>
+
   <!-- MODAL EDIT USER -->
   <div class="modal-overlay" id="edit-user-modal">
     <div class="modal-content">
@@ -691,6 +748,7 @@ window.goHomeHandler = function() {
     if (id === 'archive') renderArchive();
     if (id === 'users') { syncUsersFromSupabase(); renderUsers(); }
 
+    if (id === 'stok') renderStokAnalytics();
     if (id === 'announcements') {
       const saved = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
       document.getElementById('slide-5-input').value = saved.find(x => x.type === 'management')?.msg || '';
