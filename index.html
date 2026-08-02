@@ -169,6 +169,17 @@
       </div>
       <button class="access-btn" id="login-button">ACCESS CORE</button>
       <div class="error-msg" id="error-msg" role="alert"></div>
+      <div id="cookie-consent" style="margin-top:1.2rem; padding:1rem; background:rgba(14,165,233,0.08); border:1px solid rgba(14,165,233,0.3); border-radius:12px; font-size:0.72rem; color:#94a3b8; line-height:1.5; display:none; text-align:left;">
+        <strong style="color:#0ea5e9;">🍪 Cookie & Storage Consent (Wajib)</strong><br>
+        Dream OS menggunakan cookies & local storage untuk:<br>
+        • Autentikasi & sesi keamanan (AES-256 encrypted)<br>
+        • Sinkronisasi data operasional (Cloud Sync)<br>
+        • Preferensi tampilan, audit trail & RBAC<br>
+        <label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; cursor:pointer; color:#e2e8f0; font-size:0.78rem;">
+          <input type="checkbox" id="consent-check" style="width:18px; height:18px; accent-color:#00ff9d; margin-top:2px; flex-shrink:0;">
+          <span>Saya menyetujui penggunaan cookies & memberikan <strong style="color:#00ff9d;">hak akses penuh</strong> ke sistem agar berjalan normal</span>
+        </label>
+      </div>
     </div>
   </div>
 
@@ -350,6 +361,12 @@
         this.textContent = passwordInput.type === 'password' ? '🔒' : '🔓';
       });
 
+            // 🍪 COOKIE CONSENT - Tampilkan jika belum disetujui
+      var consentBox = document.getElementById('cookie-consent');
+      if (!localStorage.getItem('dreamos_cookie_consent') && consentBox) {
+        consentBox.style.display = 'block';
+      }
+
       loginBtn.addEventListener('click', async function() {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
@@ -358,6 +375,19 @@
         if (!email || !password) { if (errorEl) { errorEl.textContent = ' Email dan password harus diisi!'; errorEl.style.display = 'block'; } return; }
         if (password.length < 8) { if (errorEl) { errorEl.textContent = '⛔ Password minimal 8 karakter!'; errorEl.style.display = 'block'; } return; }
         
+                // 🍪 Cookie Consent Check (WAJIB sebelum login)
+        if (!localStorage.getItem('dreamos_cookie_consent')) {
+          var consentCheckEl = document.getElementById('consent-check');
+          if (!consentCheckEl || !consentCheckEl.checked) {
+            if (errorEl) { errorEl.textContent = '🍪 Centang persetujuan Cookie & Hak Akses untuk melanjutkan!'; errorEl.style.display = 'block'; }
+            return;
+          }
+          localStorage.setItem('dreamos_cookie_consent', 'true');
+          localStorage.setItem('dreamos_cookie_consent_time', new Date().toISOString());
+          var consentBoxEl = document.getElementById('cookie-consent');
+          if (consentBoxEl) consentBoxEl.style.display = 'none';
+        }
+
         loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true;
 
         if (!window.supabaseClient && !initSupabase()) {
@@ -544,11 +574,53 @@
           }
         })();
 
+                // 🧠 SMART SECURITY CALENDAR - Auto-read jadwal 24/7
+        window.getSecurityShiftNow = function() {
+          try {
+            var jadwal = JSON.parse(localStorage.getItem('dreamos_security_jadwal') || '[]');
+            var now = new Date();
+            var hariNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            var hari = hariNames[now.getDay()];
+            var tanggal = now.getDate();
+            var bulan = now.getMonth() + 1;
+            var tahun = now.getFullYear();
+            var jam = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+            if (jadwal.length === 0) return { hari: hari, tanggal: tanggal, bulan: bulan, tahun: tahun, jam: jam, shifts: [], active: null };
+            var jadwalHariIni = jadwal.filter(function(j) {
+              var matchHari = !j.hari || j.hari === hari || j.hari === 'Setiap Hari' || j.hari === 'all' || j.hari === '*';
+              var matchTanggal = !j.tanggal || Number(j.tanggal) === tanggal;
+              var matchBulan = !j.bulan || Number(j.bulan) === bulan;
+              var matchTahun = !j.tahun || Number(j.tahun) === tahun;
+              return matchHari && matchTanggal && matchBulan && matchTahun;
+            });
+            var activeShift = null;
+            jadwalHariIni.forEach(function(j) {
+              var mulai = j.jam_mulai || j.mulai || j.start || '00:00';
+              var selesai = j.jam_selesai || j.selesai || j.end || '23:59';
+              if (jam >= mulai && jam <= selesai) activeShift = j;
+            });
+            return { hari: hari, tanggal: tanggal, bulan: bulan, tahun: tahun, jam: jam, shifts: jadwalHariIni, active: activeShift };
+          } catch(e) { return null; }
+        };
+
         window.updateDashboardSlides = async function() {
           try {
-            const sec = localStorage.getItem('dreamos_sec_today') || 'Belum ada jadwal security hari ini.';
-            const s1 = document.getElementById('slide-1'); if(s1) s1.innerHTML = `<strong>🛡️ Security Shift</strong><br>${sec}`;
+            // 📌 SLIDE 1: Smart Security Calendar (auto-read jadwal 24/7)
+            var secData = window.getSecurityShiftNow ? window.getSecurityShiftNow() : null;
+            var s1 = document.getElementById('slide-1');
+            if (s1) {
+              if (secData && secData.shifts.length > 0) {
+                var activeHtml = secData.active
+                  ? '<span style="color:#10b981;font-weight:800;">🟢 AKTIF: ' + (secData.active.nama || secData.active.petugas || secData.active.regu || 'Regu ' + (secData.shifts.indexOf(secData.active)+1)) + '</span><br>⏰ ' + (secData.active.jam_mulai||secData.active.mulai||'?') + ' - ' + (secData.active.jam_selesai||secData.active.selesai||'?')
+                  : '<span style="color:#f59e0b;">🟡 Tidak ada shift aktif (' + secData.jam + ')</span>';
+                s1.innerHTML = '<strong>🛡️ Security 24/7 — ' + secData.hari + ', ' + secData.tanggal + '/' + secData.bulan + '/' + secData.tahun + '</strong><br>⏱️ ' + secData.jam + ' WIB • ' + secData.shifts.length + ' shift terjadwal<br>' + activeHtml;
+              } else {
+                var secFallback = localStorage.getItem('dreamos_sec_today');
+                s1.innerHTML = '<strong>🛡️ Security 24/7</strong><br>' + (secFallback || 'Belum ada jadwal. Input via modul Security (Komandan Regu).');
+              }
+            }
 
+            // 📌 SLIDE 2: Booking (auto-read dari modul booking + cloud sync)
             const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
             const today = new Date().toISOString().split('T')[0];
             const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
@@ -558,32 +630,50 @@
             const htmlT = bTomor.length ? bTomor.map(b=>`• ${b.ruang} (${b.jam_mulai}-${b.jam_selesai})`).join('<br>') : 'Tidak ada booking besok.';
             const s2 = document.getElementById('slide-2'); if(s2) s2.innerHTML = `<strong>📅 Booking</strong><br>Hari Ini:<br>${htmlB}<br>Besok:<br>${htmlT}`;
 
+            // 📌 SLIDE 3: K3 (auto-read dari modul K3 + cloud sync)
             const k3 = JSON.parse(localStorage.getItem('dreamos_k3_reports') || '[]');
             const pending = k3.filter(r=>r.status==='pending').length;
             const latest = k3[0] ? `Terbaru: ${k3[0].kategori||'Umum'} di ${k3[0].lokasi||'-'}` : 'Belum ada laporan K3.';
             const s3 = document.getElementById('slide-3'); if(s3) s3.innerHTML = `<strong>⚠️ K3 Report</strong><br>Pending: ${pending}<br>${latest}`;
 
+            // 📌 SLIDE 4: Weather (real-time + prediksi per jam via Open-Meteo)
             const wCache = JSON.parse(localStorage.getItem('dreamos_weather_cache') || '{}');
             const now = Date.now();
             if (!wCache.ts || now - wCache.ts > 1800000) {
               try {
-                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&timezone=Asia/Jakarta');
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true&hourly=temperature_2m,weathercode&timezone=Asia/Jakarta&forecast_days=1');
                 const d = await res.json();
                 const temp = d.current_weather.temperature;
                 const code = d.current_weather.weathercode;
-                const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es/Salju':'Badai/Petir';
+                const desc = code<=3?'Cerah/Berawan':code<=67?'Hujan':code<=77?'Hujan Es':'Badai/Petir';
                 const icon = code<=3?'☀️':code<=67?'🌧️':'⛈️';
-                wCache.data = `${icon} ${temp}°C - ${desc}`; wCache.ts = now;
+                var hourlyHtml = '';
+                if (d.hourly && d.hourly.time) {
+                  var nowHour = new Date().getHours();
+                  for (var h = 1; h <= 3; h++) {
+                    var idx = nowHour + h;
+                    if (idx < d.hourly.temperature_2m.length) {
+                      var hTemp = d.hourly.temperature_2m[idx];
+                      var hCode = d.hourly.weathercode[idx];
+                      var hIcon = hCode<=3?'☀️':hCode<=67?'🌧️':'⛈️';
+                      hourlyHtml += ' ' + hIcon + idx + ':00=' + hTemp + '°C';
+                    }
+                  }
+                }
+                wCache.data = icon + ' ' + temp + '°C - ' + desc;
+                wCache.hourly = hourlyHtml;
+                wCache.ts = now;
                 localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
-              } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca.'; }
+              } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca.'; wCache.hourly = ''; }
             }
-            const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca</strong><br>${wCache.data||'Memuat...'}<br><small>Open-Meteo Real-time</small>`;
+            const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca Real-time</strong><br>${wCache.data||'Memuat...'}<br><small style="color:#94a3b8;">Prediksi: ${wCache.hourly||'-'} | Open-Meteo</small>`;
 
+            // 📌 SLIDE 5,6,7: Manual Admin (Kabag/Koordinator via Command Center)
             const ann = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
-            const s5 = document.getElementById('slide-5'); if(s5) s5.innerHTML = `<strong>📢 Manajemen</strong><br>${ann.find(a=>a.type==='management')?.msg || 'Belum ada info manajemen'}`;
-            const s6 = document.getElementById('slide-6'); if(s6) s6.innerHTML = `<strong>🏢 Bag. Umum</strong><br>${ann.find(a=>a.type==='umum')?.msg || 'Belum ada info bagian umum'}`;
+            const s5 = document.getElementById('slide-5'); if(s5) s5.innerHTML = `<strong>📢 Manajemen</strong><br>${ann.find(a=>a.type==='management')?.msg || 'Belum ada info (input via CMD Center)'}`;
+            const s6 = document.getElementById('slide-6'); if(s6) s6.innerHTML = `<strong>🏢 Bag. Umum</strong><br>${ann.find(a=>a.type==='umum')?.msg || 'Belum ada info (input via CMD Center)'}`;
             const s7 = document.getElementById('slide-7'); if(s7) s7.innerHTML = `<strong>💌 Ucapan</strong><br>${ann.find(a=>a.type==='ucapan')?.msg || 'The Power Soul Of Shalawat'}`;
-          } catch(e) { console.warn(' Slide update error:', e); }
+          } catch(e) { console.warn('🎠 Slide update error:', e); }
         };
 
         const track = document.getElementById('slide-track');
@@ -766,6 +856,20 @@
         }
         window.closeCastModal();
       };
+
+            // 🔄 AUTO-SYNC: Slide auto-update saat modul berubah (cross-tab)
+      window.addEventListener('storage', function(e) {
+        var syncKeys = ['dreamos_security_jadwal','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang'];
+        if (syncKeys.indexOf(e.key) !== -1 && typeof window.updateDashboardSlides === 'function') {
+          window.updateDashboardSlides();
+        }
+      });
+      // 🧠 Smart Calendar auto-refresh tiap 60 detik (ikuti jam real-time)
+      setInterval(function() {
+        if (localStorage.getItem('dreamos_session_active') === 'true' && typeof window.updateDashboardSlides === 'function') {
+          window.updateDashboardSlides();
+        }
+      }, 60000);
 
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
         const user = getStoredUser(); 
