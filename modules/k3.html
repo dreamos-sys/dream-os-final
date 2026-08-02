@@ -14,6 +14,7 @@
   .badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
   .badge-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
   .badge-approved { background: rgba(16,185,129,0.2); color: #10b981; }
+  .badge-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
   .file-input-wrapper { position: relative; margin: 0.3rem 0; }
   .file-input-wrapper input[type="file"] { width: 100%; padding: 0.6rem; background: #020617; border: 1px dashed #334155; border-radius: 8px; color: #cbd5e1; font-size: 0.875rem; cursor: pointer; }
   .preview-img { max-width: 100%; max-height: 150px; border-radius: 8px; margin-top: 0.5rem; border: 1px solid #334155; display: none; }
@@ -60,11 +61,7 @@
         </div>
       </div>
       
-      <div class="file-input-wrapper">
-        <label style="color: #cbd5e1; font-size: 0.875rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Opsional)</label>
-        <input type="file" id="k3-foto" accept="image/*" onchange="previewFoto(this)">
-        <img id="foto-preview" class="preview-img">
-      </div>
+      
 
       <select id="k3-priority" class="bk-input">
         <option value="normal">Normal</option>
@@ -100,6 +97,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
   function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
   // Generate UUID yang kompatibel dengan Supabase
   function generateUUID() {
@@ -288,7 +286,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       lokasi: lokasi,
       deskripsi: deskripsi,
       priority: priority,
-      foto: fotoBukti || currentFotoBase64 || null,
+      foto: fotoBukti,
       pelapor_id: user?.id || 'unknown',
       pelapor_nama: user?.nama || nama,
       status: 'pending',
@@ -350,7 +348,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     }
 
     document.getElementById('k3-form').reset();
-    document.getElementById('foto-preview').style.display = 'none';
+    (function(){var __fp=document.getElementById('foto-preview'); if(__fp) __fp.style.display='none';})();
     currentFotoBase64 = null;
     clearPhoto('k3-foto-input', 'k3-foto-preview');
     setTimeout(function() { statusEl.textContent = ''; }, 4000);
@@ -410,27 +408,27 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     }
     
     container.innerHTML = reports.map(function(item) {
-      var statusClass = item.status === 'pending' ? 'pending' : 'approved';
+      var statusClass = (item.status === 'approved') ? 'approved' : (item.status === 'rejected' ? 'rejected' : 'pending');
       var prioColor = item.priority === 'critical' ? '#ef4444' : (item.priority === 'high' ? '#f59e0b' : '#10b981');
       var syncIcon = item.synced ? '🟢' : '🟡';
       
       var html = '<div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem; border-left: 4px solid ' + prioColor + ';">' +
         '<div style="display:flex; justify-content:space-between; align-items:start;">' +
-          '<b style="color:#e2e8f0;">' + (item.kategori ? item.kategori.toUpperCase() : 'UMUM') + ' <span style="font-size:0.7rem;">'+syncIcon+'</span></b>' +
+          '<b style="color:#e2e8f0;">' + (item.kategori ? esc(item.kategori).toUpperCase() : 'UMUM') + ' <span style="font-size:0.7rem;">'+syncIcon+'</span></b>' +
           '<span class="badge badge-' + statusClass + '">' + (item.status || 'pending') + '</span>' +
         '</div>' +
         '<div style="font-size:0.8125rem; color:#cbd5e1; margin:0.3rem 0;">' +
-          '📍 ' + (item.lokasi || '-') + ' • 👤 ' + (item.nama_pelapor || item.pelapor_nama || item.pelapor_id || '-') +
+          '📍 ' + esc(item.lokasi||'-') + ' • 👤 ' + esc(item.nama_pelapor || item.pelapor_nama || item.pelapor_id || '-') +
         '</div>' +
-        '<div style="font-size:0.8125rem; color:#e2e8f0; margin-bottom:0.3rem; line-height:1.4;">' + (item.deskripsi || '-') + '</div>';
+        '<div style="font-size:0.8125rem; color:#e2e8f0; margin-bottom:0.3rem; line-height:1.4;">' + esc(item.deskripsi||'-') + '</div>';
         
       if (item.foto) {
-        html += '<img src="' + item.foto + '" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155; cursor:pointer;" onclick="window.open(this.src)">';
+        html += '<img src="' + esc(item.foto) + '" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155; cursor:pointer;" onclick="window.open(this.src)">';
       }
       
       html += '<div style="font-size:0.75rem; color:#94a3b8; margin-top:0.3rem; display:flex; justify-content:space-between;">' +
         '<span>📅 ' + new Date(item.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) + '</span>' +
-        '<span style="color:' + prioColor + '; font-weight:700;">' + (item.priority ? item.priority.toUpperCase() : 'NORMAL') + '</span>' +
+        '<span style="color:' + prioColor + '; font-weight:700;">' + esc(item.priority ? item.priority.toUpperCase() : 'NORMAL') + '</span>' +
       '</div>';
       
       if (window.WorkflowEngine && (window.getUserRole() === 'dev' || window.getUserRole() === 'kabag_umum' || window.getUserRole() === 'koordinator_umum') && item.status === 'pending') {
@@ -532,6 +530,18 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     renderList(localData);
   };
 
+  // 📡 REALTIME: laporan K3 dari device lain muncul hidup
+  (function(){
+    if (!window.supabaseClient || !window.supabaseClient.channel || window.__k3rt) return;
+    window.__k3rt = true;
+    try {
+      window.supabaseClient.channel('dreamos-k3-rt')
+        .on('postgres_changes', { event:'*', schema:'public', table:'k3_reports' }, function(){ if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan(); })
+        .subscribe(function(){});
+    } catch(e){ console.warn('k3 realtime skip:', e.message||e); }
+  })();
+  // 🔧 forceK3Sync = alias (tombol Pull Cloud sebelumnya memanggil fungsi yang tak ada)
+  window.forceK3Sync = function(){ if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan(); };
   tampilkanLaporan();
   console.log('🌌 K3 Module - Hybrid Soul Active with Robust Sync');
 })();
