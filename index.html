@@ -177,6 +177,14 @@
   <div class="cast-modal" id="cast-modal">
     <div class="cast-content" style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:400px;width:90%;text-align:center;box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
       <h3 style="color:#00ff9d;margin:0 0 1rem;">📺 Cast & Present (Pro)</h3>
+      
+      <!-- FITUR SAKTI QR CODE (Hidden by default) -->
+      <div id="cast-qr-container" style="display:none; margin: 0 auto 15px; padding: 12px; background: #fff; border-radius: 12px; width: fit-content; border: 3px solid #00ff9d;">
+        <img id="cast-qr-img" src="" alt="QR Code" style="width: 150px; height: 150px; display: block;">
+        <div style="color:#000; font-size:0.75rem; font-weight:800; margin-top:8px; font-family:'Orbitron', monospace;">SCAN TO CAST</div>
+      </div>
+
+      <button onclick="toggleCastQR()" style="width:100%;padding:12px;margin:5px 0;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.5);border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;">📱 Tampilkan QR Code</button>
       <button onclick="shareToTV()" style="width:100%;padding:12px;margin:5px 0;background:rgba(0,255,157,0.1);color:#e2e8f0;border:1px solid rgba(0,255,157,0.5);border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;">📡 Bagikan Link (Share API)</button>
       <button onclick="presentHere()" style="width:100%;padding:12px;margin:5px 0;background:rgba(14,165,233,0.1);color:#e2e8f0;border:1px solid rgba(14,165,233,0.5);border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;">🖥️ Toggle Fullscreen Mode</button>
       <button onclick="closeCastModal()" style="width:100%;padding:12px;margin:15px 0 5px;background:rgba(239,68,68,0.15);color:#e11d48;border:1px solid #e11d48;border-radius:8px;cursor:pointer;font-weight:600;">✕ Tutup Panel</button>
@@ -447,7 +455,6 @@
           healthEl.innerHTML = `<span class="health-badge ${online?'health-ok':'health-err'}">${online?'🟢 Online':'🔴 Offline'}</span>`;
         }
 
-        // 📈 PERBAIKAN: Hapus CMD, Security, Asset dari Grafik
         setTimeout(() => {
           const canvasEl = document.getElementById('unifiedMarketChart');
           if (!canvasEl || typeof Chart === 'undefined') return;
@@ -668,9 +675,27 @@
         if(e.key==='Escape') closeCmd();
       });
 
-      // 📺 PERBAIKAN: Fungsi Lengkap Cast & Present (Share API & Fullscreen Pro)
+      // 📺 PERBAIKAN: Fungsi Lengkap Cast & Present (Share API & Fullscreen Pro) + QR
       window.openCastModal = function() { document.getElementById('cast-modal').classList.add('show'); };
-      window.closeCastModal = function() { document.getElementById('cast-modal').classList.remove('show'); };
+      
+      window.closeCastModal = function() { 
+        document.getElementById('cast-modal').classList.remove('show');
+        document.getElementById('cast-qr-container').style.display = 'none';
+      };
+
+      window.toggleCastQR = function() {
+        const qrContainer = document.getElementById('cast-qr-container');
+        const qrImg = document.getElementById('cast-qr-img');
+        
+        if (qrContainer.style.display === 'none') {
+          // Generate QR dinamis sesuai URL yang sedang diakses
+          const currentUrl = window.location.href;
+          qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentUrl);
+          qrContainer.style.display = 'block';
+        } else {
+          qrContainer.style.display = 'none';
+        }
+      };
       
       window.shareToTV = async function() {
         const shareData = {
