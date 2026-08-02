@@ -300,9 +300,12 @@
     document.getElementById('qr-modal').classList.add('show');
   };
 
-  window.navModule=function(path, label){
-    try { if(typeof window.openMod==='function'){ window.openMod(path); return; } } catch(e){}
-    try { if(window.parent && typeof window.parent.openMod==='function'){ window.parent.openMod(path); return; } } catch(e){}
+    window.navModule=function(pathOrId, label){
+    // 🧭 Terjemahkan path/file -> moduleId (openMod memvalidasi terhadap moduleId, bukan path)
+    var __idMap={'modules/stok.html':'stok','modules/maintenance.html':'maintenance','stok.html':'stok','maintenance.html':'maintenance','stok':'stok','maintenance':'maintenance'};
+    var mid=__idMap[pathOrId]||String(pathOrId).replace(/^.*\//,'').replace(/\.html$/,'');
+    try { if(typeof window.openMod==='function'){ window.openMod(mid); return; } } catch(e){}
+    try { if(window.parent && typeof window.parent.openMod==='function'){ window.parent.openMod(mid); return; } } catch(e){}
     alert('📦 Buka modul "'+label+'" melalui menu di Dashboard.');
   };
 
