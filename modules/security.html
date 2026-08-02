@@ -106,7 +106,7 @@
       <button class="sec-tab active" data-target="tab-jadwal">📅 Jadwal Matriks</button>
       <button class="sec-tab" data-target="tab-laporan-terpadu">📋 Laporan Terpadu 24/7</button>
       <button class="sec-tab" data-target="tab-patrol">🚶 Patroli QR/NFC</button>
-      <button class="sec-tab" data-target="tab-bridge">🚨 Slide Dashboard</button>
+      \1\n      <button class="sec-tab" data-target="tab-insiden">🚨 Insiden K3</button>
     </div>
 
     <!-- TAB 1: MATRIKS JADWAL -->
@@ -292,7 +292,16 @@
       </div>
     </div>
 
-    <!-- MODALS UTILITY -->
+      <!-- TAB 5: INSIDEN K3 (kehilangan / kecelakaan / bahaya) — pull idempotent -->
+    <div id="tab-insiden" class="sec-panel no-print" style="display:none;">
+      <div class="glass">
+        <div class="section-title">🚨 Insiden dari Laporan K3 (Kehilangan · Kecelakaan · Bahaya)</div>
+        <p style="font-size:0.75rem;color:#94a3b8;margin-top:0;">Laporan K3 kategori kehilangan/kecelakaan/bahaya otomatis muncul di sini. Tindak lanjuti & catat — klaim tersinkron antar perangkat.</p>
+        <div id="insiden-list" style="margin-top:0.8rem;"></div>
+      </div>
+    </div>
+
+\1
     <div id="signature-modal" class="sig-modal">
       <div class="sig-box">
         <h3 id="sig-modal-title" style="color:var(--neon); margin:0 0 0.5rem;">✍️ Tanda Tangan</h3>
@@ -728,7 +737,59 @@ Auto-Sync by Dream OS ver. 13`;
     setInterval(updateDashboardSlide, 1000);
   };
   
-  initApp();
+
+  // ===== INSIDEN K3: tarik laporan kehilangan/kecelakaan/bahaya, klaim tindak-lanjut =====
+  var SEC_DONE_CACHE = 'dreamos_k3_followups_cache';
+  function secEscQ(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+  function secGetDone(){ try{ return JSON.parse(localStorage.getItem(SEC_DONE_CACHE)||'{}'); }catch(e){ return {}; } }
+  function secSetDone(d){ try{ localStorage.setItem(SEC_DONE_CACHE, JSON.stringify(d)); }catch(e){} }
+  function secDkey(id,sc){ return id+'::'+sc; }
+  function secClient(){ return window.supabaseClient || (window.parent && window.parent.supabaseClient) || null; }
+  function secIsIncident(r){ return /kehilangan|kecelakaan|bahaya/i.test((r&&r.kategori)||''); }
+  function secPullFollowups(cb){ var cl=secClient(); if(!cl){ if(cb)cb(); return; } cl.from('k3_followups').select('*').limit(2000).then(function(r){ if(!r.error && r.data){ var c=secGetDone(); r.data.forEach(function(x){ if(x&&x.id) c[x.id]={by:x.by,at:x.at,scope:x.scope}; }); secSetDone(c); } if(cb)cb(); }).catch(function(){ if(cb)cb(); }); }
+  window.__secMarkK3 = function(id){
+    var c=secGetDone(); var u=(function(){try{return JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');}catch(e){return {};}})();
+    c[secDkey(id,'security')]={by:(u.nama||u.email||'security'), at:new Date().toISOString(), scope:'security'}; secSetDone(c);
+    var cl=secClient(); if(cl){ cl.from('k3_followups').upsert({id:secDkey(id,'security'), k3_id:id, scope:'security', by:(u.nama||u.email||'security'), at:new Date().toISOString()}, {onConflict:'id'}).then(function(){}).catch(function(e){ console.warn('[sec-insiden] push', e&&e.message); }); }
+    if(window.BankAudit){ try{ window.BankAudit.log('SEC_K3_FOLLOWUP', {k3_id:id}); }catch(e){} }
+    secRenderInsiden();
+  };
+  window.__secUndoK3 = function(id){ var c=secGetDone(); delete c[secDkey(id,'security')]; secSetDone(c); secRenderInsiden(); };
+  function secRenderInsiden(){
+    var panel=document.getElementById('tab-insiden'); var box=document.getElementById('insiden-list');
+    if(!panel || !box || panel.style.display==='none') return;
+    var k3=(function(){try{return JSON.parse(localStorage.getItem('dreamos_k3_reports')||'[]');}catch(e){return [];}})().filter(secIsIncident);
+    var done=secGetDone();
+    if(!k3.length){ box.innerHTML='<p style="text-align:center;color:#64748b;padding:1rem;">Tidak ada insiden K3 aktif. ✅</p>'; return; }
+    var active=k3.filter(function(r){ return !done[secDkey(r.id,'security')]; });
+    var doneHere=k3.filter(function(r){ return !!done[secDkey(r.id,'security')]; });
+    function card(r, isDone){
+      var d=done[secDkey(r.id,'security')];
+      var pri=(r.priority||'').toLowerCase(); var pc=pri==='critical'||pri==='urgent'?'#ef4444':pri==='high'?'#f59e0b':'#94a3b8';
+      var h='<div style="background:rgba(0,0,0,0.3);border:1px solid rgba(225,29,72,0.25);border-left:4px solid '+(isDone?'#10b981':'#e11d48')+';border-radius:12px;padding:0.7rem 0.8rem;margin-bottom:0.5rem;">';
+      h+='<div style="display:flex;justify-content:space-between;gap:0.5rem;"><div style="flex:1;min-width:0;"><div style="font-weight:700;color:#e2e8f0;">'+esc(r.kategori||'INSIDEN')+' · 📍 '+esc(r.lokasi||'-')+'</div>';
+      h+='<div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">'+esc(r.deskripsi||'-')+'</div>';
+      h+='<div style="font-size:0.68rem;color:#64748b;margin-top:4px;">👤 '+esc(r.nama_pelapor||r.pelapor_nama||'-')+' · <span style="color:'+pc+';font-weight:700;">'+esc((r.priority||'normal').toUpperCase())+'</span></div>';
+      if(isDone) h+='<div style="font-size:0.68rem;color:#10b981;margin-top:3px;">🛡️ Ditindaklanjuti: '+esc(d.by||'-')+' · '+new Date(d.at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>';
+      h+='</div>';
+      if(r.foto) h+='<img src="'+esc(r.foto).replace(/"/g,'&quot;')+'" loading="lazy" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #334155;cursor:pointer;" onclick="window.open(this.src)">';
+      h+='</div><div style="margin-top:0.5rem;">';
+      if(!isDone) h+='<button onclick="__secMarkK3(\''+secEscQ(r.id)+'\')" style="width:100%;min-height:40px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">🛡️ Tindak Lanjuti</button>';
+      else h+='<button onclick="__secUndoK3(\''+secEscQ(r.id)+'\')" style="width:100%;min-height:40px;border:1px solid #10b981;border-radius:8px;background:rgba(16,185,129,0.12);color:#10b981;font-weight:700;font-size:0.75rem;cursor:pointer;">✅ Selesai · ↺ Buka Lagi</button>';
+      h+='</div></div>'; return h;
+    }
+    var html='<div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.5rem;">'+active.length+' aktif · '+doneHere.length+' ditindaklanjuti</div>';
+    if(active.length) active.forEach(function(r){ html+=card(r,false); });
+    else html+='<p style="text-align:center;color:#64748b;padding:0.8rem;">Semua insiden sudah ditindaklanjuti. 🛡️</p>';
+    if(doneHere.length){ html+='<details style="margin-top:0.4rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#94a3b8;">Lihat yang sudah ditindaklanjuti ('+doneHere.length+')</summary><div style="margin-top:0.4rem;opacity:0.75;">'; doneHere.forEach(function(r){ html+=card(r,true); }); html+='</div></details>'; }
+    box.innerHTML=html;
+  }
+  var __secTabBtn=document.querySelector('[data-target="tab-insiden"]'); if(__secTabBtn) __secTabBtn.addEventListener('click', function(){ secPullFollowups(secRenderInsiden); });
+  secPullFollowups(secRenderInsiden);
+  setInterval(function(){ var p=document.getElementById('tab-insiden'); if(p && p.style.display!=='none') secRenderInsiden(); }, 3000);
+  setInterval(function(){ secPullFollowups(function(){ var p=document.getElementById('tab-insiden'); if(p && p.style.display!=='none') secRenderInsiden(); }); }, 20000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) secPullFollowups(secRenderInsiden); });
+\1
   
   window.openRevisionModal = function() {
     const select = document.getElementById('rev-personil'); select.innerHTML = '';
