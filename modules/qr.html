@@ -147,7 +147,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         history: JSON.parse(localStorage.getItem('dreamos_qr_history')||'[]'),
         scans: JSON.parse(localStorage.getItem('dreamos_qr_scans')||'[]'),
         currentImg: '', currentData: '', currentType: 'text', activeTab: 'generate', scanner: null,
-        lastScanData: '', lastScanTime: 0, // Engine Anti-Spam
+        lastScanData: '', lastScanTime: 0,
         encryptionKey: (function(){ try{ var u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); return CryptoJS.SHA256((u.email||'anon') + 'dreamos_salt_2026').toString(); }catch(e){ return 'fallback_key'; } })()
     };
     
@@ -234,12 +234,10 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         html += `</div></body></html>`; w.document.write(html); w.document.close();
     }
 
-    // 🤖 ENGINE UNIVERSAL SMART SCAN & AUTO ROUTING
     function executePayload(dataStr) {
         var resBox = document.getElementById('scan-result');
         if(!resBox) return;
         
-        // Efek visual sukses
         resBox.style.display = 'block';
         resBox.style.background = 'rgba(0, 255, 157, 0.1)';
         setTimeout(() => { resBox.style.background = 'rgba(0,0,0,0.5)'; }, 300);
@@ -248,7 +246,6 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         var actionHtml = '';
         var timestamp = '🕒 Scanned: ' + new Date().toLocaleString('id-ID');
         
-        // Skenario 1: Aset Internal Dream OS
         if (dataStr.startsWith('DREAMOS-ASSET:')) {
             var id = dataStr.split(':')[1];
             var assets = getData('dreamos_assets');
@@ -260,14 +257,11 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
                 displayData = '❌ <b>[ASET TIDAK DITEMUKAN]</b><br>ID: ' + id;
             }
         } 
-        // Skenario 2: URL Universal
         else if (dataStr.startsWith('http://') || dataStr.startsWith('https://')) {
             displayData = '🌐 <b>[WEB LINK / URL]</b><br>' + dataStr;
             actionHtml = '<span style="color:#3b82f6;font-weight:700;">🚀 Mengalihkan Tab Secara Otomatis...</span>';
-            // Auto routing eksekusi
             setTimeout(() => window.open(dataStr, '_blank'), 800);
         }
-        // Skenario 3: Barcode/QR Fisik Barang
         else {
             var cleanId = dataStr.replace('DREAMOS-INV:', '').replace('DREAMOS-GDG:', '');
             var inv = getData('dreamos_inventory');
@@ -279,11 +273,8 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             } else {
                 displayData = '❓ <b>[BARCODE BARU DITEMUKAN]</b><br>Data: <span style="font-family:monospace;color:#f59e0b;">' + cleanId + '</span>';
                 actionHtml = '<span style="color:#f59e0b;font-weight:700;">⚡ Mengalihkan ke Modul Tambah Inventaris...</span>';
-                
-                // Auto-Routing Lempar Data antar modul (Integrasi Dream OS Parent)
                 setTimeout(() => {
                     if(window.parent && window.parent.switchModule) {
-                        // Kanjeng bisa buat logic ini di index.html nantinya
                         window.parent.switchModule('inventory', { barcodeScan: cleanId });
                     }
                 }, 1500);
@@ -333,52 +324,58 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         executePayload(payload);
     }
 
-    // 📸 ENGINE CONTINUOUS SCAN + DEBOUNCE (ANTI-SPAM)
+    // 📸 SAFE AUTO-RETRY SCANNER LOADER (ANTI BUG LIBRARY BELUM SIAP)
     function startScanner(retryCount){
         if(state.scanner) return;
+        
         if(typeof Html5Qrcode === 'undefined') {
             retryCount = (retryCount || 0) + 1;
-            if (retryCount > 15) {
+            if(retryCount > 20) {
                 alert('⚠️ Koneksi internet lambat. Pustaka scanner gagal dimuat.');
                 return;
             }
-            // Auto-retry senyap tiap 300ms sampai library siap
+            // Tunggu senyap selama 300ms sampai library benar-benar siap
             setTimeout(function(){ startScanner(retryCount); }, 300);
             return;
         }
         
         try {
             state.scanner = new Html5Qrcode("qr-reader");
-        state.lastScanData = ''; 
-        state.lastScanTime = 0;
-        
-        state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-            function(text){ 
-                // Anti-Spam: Block duplicate scan dalam 3 detik
-                var now = Date.now();
-                if (text === state.lastScanData && (now - state.lastScanTime) < 3000) return;
-                
-                state.lastScanData = text;
-                state.lastScanTime = now;
-                
-                // Panggil logic tanpa mematikan scanner!
-                processSmartScan(text); 
-            }, function(err){}
-        ).then(function(){
-            var sBtn = document.querySelector('[data-qr="start-scan"]');
-            var xBtn = document.querySelector('[data-qr="stop-scan"]');
-            if(sBtn) sBtn.style.display = 'none';
-            if(xBtn) xBtn.style.display = 'block';
-        }).catch(function(err){ alert('❌ Gagal akses kamera: ' + err); state.scanner = null; });
+            state.lastScanData = ''; 
+            state.lastScanTime = 0;
+            
+            state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                function(text){ 
+                    var now = Date.now();
+                    if (text === state.lastScanData && (now - state.lastScanTime) < 3000) return;
+                    state.lastScanData = text;
+                    state.lastScanTime = now;
+                    processSmartScan(text); 
+                }, function(err){}
+            ).then(function(){
+                var sBtn = document.querySelector('[data-qr="start-scan"]');
+                var xBtn = document.querySelector('[data-qr="stop-scan"]');
+                if(sBtn) sBtn.style.display = 'none';
+                if(xBtn) xBtn.style.display = 'block';
+            }).catch(function(err){ 
+                alert('❌ Gagal akses kamera: ' + err); 
+                state.scanner = null; 
+            });
+        } catch(e) {
+            state.scanner = null;
+            alert('❌ Inisialisasi Scanner Error: ' + e.message);
+        }
     }
     
     function stopScanner(){
         if(!state.scanner) return;
         state.scanner.stop().then(function(){
             state.scanner = null;
-            document.querySelector('[data-qr="start-scan"]').style.display = 'block';
-            document.querySelector('[data-qr="stop-scan"]').style.display = 'none';
-        }).catch(function(){});
+            var sBtn = document.querySelector('[data-qr="start-scan"]');
+            var xBtn = document.querySelector('[data-qr="stop-scan"]');
+            if(sBtn) sBtn.style.display = 'block';
+            if(xBtn) xBtn.style.display = 'none';
+        }).catch(function(){ state.scanner = null; });
     }
 
     function renderCodes(){
@@ -404,7 +401,6 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             if(pEl) pEl.style.display = p === tab ? 'block' : 'none';
         });
         if(tab==='codes') renderCodes();
-        // Jangan matikan otomatis jika ganti tab agar bisa continuous multi-tasking!
     }
 
     if (!window.__qr_pro_bound) {
@@ -433,6 +429,6 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         });
     }
 
-    renderForm(); switchTab('scanner'); // Auto-buka di tab scanner agar siap pakai!
+    renderForm(); switchTab('scanner');
 })();
 </script>
