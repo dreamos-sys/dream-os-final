@@ -3,7 +3,7 @@
 if (!window.goHome) window.goHome = function() { 
   if (window.parent && window.parent.goHome) window.parent.goHome();
   else window.location.reload();
-};
+} } catch(e) { console.warn('Parent switchModule failed:', e); };
 if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
   window.supabaseClient = window.parent.supabaseClient;
 if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
@@ -274,7 +274,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
                 displayData = '❓ <b>[BARCODE BARU DITEMUKAN]</b><br>Data: <span style="font-family:monospace;color:#f59e0b;">' + cleanId + '</span>';
                 actionHtml = '<span style="color:#f59e0b;font-weight:700;">⚡ Mengalihkan ke Modul Tambah Inventaris...</span>';
                 setTimeout(() => {
-                    if(window.parent && window.parent.switchModule) {
+                    try { if(window.parent && typeof window.parent.switchModule === 'function') {
                         window.parent.switchModule('inventory', { barcodeScan: cleanId });
                     }
                 }, 1500);
@@ -293,7 +293,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             if(!navigator.geolocation) return alert('⛔ Perangkat tidak mendukung GPS.');
             var geoParts = payload.substring(4).split(':'); var coords = geoParts[0].split(',');
             payload = geoParts.slice(1).join(':');
-            navigator.geolocation.getCurrentPosition(function(pos) {
+            navigator.geolocation.getCurrentPosition(function(pos, function(err){ alert('️ GPS tidak tersedia. Scan tetap dilanjutkan tanpa geo-fence.'); processNextLayers(payload); }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}) {
                 var lat = pos.coords.latitude, lng = pos.coords.longitude;
                 var targetLat = parseFloat(coords[0]), targetLng = parseFloat(coords[1]);
                 var p = 0.017453292519943295;
@@ -331,7 +331,9 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         if(typeof Html5Qrcode === 'undefined') {
             retryCount = (retryCount || 0) + 1;
             if(retryCount > 20) {
-                alert('⚠️ Koneksi internet lambat. Pustaka scanner gagal dimuat.');
+                alert('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.');
+        var manualDiv = document.querySelector('#manual-scan-input')?.parentElement;
+        if(manualDiv) manualDiv.style.display = 'block';
                 return;
             }
             // Tunggu senyap selama 300ms sampai library benar-benar siap
