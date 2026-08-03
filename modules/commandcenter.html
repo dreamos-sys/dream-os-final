@@ -444,6 +444,7 @@
         <div class="form-grid">
           <input type="text" id="new-user-nama" placeholder="Nama Lengkap">
           <input type="email" id="new-user-email" placeholder="Email">
+          <div id="email-intel" style="grid-column:1/-1; font-size:0.72rem; font-weight:700; min-height:1rem;"></div>
           <select id="new-user-role">
             <option value="staff">👤 Staff</option>
             <option value="guru">👨‍🏫 Guru</option>
@@ -1462,6 +1463,39 @@ window.goHomeHandler = function() {
     var el = document.getElementById(id);
     if (el) el.addEventListener('input', validateUserForm);
   });
+
+
+  // ===== EMAIL INTELLIGENCE: deteksi email terdaftar / email asal =====
+  var __intelTimer = null;
+  function scheduleEmailIntel(email){
+    clearTimeout(__intelTimer);
+    var box = document.getElementById('email-intel'); if(!box) return;
+    if(!email || email.trim().length < 5){ box.textContent=''; return; }
+    box.textContent = '🔍 Memeriksa email...'; box.style.color = 'var(--muted)';
+    __intelTimer = setTimeout(function(){ runEmailIntel(email); }, 600);
+  }
+  async function runEmailIntel(email){
+    var box = document.getElementById('email-intel'); if(!box) return;
+    var em = email.trim().toLowerCase();
+    var domain = em.split('@')[1] || '';
+    // Lapis 1: email sekali pakai
+    var disposable = ['mailinator.com','tempmail.com','temp-mail.org','10minutemail.com','guerrillamail.com','yopmail.com','trashmail.com','getnada.com','dispostable.com'];
+    if (disposable.indexOf(domain) > -1){ box.innerHTML='⚠️ Email sekali pakai terdeteksi — tidak diizinkan'; box.style.color='var(--danger)'; return; }
+    // Lapis 2: duplikat lokal
+    var local = safeJSON('dreamos_users_db', []);
+    if (local.find(function(u){ return (u.email||'').toLowerCase()===em; })){ box.innerHTML='⚠️ Email sudah terdaftar di sistem'; box.style.color='var(--gold)'; }
+    // Lapis 3: duplikat cloud
+    if (window.supabaseClient){ try{ var r = await window.supabaseClient.from('users').select('email').eq('email', em).maybeSingle(); if(r.data){ box.innerHTML='⚠️ Email sudah terdaftar di cloud'; box.style.color='var(--gold)'; return; } }catch(e){} }
+    // Lapis 4: cek MX record (domain punya mail server?)
+    try{
+      var mx = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) + '&type=MX');
+      var mj = await mx.json();
+      if (mj && mj.Answer && mj.Answer.length > 0){ box.innerHTML='✅ Email valid & domain punya mail server'; box.style.color='var(--success)'; }
+      else { box.innerHTML='⚠️ Domain tidak punya mail server (email asal?)'; box.style.color='var(--gold)'; }
+    }catch(e){ box.innerHTML='ℹ️ Tidak dapat memverifikasi domain (offline)'; box.style.color='var(--muted)'; }
+  }
+  var __emEl = document.getElementById('new-user-email');
+  if (__emEl) __emEl.addEventListener('input', function(){ scheduleEmailIntel(__emEl.value); });
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
