@@ -55,6 +55,7 @@
       <div style="margin-top: 0.5rem;">
         <label style="color: #cbd5e1; font-size: 0.8125rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Auto-Compress ~300KB)</label>
         <input type="file" id="k3-foto-input" accept="image/*" capture="environment" onchange="handlePhoto(this, 'k3-foto-preview')" class="bk-input" style="padding: 0.5rem;">
+        <div id="k3-foto-status" style="font-size:0.72rem; margin:0.3rem 0; min-height:1rem;"></div>
         <div class="foto-preview-container">
           <img id="k3-foto-preview">
           <button type="button" onclick="clearPhoto('k3-foto-input', 'k3-foto-preview')" class="btn btn-danger btn-clear-foto">✕ Hapus Foto</button>
@@ -94,6 +95,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   'use strict';
   
   let currentFotoBase64 = null;
+  let currentFotoUrl = null;     // URL cloud jika upload berhasil
+  let currentFotoStatus = null;  // 'cloud' | 'offline' | null
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
   function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
@@ -260,7 +263,9 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     const lokasi = document.getElementById('k3-lokasi').value.trim();
     const deskripsi = document.getElementById('k3-deskripsi').value.trim();
     const priority = document.getElementById('k3-priority').value;
-    const fotoBukti = window.currentPhoto || null;
+    // Prioritas: URL cloud > base64 lokal > null
+    const fotoBukti = currentFotoUrl || currentFotoBase64 || window.currentPhoto || null;
+    const fotoSource = currentFotoStatus || (currentFotoBase64 ? 'offline' : null);
 
     // Cek apakah user login (Supabase Auth)
     var userBound = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
@@ -287,6 +292,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       deskripsi: deskripsi,
       priority: priority,
       foto: fotoBukti,
+      foto_source: fotoSource,  // 'cloud' | 'offline'
+      foto_uploaded_at: fotoBukti ? new Date().toISOString() : null,
       pelapor_id: user?.id || 'unknown',
       pelapor_nama: user?.nama || nama,
       status: 'pending',
@@ -342,6 +349,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     (function(){var __fp=document.getElementById('foto-preview'); if(__fp) __fp.style.display='none';})();
     currentFotoBase64 = null;
     clearPhoto('k3-foto-input', 'k3-foto-preview');
+    currentFotoUrl = null; currentFotoStatus = null;
+    var stEl = document.getElementById('k3-foto-status'); if (stEl) stEl.textContent = '';
     setTimeout(function() { statusEl.textContent = ''; }, 4000);
   }
 
@@ -474,6 +483,24 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+    // === CLOUD PHOTO: upload ke Supabase Storage, fallback base64 ===
+    (async function(){
+      var statusEl = document.getElementById('k3-foto-status');
+      if (!window.CloudPhoto) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ CloudPhoto belum dimuat — pakai base64</span>';
+        return;
+      }
+      if (statusEl) statusEl.innerHTML = '<span style="color:#0ea5e9;">☁️ Mengunggah ke cloud…</span>';
+      try {
+        var url = await window.CloudPhoto.upload(file, 'k3-photos');
+        currentFotoUrl = url;
+        currentFotoStatus = 'cloud';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#10b981;">✅ Foto tersimpan di cloud (' + Math.round(file.size/1024) + ' KB → terkompresi)</span>';
+      } catch(e) {
+        currentFotoStatus = 'offline';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ Cloud gagal — fallback base64 (akan sync nanti): ' + (e.message||'').slice(0,60) + '</span>';
+      }
+    })();
   };
 
   window.clearPhoto = function(inputId, previewId) {
