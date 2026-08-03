@@ -567,6 +567,51 @@
     </div>
   </div>
 
+  <!-- TAB: USER HEALTH MONITOR (Dev Only) -->
+  <div id="tab-user-health" class="tab-content">
+    <div class="glass">
+      <div style="font-weight:800; color:var(--neon); margin-bottom:0.5rem;">🏥 User Health Monitor & Troubleshooting</div>
+      <p style="font-size:0.75rem; color:var(--muted); margin-bottom:1rem;">Monitoring real-time kesehatan user account + quick fix dari Dev</p>
+      
+      <div id="user-health-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:0.5rem; margin-bottom:1rem;">
+        <div style="background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:8px; padding:0.8rem; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:#10b981;" id="stat-healthy">0</div>
+          <div style="font-size:0.7rem; color:#94a3b8;">✅ Sehat</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b; border-radius:8px; padding:0.8rem; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:#f59e0b;" id="stat-never-login">0</div>
+          <div style="font-size:0.7rem; color:#94a3b8;">❓ Belum Login</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:8px; padding:0.8rem; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:#ef4444;" id="stat-locked">0</div>
+          <div style="font-size:0.7rem; color:#94a3b8;">🔒 Locked</div>
+        </div>
+        <div style="background:rgba(14,165,233,0.1); border:1px solid #0ea5e9; border-radius:8px; padding:0.8rem; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:#0ea5e9;" id="stat-revised">0</div>
+          <div style="font-size:0.7rem; color:#94a3b8;">🔧 Direvisi</div>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto; max-height:500px;">
+        <table style="width:100%; font-size:0.75rem;">
+          <thead style="position:sticky; top:0; background:rgba(15,23,42,0.95); backdrop-filter:blur(8px); z-index:1;">
+            <tr>
+              <th style="padding:0.5rem; text-align:left;">Email</th>
+              <th style="padding:0.5rem; text-align:left;">Nama</th>
+              <th style="padding:0.5rem; text-align:left;">Role</th>
+              <th style="padding:0.5rem; text-align:left;">Status</th>
+              <th style="padding:0.5rem; text-align:center;">Health</th>
+              <th style="padding:0.5rem; text-align:center;">Failures</th>
+              <th style="padding:0.5rem; text-align:left;">Last Login</th>
+              <th style="padding:0.5rem; text-align:left;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="user-health-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL EDIT USER -->
   <div class="modal-overlay" id="edit-user-modal">
     <div class="modal-content">
@@ -760,6 +805,7 @@ window.goHomeHandler = function() {
     if (btn) btn.classList.add('active');
 
     if (id === 'devmon') { if(!isDev()){ showToast('⛔ Khusus Dev.','error'); return; } renderDevMonitor(); }
+    if (id === 'user-health') { if(!isDev()){ showToast(' Khusus Dev.','error'); return; } renderUserHealth(); }
     if (id === 'inbox') renderInbox();
     if (id === 'approvals') renderApprovals();
     if (id === 'activity') renderActivity();
@@ -1180,6 +1226,111 @@ window.goHomeHandler = function() {
   function canManage(targetRole){ return (MANAGEABLE_C[_myRole()]||[]).indexOf(targetRole)>=0; }
   function restrictRoleOptions(){ var allow=MANAGEABLE_C[_myRole()]||[]; ['new-user-role','edit-user-role'].forEach(function(id){ var sel=document.getElementById(id); if(!sel)return; Array.prototype.slice.call(sel.options).slice().forEach(function(o){ if(o.value && allow.indexOf(o.value)<0){ try{o.remove();}catch(e){} } }); }); }
   restrictRoleOptions();
+  window.renderUserHealth = async function() {
+    if (!isDev()) return;
+    if (!window.supabaseClient) {
+      document.getElementById('user-health-body').innerHTML = '<tr><td colspan="8" style="text-align:center; color:#fcd34d;">Offline — butuh koneksi cloud</td></tr>';
+      return;
+    }
+    
+    try {
+      const { data, error } = await window.supabaseClient
+        .from('user_health_monitor')
+        .select('*');
+      
+      if (error) throw error;
+      
+      const tbody = document.getElementById('user-health-body');
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#94a3b8;">Belum ada data user</td></tr>';
+        return;
+      }
+      
+      // Update stats
+      const stats = { healthy: 0, neverLogin: 0, locked: 0, revised: 0 };
+      data.forEach(u => {
+        if (u.health_status.includes('LOCKED')) stats.locked++;
+        else if (u.health_status.includes('NEVER_LOGIN')) stats.neverLogin++;
+        else if (u.health_status.includes('REVISED')) stats.revised++;
+        else stats.healthy++;
+      });
+      
+      document.getElementById('stat-healthy').textContent = stats.healthy;
+      document.getElementById('stat-never-login').textContent = stats.neverLogin;
+      document.getElementById('stat-locked').textContent = stats.locked;
+      document.getElementById('stat-revised').textContent = stats.revised;
+      
+      // Render table
+      tbody.innerHTML = data.map(u => {
+        const healthColor = u.health_status.includes('LOCKED') ? '#ef4444' : 
+                           u.health_status.includes('FAILURE') ? '#f59e0b' : 
+                           u.health_status.includes('NEVER') ? '#94a3b8' : '#10b981';
+        const lastLogin = u.last_login_attempt ? new Date(u.last_login_attempt).toLocaleString('id-ID') : '<span style="color:#94a3b8;">Belum pernah</span>';
+        
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:0.5rem;">${escU(u.email)}</td>
+          <td style="padding:0.5rem;"><b>${escU(u.nama||'-')}</b></td>
+          <td style="padding:0.5rem;"><span class="badge badge-pending">${escU(u.role)}</span></td>
+          <td style="padding:0.5rem;"><span class="badge ${u.status==='active'?'badge-approved':'badge-rejected'}">${u.status}</span></td>
+          <td style="padding:0.5rem; text-align:center;"><span style="color:${healthColor}; font-weight:700;">${u.health_status}</span></td>
+          <td style="padding:0.5rem; text-align:center;"><b>${u.login_failures||0}</b></td>
+          <td style="padding:0.5rem; font-size:0.7rem;">${lastLogin}</td>
+          <td style="padding:0.5rem; white-space:nowrap;">
+            <button class="btn btn-primary btn-sm" onclick="resetUserPassword('${escU(u.id)}')" title="Reset Password">🔑</button>
+            <button class="btn btn-warning btn-sm" onclick="unlockUser('${escU(u.id)}')" title="Unlock Account" ${!u.account_locked?'disabled style="opacity:0.3;"':''}>🔓</button>
+            <button class="btn btn-success btn-sm" onclick="addRevisionNote('${escU(u.id)}')" title="Tambah Catatan Revisi">📝</button>
+          </td>
+        </tr>`;
+      }).join('');
+      
+    } catch (e) {
+      console.error('User Health Monitor error:', e);
+      document.getElementById('user-health-body').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444;">Error: ${escU(e.message)}</td></tr>`;
+    }
+  };
+  
+  window.unlockUser = async function(userId) {
+    if (!isDev()) return showToast('⛔ Hanya Dev', 'error');
+    if (!confirm('Unlock user ini? Login failures akan direset.')) return;
+    
+    try {
+      const { error } = await window.supabaseClient
+        .from('users')
+        .update({ account_locked: false, login_failures: 0, revised_by: 'dev', revised_at: new Date().toISOString() })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      showToast('✅ User unlocked', 'success');
+      renderUserHealth();
+    } catch (e) {
+      showToast('❌ Gagal: ' + e.message, 'error');
+    }
+  };
+  
+  window.addRevisionNote = async function(userId) {
+    if (!isDev()) return;
+    const note = prompt(' Masukkan catatan revisi (format: Masalah - Solusi):');
+    if (!note) return;
+    
+    try {
+      const { data, error } = await window.supabaseClient
+        .from('users')
+        .update({ 
+          revision_notes: (new Date().toISOString().split('T')[0] + ' ' + note),
+          revised_by: 'dev',
+          revised_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select('revision_notes');
+      
+      if (error) throw error;
+      showToast('✅ Catatan revisi ditambahkan', 'success');
+      renderUserHealth();
+    } catch (e) {
+      showToast('❌ Gagal: ' + e.message, 'error');
+    }
+  };
+
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
   initCalSelectors();
