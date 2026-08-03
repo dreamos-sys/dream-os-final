@@ -612,7 +612,7 @@
 
                 window.updateDashboardSlides = async function() {
           try {
-            // 📌 SLIDE 1: SMART SECURITY 24/7 — baca dreamos_matrix (SINKRON modul Security)
+            // 📌 SLIDE 1: SMART SECURITY 24/7 — baca bridge dreamos_slide_petugas DULU (Rotation Engine), fallback dreamos_matrix
             var s1 = document.getElementById('slide-1');
             if (s1) {
               var nowS = new Date();
@@ -621,6 +621,12 @@
               var tglN = nowS.getDate(), blnN = nowS.getMonth()+1, thnN = nowS.getFullYear();
               var jamN = nowS.getHours().toString().padStart(2,'0')+':'+nowS.getMinutes().toString().padStart(2,'0');
               var periode = thnN+'-'+String(blnN).padStart(2,'0');
+              var __bridge = localStorage.getItem('dreamos_slide_petugas');
+              if (__bridge && __bridge.length > 10) {
+                var __meta = null; try { __meta = JSON.parse(localStorage.getItem('dreamos_slide_petugas_meta')||'{}'); } catch(e){}
+                var __byTag = __meta && __meta.by ? '<br><small style="color:#94a3b8;">Updated: ' + new Date(__meta.updated_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) + ' oleh ' + __meta.by + '</small>' : '';
+                s1.innerHTML = '<pre style="white-space:pre-wrap;margin:0;font-family:Inter,sans-serif;font-size:0.72rem;line-height:1.35;text-align:left;color:#e2e8f0;">' + __bridge.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>' + __byTag;
+              } else {
               var matrix = []; try { matrix = JSON.parse(localStorage.getItem('dreamos_matrix')||'[]'); } catch(e){}
               var todayEntries = matrix.filter(function(x){ return x.periode===periode && parseInt(x.tgl)===tglN && (x.shift==='P'||x.shift==='M'); });
               var pagiNames = todayEntries.filter(function(x){return x.shift==='P';}).map(function(x){return x.nama;});
@@ -641,7 +647,7 @@
                   : (pagiNames.length ? '<br><small style="color:#94a3b8;">☀️ Berikutnya (Pagi 07:00): '+pagiNames.join(', ')+'</small>' : '');
                 s1.innerHTML = head+' • '+todayEntries.length+' petugas<br>'+activeHtml+nextHtml;
               }
-            }
+            } } // end else (no bridge)
 
             // 📌 SLIDE 2: Booking (auto-read modul booking + cloud sync)
             const bookings = JSON.parse(localStorage.getItem('dreamos_bookings') || '[]');
@@ -919,7 +925,7 @@
             // 🔄 AUTO-SYNC 3-LAPISAN (Pro Global Enterprise)
       // Lapis 1: CROSS-TAB (event storage antar tab/browser)
       window.addEventListener('storage', function(e) {
-        var syncKeys = ['dreamos_matrix','dreamos_security_jadwal','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang'];
+        var syncKeys = ['dreamos_matrix','dreamos_slide_petugas','dreamos_slide_petugas_meta','dreamos_security_jadwal','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang'];
         if (syncKeys.indexOf(e.key) !== -1 && typeof window.updateDashboardSlides === 'function') {
           window.updateDashboardSlides();
         }
@@ -934,7 +940,7 @@
         if (window.__dreamos_ls_patched) return;
         window.__dreamos_ls_patched = true;
         var origSet = localStorage.setItem.bind(localStorage);
-        var watchKeys = ['dreamos_matrix','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang','dreamos_security_jadwal'];
+        var watchKeys = ['dreamos_matrix','dreamos_slide_petugas','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang','dreamos_security_jadwal'];
         var deb = null;
         localStorage.setItem = function(k, v) {
           origSet(k, v);
@@ -945,7 +951,7 @@
         };
       })();
       // Lapis 3: CUSTOM EVENT dari modul (booking.html dispatch 'booking-updated', dll)
-      ['booking-updated','dreamos-notif','k3-updated','matrix-updated'].forEach(function(ev){
+      ['booking-updated','dreamos-notif','k3-updated','matrix-updated','dreamos-slide-updated'].forEach(function(ev){
         window.addEventListener(ev, function(){ if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides(); });
       });
       // Jaring pengaman: polling 60 detik (ikuti jam real-time untuk pergantian shift)
