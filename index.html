@@ -344,6 +344,15 @@
         
         if(local && local.password_hash){
           if(!window.__dvVerify(password, local.password_hash)) throw new Error('Password salah');
+          //  SILENT SESSION: buat sesi Supabase di latar belakang (non-blocking)
+          // agar fitur cloud (upload foto, sync, storage) punya token JWT
+          try {
+            if (window.supabaseClient && window.supabaseClient.auth) {
+              window.supabaseClient.auth.signInWithPassword({ email: email, password: password })
+                .then(function(r){ if (r && r.data && r.data.session) { try { window.__cloudSessionOk = true; } catch(e){} } })
+                .catch(function(){ /* offline / password cloud beda — tidak masalah, fallback lokal tetap jalan */ });
+            }
+          } catch(e){}
           return {source:'local', user:{id:local.id||('local_'+email), email:local.email, nama:local.nama||email.split('@')[0], role:local.role||'staff'}};
         }
         
