@@ -3,7 +3,7 @@
 if (!window.goHome) window.goHome = function() { 
   if (window.parent && window.parent.goHome) window.parent.goHome();
   else window.location.reload();
-} } catch(e) { console.warn('Parent switchModule failed:', e); };
+};
 if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
   window.supabaseClient = window.parent.supabaseClient;
 if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
@@ -293,7 +293,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             if(!navigator.geolocation) return alert('⛔ Perangkat tidak mendukung GPS.');
             var geoParts = payload.substring(4).split(':'); var coords = geoParts[0].split(',');
             payload = geoParts.slice(1).join(':');
-            navigator.geolocation.getCurrentPosition(function(pos, function(err){ alert('️ GPS tidak tersedia. Scan tetap dilanjutkan tanpa geo-fence.'); processNextLayers(payload); }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
                 var lat = pos.coords.latitude, lng = pos.coords.longitude;
                 var targetLat = parseFloat(coords[0]), targetLng = parseFloat(coords[1]);
                 var p = 0.017453292519943295;
@@ -301,7 +301,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
                 var distance = 12742 * Math.asin(Math.sqrt(a)); 
                 if (distance > 5) return alert('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1) + ' km dari Safe Core (Depok).');
                 processNextLayers(payload);
-            }, function(err) { alert('⛔ Gagal mendapatkan GPS.'); });
+            }, function(err) { console.warn('GPS ditolak/timeout, melanjutkan scan tanpa geo-fence'); processNextLayers(payload); }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 0});
             return;
         }
         processNextLayers(payload);
@@ -332,8 +332,8 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             retryCount = (retryCount || 0) + 1;
             if(retryCount > 20) {
                 alert('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.');
-        var manualDiv = document.querySelector('#manual-scan-input')?.parentElement;
-        if(manualDiv) manualDiv.style.display = 'block';
+                var manualDiv = document.querySelector('#manual-scan-input')?.parentElement;
+                if(manualDiv) manualDiv.style.display = 'block';
                 return;
             }
             // Tunggu senyap selama 300ms sampai library benar-benar siap
