@@ -65,6 +65,7 @@
     </div>
 
     <div class="sync-bar" id="sync-status">🟡 Init…</div>
+    <div id="booking-window-status" class="info-box" style="margin-bottom:0.6rem;padding:0.5rem 0.8rem;font-size:0.78rem;"></div>
 
     <div class="info-box">
       <strong>📋 Aturan:</strong> Jam <strong>07:30–16:00 WIB</strong> · Minggu libur · Jumat Aula/Serbaguna 10:30–13:00 (Shalat Jumat) · Sabtu konfirmasi Kabag<br>
@@ -179,6 +180,14 @@
   function getBookings() { try { return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch (e) { return []; } }
   function saveBookings(data) { localStorage.setItem('dreamos_bookings', JSON.stringify(data)); try { window.dispatchEvent(new CustomEvent('booking-updated')); } catch (e) {} }
   function timeToFloat(t) { var p = String(t||'0:0').split(':'); return (parseInt(p[0],10)||0) + (parseInt(p[1],10)||0)/60; }
+  function nowFloatLocal(){ var n=new Date(); return n.getHours()+n.getMinutes()/60; }
+  function isSubmissionWindowOpen(){ var h=nowFloatLocal(); return h>=WORK_START && h<=WORK_END; }
+  function renderWindowStatus(){
+    var el=document.getElementById('booking-window-status'); if(!el) return;
+    if(isAdmin()){ el.innerHTML='🕐 Jendela pengajuan: <b style="color:#10b981;">TERBUKA — Admin/Dev bebas aturan jam (override pro EMS)</b>'; el.style.borderLeftColor='#10b981'; return; }
+    if(isSubmissionWindowOpen()){ el.innerHTML='🕐 Jendela pengajuan: <b style="color:#10b981;">TERBUKA</b> (07:30–16:00 WIB)'; el.style.borderLeftColor='#10b981'; }
+    else { el.innerHTML='🕐 Jendela pengajuan: <b style="color:#ef4444;">TUTUP</b> — staff hanya dapat mengirim 07:30–16:00 WIB.'; el.style.borderLeftColor='#ef4444'; }
+  }
   function toMinutes(t) { var p = String(t||'0:0').split(':'); return (parseInt(p[0],10)||0)*60 + (parseInt(p[1],10)||0); }
   function setSyncStatus(msg, ok) { var el = document.getElementById('sync-status'); if (!el) return; el.textContent = msg; el.style.color = ok===true ? '#10b981' : ok===false ? '#f59e0b' : '#94a3b8'; }
   function showError(msg) { var el = document.getElementById('booking-error'); el.textContent = msg; el.style.display = 'block'; }
@@ -396,6 +405,11 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     });
     var saranaStr = selectedAlatsWithQty.length ? selectedAlatsWithQty.join(', ') : 'Tidak ada alat';
 
+    // 0. Jendela pengajuan (adopt pro EMS): staff dibatasi jam kerja, admin override
+    if (!isAdmin() && !isSubmissionWindowOpen()) {
+      return showError('⛔ Pengajuan booking hanya dapat dikirim pada jam kerja 07:30–16:00 WIB. (Dev/Kabag/Koordinator dapat mengajukan kapan saja.)');
+    }
+
     // 1. Validasi Field Wajib
     if (!tglMulai || !jamMulai || !jamSelesai || !ruang) return showError('⚠️ Tanggal, ruangan, dan jam wajib diisi.');
     if (!peminjam) return showError('⚠️ Nama peminjam wajib diisi.');
@@ -410,7 +424,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
 
     // 3. Validasi Ketat: Hanya Jam Kerja 07:30 - 16:00 WIB
     var startT = timeToFloat(jamMulai), endT = timeToFloat(jamSelesai);
-    if (startT < 7.5 || endT > 16.0 || startT >= endT) {
+    if (startT < WORK_START || endT > WORK_END || startT >= endT) {
       return showError('⛔ Booking HANYA diperbolehkan pada jam kerja: 07:30 – 16:00 WIB.');
     }
     var dateObj = new Date(tglMulai + 'T12:00:00'); var dayOfWeek = dateObj.getDay();
@@ -600,6 +614,8 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   
   // Init
   renderBookings();
+  renderWindowStatus();
+  setInterval(renderWindowStatus, 30000);
   try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission(); } catch(e){}
   setSyncStatus(window.supabaseClient ? '🔄 Menarik data…' : '🟡 Mode lokal');
   setTimeout(function(){ pullBookingsFromCloud(false).then(function(){ subscribeRealtime(); }); }, 400);
