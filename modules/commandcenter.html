@@ -577,6 +577,16 @@
       <div style="font-weight:800; color:var(--gold); margin-bottom:0.3rem;">📜 Log Percobaan Login (50 terakhir, lintas perangkat)</div>
       <div id="devmon-loginlog" style="overflow-x:auto; max-height:420px;">Memuat...</div>
     </div>
+    <div class="glass">
+      <div style="font-weight:800; color:var(--purple); margin-bottom:0.5rem;">🗄️ Backup & Restore Data Lokal (Dev Only)</div>
+      <p style="font-size:0.72rem; color:var(--muted); margin-bottom:0.8rem;">Asuransi data perangkat: export semua kunci <code>dreamos_*</code> ke file JSON. Jika HP hilang/di-reset, restore di perangkat baru dalam 10 detik.</p>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button class="btn btn-success" onclick="exportLocalBackup()">📥 Export Backup JSON</button>
+        <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="importLocalBackup(this)">
+        <button class="btn btn-warning" onclick="document.getElementById('restore-file').click()">📤 Restore dari JSON</button>
+      </div>
+      <div id="backup-status" style="font-size:0.7rem; margin-top:0.5rem; color:#94a3b8;"></div>
+    </div>
   </div>
 
   <!-- TAB: USER HEALTH MONITOR (Dev Only) -->
@@ -1295,6 +1305,47 @@ window.goHomeHandler = function() {
       if(logEl) logEl.innerHTML = logs.length ? ('<table><thead><tr><th>Waktu</th><th>Email</th><th>Status</th><th>Detail</th><th>Source</th><th>Device</th></tr></thead><tbody>'+logs.map(function(l){ var ok=l.status==='success'; return '<tr><td style="font-size:0.66rem;white-space:nowrap;">'+fmtDT(l.created_at)+'</td><td>'+escU(l.email||'-')+'</td><td><span class="badge '+(ok?'badge-approved':'badge-rejected')+'">'+(ok?'✅ sukses':'❌ gagal')+'</span></td><td style="font-size:0.66rem;">'+escU(l.detail||'-')+'</td><td>'+escU(l.source||'-')+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((l.device||'').slice(0,28))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">Belum ada percobaan login tercatat.</p>';
     } catch(e){ if(logEl) logEl.innerHTML='<p style="color:#fca5a5;">Gagal memuat log: '+escU(e.message||String(e))+'</p>'; }
   };
+  // ===== BACKUP & RESTORE LOKAL (asuransi data perangkat) =====
+  window.exportLocalBackup = function(){
+    if(!isDev()) return showToast('⛔ Khusus Dev','error');
+    var data = { app:'dream-os', exported_at: new Date().toISOString(), device:(navigator.userAgent||'').slice(0,80), keys:{} };
+    for (var i=0;i<localStorage.length;i++){
+      var k = localStorage.key(i);
+      if (k && k.indexOf('dreamos_')===0) data.keys[k] = localStorage.getItem(k);
+    }
+    var blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dreamos-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    var n = Object.keys(data.keys).length;
+    var st = document.getElementById('backup-status');
+    if (st) st.textContent = '✅ ' + n + ' keys ter-export (' + Math.round(blob.size/1024) + ' KB)';
+    if (window.BankAudit) { try { BankAudit.log('LOCAL_BACKUP_EXPORT', { keys:n }); } catch(e){} }
+    showToast('✅ Backup terunduh: ' + n + ' keys');
+  };
+  window.importLocalBackup = function(input){
+    if(!isDev()) return showToast('⛔ Khusus Dev','error');
+    var f = input.files && input.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(ev){
+      try {
+        var data = JSON.parse(ev.target.result);
+        if (!data || !data.keys) throw new Error('Format backup tidak valid');
+        var n = Object.keys(data.keys).length;
+        if (!confirm('Restore ' + n + ' keys? Data lokal saat ini akan DITIMPA.')) return;
+        Object.keys(data.keys).forEach(function(k){ localStorage.setItem(k, data.keys[k]); });
+        var st = document.getElementById('backup-status');
+        if (st) st.textContent = '✅ ' + n + ' keys di-restore. Memuat ulang…';
+        if (window.BankAudit) { try { BankAudit.log('LOCAL_BACKUP_RESTORE', { keys:n }); } catch(e){} }
+        showToast('✅ Restore selesai — memuat ulang…');
+        setTimeout(function(){ location.reload(); }, 1200);
+      } catch(e){ showToast('❌ Gagal restore: ' + e.message, 'error'); }
+    };
+    r.readAsText(f);
+    input.value = '';
+  };
+
   setTimeout(function(){ if(!isDev()){ document.querySelectorAll('.tab-dev-only').forEach(function(el){ el.style.display='none'; }); } }, 0);
 
   /* hier_v1 */
