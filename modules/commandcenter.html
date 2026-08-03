@@ -458,7 +458,8 @@
             <option value="management">🏢 Management</option>
             <option value="komite">🧑‍⚖️ Komite</option>
           </select>
-          <input type="password" id="new-user-pass" placeholder="Password (min 6)">
+          <input type="password" id="new-user-pass" placeholder="Password (min 8 karakter)">
+          <div id="user-form-feedback" style="grid-column:1/-1; font-size:0.75rem; font-weight:700; color:var(--muted); min-height:1rem;"></div>
           <button class="btn btn-success" onclick="createNewUser()" style="grid-column:1/-1;">✅ Simpan User Baru</button>
         </div>
       </div>
@@ -1439,6 +1440,28 @@ window.goHomeHandler = function() {
     ).join('');
   }
   setTimeout(renderQuickActions, 150);
+
+
+  // ===== FASE 2: REAL-TIME USER FORM VALIDATION =====
+  function validateUserForm() {
+    var nama = (document.getElementById('new-user-nama')||{}).value || '';
+    var email = (document.getElementById('new-user-email')||{}).value || '';
+    var pass = (document.getElementById('new-user-pass')||{}).value || '';
+    var issues = [];
+    if (nama.trim().length < 3) issues.push('Nama min 3 karakter');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) issues.push('Format email tidak valid');
+    if (pass.length < 8) issues.push('Password min 8 karakter');
+    var box = document.getElementById('user-form-feedback');
+    if (box) {
+      if (issues.length) { box.innerHTML = '⚠️ ' + issues.join(' • '); box.style.color = 'var(--gold)'; }
+      else { box.innerHTML = '✅ Semua input valid — siap disimpan'; box.style.color = 'var(--success)'; }
+    }
+    return issues.length === 0;
+  }
+  ['new-user-nama','new-user-email','new-user-pass'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', validateUserForm);
+  });
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
