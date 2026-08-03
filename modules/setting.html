@@ -442,12 +442,12 @@
   async function syncSettingsToCloud() {
     if (!window.supabaseClient) return;
     try {
-      var u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-      if (!u.email) return;
-      // Simpan ke kolom settings (jsonb) di tabel users
-      var res = await window.supabaseClient.from('users').update({ settings: state, settings_updated_at: new Date().toISOString() }).eq('email', u.email);
-      if (res.error) throw res.error;
-      console.log('✅ Settings synced to cloud');
+      var sess = await window.supabaseClient.auth.getSession();
+      if (!sess || !sess.data || !sess.data.session) { console.warn('Settings sync: sesi Supabase belum ada (login online sekali untuk aktifkan).'); return; }
+      var r = await window.supabaseClient.functions.invoke('save-settings', { body: { settings: state } });
+      if (r.error) throw new Error(r.error.message || 'Edge Function error');
+      if (r.data && r.data.error) throw new Error(r.data.error);
+      console.log('✅ Settings synced via Edge Function');
     } catch(e) { console.warn('Cloud sync failed:', e.message); }
   }
   async function loadSettingsFromCloud() {
