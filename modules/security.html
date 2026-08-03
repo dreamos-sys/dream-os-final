@@ -274,7 +274,7 @@
         <div class="section-title">🚨 Slide Dashboard (Live Auto-Sync)</div>
         <div style="font-size:0.7rem; color:#10b981; margin-bottom:0.5rem;">✅ Sinkronisasi Realtime dengan Matriks Jadwal aktif — mengalir ke Slide otomatis no.1 di Dashboard.</div>
         <textarea id="slide-petugas" class="bk-input" rows="14" readonly style="font-family:monospace; font-size:0.75rem; color:var(--neon); border-color:var(--neon); background:rgba(0,0,0,0.5);"></textarea>
-        <button data-act="set-slide" class="btn btn-primary" style="width:100%; margin-top:0.5rem;" onclick="alert('✅ Slide Dashboard SIF Al-Fikri berhasil di-update ke layar utama!')">🚀 UPDATE SLIDE PUBLIK SEKARANG</button>
+        <button data-act="set-slide" class="btn btn-primary" style="width:100%; margin-top:0.5rem;" onclick="publishSlide(false)">🚀 UPDATE SLIDE PUBLIK SEKARANG</button>
       </div>
     </div>
 
@@ -706,6 +706,36 @@ Auto-Sync by Dream OS ver. 13`;
     if(slideEl) slideEl.value = slideText;
     const liveClockEl = document.getElementById('sec-live-clock');
     if(liveClockEl) liveClockEl.textContent = timeStr + ' WIB';
+    autoPublishSlide(slideText);
+  };
+
+  // ===== SLIDE BRIDGE: menulis ke jembatan yang dibaca Slide 1 Dashboard =====
+  var __lastSlidePublished = null;
+  function writeSlideToBridge(text){
+    try { localStorage.setItem('dreamos_slide_petugas', text); } catch(e){}
+    try {
+      var by = 'Security';
+      try { by = (JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}')||{}).nama || 'Security'; } catch(e){}
+      localStorage.setItem('dreamos_slide_petugas_meta', JSON.stringify({ updated_at: new Date().toISOString(), by: by }));
+    } catch(e){}
+    try {
+      window.dispatchEvent(new Event('dreamos-slide-updated'));
+      if (window.parent && window.parent !== window) window.parent.dispatchEvent(new Event('dreamos-slide-updated'));
+    } catch(e){}
+  }
+  function autoPublishSlide(text){
+    if(__lastSlidePublished === text) return;
+    __lastSlidePublished = text;
+    writeSlideToBridge(text);
+  }
+  window.publishSlide = function(silent){
+    var el = document.getElementById('slide-petugas');
+    var text = el ? el.value : '';
+    if(!text){ if(!silent) alert('⚠️ Slide masih kosong.'); return; }
+    __lastSlidePublished = text;
+    writeSlideToBridge(text);
+    if (window.BankAudit) { try { window.BankAudit.log('SLIDE_PETUGAS_PUBLISH', { len: text.length }); } catch(e){} }
+    if(!silent) alert('✅ Slide 1 Dashboard utama berhasil di-update!');
   };
 
   document.querySelectorAll('.sec-tab').forEach(btn => {
