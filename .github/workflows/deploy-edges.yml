@@ -1,0 +1,34 @@
+name: Deploy Edge Functions
+on:
+  push:
+    branches:
+      - gh-pages
+      - main
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/deploy-edges.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: gbigjdhifispatrrskgh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+
+      - name: Deploy submit-booking
+        run: supabase functions deploy submit-booking --no-verify-jwt
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Edge function deployed successfully!"
+          supabase functions list
