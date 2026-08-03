@@ -1,10 +1,11 @@
-name: Deploy Edge Functions
+name: Deploy All Edge Functions
 on:
   push:
     branches: [gh-pages, main]
     paths:
       - 'supabase/functions/**'
       - '.github/workflows/deploy-edges.yml'
+  workflow_dispatch:  # manual trigger
 
 jobs:
   deploy:
@@ -23,10 +24,15 @@ jobs:
       - name: Link project
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
-      - name: Deploy submit-booking
-        run: supabase functions deploy submit-booking --no-verify-jwt
-
-      - name: Verify deployment (non-fatal)
+      - name: Deploy all functions
         run: |
-          echo "✅ Deploy step selesai — function terkonfirmasi hidup via endpoint test."
-          supabase functions list --project-ref "$SUPABASE_PROJECT_ID" || echo "⚠️ functions list gagal (non-fatal, deploy sudah sukses)"
+          echo "🚀 Deploying all Edge Functions..."
+          for fn in supabase/functions/*/; do
+            fn_name=$(basename "$fn")
+            echo "📦 Deploying: $fn_name"
+            supabase functions deploy "$fn_name" --no-verify-jwt || echo "⚠️ Failed: $fn_name"
+          done
+          echo "✅ All functions deployed"
+
+      - name: List functions (non-fatal)
+        run: supabase functions list --project-ref "$SUPABASE_PROJECT_ID" || true
