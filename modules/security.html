@@ -113,7 +113,7 @@
           <span id="rbac-badge" class="rbac-pill rbac-view">🔒 Mode Lihat</span>
         </div>
         <div style="display:flex; gap:0.5rem; margin-bottom: 0.8rem; align-items:center; flex-wrap:wrap;">
-            <input type="month" id="m-period" class="bk-input" style="width:auto; margin:0;">
+            <input type="month" id="m-period" class="bk-input" style="width:auto; margin:0;" onchange="renderMatrix()">
             <button id="btn-revisi" onclick="openRevisionModal()" class="btn btn-warning" style="white-space:nowrap;">📝 Revisi Cepat</button>
         </div>
         <div style="display:flex; gap:0.5rem; font-size:0.75rem; background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:8px; flex-wrap:wrap;">
@@ -129,6 +129,22 @@
           <tbody id="matrix-body"></tbody>
         </table>
       </div>
+      <div class="glass no-print">
+        <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+          <span>🧭 Navigasi & Analitik Rotasi</span>
+          <span style="display:flex;gap:.3rem;">
+            <button class="btn btn-outline" onclick="shiftPeriod(-1)">◀ Bulan</button>
+            <button class="btn btn-outline" onclick="shiftPeriod(1)">Bulan ▶</button>
+          </span>
+        </div>
+        <div id="matrix-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin-bottom:.6rem;"></div>
+        <div id="coverage-warn" style="font-size:.72rem;color:#f59e0b;"></div>
+        <div style="font-size:.7rem;color:#94a3b8;margin-top:.4rem;">🔁 Rotasi berjalan otomatis lintas bulan/tahun (anchor 1 Agu 2026). ✎ = revisi manual · ⚠️ = risiko kelelahan (M→P) / kurang personel.</div>
+      </div>
+      <div class="glass no-print">
+        <div class="section-title">📜 Riwayat Revisi Jadwal (Audit Trail)</div>
+        <div id="matrix-log" style="max-height:220px;overflow-y:auto;font-size:.72rem;"></div>
+      </div>
     </div>
 
     <!-- TAB 2: LAPORAN TERPADU 24/7 -->
@@ -141,6 +157,11 @@
             <button onclick="saveDailyReport()" class="btn btn-success" style="font-size:0.7rem;">💾 Simpan Jurnal</button>
             <button onclick="window.print()" class="btn btn-warning" style="font-size:0.7rem;">🖨️ Cetak Jurnal</button>
           </div>
+        </div>
+        <div class="no-print" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;">
+          <label style="font-size:0.7rem;color:#94a3b8;">📚 Riwayat Laporan (retensi 90 hari):</label>
+          <select id="report-history" class="bk-input" style="width:auto;margin:0;" onchange="if(this.value){document.getElementById('report-date-daily').value=this.value; loadDailyReport();}"></select>
+          <span id="report-retention" style="font-size:0.68rem;color:#64748b;"></span>
         </div>
         <div style="text-align:center; display:none; margin-bottom:20px;" class="print-only-header">
             <h2 style="margin:0; font-size:16pt;">BUKU MUTASI & LAPORAN KEAMANAN 24 JAM</h2>
@@ -334,73 +355,155 @@
   function getFullMatrix() { try { return JSON.parse(localStorage.getItem('dreamos_matrix') || '[]'); } catch(e) { return []; } }
   function saveMatrix(data) { localStorage.setItem('dreamos_matrix', JSON.stringify(data)); }
 
-  function initMatrix() {
-    let m = getFullMatrix();
-    if (m.length === 0) {
-      const seed = [
-        { n: "SUDARSONO", divisi: "SECURITY", s: ["P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P"] },
-        { n: "MARHUSIN", divisi: "SECURITY", s: ["L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L"] },
-        { n: "AGUS SUTISNA", divisi: "SECURITY", s: ["L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L"] },
-        { n: "SUNARKO", divisi: "SECURITY", s: ["M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M"] },
-        { n: "HARIYANSAHC", divisi: "SECURITY", s: ["M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M"] },
-        { n: "HERIYATNO", divisi: "SECURITY", s: ["P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P","M","M","L","L","P","P"] },
-        { n: "DONIH", divisi: "SECURITY", s: ["L","L","P","P","P","P","P","L","L","P","P","P","P","P","L","L","P","P","P","P","P","L","L","P","P","P","P","P","L","L","P"] }
-      ];
-      const period = document.getElementById('m-period')?.value || new Date().toISOString().slice(0,7);
-      seed.forEach(r => r.s.forEach((sh, i) => m.push({ nama: r.n, divisi: r.divisi, tgl: i + 1, shift: sh, periode: period })));
-      saveMatrix(m);
-    }
+  // ===== ROTATION ENGINE: pola kontinu lintas bulan/tahun (adopted: Kronos/Deputy) =====
+  var CYCLE6 = ['P','P','M','M','L','L'];
+  var ROTATION = {
+    'SUDARSONO': { pat: CYCLE6, off: 0 },
+    'MARHUSIN': { pat: CYCLE6, off: 5 },
+    'AGUS SUTISNA': { pat: CYCLE6, off: 4 },
+    'SUNARKO': { pat: CYCLE6, off: 3 },
+    'HARIYANSAHC': { pat: CYCLE6, off: 2 },
+    'HERIYATNO': { pat: CYCLE6, off: 1 },
+    'DONIH': { pat: ['L','L','P','P','P','P','P'], off: 0 }
+  };
+  var EPOCH_UTC = Date.UTC(2026, 7, 1);
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function dateKey(y,m,d){ return y + '-' + pad2(m) + '-' + pad2(d); }
+  function baseShift(nama, y, m, d){
+    var r = ROTATION[nama]; if (!r) return '';
+    var days = Math.round((Date.UTC(y, m-1, d) - EPOCH_UTC) / 86400000);
+    var L = r.pat.length;
+    return r.pat[((days + r.off) % L + L) % L];
   }
+  function getOverrides(){ try { return JSON.parse(localStorage.getItem('dreamos_matrix_ovr') || '{}'); } catch(e){ return {}; } }
+  function saveOverrides(o){ localStorage.setItem('dreamos_matrix_ovr', JSON.stringify(o)); }
+  function cellShift(nama, y, m, d){
+    var ovr = getOverrides();
+    var v = ovr[nama + '|' + dateKey(y,m,d)];
+    return (v === undefined || v === null) ? baseShift(nama, y, m, d) : v;
+  }
+  function logMatrix(action, detail){
+    try {
+      var logs = JSON.parse(localStorage.getItem('dreamos_matrix_log') || '[]');
+      var u = {}; try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}') || {}; } catch(e){}
+      logs.unshift({ at: new Date().toISOString(), user: u.nama || u.email || 'system', action: action, detail: detail });
+      localStorage.setItem('dreamos_matrix_log', JSON.stringify(logs.slice(0, 300)));
+    } catch(e){}
+  }
+  function migrateOldMatrix(){
+    try {
+      var old = getFullMatrix(); if (!old || !old.length) return;
+      var ovr = getOverrides(); var changed = false;
+      old.forEach(function(row){
+        if (!row || !row.periode || !row.nama) return;
+        var pp = String(row.periode).split('-'); var yy = +pp[0], mm = +pp[1], dd = parseInt(row.tgl);
+        if (!yy || !mm || !dd) return;
+        if (row.shift !== baseShift(row.nama, yy, mm, dd)) { ovr[row.nama + '|' + dateKey(yy,mm,dd)] = row.shift; changed = true; }
+      });
+      if (changed) saveOverrides(ovr);
+      localStorage.removeItem('dreamos_matrix');
+    } catch(e){}
+  }
+  function pruneReports90(){
+    try {
+      var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 90);
+      var cutKey = cutoff.getFullYear() + '-' + pad2(cutoff.getMonth()+1) + '-' + pad2(cutoff.getDate());
+      var keys = []; for (var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
+      keys.forEach(function(k){
+        if (k && k.indexOf('dreamos_laporan_terpadu_') === 0) {
+          var dstr = k.replace('dreamos_laporan_terpadu_','');
+          if (dstr < cutKey) localStorage.removeItem(k);
+        }
+      });
+    } catch(e){}
+  }
+  function renderReportHistory(){
+    var sel = document.getElementById('report-history'); if (!sel) return;
+    var keys = []; for (var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); if (k && k.indexOf('dreamos_laporan_terpadu_')===0) keys.push(k.replace('dreamos_laporan_terpadu_','')); }
+    keys.sort().reverse();
+    sel.innerHTML = '<option value="">— pilih riwayat —</option>' + keys.map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
+    var ret = document.getElementById('report-retention');
+    if (ret) ret.textContent = '📦 ' + keys.length + ' laporan tersimpan (auto-hapus > 90 hari).';
+  }
+  function renderMatrixLog(){
+    var box = document.getElementById('matrix-log'); if (!box) return;
+    var logs = []; try { logs = JSON.parse(localStorage.getItem('dreamos_matrix_log') || '[]'); } catch(e){}
+    box.innerHTML = logs.length ? logs.slice(0,100).map(function(l){ return '<div style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05);"><b style="color:var(--neon);">'+esc(l.action)+'</b> · '+esc(l.detail)+'<div style="color:#64748b;font-size:.65rem;">'+new Date(l.at).toLocaleString('id-ID')+' · 👤 '+esc(l.user)+'</div></div>'; }).join('') : '<p style="color:#64748b;text-align:center;padding:.6rem;">Belum ada revisi tercatat.</p>';
+  }
+  function initMatrix() { migrateOldMatrix(); pruneReports90(); }
 
   window.renderMatrix = function() {
     const periodEl = document.getElementById('m-period');
-    if (!periodEl) return;
+    if (!periodEl || !periodEl.value) return;
     const period = periodEl.value;
-    if (!period) return;
     const parts = period.split('-');
-    const daysInMonth = new Date(parts[0], parts[1], 0).getDate();
+    const y = +parts[0], m = +parts[1];
+    const daysInMonth = new Date(y, m, 0).getDate();
     const editable = canEditSchedule();
+    const names = Object.keys(ROTATION);
+    const MINP = 2, MINM = 1;
+    let warnDays = [];
     let head = '<tr class="matrix-header-row"><th class="sticky-name matrix-sticky-name">NAMA</th>';
     for (let i = 1; i <= daysInMonth; i++) {
-      const d = new Date(parts[0], parts[1]-1, i);
+      const d = new Date(y, m - 1, i);
       const dayName = ['MG','SN','SL','RB','KM','JM','SB'][d.getDay()];
       const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-      head += '<th class="' + (isWeekend ? 'weekend' : '') + '">' + dayName + '<span class="day-badge">' + i + '</span></th>';
+      let cp = 0, cm = 0;
+      names.forEach(n => { const s = cellShift(n, y, m, i); if (s === 'P') cp++; else if (s === 'M') cm++; });
+      const under = (cp < MINP || cm < MINM);
+      if (under) warnDays.push(i);
+      head += '<th class="' + (isWeekend ? 'weekend' : '') + '">' + dayName + '<span class="day-badge">' + i + (under ? ' ⚠️' : '') + '</span></th>';
     }
     head += '</tr>';
     document.getElementById('matrix-head').innerHTML = head;
-    const fullData = getFullMatrix();
+    const ovr = getOverrides();
     const b = document.getElementById('matrix-body'); b.innerHTML = '';
-    const exactOrder = ["SUDARSONO", "MARHUSIN", "AGUS SUTISNA", "SUNARKO", "HARIYANSAHC", "HERIYATNO", "DONIH"];
-    const names = [...new Set(fullData.map(x => x.nama))].sort((a, c) => exactOrder.indexOf(a) - exactOrder.indexOf(c));
     names.forEach((n, idx) => {
-      let row = `<tr><td class="sticky-name matrix-sticky-name" style="font-weight:700; padding:0.5rem; text-align:left;">${idx+1}. ${esc(n)}</td>`;
+      let row = '<tr><td class="sticky-name matrix-sticky-name" style="font-weight:700;padding:0.5rem;text-align:left;">' + (idx+1) + '. ' + esc(n) + '</td>';
       for (let i = 1; i <= daysInMonth; i++) {
-        const s = fullData.find(x => x.nama === n && parseInt(x.tgl) === i && x.periode === period);
-        const sh = s ? s.shift : '';
+        const sh = cellShift(n, y, m, i);
+        const pd = new Date(y, m - 1, i - 1);
+        const prev = cellShift(n, pd.getFullYear(), pd.getMonth() + 1, pd.getDate());
+        const fatigue = (prev === 'M' && sh === 'P');
+        const isOvr = ovr[n + '|' + dateKey(y, m, i)] !== undefined;
         const cls = sh === 'L' ? 'shift-L' : sh === 'P' ? 'shift-P' : sh === 'M' ? 'shift-M' : sh === 'CT' ? 'shift-CT' : 'shift-empty';
         const clickCls = editable ? 'cell-klik' : 'cell-readonly';
-        const onClick = editable ? ` onclick="toggleShift('${esc(n)}', ${i})"` : '';
-        row += `<td class="shift-cell ${cls} ${clickCls}"${onClick}>${sh}</td>`;
+        const onClick = editable ? ' onclick="toggleShift(\'' + esc(n) + '\', ' + i + ')"' : '';
+        const mark = (isOvr ? '<span style="font-size:.5rem;position:absolute;top:1px;right:2px;">✎</span>' : '') + (fatigue ? '<span style="font-size:.5rem;position:absolute;bottom:1px;right:2px;">⚠️</span>' : '');
+        row += '<td class="shift-cell ' + cls + ' ' + clickCls + '"' + onClick + ' style="position:relative;">' + sh + mark + '</td>';
       }
       b.innerHTML += row + '</tr>';
     });
+    const statsEl = document.getElementById('matrix-stats');
+    if (statsEl) statsEl.innerHTML = names.map(n => {
+      const c = { P:0, M:0, L:0, CT:0 };
+      for (let i = 1; i <= daysInMonth; i++) { const s = cellShift(n, y, m, i); if (c[s] !== undefined) c[s]++; }
+      return '<div class="mini-stat"><div class="mini-stat-val" style="font-size:.75rem;">' + c.P + 'P·' + c.M + 'M·' + c.L + 'L·' + c.CT + 'CT</div><div class="mini-stat-label">' + esc(n) + '</div></div>';
+    }).join('');
+    const cw = document.getElementById('coverage-warn');
+    if (cw) cw.innerHTML = warnDays.length ? ('⚠️ Kekurangan personel (min ' + MINP + 'P/' + MINM + 'M) tanggal: ' + warnDays.join(', ')) : '✅ Coverage personel aman seluruh bulan.';
+    renderMatrixLog();
   };
 
-  window.toggleShift = function(n, t) {
+  window.toggleShift = function(n, tgl) {
     if (!guardEdit()) return;
     const p = document.getElementById('m-period').value;
-    const fullData = getFullMatrix();
-    const idx = fullData.findIndex(x => x.nama === n && parseInt(x.tgl) === t && x.periode === p);
+    const parts = p.split('-'); const y = +parts[0], m = +parts[1];
+    const key = n + '|' + dateKey(y, m, tgl);
+    const ovr = getOverrides();
+    const cur = ovr[key] !== undefined ? ovr[key] : baseShift(n, y, m, tgl);
     const cycle = ['P', 'M', 'L', 'CT'];
-    if (idx > -1) {
-      const next = cycle.indexOf(fullData[idx].shift) + 1;
-      if (next >= cycle.length) fullData[idx].shift = '';
-      else fullData[idx].shift = cycle[next];
-    } else {
-      fullData.push({ nama: n, divisi: "SECURITY", tgl: t, shift: 'P', periode: p });
-    }
-    saveMatrix(fullData); renderMatrix();
+    const nextIdx = cycle.indexOf(cur) + 1;
+    if (nextIdx >= cycle.length) { delete ovr[key]; logMatrix('EDIT_SEL', n + ' ' + dateKey(y,m,tgl) + ' → KEMBALI KE POLA'); }
+    else { ovr[key] = cycle[nextIdx]; logMatrix('EDIT_SEL', n + ' ' + dateKey(y,m,tgl) + ' → ' + cycle[nextIdx]); }
+    saveOverrides(ovr); renderMatrix();
+  };
+  window.shiftPeriod = function(delta) {
+    const el = document.getElementById('m-period');
+    const parts = el.value.split('-');
+    const d = new Date(+parts[0], +parts[1] - 1 + delta, 1);
+    el.value = d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+    renderMatrix();
   };
 
   const DEFAULT_PERSONNEL = [
@@ -415,7 +518,8 @@
 
   function computeRealtimeHandover(matrix, period, day, currentHour) {
     const isNightTime = currentHour >= 19 || currentHour < 7;
-    const dayShifts = matrix.filter(x => x.periode === period && parseInt(x.tgl) === parseInt(day));
+    const yy = +period.split('-')[0], mm = +period.split('-')[1];
+    const dayShifts = Object.keys(ROTATION).map(n => ({ nama: n, shift: cellShift(n, yy, mm, +day) }));
     const pagiStaffs = dayShifts.filter(x => x.shift === 'P').map(x => x.nama);
     const malamStaffs = dayShifts.filter(x => x.shift === 'M').map(x => x.nama);
     let penyerahName = "Belum Ada Data", penerimaName = "Belum Ada Data";
@@ -445,8 +549,7 @@
     const period = `${year}-${month}`;
     let syncedPersonnel = JSON.parse(JSON.stringify(DEFAULT_PERSONNEL));
     syncedPersonnel.forEach(p => {
-      const shiftData = matrix.find(x => x.nama === p.nama && x.periode === period && parseInt(x.tgl) === parseInt(day));
-      const shift = shiftData ? shiftData.shift : '';
+      const shift = cellShift(p.nama, +year, +month, +day);
       p.pagi = (shift === 'P') ? '07:00 - 19:00' : '';
       p.malam = (shift === 'M') ? '19:00 - 07:00' : '';
       p.ket = (shift === 'L') ? 'Libur' : (shift === 'CT') ? 'Cuti' : '';
@@ -536,6 +639,7 @@
       s1: document.getElementById('sop-1').checked, s2: document.getElementById('sop-2').checked, s3: document.getElementById('sop-3').checked,
       sigPenyerah: window.currentSignatures.penyerah || '', sigPenerima: window.currentSignatures.penerima || '' };
     localStorage.setItem(key, JSON.stringify(d));
+    renderReportHistory();
     alert('💾 Buku Mutasi, Serah Terima & Logbook Realtime tersimpan!');
   };
 
@@ -580,9 +684,8 @@
     const now = new Date();
     const period = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     const today = now.getDate();
-    const matrix = getFullMatrix();
     let pagi = [], malam = [];
-    matrix.forEach(x => { if(x.periode === period && parseInt(x.tgl) === today) { if(x.shift === 'P') pagi.push(x.nama); if(x.shift === 'M') malam.push(x.nama); } });
+    Object.keys(ROTATION).forEach(n => { const s = cellShift(n, now.getFullYear(), now.getMonth()+1, today); if (s === 'P') pagi.push(n); if (s === 'M') malam.push(n); });
     const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     const slideText = `📢 [LIVE UPDATE] INFO PENJAGAAN SIF AL-FIKRI
@@ -623,6 +726,7 @@ Auto-Sync by Dream OS ver. 13`;
     initMatrix();
     renderMatrix();
     loadDailyReport();
+    renderReportHistory();
     updateDashboardSlide();
     setInterval(updateDashboardSlide, 1000);
   };
@@ -692,13 +796,22 @@ Auto-Sync by Dream OS ver. 13`;
   window.applyRevision = function() {
     if (!guardEdit()) return;
     const name = document.getElementById('rev-personil').value;
-    const s = parseInt(document.getElementById('rev-start').value.split('-')[2]);
-    const e = parseInt(document.getElementById('rev-end').value.split('-')[2]);
+    const s = document.getElementById('rev-start').value, e = document.getElementById('rev-end').value;
     const stat = document.getElementById('rev-status').value;
-    let data = getFullMatrix();
-    data.forEach(row => { if (row.nama === name && row.periode === document.getElementById('m-period').value && parseInt(row.tgl) >= s && parseInt(row.tgl) <= e) row.shift = stat; });
-    saveMatrix(data); renderMatrix(); document.getElementById('rev-modal').classList.remove('show');
-    loadDailyReport();
+    if (!s || !e) return alert('⚠️ Rentang tanggal wajib diisi.');
+    const cur = new Date(s + 'T00:00:00'), end = new Date(e + 'T00:00:00');
+    if (cur > end) return alert('⚠️ Tanggal mulai lebih besar dari tanggal akhir.');
+    const ovr = getOverrides(); let count = 0, guard = 0;
+    while (cur <= end && guard < 400) {
+      const yy = cur.getFullYear(), mm = cur.getMonth() + 1, dd = cur.getDate();
+      const key = name + '|' + dateKey(yy, mm, dd);
+      if (stat === '') delete ovr[key]; else ovr[key] = stat;
+      count++; guard++; cur.setDate(cur.getDate() + 1);
+    }
+    saveOverrides(ovr);
+    logMatrix('REVISI_MASSAL', name + ' ' + s + ' s/d ' + e + ' (' + count + ' hari) → ' + (stat || 'POLA'));
+    document.getElementById('rev-modal').classList.remove('show');
+    renderMatrix(); loadDailyReport();
   };
 
   initApp();
