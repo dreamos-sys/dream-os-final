@@ -28,6 +28,25 @@
   .qr-modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; display:none; align-items:center; justify-content:center; padding:1rem; }
   .qr-modal.show { display:flex; }
   .qr-box { background:#1e293b; border:1px solid var(--neon); border-radius:16px; padding:1.5rem; max-width:340px; width:100%; text-align:center; }
+
+  .metrics-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.6rem; margin-bottom:0.8rem; }
+  .metric-card { background:rgba(15,23,42,0.85); border:1px solid rgba(0,255,157,0.2); border-left:3px solid var(--neon); border-radius:12px; padding:0.75rem; }
+  .metric-val { font-family:'Orbitron',sans-serif; font-size:1.2rem; font-weight:800; color:#fff; }
+  .metric-lbl { font-size:0.65rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
+  .asset-search { display:flex; gap:0.4rem; margin-bottom:0.8rem; flex-wrap:wrap; }
+  .asset-search input, .asset-search select { flex:1; min-width:120px; margin:0; }
+  th.sortable { cursor:pointer; user-select:none; position:relative; }
+  th.sortable:hover { color:var(--neon); }
+  th.sortable::after { content:' ⇅'; opacity:0.4; font-size:0.6rem; }
+  th.sortable.asc::after { content:' ▲'; opacity:1; color:var(--neon); }
+  th.sortable.desc::after { content:' ▼'; opacity:1; color:var(--neon); }
+  .asset-photo { width:32px; height:32px; border-radius:6px; object-fit:cover; border:1px solid rgba(0,255,157,0.3); cursor:pointer; }
+  .photo-preview { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10001; display:none; align-items:center; justify-content:center; padding:1rem; cursor:pointer; }
+  .photo-preview.show { display:flex; }
+  .photo-preview img { max-width:90%; max-height:90%; border-radius:8px; border:2px solid var(--neon); }
+  .timeline-item { padding:0.5rem 0; border-left:2px solid rgba(0,255,157,0.3); margin-left:8px; padding-left:12px; font-size:0.72rem; }
+  .timeline-item:last-child { border-left-color:transparent; }
+
 </style>
 </head>
 <body>
@@ -54,6 +73,7 @@
   <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">
     <button class="tab-btn active" id="tab-strategis" onclick="switchTab('strategis')">🏢 Aset Strategis</button>
     <button class="tab-btn" id="tab-rab" onclick="switchTab('rab')">📊 RAB & Penyusutan</button>
+    <button class="tab-btn" id="tab-timeline" onclick="switchTab('timeline')">🕐 Timeline</button>
     <button class="tab-btn" id="tab-log" onclick="switchTab('log')">📜 Audit Log</button>
   </div>
 
@@ -73,15 +93,40 @@
           <option value="Baik">Baik</option><option value="Rusak">Rusak</option><option value="Dalam Perbaikan">Dalam Perbaikan</option>
         </select>
       </div>
+      
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.72rem; color:#94a3b8; display:block; margin-bottom:0.3rem;">📷 Foto Aset (opsional)</label>
+          <input type="file" id="as-foto" accept="image/*" class="input-field">
+          <input type="hidden" id="as-foto-data">
+        </div>
+
       <input type="hidden" id="as-edit-id">
       <div style="display:flex; gap:0.5rem;">
         <button class="btn btn-primary" onclick="saveAsset()" style="flex:1;">💾 SIMPAN ASET</button>
         <button class="btn btn-danger" onclick="resetForm()" id="btn-cancel-asset" style="flex:1; display:none;">❌ Batal Edit</button>
       </div>
     </div>
+    
+    <div class="metrics-row" id="asset-metrics"></div>
+
+    <div class="asset-search">
+      <input type="text" id="asset-q" class="input-field" placeholder="🔍 Cari aset..." oninput="renderAsset()">
+      <select id="asset-f-jenis" class="input-field" onchange="renderAsset()">
+        <option value="">Semua Jenis</option>
+        <option value="Gedung">Gedung</option><option value="Tanah">Tanah</option>
+        <option value="Kendaraan">Kendaraan</option><option value="Elektronik">Elektronik/IT</option><option value="Meubelair">Meubelair</option>
+      </select>
+      <select id="asset-f-status" class="input-field" onchange="renderAsset()">
+        <option value="">Semua Status</option>
+        <option value="Baik">Baik</option><option value="Rusak">Rusak</option><option value="Dalam Perbaikan">Dalam Perbaikan</option>
+      </select>
+      <button class="btn btn-purple" onclick="importAssetCSV()">📤 Import CSV</button>
+      <button class="btn btn-warning" onclick="printAssetRegister()">🖨️ Print PDF</button>
+    </div>
+
     <div class="glass" style="overflow-x:auto;">
       <div class="section-title" style="color:var(--gold);">📋 Register Aset</div>
-      <table><thead><tr><th>Nama Aset</th><th>Jenis</th><th>Lokasi</th><th>Nilai Perolehan</th><th>Nilai Buku</th><th>Tahun</th><th>Status</th><th>QR</th><th>Aksi</th></tr></thead>
+      <table><thead><tr><th class="sortable" onclick="sortAsset('nama')">Nama</th><th class="sortable" onclick="sortAsset('jenis')">Jenis</th><th class="sortable" onclick="sortAsset('lokasi')">Lokasi</th><th class="sortable" onclick="sortAsset('nilai')">Nilai</th><th>Nilai Buku</th><th class="sortable" onclick="sortAsset('tahun')">Tahun</th><th class="sortable" onclick="sortAsset('status')">Status</th><th>Foto</th><th>QR</th><th>Aksi</th></tr></thead>
       <tbody id="asset-list"></tbody></table>
     </div>
   </div>
@@ -111,12 +156,25 @@
     </div>
   </div>
 
+  
+  <div id="panel-timeline" style="display:none;">
+    <div class="glass">
+      <div class="section-title" style="color:var(--purple);">🕐 Timeline Perubahan Aset</div>
+      <div id="timeline-list" style="max-height:500px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <div id="panel-log" style="display:none;">
     <div class="glass">
       <div class="section-title">📜 Audit Log Aset (siapa · apa · kapan)</div>
       <div id="log-list" style="max-height:450px; overflow-y:auto;"></div>
     </div>
   </div>
+</div>
+
+
+<div id="photo-preview" class="photo-preview" onclick="this.classList.remove('show')">
+  <img id="photo-preview-img" src="">
 </div>
 
 <div id="qr-modal" class="qr-modal">
@@ -215,6 +273,7 @@
     if(tab==='strategis') renderAsset();
     if(tab==='rab') renderRAB();
     if(tab==='log') renderLog();
+    if(tab==='timeline') renderTimeline();
   };
 
   window.saveAsset=function(){
@@ -309,7 +368,160 @@
     alert('📦 Buka modul "'+label+'" melalui menu di Dashboard.');
   };
 
-  applyRBAC(); renderAsset();
+
+
+  // ===== ASSET METRICS DASHBOARD =====
+  function renderAssetMetrics(){
+    var data=safeGet('dreamos_assets', []);
+    var totalNilai=0, totalBuku=0, rusak=0, dalamPerbaikan=0;
+    data.forEach(function(a){
+      totalNilai += parseInt(a.nilai)||0;
+      totalBuku += bookValue(a);
+      if(a.status==='Rusak') rusak++;
+      if(a.status==='Dalam Perbaikan') dalamPerbaikan++;
+    });
+    var box=document.getElementById('asset-metrics'); if(!box) return;
+    box.innerHTML =
+      '<div class="metric-card" style="border-left-color:var(--accent);"><div class="metric-val">'+data.length+'</div><div class="metric-lbl">Total Aset</div></div>'+
+      '<div class="metric-card" style="border-left-color:var(--gold);"><div class="metric-val" style="font-size:0.95rem;">'+fmtRp(totalNilai)+'</div><div class="metric-lbl">Nilai Perolehan</div></div>'+
+      '<div class="metric-card" style="border-left-color:var(--neon);"><div class="metric-val" style="font-size:0.95rem;">'+fmtRp(totalBuku)+'</div><div class="metric-lbl">Nilai Buku</div></div>'+
+      '<div class="metric-card" style="border-left-color:var(--warning);"><div class="metric-val">'+rusuk+'</div><div class="metric-lbl">Rusak / Perbaikan</div></div>'.replace('rusuk', rusak+dalamPerbaikan);
+  }
+
+  // ===== SEARCH + FILTER + SORT =====
+  var __assetSort = { key:'nama', dir:'asc' };
+  window.sortAsset = function(key){
+    if(__assetSort.key===key) __assetSort.dir = __assetSort.dir==='asc'?'desc':'asc';
+    else { __assetSort.key=key; __assetSort.dir='asc'; }
+    document.querySelectorAll('th.sortable').forEach(function(th){ th.classList.remove('asc','desc'); });
+    var ths = document.querySelectorAll('th.sortable');
+    ths.forEach(function(th){
+      var onclick = th.getAttribute('onclick')||'';
+      if(onclick.indexOf("'"+key+"'")>-1){ th.classList.add(__assetSort.dir==='asc'?'asc':'desc'); }
+    });
+    renderAsset();
+  };
+
+  // ===== PHOTO HANDLING =====
+  window.previewPhoto = function(src){
+    var img=document.getElementById('photo-preview-img');
+    if(img){ img.src=src; document.getElementById('photo-preview').classList.add('show'); }
+  };
+
+  var fotoEl = document.getElementById('as-foto');
+  if(fotoEl) fotoEl.addEventListener('change', function(e){
+    var file = e.target.files[0]; if(!file) return;
+    if(file.size > 2*1024*1024){ alert('⚠️ Maksimal 2MB'); e.target.value=''; return; }
+    var reader = new FileReader();
+    reader.onload = function(ev){ document.getElementById('as-foto-data').value = ev.target.result; };
+    reader.readAsDataURL(file);
+  });
+
+  // ===== DOWNLOAD QR per Aset =====
+  window.downloadAssetQR = function(id, name){
+    if(typeof qrcode==='undefined') return alert('Library QR belum siap');
+    var qr=qrcode(0,'M'); qr.addData('DREAMOS|ASET|'+id+'|'+name); qr.make();
+    var url = qr.createDataURL(6, 8);
+    var a=document.createElement('a'); a.href=url; a.download='QR_'+name.replace(/\s+/g,'_')+'_'+id+'.png'; a.click();
+  };
+
+  // ===== IMPORT CSV =====
+  window.importAssetCSV = function(){
+    var input = document.createElement('input'); input.type='file'; input.accept='.csv';
+    input.onchange = function(e){
+      var file = e.target.files[0]; if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        var lines = ev.target.result.split('\n').slice(1); // skip header
+        var data = safeGet('dreamos_assets', []);
+        var count = 0;
+        lines.forEach(function(line){
+          if(!line.trim()) return;
+          var parts = line.split(',').map(function(x){return x.replace(/^"|"$/g,'').trim();});
+          if(parts.length < 5) return;
+          data.push({
+            id: 'asset_'+Date.now()+'_'+count,
+            nama: parts[0]||'', jenis: parts[1]||'Gedung', lokasi: parts[2]||'',
+            nilai: parts[3]||'', tahun: parts[4]||'', status: parts[6]||'Baik',
+            updated_at: new Date().toISOString()
+          });
+          count++;
+        });
+        safeSet('dreamos_assets', data);
+        logAudit('IMPORT_CSV', count+' aset diimpor');
+        renderAsset(); renderAssetMetrics();
+        alert('✅ '+count+' aset berhasil diimpor!');
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  // ===== PRINT ASSET REGISTER =====
+  window.printAssetRegister = function(){
+    var data = safeGet('dreamos_assets', []);
+    if(!data.length) return alert('⚠️ Tidak ada aset untuk dicetak');
+    var w = window.open('','_blank','width=1100,height=800');
+    var html = '<!DOCTYPE html><html><head><title>Asset Register</title>'+
+      '<style>@import url(https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap);'+
+      'body{font-family:Inter,sans-serif;background:#fff;padding:15mm;color:#000;}'+
+      '.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px;}'+
+      'table{width:100%;border-collapse:collapse;font-size:10px;}'+
+      'th{background:#000;color:#fff;padding:6px;text-align:left;}'+
+      'td{padding:5px;border-bottom:1px solid #ddd;}'+
+      '@media print{.no-print{display:none;}body{padding:0;}}</style></head><body>'+
+      '<div class="no-print" style="text-align:center;margin-bottom:20px;">'+
+      '<button onclick="window.print()" style="padding:10px 20px;background:#000;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">🖨️ Cetak ke PDF</button></div>'+
+      '<div class="header"><h1 style="margin:0;">DREAM OS ENTERPRISE</h1><p>ASSET REGISTER • ISO 55001 • '+new Date().toLocaleDateString('id-ID')+'</p></div>'+
+      '<table><tr><th>No</th><th>Nama</th><th>Jenis</th><th>Lokasi</th><th>Nilai</th><th>Tahun</th><th>Status</th><th>Nilai Buku</th></tr>';
+    var totalNilai=0, totalBuku=0;
+    data.forEach(function(a,i){
+      var bv = bookValue(a);
+      totalNilai += parseInt(a.nilai)||0; totalBuku += bv;
+      html += '<tr><td>'+(i+1)+'</td><td><b>'+a.nama+'</b></td><td>'+a.jenis+'</td><td>'+(a.lokasi||'-')+'</td><td>Rp '+(parseInt(a.nilai)||0).toLocaleString('id-ID')+'</td><td>'+(a.tahun||'-')+'</td><td>'+a.status+'</td><td>Rp '+bv.toLocaleString('id-ID')+'</td></tr>';
+    });
+    html += '<tr style="font-weight:bold;background:#f0f0f0;"><td colspan="4">TOTAL</td><td>Rp '+totalNilai.toLocaleString('id-ID')+'</td><td>-</td><td>-</td><td>Rp '+totalBuku.toLocaleString('id-ID')+'</td></tr></table></body></html>';
+    w.document.write(html); w.document.close();
+    logAudit('PRINT_REGISTER', data.length+' aset');
+  };
+
+  // ===== TIMELINE per Aset =====
+  function logAssetTimeline(assetId, event, detail){
+    var logs = safeGet('dreamos_asset_timeline', {});
+    if(!logs[assetId]) logs[assetId] = [];
+    logs[assetId].unshift({ time: new Date().toISOString(), event: event, detail: detail, user: getUser().nama||getUser().email||'System' });
+    if(logs[assetId].length > 50) logs[assetId] = logs[assetId].slice(0,50);
+    safeSet('dreamos_asset_timeline', logs);
+  }
+
+  window.showAssetTimeline = function(id, nama){
+    var logs = safeGet('dreamos_asset_timeline', {});
+    var items = logs[id] || [];
+    var html = items.length
+      ? '<div style="font-weight:800;color:var(--purple);margin-bottom:0.5rem;">🕐 Timeline: '+esc(nama)+'</div>'+items.map(function(t){
+          return '<div class="timeline-item"><div style="font-weight:700;color:var(--neon);">'+esc(t.event)+'</div><div style="color:#cbd5e1;">'+esc(t.detail)+'</div><div style="color:#64748b;font-size:0.66rem;">'+fullTime(t.time)+' · 👤 '+esc(t.user)+'</div></div>';
+        }).join('')
+      : '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada riwayat untuk aset ini.</p>';
+    document.getElementById('timeline-list').innerHTML = html;
+    switchTab('timeline');
+  };
+
+  window.renderTimeline = function(){
+    var logs = safeGet('dreamos_asset_timeline', {});
+    var all = [];
+    Object.keys(logs).forEach(function(id){
+      logs[id].forEach(function(t){ all.push({ id:id, t:t }); });
+    });
+    all.sort(function(a,b){ return new Date(b.t.time) - new Date(a.t.time); });
+    var box = document.getElementById('timeline-list');
+    box.innerHTML = all.length
+      ? '<div style="font-weight:800;color:var(--purple);margin-bottom:0.5rem;">🕐 Semua Timeline ('+all.length+')</div>'+all.slice(0,100).map(function(x){
+          return '<div class="timeline-item"><div style="font-weight:700;color:var(--neon);">['+esc(x.id.slice(0,12))+'] '+esc(x.t.event)+'</div><div style="color:#cbd5e1;">'+esc(x.t.detail)+'</div><div style="color:#64748b;font-size:0.66rem;">'+fullTime(x.t.time)+' · 👤 '+esc(x.t.user)+'</div></div>';
+        }).join('')
+      : '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada timeline.</p>';
+  };
+
+  applyRBAC(); renderAsset(); renderAssetMetrics();
   if(window.BankAudit){ try{window.BankAudit.log('ACCESS_ASSET_MODULE',{role:getRole()});}catch(e){} }
   console.log('🏛️ Aset Strategis ERP ready — gudang didelegasikan ke stok.html');
 })();
