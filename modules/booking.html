@@ -445,9 +445,36 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     var list = getBookings(); list.unshift(newBooking); saveBookings(list); renderBookings();
     logBookingAudit('BOOKING_CREATE', newBooking);
     var cloudOk = false;
+    var adminOverride = false;
     if (window.supabaseClient) {
-      try { var up = await window.supabaseClient.from('bookings').upsert(newBooking, { onConflict:'id' }); if (up.error) throw up.error; cloudOk = true; setSyncStatus('🟢 Lokal + server', true); }
-      catch (e) { setSyncStatus('🟠 Lokal OK · server: '+(e.message||e), false); alert('Tersimpan di HP ini.\nServer: '+(e.message||e)); }
+      try {
+        if (isAdmin()) {
+          // ADMIN OVERRIDE: direct insert (darurat, RLS sudah filter admin saja)
+          var up = await window.supabaseClient.from('bookings').upsert(newBooking, { onConflict:'id' });
+          if (up.error) throw up.error;
+          cloudOk = true; adminOverride = true;
+          setSyncStatus('🟢 Admin override · tersimpan ke server', true);
+        } else {
+          // STAFF: wajib lewat Edge Function (server-side validation)
+          var { data: rData, error: rErr } = await window.supabaseClient.functions.invoke('submit-booking', { body: newBooking });
+          if (rErr) throw new Error(rErr.message || 'Edge Function error');
+          if (rData && rData.error) throw new Error(rData.error);
+          newBooking.id = (rData && rData.id) || newBooking.id;
+          cloudOk = true;
+          setSyncStatus('🟢 Server-side validated · tersimpan', true);
+        }
+      } catch (e) {
+        setSyncStatus('🟠 Server: ' + (e.message || e), false);
+        if (!isAdmin()) {
+          // Server menolak → batalkan simpan lokal juga (anti-fraud)
+          var list2 = getBookings().filter(function(x){ return x.id !== newBooking.id; });
+          saveBookings(list2);
+          renderBookings();
+          return showError((e.message || e) + '\n\n⛔ Pengajuan tidak disimpan di mana pun.');
+        } else {
+          alert('Tersimpan di HP ini (fallback admin).\nServer: ' + (e.message || e));
+        }
+      }
     } else { setSyncStatus('🟡 Hanya lokal', false); }
     if (window.OfflineQueue && !cloudOk) { try { window.OfflineQueue.add('bookings','upsert',newBooking); } catch(e){} }
 
