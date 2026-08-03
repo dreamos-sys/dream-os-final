@@ -334,11 +334,21 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     }
 
     // 📸 ENGINE CONTINUOUS SCAN + DEBOUNCE (ANTI-SPAM)
-    function startScanner(){
+    function startScanner(retryCount){
         if(state.scanner) return;
-        if(typeof Html5Qrcode === 'undefined') return alert('⚠️ Library scanner belum siap. Refresh halaman.');
+        if(typeof Html5Qrcode === 'undefined') {
+            retryCount = (retryCount || 0) + 1;
+            if (retryCount > 15) {
+                alert('⚠️ Koneksi internet lambat. Pustaka scanner gagal dimuat.');
+                return;
+            }
+            // Auto-retry senyap tiap 300ms sampai library siap
+            setTimeout(function(){ startScanner(retryCount); }, 300);
+            return;
+        }
         
-        state.scanner = new Html5Qrcode("qr-reader");
+        try {
+            state.scanner = new Html5Qrcode("qr-reader");
         state.lastScanData = ''; 
         state.lastScanTime = 0;
         
@@ -355,8 +365,10 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
                 processSmartScan(text); 
             }, function(err){}
         ).then(function(){
-            document.querySelector('[data-qr="start-scan"]').style.display = 'none';
-            document.querySelector('[data-qr="stop-scan"]').style.display = 'block';
+            var sBtn = document.querySelector('[data-qr="start-scan"]');
+            var xBtn = document.querySelector('[data-qr="stop-scan"]');
+            if(sBtn) sBtn.style.display = 'none';
+            if(xBtn) xBtn.style.display = 'block';
         }).catch(function(err){ alert('❌ Gagal akses kamera: ' + err); state.scanner = null; });
     }
     
