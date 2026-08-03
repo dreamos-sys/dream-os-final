@@ -280,7 +280,7 @@
     if(!isAdmin()) return alert('⛔ Hanya Dev / Kabag / Koordinator yang dapat mengelola aset.');
     var nama=document.getElementById('as-nama').value.trim();
     if(!nama) return alert('⚠️ Nama aset wajib diisi!');
-    var item={ id:document.getElementById('as-edit-id').value || ('asset_'+Date.now()), nama:nama, jenis:document.getElementById('as-jenis').value, lokasi:document.getElementById('as-lokasi').value, nilai:document.getElementById('as-nilai').value, tahun:document.getElementById('as-tahun').value, status:document.getElementById('as-status').value, updated_at:new Date().toISOString() };
+    var item={ id:document.getElementById('as-edit-id').value || ('asset_'+Date.now()), nama:nama, jenis:document.getElementById('as-jenis').value, lokasi:document.getElementById('as-lokasi').value, nilai:parseInt(document.getElementById('as-nilai').value)||0, tahun:parseInt(document.getElementById('as-tahun').value)||null, status:document.getElementById('as-status').value, updated_at:new Date().toISOString() };
     var data=safeGet('dreamos_assets', []); var editId=document.getElementById('as-edit-id').value;
     if(editId){ var idx=data.findIndex(function(a){return a.id===editId;}); if(idx>-1)data[idx]=item; } else data.push(item);
     safeSet('dreamos_assets', data);
@@ -335,10 +335,21 @@
   window.syncAssetToCloud=async function(){
     if(!isAdmin()) return alert('⛔ Hanya admin yang dapat sync.');
     if(!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
+    var sess = await window.supabaseClient.auth.getSession();
+    if(!sess || !sess.data || !sess.data.session) return alert('⚠️ Sesi Supabase belum ada. Logout lalu login ulang (online) agar sync aktif.');
     var data=safeGet('dreamos_assets', []); if(!data.length) return alert('⚠️ Tidak ada data untuk disync.');
-    var count=0;
-    for(var i=0;i<data.length;i++){ try{ await window.supabaseClient.from('assets').upsert(data[i]); count++; }catch(e){ console.warn('Sync error:', e.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',data[i]);}catch(_){}} } }
-    alert('✅ '+count+'/'+data.length+' aset tersync ke cloud!');
+    var count=0, lastErr='';
+    for(var i=0;i<data.length;i++){
+      var item=Object.assign({}, data[i]);
+      item.nilai = parseInt(item.nilai)||0;
+      item.tahun = parseInt(item.tahun)||null;
+      try{
+        var res = await window.supabaseClient.from('assets').upsert(item);
+        if(res.error){ lastErr=res.error.message; console.warn('Sync error:', res.error.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }
+        else count++;
+      }catch(e){ lastErr=e.message; console.warn('Sync error:', e.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }
+    }
+    alert(count===data.length ? ('✅ '+count+'/'+data.length+' aset tersync ke cloud!') : ('⚠️ '+count+'/'+data.length+' tersync. Error: '+lastErr));
     if(window.BankAudit){ try{window.BankAudit.log('ASSET_SYNC',{total:data.length,success:count});}catch(e){} }
   };
 
