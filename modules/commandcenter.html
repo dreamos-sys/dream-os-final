@@ -584,6 +584,10 @@
         <button class="btn btn-success" onclick="exportLocalBackup()">📥 Export Backup JSON</button>
         <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="importLocalBackup(this)">
         <button class="btn btn-warning" onclick="document.getElementById('restore-file').click()">📤 Restore dari JSON</button>
+        <button class="btn btn-primary" onclick="healOfflinePhotos()">☁️ Healing Foto Offline ke Cloud</button>
+      </div>
+      <div id="heal-status" style="font-size:0.7rem; margin-top:0.5rem; color:#94a3b8;"></div>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
       </div>
       <div id="backup-status" style="font-size:0.7rem; margin-top:0.5rem; color:#94a3b8;"></div>
     </div>
@@ -1306,6 +1310,36 @@ window.goHomeHandler = function() {
     } catch(e){ if(logEl) logEl.innerHTML='<p style="color:#fca5a5;">Gagal memuat log: '+escU(e.message||String(e))+'</p>'; }
   };
   // ===== BACKUP & RESTORE LOKAL (asuransi data perangkat) =====
+  // ===== PHOTO CLOUD HEALING: base64 lama -> upload cloud -> update URL =====
+  window.healOfflinePhotos = async function(){
+    if(!isDev()) return showToast('⛔ Khusus Dev','error');
+    if(!window.supabaseClient) return showToast('⚠️ Butuh koneksi cloud','error');
+    var st = document.getElementById('heal-status');
+    if (st) st.textContent = '🔄 Memindai foto base64 lama…';
+    var res = await window.supabaseClient.from('k3_reports').select('id,foto').like('foto','data:image%').limit(20);
+    if (res.error) { if (st) st.textContent = '❌ ' + res.error.message; return showToast('❌ '+res.error.message,'error'); }
+    var rows = res.data || [];
+    if (!rows.length) { if (st) st.textContent = '✅ Tidak ada foto offline — semua sudah di cloud!'; return showToast('✅ Semua foto sudah di cloud'); }
+    var done=0, fail=0;
+    for (var i=0;i<rows.length;i++){
+      var r = rows[i];
+      try {
+        var blob = window.CloudPhoto.dataURLtoBlob(r.foto);
+        var path = 'healed/' + Date.now() + '_' + i + '.jpg';
+        var up = await window.supabaseClient.storage.from('k3-photos').upload(path, blob, { contentType:'image/jpeg' });
+        if (up.error) throw new Error(up.error.message);
+        var url = window.supabaseClient.storage.from('k3-photos').getPublicUrl(path).data.publicUrl;
+        var u2 = await window.supabaseClient.from('k3_reports').update({ foto:url, foto_source:'cloud', foto_uploaded_at:new Date().toISOString() }).eq('id', r.id);
+        if (u2.error) throw new Error(u2.error.message);
+        done++;
+        if (st) st.textContent = '⏳ Healing ' + (i+1) + '/' + rows.length + '…';
+      } catch(e){ fail++; }
+    }
+    if (st) st.textContent = '✅ ' + done + ' foto di-healing ke cloud, ' + fail + ' gagal.';
+    showToast('✅ Healing selesai: ' + done + ' foto ke cloud');
+    if (window.BankAudit) { try { BankAudit.log('PHOTO_HEALING', { done:done, fail:fail }); } catch(e){} }
+  };
+
   window.exportLocalBackup = function(){
     if(!isDev()) return showToast('⛔ Khusus Dev','error');
     var data = { app:'dream-os', exported_at: new Date().toISOString(), device:(navigator.userAgent||'').slice(0,80), keys:{} };
