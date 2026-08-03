@@ -298,6 +298,15 @@
       </div>
     </div>
 
+    
+    <!-- QUICK ACTIONS BAR (Role-Based) -->
+    <div class="glass" id="quick-actions-bar" style="margin-bottom:1rem; padding:1rem;">
+      <div style="font-weight:700; color:var(--neon); font-size:0.8rem; margin-bottom:0.75rem;">⚡ Aksi Cepat</div>
+      <div id="quick-actions-container" style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+        <!-- Diisi oleh JavaScript berdasarkan role -->
+      </div>
+    </div>
+
     <div class="glass">
       <div style="font-weight:800; color:var(--neon); margin-bottom:0.8rem; display:flex; justify-content:space-between; align-items:center;">
         <span>📈 Kinerja Operasional & SLA</span>
@@ -814,6 +823,7 @@ window.goHomeHandler = function() {
     if (id === 'users') { syncUsersFromSupabase(); renderUsers(); }
 
     if (id === 'stok') renderStokAnalytics();
+    renderQuickActions();
     if (id === 'announcements') {
       const saved = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
       document.getElementById('slide-5-input').value = saved.find(x => x.type === 'management')?.msg || '';
@@ -1330,6 +1340,105 @@ window.goHomeHandler = function() {
       showToast('❌ Gagal: ' + e.message, 'error');
     }
   };
+
+  
+  // ===== ROLE-BASED WORKSPACE: Dynamic Tab Filtering =====
+  function applyRoleWorkspace() {
+    const role = (window.getUserRole ? window.getUserRole() : 'staff').toLowerCase();
+    const tabs = document.querySelectorAll('#main-tabs .tab');
+    
+    const tabVisibility = {
+      'dev': ['dashboard','inbox','approvals','calendar','archive','users','devmon','user-health','activity','announcements','stok'],
+      'kabag_umum': ['dashboard','inbox','approvals','calendar','archive','activity','announcements','stok'],
+      'koordinator_umum': ['dashboard','inbox','calendar','stok','activity'],
+      'management': ['dashboard','inbox','approvals','calendar','archive','activity','stok'],
+      'komite': ['dashboard','inbox','calendar','activity'],
+      'guru': ['dashboard','calendar','activity'],
+      'security': ['dashboard','calendar','activity'],
+      'komandan_regu': ['dashboard','calendar','activity'],
+      'janitor_indoor': ['dashboard','calendar','activity'],
+      'janitor_outdoor': ['dashboard','calendar','activity'],
+      'maintenance': ['dashboard','calendar','activity'],
+      'staff': ['dashboard','calendar','activity']
+    };
+    
+    const allowedTabs = tabVisibility[role] || tabVisibility['staff'];
+    
+    tabs.forEach(tab => {
+      const tabId = tab.getAttribute('data-tab');
+      if (allowedTabs.includes(tabId)) {
+        tab.style.display = '';
+      } else {
+        tab.style.display = 'none';
+      }
+    });
+    
+    const brandTitle = document.querySelector('.brand-title');
+    if (brandTitle) {
+      const workspaceNames = {
+        'dev': '💻 DEV CONSOLE',
+        'kabag_umum': '👑 KABAG WORKSPACE',
+        'koordinator_umum': '🛡️ KOORD WORKSPACE',
+        'management': '🏢 MANAGEMENT DESK',
+        'komite': '🧑‍⚖️ KOMITE VIEW',
+        'guru': '👨‍🏫 GURU VIEW',
+        'security': '🛡️ SECURITY VIEW',
+        'komandan_regu': '⭐ DANRU VIEW',
+        'janitor_indoor': '🏠 JANITOR INDOOR',
+        'janitor_outdoor': '🌳 JANITOR OUTDOOR',
+        'maintenance': '🔧 MAINTENANCE',
+        'staff': '👤 STAFF VIEW'
+      };
+      brandTitle.innerHTML = workspaceNames[role] || '👤 STAFF VIEW';
+    }
+  }
+  setTimeout(applyRoleWorkspace, 100);
+
+  
+  function renderQuickActions() {
+    const role = (window.getUserRole ? window.getUserRole() : 'staff').toLowerCase();
+    const container = document.getElementById('quick-actions-container');
+    if (!container) return;
+    
+    const actions = {
+      'dev': [
+        { label: '👥 Kelola User', action: "switchTab('users')" },
+        { label: '🏥 User Health', action: "switchTab('user-health')" },
+        { label: '🟢 Dev Monitor', action: "switchTab('devmon')" },
+        { label: '📜 Activity Log', action: "switchTab('activity')" }
+      ],
+      'kabag_umum': [
+        { label: '✅ Approval Booking', action: "switchTab('approvals')" },
+        { label: '📦 Cek Stok', action: "switchTab('stok')" },
+        { label: '📢 Pengumuman', action: "switchTab('announcements')" },
+        { label: '📅 Kalender', action: "switchTab('calendar')" }
+      ],
+      'koordinator_umum': [
+        { label: '📋 Tugas Pending', action: "switchTab('inbox')" },
+        { label: '📦 Stok Gudang', action: "switchTab('stok')" },
+        { label: '🗓️ Jadwal Shift', action: "switchTab('calendar')" },
+        { label: '📜 Aktivitas', action: "switchTab('activity')" }
+      ],
+      'guru': [
+        { label: '📅 Booking Ruang', action: "switchTab('calendar')" },
+        { label: '📜 Aktivitas', action: "switchTab('activity')" }
+      ],
+      'security': [
+        { label: '🗓️ Jadwal Saya', action: "switchTab('calendar')" },
+        { label: '📜 Aktivitas', action: "switchTab('activity')" }
+      ]
+    };
+    
+    const roleActions = actions[role] || [
+      { label: '📅 Kalender', action: "switchTab('calendar')" },
+      { label: '📜 Aktivitas', action: "switchTab('activity')" }
+    ];
+    
+    container.innerHTML = roleActions.map(a => 
+      `<button class="btn btn-outline btn-sm" onclick="${a.action}" style="font-size:0.75rem;">${a.label}</button>`
+    ).join('');
+  }
+  setTimeout(renderQuickActions, 150);
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
