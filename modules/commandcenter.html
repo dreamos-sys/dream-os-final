@@ -1016,6 +1016,15 @@ window.goHomeHandler = function() {
   window.calNext = function() { calDate.setMonth(calDate.getMonth() + 1); initCalSelectors(); renderCalendar(); };
   window.calToday = function() { calDate = new Date(); initCalSelectors(); renderCalendar(); };
 
+  function parseDateSafe(s){
+    if(!s) return null;
+    var d = new Date(s);
+    if(!isNaN(d.getTime())) return d;
+    var m = String(s).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+    return null;
+  }
+
   window.renderCalendar = function() {
     const month = parseInt(document.getElementById('cal-month').value);
     const year = parseInt(document.getElementById('cal-year').value);
@@ -1026,13 +1035,56 @@ window.goHomeHandler = function() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
 
+    // ===== MUAT BOOKING BULAN INI =====
+    var bookings = safeJSON('dreamos_bookings', []);
+    var monthEvents = {};
+    bookings.forEach(function(b){
+      var d = parseDateSafe(b.tgl);
+      if(!d) return;
+      if(d.getMonth() === month && d.getFullYear() === year){
+        (monthEvents[d.getDate()] = monthEvents[d.getDate()] || []).push(b);
+      }
+    });
+
     let html = '';
     for (let i = 0; i < startOffset; i++) html += '<div class="cal-day" style="background:rgba(0,0,0,0.2);"></div>';
     for (let d = 1; d <= daysInMonth; d++) {
       const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-      html += '<div class="cal-day' + (isToday ? ' today' : '') + '"><div class="cal-day-num">' + d + '</div></div>';
+      var evs = monthEvents[d] || [];
+      var dots = '';
+      if (evs.length) {
+        var ap = evs.filter(function(x){return String(x.status||'').toLowerCase()==='approved';}).length;
+        var pd = evs.filter(function(x){return String(x.status||'').toLowerCase()==='pending';}).length;
+        var rj = evs.filter(function(x){return String(x.status||'').toLowerCase()==='rejected';}).length;
+        dots = '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px;">' +
+          (ap?'<span style="font-size:0.58rem;background:rgba(16,185,129,0.25);color:#6ee7b7;border-radius:6px;padding:1px 5px;font-weight:800;">✅'+ap+'</span>':'') +
+          (pd?'<span style="font-size:0.58rem;background:rgba(245,158,11,0.25);color:#fcd34d;border-radius:6px;padding:1px 5px;font-weight:800;">⏳'+pd+'</span>':'') +
+          (rj?'<span style="font-size:0.58rem;background:rgba(239,68,68,0.25);color:#fca5a5;border-radius:6px;padding:1px 5px;font-weight:800;">❌'+rj+'</span>':'') +
+          '</div>';
+      }
+      html += '<div class="cal-day' + (isToday ? ' today' : '') + '"><div class="cal-day-num">' + d + '</div>' + dots + '</div>';
     }
     grid.innerHTML = html;
+
+    // ===== DAFTAR JADWAL BULAN INI =====
+    var listEl = document.getElementById('cal-list');
+    if (listEl) {
+      var all = [];
+      Object.keys(monthEvents).forEach(function(day){
+        monthEvents[day].forEach(function(b){ all.push({ day: +day, b: b }); });
+      });
+      all.sort(function(a,b){ return a.day - b.day; });
+      listEl.innerHTML = all.length
+        ? '<div style="font-weight:800;color:var(--accent);margin-bottom:0.6rem;">📋 Jadwal & Booking Bulan Ini ('+all.length+')</div>' + all.map(function(e){
+            var st = String(e.b.status||'pending').toLowerCase();
+            var bc = st==='approved'?'badge-approved':st==='rejected'?'badge-rejected':'badge-pending';
+            return '<div style="background:rgba(2,6,23,0.6);border:1px solid var(--border);border-radius:10px;padding:0.7rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
+              '<div><b style="color:var(--text);">📅 '+e.day+' — '+escU(e.b.ruang||'Ruang')+'</b>' +
+              '<div style="font-size:0.75rem;color:var(--muted);">👤 '+escU(e.b.nama_peminjam||'-')+' • 🕐 '+escU(e.b.jam_mulai||'')+' • '+escU(e.b.keperluan||'')+'</div></div>' +
+              '<span class="badge '+bc+'">'+st+'</span></div>';
+          }).join('')
+        : '<p style="color:var(--muted);text-align:center;padding:1rem;">Tidak ada jadwal/booking bulan ini.</p>';
+    }
   };
 
   window.renderArchive = function() {
