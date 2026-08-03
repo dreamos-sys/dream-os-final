@@ -10,7 +10,22 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
   window.renderDashboard = window.parent.renderDashboard;
 </script>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+// CDN RACING: jika jsdelivr belum siap, suntik unpkg + cdnjs sebagai cadangan (paralel)
+if (typeof Html5Qrcode === 'undefined') {
+  (function(){
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    s.onerror = function(){
+      var s2 = document.createElement('script');
+      s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js';
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  })();
+}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <button onclick="window.goHome()" style="position:fixed;bottom: calc(2rem + env(safe-area-inset-bottom));left:1rem;background:#1e293b;border:1px solid #00ff9d;color:#00ff9d;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
@@ -342,7 +357,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         
         if(typeof Html5Qrcode === 'undefined') {
             retryCount = (retryCount || 0) + 1;
-            if(retryCount > 20) {
+            if(retryCount > 40) {
                 alert('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.');
                 var manualDiv = document.querySelector('#manual-scan-input')?.parentElement;
                 if(manualDiv) manualDiv.style.display = 'block';
