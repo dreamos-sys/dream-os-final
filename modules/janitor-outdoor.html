@@ -82,6 +82,7 @@
       <input type="file" id="jo-foto-input" accept="image/*" capture="environment" onchange="handlePhoto(this, 'jo-foto-preview')" class="input-field" style="padding: 0.5rem;">
       <div id="janitor-outdoor-foto-status" style="font-size:0.72rem; margin:0.3rem 0; min-height:1rem;"></div>
       <div id="janitor-outdoor-foto-status" style="font-size:0.72rem; margin:0.3rem 0; min-height:1rem;"></div>
+      <div id="jo-foto-status" style="font-size:0.72rem; margin:0.3rem 0; min-height:1rem;"></div>
       <div class="foto-preview-container">
         <img id="jo-foto-preview">
         <button type="button" onclick="clearPhoto('jo-foto-input', 'jo-foto-preview')" class="btn btn-danger btn-clear-foto">✕ Hapus Foto</button>
@@ -199,6 +200,8 @@
   window.currentFotoStatus = null;
   window.currentFotoUrl = null;
   window.currentFotoStatus = null;
+  window.currentFotoUrl = null;
+  window.currentFotoStatus = null;
   
   window.handlePhoto = function(input, previewId) {
     if (!input.files || !input.files[0]) return;
@@ -234,6 +237,19 @@
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+    (async function(){
+      var statusEl = document.getElementById('jo-foto-status');
+      if (!window.CloudPhoto) { if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ CloudPhoto belum dimuat</span>'; return; }
+      if (statusEl) statusEl.innerHTML = '<span style="color:#0ea5e9;">☁️ Mengunggah ke cloud…</span>';
+      try {
+        var url = await window.CloudPhoto.upload(file, 'janitor-photos');
+        window.currentFotoUrl = url; window.currentFotoStatus = 'cloud';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#10b981;">✅ Cloud tersimpan (' + Math.round(file.size/1024) + ' KB)</span>';
+      } catch(e) {
+        window.currentFotoStatus = 'offline';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ Fallback base64</span>';
+      }
+    })();
     // === CLOUD PHOTO: upload ke Supabase Storage ===
     (async function(){
       var statusEl = document.getElementById('janitor-outdoor-foto-status');
@@ -499,6 +515,8 @@
         if (error) throw error;
         alert('✅ Data terkirim ke cloud!');
     clearPhoto('jo-foto-input', 'jo-foto-preview');
+    window.currentFotoUrl = null; window.currentFotoStatus = null;
+    var stEl = document.getElementById('jo-foto-status'); if (stEl) stEl.textContent = '';
     window.currentFotoUrl = null; window.currentFotoStatus = null;
     var stEl = document.getElementById('janitor-outdoor-foto-status'); if (stEl) stEl.textContent = '';
     window.currentFotoUrl = null; window.currentFotoStatus = null;
