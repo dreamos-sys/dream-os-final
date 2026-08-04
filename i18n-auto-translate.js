@@ -1,12 +1,14 @@
 /**
- * Dream OS — i18n auto-translate v4 (DOM helper)
+ * Dream OS — i18n auto-translate v5 (Anti-Infinite-Loop)
  * 
- * Hanya translate DOM saat bahasa != 'id'
- * Menggunakan dictionary dari i18n.js
+ * Guard: isTranslating flag mencegah recursive call
+ * Debounce: batch mutations sebelum translate
  */
 (function () {
   'use strict';
   var translateCache = {};
+  var isTranslating = false; // Guard flag
+  var debounceTimer = null;
 
   function getLang() { return window.currentLang || 'id'; }
   function getPack() {
@@ -41,6 +43,9 @@
     if (!el || el.nodeType !== 1) return;
     var tag = el.tagName;
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CODE' || tag === 'PRE' || tag === 'SVG') return;
+    
+    // Skip elements dengan data-i18n-skip
+    if (el.hasAttribute('data-i18n-skip')) return;
     
     // data-i18n attribute (key-based)
     if (el.hasAttribute('data-i18n')) {
@@ -80,21 +85,44 @@
   function startObserver() {
     if (observer) observer.disconnect();
     if (!document.body) return;
+    
     observer = new MutationObserver(function (mutations) {
+      // Guard: jangan translate saat sedang translate (prevent infinite loop)
+      if (isTranslating) return;
       if (getLang() === 'id') return;
-      mutations.forEach(function (m) {
-        m.addedNodes.forEach(function (node) {
-          if (node.nodeType === 1) translateElement(node);
-        });
-      });
+      
+      // Debounce: batch mutations (tunggu 100ms sebelum translate)
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function() {
+        isTranslating = true;
+        try {
+          mutations.forEach(function (m) {
+            m.addedNodes.forEach(function (node) {
+              if (node.nodeType === 1) translateElement(node);
+            });
+          });
+        } finally {
+          isTranslating = false;
+        }
+      }, 100);
     });
+    
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
   window.i18nTranslate = function () {
+    // Guard: prevent recursive call
+    if (isTranslating) return;
+    
     translateCache = {};
     if (getLang() === 'id') return;
-    if (document.body) translateElement(document.body);
+    
+    isTranslating = true;
+    try {
+      if (document.body) translateElement(document.body);
+    } finally {
+      isTranslating = false;
+    }
   };
 
   function boot() {
@@ -114,5 +142,5 @@
     boot();
   }
 
-  console.log('🌍 i18n-auto-translate v4 (DOM helper)');
+  console.log('🌍 i18n-auto-translate v5 (anti-infinite-loop)');
 })();
