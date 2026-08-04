@@ -506,11 +506,26 @@
         const container = document.getElementById('dashboard-container');
         if (!container) return;
         
+        // === ENTERPRISE GREETING ===
+        function setGreeting() {
+          var u = {};
+          try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); } catch(e){}
+          var name = u.nama || (u.email || '').split('@')[0] || 'User';
+          var hour = new Date().getHours();
+          var greet = hour < 11 ? 'Selamat Pagi' : hour < 15 ? 'Selamat Siang' : hour < 18 ? 'Selamat Sore' : 'Selamat Malam';
+          if (window.currentLang === 'en') greet = hour < 11 ? 'Good Morning' : hour < 15 ? 'Good Afternoon' : hour < 18 ? 'Good Evening' : 'Good Night';
+          else if (window.currentLang === 'ar') greet = hour < 11 ? 'صباح الخير' : hour < 15 ? 'مساء الخير' : 'مساء الخير';
+          else if (window.currentLang === 'zh') greet = hour < 11 ? '早上好' : hour < 15 ? '下午好' : hour < 18 ? '晚上好' : '晚安';
+          var el = document.getElementById('greeting');
+          if (el) el.textContent = greet + ', ' + name + ' 👋';
+        }
+        
         container.innerHTML = `
           <div class="header-main glass">
             <img src="assets/logo-sultan.png" class="login-logo" style="width:55px;height:55px; margin-bottom: 0.8rem;" onerror="this.style.display='none'">
             <div class="arabic">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
             <div class="shalawat" style="margin-bottom:0.4rem;">اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ</div>
+            <div id="greeting" style="font-size:0.9rem; color:var(--accent); margin-top:0.5rem; font-weight:700;"></div>
           </div>
           
           <div id="dash-slider" class="glass">
@@ -653,6 +668,8 @@
           if (typeof window.updateDashboardSlides === 'function') {
             window.updateDashboardSlides();
           }
+          // Greeting personal
+          setGreeting();
         })();
 
                 // 🧠 SMART SECURITY CALENDAR - Auto-read jadwal 24/7
