@@ -28,6 +28,114 @@ if (typeof Html5Qrcode === 'undefined') {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
+<style id="qr-theme-css">
+/* === QR MODULE THEME SYSTEM === */
+:root {
+  --qr-bg: #040814;
+  --qr-bg-panel: rgba(15,23,42,0.6);
+  --qr-bg-input: #0f172a;
+  --qr-bg-advanced: rgba(0,0,0,0.3);
+  --qr-bg-deep: rgba(0,0,0,0.4);
+  --qr-bg-result: rgba(0,0,0,0.5);
+  --qr-border: rgba(0,255,157,0.2);
+  --qr-border-input: #334155;
+  --qr-text: #e2e8f0;
+  --qr-text-sub: #94a3b8;
+  --qr-text-muted: #64748b;
+  --qr-neon: #00ff9d;
+  --qr-blue: #3b82f6;
+  --qr-accent: #0ea5e9;
+  --qr-success: #10b981;
+  --qr-danger: #ef4444;
+  --qr-warning: #f59e0b;
+  --qr-purple: #8b5cf6;
+  --qr-indigo: #6366f1;
+  --qr-tab-active-bg: #00ff9d;
+  --qr-tab-active-text: #000;
+  --qr-tab-bg: #1e293b;
+  --qr-tab-text: #e2e8f0;
+}
+[data-theme="light"], body.light-theme {
+  --qr-bg: #f1f5f9 !important;
+  --qr-bg-panel: #ffffff !important;
+  --qr-bg-input: #ffffff !important;
+  --qr-bg-advanced: rgba(2, 132, 199, 0.05) !important;
+  --qr-bg-deep: rgba(15, 23, 42, 0.04) !important;
+  --qr-bg-result: rgba(255, 255, 255, 0.9) !important;
+  --qr-border: rgba(2, 132, 199, 0.3) !important;
+  --qr-border-input: rgba(15, 23, 42, 0.15) !important;
+  --qr-text: #0f172a !important;
+  --qr-text-sub: #475569 !important;
+  --qr-text-muted: #64748b !important;
+  --qr-neon: #047857 !important;
+  --qr-blue: #1d4ed8 !important;
+  --qr-accent: #0284c7 !important;
+  --qr-success: #047857 !important;
+  --qr-danger: #b91c1c !important;
+  --qr-warning: #b45309 !important;
+  --qr-purple: #7c3aed !important;
+  --qr-indigo: #4f46e5 !important;
+  --qr-tab-active-bg: #0284c7 !important;
+  --qr-tab-active-text: #ffffff !important;
+  --qr-tab-bg: #ffffff !important;
+  --qr-tab-text: #0f172a !important;
+}
+#qr-app { background: var(--qr-bg) !important; color: var(--qr-text) !important; }
+#qr-app h2 { color: var(--qr-neon) !important; }
+#qr-app p { color: var(--qr-text-sub) !important; }
+#qr-app .qr-tab { background: var(--qr-tab-bg) !important; color: var(--qr-tab-text) !important; border: 1px solid var(--qr-border-input) !important; }
+#qr-app .qr-tab.active { background: var(--qr-tab-active-bg) !important; color: var(--qr-tab-active-text) !important; }
+#qr-app .qr-panel { background: var(--qr-bg-panel) !important; border-color: var(--qr-border) !important; }
+#qr-app input, #qr-app select, #qr-app textarea { background: var(--qr-bg-input) !important; border-color: var(--qr-border-input) !important; color: var(--qr-text) !important; }
+#qr-app input::placeholder { color: var(--qr-text-muted) !important; }
+#qr-app label { color: var(--qr-text) !important; }
+#qr-app label[style*="94a3b8"] { color: var(--qr-text-sub) !important; }
+#qr-app button[data-qr="generate"] { background: var(--qr-neon) !important; color: #000 !important; }
+#qr-app button[data-qr="save"] { background: var(--qr-purple) !important; }
+#qr-app button[data-qr="download"] { background: var(--qr-success) !important; }
+#qr-app button[data-qr="share"] { background: var(--qr-blue) !important; }
+#qr-app button[data-qr="start-scan"] { background: var(--qr-neon) !important; color: #000 !important; }
+#qr-app button[data-qr="stop-scan"] { background: var(--qr-danger) !important; }
+#qr-app button[data-qr="manual-scan"] { background: var(--qr-indigo) !important; }
+#qr-app button[data-qr="print-all"] { background: var(--qr-accent) !important; }
+#qr-app button[data-qr="export-qr"] { background: var(--qr-success) !important; }
+#qr-app button[data-qr="delete-all"], #qr-app button[data-qr="clear-history"] { background: var(--qr-danger) !important; }
+#qr-app button[data-qr="batch-generate"] { background: var(--qr-purple) !important; }
+#qr-app #scan-result { background: var(--qr-bg-result) !important; border-color: var(--qr-neon) !important; color: var(--qr-text) !important; }
+#qr-app #scan-data { color: var(--qr-text) !important; }
+#qr-app #scan-meta { color: var(--qr-text-muted) !important; }
+#qr-app #qr-codes-list > div > div { background: var(--qr-bg-panel) !important; border-color: var(--qr-border) !important; }
+#qr-app #qr-codes-list > div > div > div[style*="font-weight:800"] { color: var(--qr-neon) !important; }
+#qr-app #stat-type-distribution { background: var(--qr-bg-deep) !important; }
+#qr-app [style*="rgba(0,255,157,0.1)"] { background: rgba(4, 120, 87, 0.1) !important; }
+[data-theme="light"] #qr-app [style*="rgba(0,255,157,0.1)"] { background: rgba(2, 132, 199, 0.08) !important; }
+#qr-app [style*="rgba(239,68,68,0.1)"] { background: rgba(185, 28, 28, 0.08) !important; }
+#qr-app .back-btn, #qr-app > button:first-of-type { background: var(--qr-tab-bg) !important; border-color: var(--qr-neon) !important; color: var(--qr-neon) !important; }
+[data-theme="light"] #qr-app img[src*="qrserver"] { filter: drop-shadow(0 0 10px rgba(2, 132, 199, 0.3)); }
+</style>
+
+
+<script id="qr-theme-js">
+(function(){
+  function applyTheme(){
+    var theme = 'dark';
+    try {
+      theme = (window.parent && window.parent.document && window.parent.document.documentElement.getAttribute('data-theme')) || 
+              localStorage.getItem('dreamos_theme') || 'dark';
+    } catch(e){ theme = localStorage.getItem('dreamos_theme') || 'dark'; }
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'light') document.body.classList.add('light-theme');
+    else document.body.classList.remove('light-theme');
+  }
+  applyTheme();
+  try {
+    var parentRoot = window.parent && window.parent.document && window.parent.document.documentElement;
+    if (parentRoot) new MutationObserver(applyTheme).observe(parentRoot, { attributes: true, attributeFilter: ['data-theme'] });
+  } catch(e){}
+  window.addEventListener('storage', function(e){ if (e.key === 'dreamos_theme') applyTheme(); });
+})();
+</script>
+
 <button onclick="window.goHome()" style="position:fixed;bottom: calc(2rem + env(safe-area-inset-bottom));left:1rem;background:#1e293b;border:1px solid #00ff9d;color:#00ff9d;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
 
 <div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="qr-app">

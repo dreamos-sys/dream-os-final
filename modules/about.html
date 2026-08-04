@@ -20,6 +20,55 @@
   --neon:#00ff9d; --blue:#0ea5e9; --gold:#d4af37; --amber:#f59e0b; --teal:#14b8a6; --red:#e11d48; --violet:#8b5cf6;
   --disp:'Orbitron',sans-serif; --body:'Inter',system-ui,sans-serif; --arabic:'Amiri',serif; --mono:'JetBrains Mono',ui-monospace,monospace;
 }
+
+/* === LIGHT MODE OVERRIDES === */
+[data-theme="light"], body.light-theme {
+  --ink: #f1f5f9;
+  --panel: #ffffff;
+  --panel2: #f8fafc;
+  --line: rgba(15, 23, 42, 0.12);
+  --txt: #0f172a;
+  --mut: #475569;
+  --mut2: #64748b;
+  --neon: #047857;
+  --blue: #0284c7;
+  --gold: #b45309;
+  --amber: #b45309;
+  --teal: #0d9488;
+  --red: #b91c1c;
+  --violet: #7c3aed;
+}
+[data-theme="light"] body, body.light-theme {
+  color: var(--txt);
+  background-image: radial-gradient(900px 500px at 90% -5%, rgba(2, 132, 199, 0.08), transparent 60%),
+                    radial-gradient(760px 460px at -8% 105%, rgba(180, 83, 9, 0.06), transparent 55%),
+                    linear-gradient(rgba(2, 132, 199, 0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(2, 132, 199, 0.04) 1px, transparent 1px);
+}
+[data-theme="light"] .masthead { background: linear-gradient(180deg, rgba(2, 132, 199, 0.08), rgba(255,255,255,0.6)); border-color: rgba(2,132,199,0.3); }
+[data-theme="light"] .doc-title { color: #0f172a; }
+[data-theme="light"] .doc-title b { color: var(--neon); }
+[data-theme="light"] .arabic { text-shadow: none; }
+[data-theme="light"] .sec:hover { border-color: rgba(4, 120, 87, 0.5); }
+[data-theme="light"] .sec h2 { color: #0f172a; }
+[data-theme="light"] .card h3 { color: var(--neon); }
+[data-theme="light"] .card li b, [data-theme="light"] td b, [data-theme="light"] .sign .name { color: #0f172a; }
+[data-theme="light"] .note { background: rgba(180, 83, 9, 0.06); border-color: rgba(180, 83, 9, 0.3); }
+[data-theme="light"] .note b { color: #92400e; }
+[data-theme="light"] .classbar { background: rgba(255,255,255,0.95); border-bottom-color: rgba(180, 83, 9, 0.4); color: #92400e; }
+[data-theme="light"] .classbar b { color: #0f172a; }
+[data-theme="light"] .back-btn { background: rgba(255,255,255,0.95); color: var(--neon); border-color: var(--neon); }
+[data-theme="light"] .tbtn { background: rgba(15,23,42,0.05); color: var(--txt); }
+[data-theme="light"] .tbtn:hover { border-color: var(--neon); color: var(--neon); }
+[data-theme="light"] table th { background: rgba(2,132,199,0.1); color: var(--neon); }
+[data-theme="light"] .legal-cols .no { background: rgba(185,28,28,0.06); }
+[data-theme="light"] .legal-cols .yes { background: rgba(4,120,87,0.06); }
+[data-theme="light"] .legal-cols .no h4 { color: #b91c1c; }
+[data-theme="light"] .legal-cols .yes h4 { color: #047857; }
+[data-theme="light"] .license-box { background: linear-gradient(135deg, rgba(180,83,9,0.1), rgba(180,83,9,0.03)); border-color: rgba(180,83,9,0.5); }
+[data-theme="light"] .footer .cls { color: #92400e; }
+[data-theme="light"] .identity { color: var(--neon); }
+[data-theme="light"] .footer p strong { color: #0f172a; }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{background:var(--ink);color:var(--txt);font-family:var(--body);min-height:100vh;line-height:1.65;overflow-x:hidden;
@@ -497,6 +546,28 @@ if (!window.goHome) window.goHome = function() {
 if (!window.supabaseClient && window.parent && window.parent.supabaseClient)
   window.supabaseClient = window.parent.supabaseClient;
 
+// === INHERIT THEME FROM PARENT ===
+(function(){
+  function applyTheme(){
+    var theme = 'dark';
+    try {
+      var pt = (window.parent && window.parent.document && window.parent.document.documentElement.getAttribute('data-theme')) || 
+               localStorage.getItem('dreamos_theme') || 'dark';
+      theme = pt;
+    } catch(e){ theme = localStorage.getItem('dreamos_theme') || 'dark'; }
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'light') document.body.classList.add('light-theme');
+    else document.body.classList.remove('light-theme');
+  }
+  applyTheme();
+  try {
+    new MutationObserver(applyTheme).observe(
+      (window.parent && window.parent.document && window.parent.document.documentElement) || document.documentElement,
+      { attributes: true, attributeFilter: ['data-theme'] }
+    );
+  } catch(e){}
+  window.addEventListener('storage', function(e){ if (e.key === 'dreamos_theme') applyTheme(); });
+})();
 document.body.classList.add('js');
 (function(){
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
