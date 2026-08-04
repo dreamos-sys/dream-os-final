@@ -25,6 +25,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/observer-manager.js?v=1"></script>
   <script src="i18n.js?v=4"></script>
   <!-- <script src="i18n-auto-translate.js?v=5"></script> --> <!-- DISABLED: infinite loop fix pending -->
   <script src="js/font-rtl.js"></script>
@@ -263,6 +264,69 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
+  // ===== BLANK DETECTOR & OBSERVER CLEANUP =====
+  (function(){
+    var lastRenderTime = Date.now();
+    var blankCheckInterval = null;
+    var observerCleanupInterval = null;
+    
+    // Safety net: reload jika blank detected
+    function checkBlankScreen() {
+      var dashboard = document.getElementById('dashboard-container');
+      var login = document.getElementById('login-screen');
+      
+      // Jika login screen hidden tapi dashboard kosong = BLANK
+      if (login && login.style.display === 'none' && dashboard && dashboard.innerHTML.trim() === '') {
+        console.warn('⚠️ Blank screen detected! Auto-reload in 3s...');
+        var warning = document.createElement('div');
+        warning.id = 'blank-warning';
+        warning.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ef4444;color:#fff;padding:1rem 2rem;border-radius:8px;z-index:99999;font-weight:700;';
+        warning.textContent = '⚠️ Layar kosong terdeteksi, memuat ulang...';
+        document.body.appendChild(warning);
+        setTimeout(function(){ location.reload(); }, 3000);
+        return;
+      }
+      
+      // Jika dashboard ada tapi tidak update dalam 5 menit = mungkin freeze
+      if (dashboard && dashboard.innerHTML.length > 0 && (Date.now() - lastRenderTime) > 300000) {
+        console.warn('⚠️ Dashboard mungkin freeze, force update slides');
+        if (typeof window.updateDashboardSlides === 'function') {
+          window.updateDashboardSlides();
+          lastRenderTime = Date.now();
+        }
+      }
+    }
+    
+    // Start blank detector (check setiap 30 detik)
+    blankCheckInterval = setInterval(checkBlankScreen, 30000);
+    
+    // Update timestamp setiap kali renderDashboard dipanggil
+    var originalRender = window.renderDashboard;
+    if (originalRender) {
+      window.renderDashboard = function() {
+        lastRenderTime = Date.now();
+        return originalRender.apply(this, arguments);
+      };
+    }
+    
+    // Cleanup observer yang terlalu agresif setiap 2 menit
+    observerCleanupInterval = setInterval(function(){
+      try {
+        // Disconnect semua observer yang mungkin leak
+        if (window.__dreamos_observers) {
+          window.__dreamos_observers.forEach(function(obs){
+            try { obs.disconnect(); } catch(e){}
+          });
+          window.__dreamos_observers = [];
+        }
+        console.log('🧹 Observer cleanup complete');
+      } catch(e){}
+    }, 120000);
+    
+    // Log untuk debugging
+    console.log('🛡️ Blank detector & observer cleanup active');
+  })();
+
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       console.log = function() {}; console.warn = function() {}; console.error = function() {};
     }
@@ -319,7 +383,7 @@
       } catch(e){}
     }
     beat();
-    window.__presenceTimer=setInterval(beat, 30000);
+    window.__presenceTimer=setInterval(beat, 60000); // 60s instead of 30s
   };
 
     const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
@@ -1014,7 +1078,7 @@
 
       // 🛡️ Slide otomatis no.1 (jadwal security) — auto-refresh tiap 60s & saat data berubah
       window.__slide1AutoRefresh = true;
-      setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true' && typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); }, 60000);
+      setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true' && typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); }, 120000); // 120s instead of 60s
       window.addEventListener('storage', function(e){ if(e.key==='dreamos_matrix' && typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); });
       // Lapis 2: SAME-TAB (monkey-patch localStorage.setItem — modul di-inject 1 window, storage event TIDAK fire!)
       (function(){
