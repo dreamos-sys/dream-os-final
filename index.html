@@ -264,71 +264,111 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-  // ===== BLANK DETECTOR & OBSERVER CLEANUP =====
+  // ===== ULTIMATE STABILITY ENGINE =====
   (function(){
+    'use strict';
     var lastRenderTime = Date.now();
-    var blankCheckInterval = null;
-    var observerCleanupInterval = null;
+    var lastActivityTime = Date.now();
+    var blankCheckCount = 0;
+    var MAX_BLANK_CHECKS = 3; // Reload setelah 3x blank terdeteksi berturut-turut
     
-    // Safety net: reload jika blank detected
+    // Track user activity
+    ['click', 'keydown', 'touchstart', 'mousemove'].forEach(function(evt){
+      document.addEventListener(evt, function(){ lastActivityTime = Date.now(); }, {passive: true});
+    });
+    
+    // Enhanced blank detector
     function checkBlankScreen() {
       var dashboard = document.getElementById('dashboard-container');
       var login = document.getElementById('login-screen');
+      var mainApp = document.getElementById('main-app');
       
-      // Jika login screen hidden tapi dashboard kosong = BLANK
-      if (login && login.style.display === 'none' && dashboard && dashboard.innerHTML.trim() === '') {
-        console.warn('⚠️ Blank screen detected! Auto-reload in 3s...');
-        var warning = document.createElement('div');
-        warning.id = 'blank-warning';
-        warning.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ef4444;color:#fff;padding:1rem 2rem;border-radius:8px;z-index:99999;font-weight:700;';
-        warning.textContent = '⚠️ Layar kosong terdeteksi, memuat ulang...';
-        document.body.appendChild(warning);
-        setTimeout(function(){ location.reload(); }, 3000);
-        return;
-      }
+      // Skip jika masih di login screen
+      if (login && login.style.display !== 'none' && login.style.display !== '') return;
       
-      // Jika dashboard ada tapi tidak update dalam 5 menit = mungkin freeze
-      if (dashboard && dashboard.innerHTML.length > 0 && (Date.now() - lastRenderTime) > 300000) {
-        console.warn('⚠️ Dashboard mungkin freeze, force update slides');
-        if (typeof window.updateDashboardSlides === 'function') {
-          window.updateDashboardSlides();
-          lastRenderTime = Date.now();
+      // Skip jika user sedang aktif (mungkin sedang loading)
+      if (Date.now() - lastActivityTime < 5000) return;
+      
+      // Check 1: dashboard kosong atau tidak ada
+      var isEmpty = !dashboard || dashboard.innerHTML.trim().length < 50;
+      
+      // Check 2: main-app tidak visible
+      var isHidden = mainApp && (mainApp.style.display === 'none' || 
+                     window.getComputedStyle(mainApp).display === 'none');
+      
+      // Check 3: body tidak punya konten visible
+      var bodyText = document.body ? document.body.innerText.trim() : '';
+      var isContentGone = bodyText.length < 10;
+      
+      if (isEmpty && (isHidden || isContentGone)) {
+        blankCheckCount++;
+        // Log ke console (akan muncul di localhost/DevTools)
+        console.warn('⚠️ Blank check #' + blankCheckCount + '/' + MAX_BLANK_CHECKS);
+        
+        if (blankCheckCount >= MAX_BLANK_CHECKS) {
+          // Force reload setelah 3x blank
+          var warning = document.createElement('div');
+          warning.id = 'blank-warning';
+          warning.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ef4444;color:#fff;padding:1rem 2rem;border-radius:8px;z-index:99999;font-weight:700;box-shadow:0 10px 40px rgba(0,0,0,0.5);';
+          warning.textContent = '⚠️ Sistem mendeteksi layar kosong, memuat ulang...';
+          document.body.appendChild(warning);
+          
+          // Reset session agar fresh
+          try { localStorage.setItem('dreamos_needs_refresh', '1'); } catch(e){}
+          setTimeout(function(){ location.reload(); }, 2000);
+        } else {
+          // Coba re-render sebelum reload
+          if (typeof window.renderDashboard === 'function') {
+            try { window.renderDashboard(); } catch(e){}
+          }
         }
+      } else {
+        blankCheckCount = 0; // Reset counter
       }
     }
     
-    // Start blank detector (check setiap 30 detik)
-    blankCheckInterval = setInterval(checkBlankScreen, 30000);
+    // Check setiap 15 detik (lebih cepat dari sebelumnya)
+    setInterval(checkBlankScreen, 15000);
     
     // Update timestamp setiap kali renderDashboard dipanggil
     var originalRender = window.renderDashboard;
     if (originalRender) {
       window.renderDashboard = function() {
         lastRenderTime = Date.now();
+        blankCheckCount = 0; // Reset saat render berhasil
         return originalRender.apply(this, arguments);
       };
     }
     
-    // Cleanup observer yang terlalu agresif setiap 2 menit
-    observerCleanupInterval = setInterval(function(){
-      try {
-        // Disconnect semua observer yang mungkin leak
-        if (window.__dreamos_observers) {
-          window.__dreamos_observers.forEach(function(obs){
-            try { obs.disconnect(); } catch(e){}
-          });
-          window.__dreamos_observers = [];
-        }
-        console.log('🧹 Observer cleanup complete');
-      } catch(e){}
-    }, 120000);
+    // Freeze detector: jika tidak ada render dalam 3 menit, force update
+    setInterval(function(){
+      if (localStorage.getItem('dreamos_session_active') === 'true' && 
+          Date.now() - lastRenderTime > 180000 &&
+          typeof window.updateDashboardSlides === 'function') {
+        console.log('🔄 Auto-refresh: dashboard stale for 3min');
+        try { window.updateDashboardSlides(); } catch(e){}
+        lastRenderTime = Date.now();
+      }
+    }, 60000);
     
-    // Log untuk debugging
-    console.log('🛡️ Blank detector & observer cleanup active');
+    console.log('🛡️ Ultimate stability engine active');
   })();
 
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      console.log = function() {}; console.warn = function() {}; console.error = function() {};
+    // DEBUG MODE: set localStorage.setItem('dreamos_debug','1') untuk enable console di production
+    var __DEBUG = localStorage.getItem('dreamos_debug') === '1';
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !__DEBUG) {
+      var _origLog = console.log, _origWarn = console.warn, _origError = console.error;
+      console.log = function() {}; 
+      console.warn = function() {}; 
+      console.error = function() { 
+        // Tetap log error critical ke localStorage untuk debugging
+        try {
+          var errors = JSON.parse(localStorage.getItem('dreamos_errors') || '[]');
+          errors.unshift({time: new Date().toISOString(), msg: arguments[0] ? arguments[0].toString() : 'unknown'});
+          if (errors.length > 20) errors = errors.slice(0, 20);
+          localStorage.setItem('dreamos_errors', JSON.stringify(errors));
+        } catch(e){}
+      };
     }
 
     (function() {
@@ -889,7 +929,7 @@
           el.addEventListener('mouseleave', function(){ if(!_dragging) start(); });
 
           goTo(0); start();
-          window.__sliderNext = next; window.__sliderPrev = prev;
+          window.__sliderNext = next; window.__sliderPrev = prev; window.__sliderStart = start; window.__sliderStop = stop;
         }
       };
 
@@ -1078,7 +1118,7 @@
 
       // 🛡️ Slide otomatis no.1 (jadwal security) — auto-refresh tiap 60s & saat data berubah
       window.__slide1AutoRefresh = true;
-      setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true' && typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); }, 120000); // 120s instead of 60s
+      // (120s interval dipindah ke freeze detector di atas)
       window.addEventListener('storage', function(e){ if(e.key==='dreamos_matrix' && typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); });
       // Lapis 2: SAME-TAB (monkey-patch localStorage.setItem — modul di-inject 1 window, storage event TIDAK fire!)
       (function(){
@@ -1120,7 +1160,10 @@
         for (let i = 0; i < 100; i++) {
           stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5, speed: 0.02 + Math.random() * 0.05 });
         }
+        let animating = true;
+        let rafId = null;
         function animate() {
+          if (!animating) { rafId = requestAnimationFrame(animate); return; }
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.fillStyle = '#e2e8f0';
           stars.forEach(s => {
@@ -1130,9 +1173,19 @@
             s.y += s.speed;
             if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
           });
-          requestAnimationFrame(animate);
+          rafId = requestAnimationFrame(animate);
         }
         animate();
+        
+        // Pause saat tab hidden (save battery & memory)
+        document.addEventListener('visibilitychange', function() {
+          animating = !document.hidden;
+          // Juga pause carousel
+          if (typeof window.__sliderStop === 'function') {
+            if (document.hidden) window.__sliderStop();
+            else if (typeof window.__sliderStart === 'function') window.__sliderStart();
+          }
+        });
       }
     });
   </script>
