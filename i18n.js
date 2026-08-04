@@ -341,14 +341,14 @@
     document.documentElement.lang = lang;
     document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
 
-    // Re-render dashboard
-    if (typeof global.renderDashboard === 'function') {
-      try { global.renderDashboard(); } catch (e) {}
-    }
-    
-    // Re-translate DOM
+    // Re-translate DOM (tidak perlu re-render dashboard)
     if (typeof global.i18nTranslate === 'function') {
       try { global.i18nTranslate(); } catch (e) {}
+    }
+    
+    // Update dashboard slides saja (bukan full re-render)
+    if (typeof global.updateDashboardSlides === 'function') {
+      try { global.updateDashboardSlides(); } catch (e) {}
     }
     
     // Emit event
