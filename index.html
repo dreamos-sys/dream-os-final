@@ -134,6 +134,39 @@
     .cmd-footer { margin-top: 0.8rem; font-size: 0.65rem; color: #64748b; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
 
     #security-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999999; align-items: center; justify-content: center; flex-direction: column; color: var(--warning); font-size: 1.2rem; font-weight: 700; }
+
+    /* ===== LIGHT THEME POLISH — kontras terbaca ===== */
+    html[data-theme="light"] .glass, body.light-theme .glass { background: rgba(255,255,255,0.95) !important; border-color: rgba(2,132,199,0.35) !important; }
+    html[data-theme="light"] .header-main .arabic { color:#047857; text-shadow:none; }
+    html[data-theme="light"] .header-main .shalawat { color:#0369a1; }
+    html[data-theme="light"] .slide-item { color:#0f172a !important; }
+    html[data-theme="light"] .slide-item strong { color:#0369a1 !important; }
+    html[data-theme="light"] .slide-item pre { color:#0f172a !important; }
+    html[data-theme="light"] .slide-item small { color:#475569 !important; }
+    html[data-theme="light"] .slide-item span[style*="10b981"] { color:#047857 !important; }
+    html[data-theme="light"] .slide-item span[style*="0ea5e9"] { color:#0369a1 !important; }
+    html[data-theme="light"] .slide-item span[style*="f59e0b"] { color:#b45309 !important; }
+    html[data-theme="light"] .slide-item span[style*="94a3b8"] { color:#475569 !important; }
+    html[data-theme="light"] .slide-dot { background: rgba(15,23,42,0.25); }
+    html[data-theme="light"] .slide-dot.active { background:#0284c7; }
+    html[data-theme="light"] .mod-card { background: rgba(255,255,255,0.95) !important; }
+    html[data-theme="light"] .mod-title { color:#0369a1; }
+    html[data-theme="light"] .kpi-chip { background: rgba(255,255,255,0.92); border-color: rgba(15,23,42,0.12); }
+    html[data-theme="light"] .kpi-chip strong { color:#047857; }
+    html[data-theme="light"] .kpi-chip span { color:#475569; }
+    html[data-theme="light"] #health-bar { color:#334155; }
+    html[data-theme="light"] .health-badge { background: rgba(15,23,42,0.06); border-color: rgba(15,23,42,0.15); }
+    html[data-theme="light"] .health-ok { color:#047857; }
+    html[data-theme="light"] .health-err { color:#b91c1c; }
+    html[data-theme="light"] #unified-chart-container { background: rgba(255,255,255,0.95); border-color: rgba(2,132,199,0.3); }
+    html[data-theme="light"] .chart-title { color:#0369a1; }
+    html[data-theme="light"] .chart-subtitle { color:#475569; }
+    html[data-theme="light"] .system-info-box { color:#334155; }
+    html[data-theme="light"] .system-info-box strong { color:#0f172a; }
+    html[data-theme="light"] .toast { background:#ffffff; color:#0f172a; border-color: rgba(15,23,42,0.25); }
+    html[data-theme="light"] .cmd-box { background:#fff; border-color: rgba(2,132,199,0.4); }
+    html[data-theme="light"] .cmd-input { background: rgba(15,23,42,0.05); color:#0f172a; }
+    html[data-theme="light"] .cmd-item { color:#334155; }
     #security-overlay.show { display: flex; }
   </style>
   <script src="js/bcrypt.min.js"></script>
@@ -580,6 +613,9 @@
 
             if (window._unifiedChartInstance) window._unifiedChartInstance.destroy();
 
+            const __isLight = document.documentElement.getAttribute('data-theme')==='light';
+            const __tick = __isLight ? '#475569' : '#94a3b8';
+            const __legend = __isLight ? '#334155' : '#cbd5e1';
             window._unifiedChartInstance = new Chart(canvasEl.getContext('2d'), {
               type: 'bar',
               data: {
@@ -591,10 +627,10 @@
               },
               options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 12 } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' } },
+                plugins: { legend: { position: 'bottom', labels: { color: __legend, font: { size: 9 }, boxWidth: 12 } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#00ff9d', bodyColor: '#e2e8f0' } },
                 scales: {
-                  x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 35, minRotation: 35 }, grid: { display: false } },
-                  y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                  x: { ticks: { color: __tick, font: { size: 9 }, maxRotation: 35, minRotation: 35 }, grid: { display: false } },
+                  y: { type: 'linear', position: 'left', ticks: { color: __tick, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
                   y1: { type: 'linear', position: 'right', ticks: { color: '#0ea5e9', font: { size: 9 }, callback: v => v + '%' }, grid: { display: false } }
                 },
                 onClick: (e, elements) => {
@@ -931,6 +967,13 @@
         }
         window.closeCastModal();
       };
+
+            // 🎨 LIVE THEME: re-render dashboard saat tema diganti di Settings
+            try {
+              new MutationObserver(function(){
+                if (localStorage.getItem('dreamos_session_active')==='true' && typeof window.renderDashboard==='function') window.renderDashboard();
+              }).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+            } catch(e){}
 
             // 🔄 AUTO-SYNC 3-LAPISAN (Pro Global Enterprise)
       // Lapis 1: CROSS-TAB (event storage antar tab/browser)
