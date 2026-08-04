@@ -1,41 +1,59 @@
+/**
+ * Dream OS — i18n auto-translate v4 (DOM helper)
+ * 
+ * Hanya translate DOM saat bahasa != 'id'
+ * Menggunakan dictionary dari i18n.js
+ */
 (function () {
   'use strict';
   var translateCache = {};
-  function getLang() { return window.currentLang || localStorage.getItem('dreamos_lang') || 'id'; }
+
+  function getLang() { return window.currentLang || 'id'; }
   function getPack() {
     var lang = getLang();
     if (lang === 'id') return null;
     return (window.DREAM_I18N && window.DREAM_I18N[lang]) || null;
   }
+
   function translateText(text) {
     if (!text || typeof text !== 'string') return text;
     var trimmed = text.trim();
     if (trimmed.length < 2) return text;
     if (getLang() === 'id') return text;
+    
     var cacheKey = getLang() + '|' + trimmed;
     if (translateCache[cacheKey] !== undefined) return translateCache[cacheKey];
+    
     var pack = getPack();
     if (!pack) { translateCache[cacheKey] = text; return text; }
+    
     if (pack[trimmed]) { translateCache[cacheKey] = pack[trimmed]; return pack[trimmed]; }
     if (pack._fromId && pack._fromId[trimmed]) {
       translateCache[cacheKey] = pack._fromId[trimmed];
       return pack._fromId[trimmed];
     }
+    
     translateCache[cacheKey] = text;
     return text;
   }
+
   function translateElement(el) {
     if (!el || el.nodeType !== 1) return;
     var tag = el.tagName;
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CODE' || tag === 'PRE' || tag === 'SVG') return;
+    
+    // data-i18n attribute (key-based)
     if (el.hasAttribute('data-i18n')) {
       var key = el.getAttribute('data-i18n');
-      if (typeof window.t === 'function') el.textContent = window.t(key);
-      else {
+      if (typeof window.t === 'function') {
+        el.textContent = window.t(key);
+      } else {
         var pack = getPack() || (window.DREAM_I18N && window.DREAM_I18N.id);
         if (pack && pack[key]) el.textContent = pack[key];
       }
     }
+    
+    // Translate child nodes
     for (var i = 0; i < el.childNodes.length; i++) {
       var child = el.childNodes[i];
       if (child.nodeType === 3) {
@@ -44,8 +62,12 @@
         if (!t) continue;
         var tr = translateText(t);
         if (tr !== t) child.textContent = raw.replace(t, tr);
-      } else if (child.nodeType === 1) translateElement(child);
+      } else if (child.nodeType === 1) {
+        translateElement(child);
+      }
     }
+    
+    // Translate attributes
     ['placeholder', 'title', 'aria-label'].forEach(function (attr) {
       if (!el.hasAttribute(attr)) return;
       var v = el.getAttribute(attr);
@@ -53,6 +75,7 @@
       if (tr !== v) el.setAttribute(attr, tr);
     });
   }
+
   var observer = null;
   function startObserver() {
     if (observer) observer.disconnect();
@@ -60,25 +83,36 @@
     observer = new MutationObserver(function (mutations) {
       if (getLang() === 'id') return;
       mutations.forEach(function (m) {
-        m.addedNodes.forEach(function (node) { if (node.nodeType === 1) translateElement(node); });
+        m.addedNodes.forEach(function (node) {
+          if (node.nodeType === 1) translateElement(node);
+        });
       });
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
+
   window.i18nTranslate = function () {
     translateCache = {};
     if (getLang() === 'id') return;
     if (document.body) translateElement(document.body);
   };
+
   function boot() {
     startObserver();
     setTimeout(function () { window.i18nTranslate(); }, 400);
   }
+
+  // Re-translate saat bahasa berubah
   window.addEventListener('dreamos-lang-changed', function () {
     translateCache = {};
     window.i18nTranslate();
   });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
-  console.log('🌍 i18n-auto-translate v3 (DOM only)');
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+  console.log('🌍 i18n-auto-translate v4 (DOM helper)');
 })();

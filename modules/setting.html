@@ -152,13 +152,14 @@
       <div class="glass">
         <div class="section-title" style="color: var(--purple);">🌍 Global Language & Region</div>
         <div class="set-row">
-          <div><div class="set-label">System Language</div><div class="set-desc">Kunci bahasa secara manual</div></div>
+          <div><div class="set-label">System Language</div><div class="set-desc">Pilih bahasa antarmuka</div></div>
           <select id="sel-lang" onchange="changeLang(this.value)">
             <option value="id">🇮🇩 Indonesia</option>
             <option value="en">🇬🇧 English</option>
             <option value="ar">🇸🇦 العربية (RTL)</option>
             <option value="zh">🇨🇳 中文</option>
           </select>
+          <button onclick="resetLangToAuto()" style="margin-left:0.5rem;padding:0.3rem 0.6rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:0.7rem;cursor:pointer;">🔄 Auto</button>
         </div>
         <div class="set-row">
           <div><div class="set-label">Auto-Detect Timezone</div><div class="set-desc">Sesuaikan dengan waktu wilayah device</div></div>
@@ -351,7 +352,27 @@
 
   window.updateFontSize = function(val) { state.fontSize = parseInt(val); document.getElementById('val-font').textContent = val + '%'; saveState('fontSize'); };
   window.updateGlass = function(val) { state.glassIntensity = parseInt(val); document.getElementById('val-glass').textContent = val + '%'; saveState('glassIntensity'); };
-  window.changeLang = function(val) { state.lang = val; saveState('lang'); };
+  window.changeLang = function(val) {
+    state.lang = val;
+    saveState('lang');
+    // Panggil i18n.js setLanguage() untuk sync global
+    if (typeof window.setLanguage === 'function') {
+      window.setLanguage(val, { fromUser: true });
+    }
+  };
+
+  window.resetLangToAuto = function() {
+    if (confirm('🔄 Reset bahasa ke deteksi otomatis (timezone/browser)?')) {
+      if (typeof window.resetToAutoDetect === 'function') {
+        var detected = window.resetToAutoDetect();
+        state.lang = detected;
+        state.autoDetect = true;
+        updateAllUI();
+        saveState('batch');
+        alert('✅ Bahasa di-reset ke: ' + detected.toUpperCase());
+      }
+    }
+  };
 
   window.resetAll = function() {
     if (confirm('🔄 Reset semua pengaturan ke default pabrik?')) {

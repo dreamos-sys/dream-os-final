@@ -1,7 +1,13 @@
 /**
- * Dream OS — i18n unified v3
- * Kamus · t(key) · setLanguage · bridge ID→lang · RTL · optional geo hint
- * Prioritas: Settings (manual) > saved lang > geo(optional) > browser > id
+ * Dream OS — i18n unified v4 (Single Source of Truth)
+ * 
+ * Storage hierarchy:
+ * 1. dreamos_settings.lang  ← Manual choice dari Settings (primary)
+ * 2. dreamos_lang           ← Cache/sync (derived)
+ * 3. Auto-detect            ← Only if settings.autoDetect === true
+ * 4. 'id'                   ← Fallback
+ * 
+ * No more dreamos_lang_locked — single source = dreamos_settings.lang
  */
 (function (global) {
   'use strict';
@@ -50,7 +56,10 @@
       welcome: 'Assalamualaikum, selamat datang.',
       settings_title: 'Pengaturan',
       lang_label: 'Bahasa',
-      restricted: 'Dibatasi'
+      restricted: 'Dibatasi',
+      lang_auto_detect: 'Deteksi Otomatis',
+      lang_geo_detect: 'Deteksi Lokasi (GPS)',
+      lang_manual: 'Pilih Manual'
     },
     en: {
       login_title: '⚡ ACCESS CORE',
@@ -96,6 +105,9 @@
       settings_title: 'Settings',
       lang_label: 'Language',
       restricted: 'Restricted',
+      lang_auto_detect: 'Auto Detect',
+      lang_geo_detect: 'Location Detect (GPS)',
+      lang_manual: 'Manual Selection',
       _fromId: {
         'Home': 'Home',
         'Profile': 'Profile',
@@ -155,6 +167,9 @@
       settings_title: 'الإعدادات',
       lang_label: 'اللغة',
       restricted: 'مقيد',
+      lang_auto_detect: 'الكشف التلقائي',
+      lang_geo_detect: 'الكشف عن الموقع (GPS)',
+      lang_manual: 'الاختيار اليدوي',
       _fromId: {
         'Home': 'الرئيسية',
         'Profile': 'الملف',
@@ -209,6 +224,9 @@
       settings_title: '设置',
       lang_label: '语言',
       restricted: '受限',
+      lang_auto_detect: '自动检测',
+      lang_geo_detect: '位置检测 (GPS)',
+      lang_manual: '手动选择',
       _fromId: {
         'Home': '主页',
         'Profile': '个人资料',
@@ -222,125 +240,69 @@
   };
 
   global.DREAM_I18N = DREAM_I18N;
-
   var SUPPORTED = ['id', 'en', 'ar', 'zh'];
 
   function normalizeLang(code) {
     if (!code) return null;
     code = String(code).toLowerCase().split('-')[0];
     if (SUPPORTED.indexOf(code) >= 0) return code;
-    // fallback kasar zona/negara → bahasa UI
-    var map = {
-      id: 'id', ms: 'id',
-      en: 'en',
-      ar: 'ar',
-      zh: 'zh', cn: 'zh', tw: 'zh', hk: 'zh'
-    };
+    var map = { id: 'id', ms: 'id', en: 'en', ar: 'ar', zh: 'zh', cn: 'zh', tw: 'zh', hk: 'zh' };
     return map[code] || null;
   }
 
-  function readSettingsLang() {
-    try {
-      var st = JSON.parse(localStorage.getItem('dreamos_settings') || '{}');
-      if (st && st.lang && DREAM_I18N[st.lang]) return st.lang;
-      // autoDetect OFF → jangan paksa geo
-      if (st && st.autoDetect === false) {
-        return localStorage.getItem('dreamos_lang') || 'id';
-      }
-    } catch (e) {}
-    return null;
+  function readSettings() {
+    try { return JSON.parse(localStorage.getItem('dreamos_settings') || '{}'); } catch (e) { return {}; }
   }
 
-  function readBrowserLang() {
-    try {
-      return normalizeLang(navigator.language || (navigator.languages && navigator.languages[0]));
-    } catch (e) {
-      return null;
-    }
+  function writeSettings(st) {
+    try { localStorage.setItem('dreamos_settings', JSON.stringify(st)); } catch (e) {}
   }
 
-  /**
-   * Geo hint SAJA — tidak override Settings manual.
-   * Memakai timezone (tanpa GPS) agar hemat & tanpa izin lokasi.
-   * Geofencing GPS opsional terpisah (lihat tryGeoLang).
-   */
   function langFromTimezone() {
     try {
       var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      // Indonesia
-      if (/Jakarta|Makassar|Jayapura|Pontianak|Asia\/Jakarta|Asia\/Makassar|Asia\/Jayapura/i.test(tz)) return 'id';
-      // Arab
+      if (/Jakarta|Makassar|Jayapura|Pontianak/i.test(tz)) return 'id';
       if (/Riyadh|Dubai|Qatar|Kuwait|Bahrain|Muscat|Cairo|Beirut|Baghdad|Jerusalem|Gaza/i.test(tz)) return 'ar';
-      // China
-      if (/Shanghai|Chongqing|Harbin|Urumqi|Hong_Kong|Taipei|Asia\/Shanghai|Asia\/Hong_Kong/i.test(tz)) return 'zh';
-      // default English-ish zones
+      if (/Shanghai|Chongqing|Harbin|Urumqi|Hong_Kong|Taipei/i.test(tz)) return 'zh';
       if (/New_York|London|Chicago|Los_Angeles|Europe\//i.test(tz)) return 'en';
     } catch (e) {}
     return null;
   }
 
-  /**
-   * GPS geofence opsional — HANYA jika:
-   * settings.autoDetect === true AND settings.geoLang === true
-   * Tidak pernah menimpa pilihan manual user (dreamos_lang_locked).
-   */
-  function tryGeoLang(cb) {
-    cb = cb || function () {};
-    var st = {};
-    try { st = JSON.parse(localStorage.getItem('dreamos_settings') || '{}'); } catch (e) {}
-    if (st.autoDetect === false || st.geoLang !== true) {
-      cb(null);
-      return;
-    }
-    if (localStorage.getItem('dreamos_lang_locked') === '1') {
-      cb(null);
-      return;
-    }
-    if (!navigator.geolocation) {
-      cb(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      function (pos) {
-        var lat = pos.coords.latitude;
-        var lng = pos.coords.longitude;
-        var lang = null;
-        // Bounding box kasar (bukan politik ketat — hanya hint UX)
-        // Indonesia
-        if (lat >= -11 && lat <= 6 && lng >= 95 && lng <= 141) lang = 'id';
-        // China approx
-        else if (lat >= 18 && lat <= 54 && lng >= 73 && lng <= 135) lang = 'zh';
-        // Middle East rough
-        else if (lat >= 12 && lat <= 38 && lng >= 25 && lng <= 60) lang = 'ar';
-        else lang = 'en';
-        cb(lang);
-      },
-      function () { cb(null); },
-      { maximumAge: 3600000, timeout: 5000, enableHighAccuracy: false }
-    );
+  function readBrowserLang() {
+    try { return normalizeLang(navigator.language || (navigator.languages && navigator.languages[0])); } catch (e) { return null; }
   }
 
+  /**
+   * Resolve initial language dengan prioritas jelas:
+   * 1. dreamos_settings.lang (manual choice)
+   * 2. dreamos_lang (cache)
+   * 3. Auto-detect jika settings.autoDetect === true
+   * 4. 'id' (fallback)
+   */
   function resolveInitialLang() {
-    // 1) User pernah pilih manual di Settings
-    if (localStorage.getItem('dreamos_lang_locked') === '1') {
-      var locked = localStorage.getItem('dreamos_lang');
-      if (locked && DREAM_I18N[locked]) return locked;
+    var st = readSettings();
+    
+    // 1. Manual choice dari Settings (highest priority)
+    if (st.lang && DREAM_I18N[st.lang]) {
+      return st.lang;
     }
-    // 2) Settings.lang
-    var fromSet = readSettingsLang();
-    if (fromSet) return fromSet;
-    // 3) localStorage
+    
+    // 2. Cache
     var saved = localStorage.getItem('dreamos_lang');
-    if (saved && DREAM_I18N[saved]) return saved;
-    // 4) autoDetect: timezone (tanpa GPS)
-    var st = {};
-    try { st = JSON.parse(localStorage.getItem('dreamos_settings') || '{}'); } catch (e) {}
-    if (st.autoDetect) {
+    if (saved && DREAM_I18N[saved]) {
+      return saved;
+    }
+    
+    // 3. Auto-detect (only if enabled)
+    if (st.autoDetect === true) {
       var tzLang = langFromTimezone();
       if (tzLang) return tzLang;
       var br = readBrowserLang();
       if (br) return br;
     }
+    
+    // 4. Fallback
     return 'id';
   }
 
@@ -352,42 +314,63 @@
     return key;
   };
 
+  /**
+   * Set language — single source of truth
+   * @param {string} lang - Language code (id/en/ar/zh)
+   * @param {object} opts - { fromUser: bool, silent: bool, skipSync: bool }
+   */
   global.setLanguage = function (lang, opts) {
     opts = opts || {};
     lang = normalizeLang(lang) || lang;
-    if (!DREAM_I18N[lang]) return false;
-
-    global.currentLang = lang;
-    localStorage.setItem('dreamos_lang', lang);
-
-    // Kunci manual = tidak diganggu geo
-    if (opts.fromUser) {
-      localStorage.setItem('dreamos_lang_locked', '1');
+    if (!DREAM_I18N[lang]) {
+      console.warn('⚠️ Unsupported language:', lang);
+      return false;
     }
 
-    try {
-      var st = JSON.parse(localStorage.getItem('dreamos_settings') || '{}');
-      st.lang = lang;
-      localStorage.setItem('dreamos_settings', JSON.stringify(st));
-    } catch (e) {}
+    global.currentLang = lang;
+    
+    // Update dreamos_settings.lang (primary storage)
+    var st = readSettings();
+    st.lang = lang;
+    writeSettings(st);
+    
+    // Sync to dreamos_lang (cache)
+    localStorage.setItem('dreamos_lang', lang);
 
+    // Apply to document
     document.documentElement.lang = lang;
     document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
 
+    // Re-render dashboard
     if (typeof global.renderDashboard === 'function') {
       try { global.renderDashboard(); } catch (e) {}
     }
+    
+    // Re-translate DOM
     if (typeof global.i18nTranslate === 'function') {
       try { global.i18nTranslate(); } catch (e) {}
     }
+    
+    // Emit event
     try {
       global.dispatchEvent(new CustomEvent('dreamos-lang-changed', { detail: { lang: lang } }));
     } catch (e) {}
-    try {
-      global.postMessage({ type: 'DREAMOS_LANG', lang: lang }, '*');
-    } catch (e) {}
+    
+    // Sync to parent window (jika di iframe/modul)
+    if (!opts.skipSync) {
+      try {
+        if (window.parent && window.parent !== window && window.parent.setLanguage) {
+          window.parent.setLanguage(lang, { skipSync: true, silent: true });
+        }
+      } catch (e) {}
+      try {
+        global.postMessage({ type: 'DREAMOS_LANG', lang: lang }, '*');
+      } catch (e) {}
+    }
 
-    if (opts.silent !== true) console.log('🌍 Language:', lang, opts.fromUser ? '(user)' : '');
+    if (!opts.silent) {
+      console.log('🌍 Language:', lang, opts.fromUser ? '(manual)' : '(auto)');
+    }
     return true;
   };
 
@@ -396,26 +379,40 @@
     global.setLanguage(SUPPORTED[(i + 1) % SUPPORTED.length], { fromUser: true });
   };
 
-  /** Dipanggil Settings: autoDetect / geoLang */
+  /**
+   * Reset ke auto-detect (hapus manual choice)
+   */
+  global.resetToAutoDetect = function () {
+    var st = readSettings();
+    delete st.lang;
+    st.autoDetect = true;
+    writeSettings(st);
+    localStorage.removeItem('dreamos_lang');
+    
+    var detected = langFromTimezone() || readBrowserLang() || 'id';
+    global.setLanguage(detected, { fromUser: false });
+    return detected;
+  };
+
+  /**
+   * Apply auto-detect policy (dipanggil saat boot)
+   */
   global.applyLangDetectionPolicy = function () {
-    var st = {};
-    try { st = JSON.parse(localStorage.getItem('dreamos_settings') || '{}'); } catch (e) {}
-    if (localStorage.getItem('dreamos_lang_locked') === '1' && st.autoDetect !== true) {
+    var st = readSettings();
+    
+    // Jika ada manual choice dan autoDetect OFF, jangan ganggu
+    if (st.lang && st.autoDetect !== true) {
       return global.currentLang;
     }
-    if (!st.autoDetect) return global.currentLang;
-
-    var tz = langFromTimezone() || readBrowserLang();
-    if (tz && tz !== global.currentLang && localStorage.getItem('dreamos_lang_locked') !== '1') {
-      global.setLanguage(tz, { fromUser: false, silent: true });
+    
+    // Auto-detect enabled
+    if (st.autoDetect === true) {
+      var tz = langFromTimezone() || readBrowserLang();
+      if (tz && tz !== global.currentLang) {
+        global.setLanguage(tz, { fromUser: false, silent: true });
+      }
     }
-    if (st.geoLang === true) {
-      tryGeoLang(function (g) {
-        if (g && localStorage.getItem('dreamos_lang_locked') !== '1') {
-          global.setLanguage(g, { fromUser: false, silent: true });
-        }
-      });
-    }
+    
     return global.currentLang;
   };
 
@@ -424,10 +421,10 @@
   document.documentElement.lang = global.currentLang;
   document.documentElement.setAttribute('dir', global.currentLang === 'ar' ? 'rtl' : 'ltr');
 
-  // Auto-detect policy setelah load settings
+  // Apply policy setelah settings loaded
   setTimeout(function () {
     try { global.applyLangDetectionPolicy(); } catch (e) {}
   }, 300);
 
-  console.log('🌍 i18n unified v3 ·', global.currentLang);
+  console.log('🌍 i18n unified v4 ·', global.currentLang);
 })(window);
