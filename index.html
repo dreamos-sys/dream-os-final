@@ -309,6 +309,72 @@
     localStorage.setItem('dreamos_pwa_installed', 'true');
     if (window.showToast) showToast('🎉 Dream OS siap digunakan offline!', 'success');
   });
+
+  // ===== PWA ADVANCED v2.1: Background + Periodic Sync =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then((reg) => {
+      // Background sync: flush offline queue saat online
+      if ('sync' in reg) {
+        reg.sync.register('dreamos-bg-sync')
+          .then(() => console.log('[PWA] Background sync registered'))
+          .catch(() => {});
+      }
+      // Periodic sync: refresh data tiap 6 jam (background)
+      if ('periodicSync' in reg) {
+        reg.periodicSync.register('dreamos-periodic', { minInterval: 6 * 60 * 60 * 1000 })
+          .then(() => console.log('[PWA] Periodic sync registered (6h)'))
+          .catch(() => {});
+      }
+    }).catch(() => {});
+  }
+
+  // Flush offline queue saat online kembali
+  window.addEventListener('online', () => {
+    console.log('[PWA] Back online — flushing offline queue');
+    if (window.syncCloudData) window.syncCloudData();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        if ('sync' in reg) reg.sync.register('dreamos-bg-sync').catch(() => {});
+      }).catch(() => {});
+    }
+  });
+
+  // ===== PWA SHARE TARGET: baca konten yang di-share =====
+  (async function () {
+    try {
+      if ('caches' in window) {
+        const res = await caches.match('./__share__.json');
+        if (res) {
+          const data = await res.json();
+          data.received_at = new Date().toISOString();
+          localStorage.setItem('dreamos_shared_content', JSON.stringify(data));
+          const cache = await caches.open('dreamos-share-v2.0.0');
+          await cache.delete('./__share__.json');
+          const label = (data.title || data.text || data.url || 'konten').slice(0, 40);
+          setTimeout(() => {
+            if (window.showToast) showToast('📥 Diterima via share: ' + label, 'success');
+          }, 1500);
+          console.log('[PWA] Shared content received:', data);
+        }
+      }
+    } catch (e) {
+      console.warn('[PWA] Share read failed:', e);
+    }
+  })();
+
+  // ===== PWA SHORTCUTS: deep-link dari home screen =====
+  window.addEventListener('load', function () {
+    const h = (location.hash || '').replace('#', '');
+    const map = { booking: 'booking', k3: 'k3', qr: 'qr', security: 'security', stok: 'stok' };
+    if (h && map[h] && localStorage.getItem('dreamos_session_active') === 'true') {
+      setTimeout(() => {
+        if (window.openMod) {
+          window.openMod(map[h]);
+          console.log('[PWA] Shortcut deep-link:', h);
+        }
+      }, 1000);
+    }
+  });
   </script>
 <script>
   // ===== FORCE REFRESH: bypass SW + clear cache =====

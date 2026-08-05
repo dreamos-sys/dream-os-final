@@ -99,7 +99,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating ' + SW_VERSION);
   
-  const currentCaches = [CACHE_APP_SHELL, CACHE_MODULES, CACHE_ASSETS, CACHE_CDN];
+  const CACHE_SHARE = 'dreamos-share-v2.0.0';
+const currentCaches = [CACHE_APP_SHELL, CACHE_MODULES, CACHE_ASSETS, CACHE_CDN, CACHE_SHARE];
   
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -158,6 +159,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // 3.5 SHARE TARGET: tangkap shared content, simpan ke cache, redirect
+  if (url.pathname.endsWith('/share')) {
+    const params = url.searchParams;
+    const shareData = {
+      title: params.get('title') || '',
+      text: params.get('text') || '',
+      url: params.get('url') || ''
+    };
+    event.respondWith((async () => {
+      try {
+        const cache = await caches.open(CACHE_SHARE);
+        await cache.put('./__share__.json', new Response(JSON.stringify(shareData), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+        console.log('[SW] Share captured:', shareData);
+      } catch (e) {
+        console.warn('[SW] Share cache failed:', e);
+      }
+      return Response.redirect(new URL('./index.html', self.location.href), 302);
+    })());
+    return;
+  }
+
   // 4. NAVIGATION: Network-first dengan fallback ke cache/offline
   if (request.mode === 'navigate') {
     event.respondWith(
