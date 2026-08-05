@@ -102,7 +102,20 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   let currentFotoStatus = null;  
 
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
-  function safeSet(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
+  function safeSet(k, d) {
+    try {
+      localStorage.setItem(k, JSON.stringify(d));
+    } catch(e) {
+      // Quota exceeded — buang item non-kritis lama
+      try {
+        var keys = Object.keys(localStorage).filter(function(x){ return x.indexOf('dreamos_')===0 && x !== k && x !== 'dreamos_bound_user' && x !== 'dreamos_session_active'; });
+        keys.slice(0, 3).forEach(function(x){ try{ localStorage.removeItem(x); }catch(_){} });
+        localStorage.setItem(k, JSON.stringify(d));
+      } catch(e2) {
+        if (window.showToast) showToast('⚠️ Storage penuh, beberapa cache dibersihkan', 'warning');
+      }
+    }
+  }
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
   function generateUUID() {
@@ -200,7 +213,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     currentFotoStatus = null;
     window.currentPhoto = null;
     var stEl = document.getElementById('k3-foto-status'); if (stEl) stEl.textContent = '';
-    setTimeout(function() { statusEl.textContent = ''; }, 4000);
+    clearTimeout(window.__k3StatusTimer);
+    window.__k3StatusTimer = setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 4000);
   }
 
   document.getElementById('k3-form').addEventListener('submit', laporK3);
@@ -273,7 +287,10 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
         '<div style="font-size:0.8125rem; color:#e2e8f0; margin-bottom:0.3rem; line-height:1.4;">' + esc(item.deskripsi||'-') + '</div>';
         
       if (item.foto) {
-        html += '<img src="' + esc(item.foto) + '" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155; cursor:pointer;" onclick="window.open(this.src)">';
+        // Prioritas: URL cloud (ringan) > base64 (fallback offline)
+        var imgSrc = item.foto;
+        var isCloud = imgSrc.indexOf('http') === 0;
+        html += '<img src="' + esc(imgSrc) + '" loading="lazy" decoding="async" style="max-width:100%; max-height:150px; border-radius:8px; margin-top:0.3rem; border:1px solid #334155; cursor:pointer; background:rgba(0,0,0,0.2);" onclick="window.open(this.src)" onerror="this.style.display=\'none\'">';
       }
       
       html += '<div style="font-size:0.75rem; color:#94a3b8; margin-top:0.3rem; display:flex; justify-content:space-between;">' +
@@ -334,6 +351,9 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
         
         currentFotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
         window.currentPhoto = currentFotoBase64;
+        // Cleanup canvas & image untuk hemat memori
+        canvas.width = 0; canvas.height = 0;
+        try { img.src = ''; } catch(_){}
         
         const preview = document.getElementById(previewId);
         if (preview) {
@@ -395,34 +415,67 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     if(b) b.innerHTML = '🔄 Upload ' + trappedData.length + ' data...';
 
     var successCount = 0;
-    for (var i = 0; i < trappedData.length; i++) {
+    var failCount = 0;
+    var total = trappedData.length;
+    // Batch upload dengan progress real-time
+    for (var i = 0; i < total; i++) {
       var item = trappedData[i];
+      if (b) b.innerHTML = '🔄 Upload ' + (i+1) + '/' + total + '...';
       try {
-        var { error } = await window.supabaseClient.from('k3_reports').upsert(item, { onConflict: 'id' });
-        if (error) throw error;
+        var result = await window.supabaseClient.from('k3_reports').upsert(item, { onConflict: 'id' });
+        if (result.error) throw result.error;
         var idx = localData.findIndex(x => x.id === item.id);
         if (idx > -1) { localData[idx].synced = true; }
         successCount++;
       } catch (e) {
-        console.error('Gagal upload item ' + item.id, e);
+        failCount++;
+        console.warn('Gagal upload item ' + item.id, e && e.message);
       }
+      // Yield ke event loop tiap 5 item (biar UI tidak freeze)
+      if ((i+1) % 5 === 0) await new Promise(function(r){ setTimeout(r, 0); });
     }
     
     safeSet('dreamos_k3_reports', localData);
-    if (window.showToast) showToast('✅ Upload ' + successCount + ' laporan ke Cloud', 'success');
+    var msg = '✅ ' + successCount + '/' + total + ' laporan tersinkron';
+    if (failCount > 0) msg += ' • ⚠️ ' + failCount + ' gagal (akan dicoba lagi nanti)';
+    if (window.showToast) showToast(msg, failCount > 0 ? 'warning' : 'success');
     if(b) b.innerHTML = '🟢 Cloud: ' + (localData.length) + ' laporan';
     renderList(localData);
   };
 
+  // Realtime dengan debounce + unsubscribe (anti memory leak & kuota boros)
+  var __k3rtChannel = null;
+  var __k3rtDebounce = null;
   (function(){
     if (!window.supabaseClient || !window.supabaseClient.channel || window.__k3rt) return;
     window.__k3rt = true;
     try {
-      window.supabaseClient.channel('dreamos-k3-rt')
-        .on('postgres_changes', { event:'*', schema:'public', table:'k3_reports' }, function(){ if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan(); })
+      __k3rtChannel = window.supabaseClient.channel('dreamos-k3-rt')
+        .on('postgres_changes', { event:'*', schema:'public', table:'k3_reports' }, function(){
+          // Debounce 2 detik — cegah re-render bertubi-tubi
+          clearTimeout(__k3rtDebounce);
+          __k3rtDebounce = setTimeout(function(){
+            if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan();
+          }, 2000);
+        })
         .subscribe(function(){});
     } catch(e){ console.warn('k3 realtime skip:', e.message||e); }
   })();
+
+  // Cleanup subscription saat user pindah modul (goHome)
+  window.__k3Cleanup = function(){
+    try {
+      if (__k3rtChannel) { window.supabaseClient.removeChannel(__k3rtChannel); __k3rtChannel = null; }
+      clearTimeout(__k3rtDebounce);
+      window.__k3rt = false;
+    } catch(e){}
+  };
+  // Hook ke goHome
+  var __origGoHome = window.goHome;
+  window.goHome = function(){
+    if (window.__k3Cleanup) window.__k3Cleanup();
+    if (__origGoHome) return __origGoHome();
+  };
 
   window.forceK3Sync = function(){ if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan(); };
   tampilkanLaporan();
