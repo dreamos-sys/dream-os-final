@@ -49,7 +49,7 @@
   </style>
 </head>
 <body>
-  <button type="button" class="back-btn" onclick="goHomeSafe()">← HOME</button>
+  <button type="button" class="back-btn" onclick="if(typeof window.goHomeSafe==='function')window.goHomeSafe();else if(typeof window.goHome==='function')window.goHome();else{var b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=b+'index.html';}">← HOME</button>
 
   <div style="max-width:920px;margin:0 auto;padding:0.5rem 0.5rem 5rem;">
     <div class="glass" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
@@ -148,6 +148,13 @@
   <script>
 (function () {
   'use strict';
+  
+  // Helper: path ke index.html yang robust (anti-404)
+  function indexPath() {
+    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+    return base + 'index.html';
+  }
+  
   var WORK_START = 7.5, WORK_END = 16.0;
   var __bookingPage = 0;
   var __bookingPageSize = 50;
@@ -308,18 +315,23 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
       rtBound = false;
     } catch(e){}
   };
-  // Hook ke goHome
+  // Hook ke goHome (dengan cleanup + fallback indexPath anti-404)
   var __origGoHomeSafe = window.goHomeSafe;
   window.goHomeSafe = function(){
     if (window.__bookingCleanup) window.__bookingCleanup();
-    if (__origGoHomeSafe) return __origGoHomeSafe();
-    else {
-      try {
-        if (window.parent && typeof window.parent.goHome === 'function') window.parent.goHome();
-        else if (typeof window.goHome === 'function') window.goHome();
-        else window.location.href = '../index.html';
-      } catch(e){ window.location.href = '../index.html'; }
+    if (__origGoHomeSafe && typeof __origGoHomeSafe === 'function') {
+      return __origGoHomeSafe();
     }
+    // Fallback darurat — pakai indexPath() yang robust
+    try {
+      if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+        window.parent.goHome(); return;
+      }
+    } catch(e){}
+    if (typeof window.goHome === 'function') {
+      try { window.goHome(); return; } catch(e){}
+    }
+    window.location.href = indexPath();
   };
 
   var user = {}; try { user = JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); } catch(e){}
