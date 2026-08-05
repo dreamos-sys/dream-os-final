@@ -110,7 +110,7 @@
     <div class="metrics-row" id="asset-metrics"></div>
 
     <div class="asset-search">
-      <input type="text" id="asset-q" class="input-field" placeholder="🔍 Cari aset..." oninput="renderAsset()">
+      <input type="text" id="asset-q" class="input-field" placeholder="🔍 Cari aset..." oninput="debouncedRenderAsset()">
       <select id="asset-f-jenis" class="input-field" onchange="renderAsset()">
         <option value="">Semua Jenis</option>
         <option value="Gedung">Gedung</option><option value="Tanah">Tanah</option>
@@ -196,7 +196,32 @@
   var DEP_RATE = { 'Gedung':0.02, 'Tanah':0, 'Kendaraan':0.125, 'Elektronik':0.25, 'Meubelair':0.10 };
 
   function safeGet(key, fb){ try{ return JSON.parse(localStorage.getItem(key) || JSON.stringify(fb)); }catch(e){ return fb; } }
-  function safeSet(key, data){ localStorage.setItem(key, JSON.stringify(data)); }
+  function safeSet(key, data){
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch(e) {
+      // Quota exceeded — hapus data lama
+      try {
+        if(key === 'dreamos_asset_log') localStorage.removeItem('dreamos_asset_log');
+        if(key === 'dreamos_asset_timeline') localStorage.removeItem('dreamos_asset_timeline');
+        localStorage.setItem(key, JSON.stringify(data));
+        if(window.showToast) showToast('⚠️ Storage penuh, data lama dibersihkan', 'warning');
+      } catch(e2) {
+        if(window.showToast) showToast('❌ Storage sangat penuh', 'error');
+        console.warn('[Asset] localStorage quota exceeded:', e);
+      }
+    }
+  }
+
+  // Debounce helper untuk search
+  var __renderAssetTimer = null;
+  function debouncedRenderAsset() {
+    if (__renderAssetTimer) clearTimeout(__renderAssetTimer);
+    __renderAssetTimer = setTimeout(function() {
+      renderAsset();
+    }, 300);
+  }
+
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fmtRp(v){ return 'Rp ' + (parseInt(v)||0).toLocaleString('id-ID'); }
   function fullTime(iso){ if(!iso)return '-'; var d=new Date(iso); var hari=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][d.getDay()]; var bulan=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][d.getMonth()]; var p=function(n){return String(n).padStart(2,'0');}; return hari+', '+p(d.getDate())+' '+bulan+' '+d.getFullYear()+' · '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); }
@@ -229,9 +254,10 @@
     if(!data.length){ tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:#64748b;padding:1.2rem;">Belum ada aset strategis.</td></tr>'; return; }
     tb.innerHTML=data.map(function(a){
       var sb=a.status==='Baik'?'<span class="badge badge-aman">Baik</span>':(a.status==='Rusak'?'<span class="badge badge-kritis">Rusak</span>':'<span class="badge badge-rusak">'+esc(a.status)+'</span>');
+      var foto = a.foto ? '<img src="'+esc(a.foto)+'" class="asset-photo" loading="lazy" decoding="async" onclick="previewPhoto(\''+esc(a.foto)+'\')" onerror="this.style.display=\'none\'">' : '<span style="color:#475569;font-size:0.6rem;">📷</span>';
       var qr='<button class="btn btn-primary" onclick="showAssetQR(\''+esc(a.id)+'\',\''+esc(a.nama).replace(/'/g,"\\'")+'\',\'ASET\')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">🔖</button>';
       var aksi=edit?('<button class="btn btn-primary" onclick="editAsset(\''+esc(a.id)+'\')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">✏️</button> <button class="btn btn-danger" onclick="deleteAsset(\''+esc(a.id)+'\')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">🗑️</button>'):'<span style="color:#475569;font-size:0.7rem;">🔒</span>';
-      return '<tr><td><b>'+esc(a.nama)+'</b></td><td>'+esc(a.jenis)+'</td><td>'+esc(a.lokasi||'-')+'</td><td>'+fmtRp(a.nilai)+'</td><td style="color:var(--accent);font-weight:700;">'+fmtRp(bookValue(a))+'</td><td>'+esc(a.tahun||'-')+'</td><td>'+sb+'</td><td>'+qr+'</td><td>'+aksi+'</td></tr>';
+      return '<tr><td><b>'+esc(a.nama)+'</b></td><td>'+esc(a.jenis)+'</td><td>'+esc(a.lokasi||'-')+'</td><td>'+fmtRp(a.nilai)+'</td><td style="color:var(--accent);font-weight:700;">'+fmtRp(bookValue(a))+'</td><td>'+esc(a.tahun||'-')+'</td><td>'+sb+'</td><td>'+foto+'</td><td>'+qr+'</td><td>'+aksi+'</td></tr>';
     }).join('');
   }
 
@@ -277,21 +303,23 @@
   };
 
   window.saveAsset=function(){
-    if(!isAdmin()) return alert('⛔ Hanya Dev / Kabag / Koordinator yang dapat mengelola aset.');
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
     var nama=document.getElementById('as-nama').value.trim();
-    if(!nama) return alert('⚠️ Nama aset wajib diisi!');
-    var item={ id:document.getElementById('as-edit-id').value || ('asset_'+Date.now()), nama:nama, jenis:document.getElementById('as-jenis').value, lokasi:document.getElementById('as-lokasi').value, nilai:parseInt(document.getElementById('as-nilai').value)||0, tahun:parseInt(document.getElementById('as-tahun').value)||null, status:document.getElementById('as-status').value, updated_at:new Date().toISOString() };
+    if(!nama){ if(window.showToast) showToast('⚠️ Nama aset wajib diisi', 'error'); else alert('⚠️ Nama aset wajib diisi'); return; }
+    var fotoData = document.getElementById('as-foto-data').value || null;
+    var item={ id:document.getElementById('as-edit-id').value || ('asset_'+Date.now()), nama:nama, jenis:document.getElementById('as-jenis').value, lokasi:document.getElementById('as-lokasi').value, nilai:parseInt(document.getElementById('as-nilai').value)||0, tahun:parseInt(document.getElementById('as-tahun').value)||null, status:document.getElementById('as-status').value, foto:fotoData, updated_at:new Date().toISOString() };
     var data=safeGet('dreamos_assets', []); var editId=document.getElementById('as-edit-id').value;
     if(editId){ var idx=data.findIndex(function(a){return a.id===editId;}); if(idx>-1)data[idx]=item; } else data.push(item);
     safeSet('dreamos_assets', data);
     if(window.supabaseClient){ window.supabaseClient.from('assets').upsert(item).then(function(){}).catch(function(e){ console.warn('Asset sync error:', e.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }); }
     if(window.OfflineQueue){ try{window.OfflineQueue.add('assets','upsert',item);}catch(e){} }
     logAudit(editId?'UPDATE_ASET':'TAMBAH_ASET', item.nama+' ('+item.jenis+')');
-    resetForm(); renderAsset();
+    logAssetTimeline(item.id, editId?'UPDATE':'CREATE', 'Aset '+(editId?'diperbarui':'ditambahkan')+': '+item.nama);
+    resetForm(); renderAsset(); renderAssetMetrics();
   };
 
   window.editAsset=function(id){
-    if(!isAdmin()) return alert('⛔ Hanya admin yang dapat mengedit.');
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
     var data=safeGet('dreamos_assets', []); var item=data.find(function(a){return a.id===id;}); if(!item)return;
     document.getElementById('as-nama').value=item.nama||'';
     document.getElementById('as-jenis').value=item.jenis||'Gedung';
@@ -304,13 +332,14 @@
   };
 
   window.deleteAsset=function(id){
-    if(!isAdmin()) return alert('⛔ Hanya admin yang dapat menghapus.');
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
     var data=safeGet('dreamos_assets', []); var deleted=data.find(function(a){return a.id===id;});
     if(!confirm('Hapus aset "'+(deleted?deleted.nama:id)+'"?')) return;
     data=data.filter(function(a){return a.id!==id;}); safeSet('dreamos_assets', data);
     if(window.supabaseClient){ window.supabaseClient.from('assets').delete().eq('id', id).then(function(){}).catch(function(e){ console.warn('Asset sync error:', e.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','delete',{id:id});}catch(_){}} }); }
     logAudit('HAPUS_ASET', deleted?deleted.nama:id);
-    renderAsset();
+    if(deleted) logAssetTimeline(id, 'DELETE', 'Aset dihapus: '+deleted.nama);
+    renderAsset(); renderAssetMetrics();
   };
 
   window.resetForm=function(){
@@ -320,44 +349,54 @@
   };
 
   window.submitRABAset=function(){
-    if(!isAdmin()) return alert('⛔ Hanya admin yang dapat mengajukan RAB.');
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
     var el=document.getElementById('rab-aset-total'); var total=parseInt(el.dataset.value||0); var items=[]; try{items=JSON.parse(el.dataset.items||'[]');}catch(e){}
-    if(!total||!items.length) return alert('⚠️ Tidak ada aset yang perlu diajukan.');
+    if(!total||!items.length){ if(window.showToast) showToast('⚠️ Tidak ada aset', 'warning'); else alert('⚠️ Tidak ada aset'); return; }
     var desc='Pengadaan/penggantian aset: '+items.map(function(i){return i.nama+' ('+i.status+', '+fmtRp(i.nilai)+')';}).join('; ');
     var dana=safeGet('dreamos_dana', []);
     dana.push({ id:'rabaset_'+Date.now(), judul:'Pengadaan Aset Strategis (Auto-RAB)', nominal:total, deskripsi:desc, status:'pending', divisi:'Bagian Umum', tanggal:new Date().toLocaleDateString('id-ID'), created_at:new Date().toISOString() });
     safeSet('dreamos_dana', dana);
     if(window.OfflineQueue){ try{window.OfflineQueue.add('dana','insert',dana[dana.length-1]);}catch(e){} }
     logAudit('AJUKAN_RAB_ASET', 'Total: '+fmtRp(total));
-    alert('✅ Draft RAB Aset senilai '+fmtRp(total)+' tersimpan!\n📌 Buka Command Center → Approval/Dana.');
+    if(window.showToast) showToast('✅ RAB Aset '+fmtRp(total)+' tersimpan', 'success'); else alert('✅ RAB Aset tersimpan');
   };
 
   window.syncAssetToCloud=async function(){
-    if(!isAdmin()) return alert('⛔ Hanya admin yang dapat sync.');
-    if(!window.supabaseClient) return alert('⚠️ Koneksi database tidak tersedia.');
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!window.supabaseClient){ if(window.showToast) showToast('⚠️ Koneksi tidak tersedia', 'error'); else alert('⚠️ Koneksi tidak tersedia'); return; }
     var sess = await window.supabaseClient.auth.getSession();
-    if(!sess || !sess.data || !sess.data.session) return alert('⚠️ Sesi Supabase belum ada. Logout lalu login ulang (online) agar sync aktif.');
-    var data=safeGet('dreamos_assets', []); if(!data.length) return alert('⚠️ Tidak ada data untuk disync.');
-    var count=0, lastErr='';
-    for(var i=0;i<data.length;i++){
+    if(!sess || !sess.data || !sess.data.session){ if(window.showToast) showToast('⚠️ Sesi Supabase belum ada', 'error'); else alert('⚠️ Sesi Supabase belum ada'); return; }
+    var data=safeGet('dreamos_assets', []); if(!data.length){ if(window.showToast) showToast('⚠️ Tidak ada data', 'warning'); else alert('⚠️ Tidak ada data'); return; }
+    var count=0, fail=0, total=data.length, lastErr='';
+    if(window.showToast) showToast('🔄 Sync 0/'+total+'...', 'info');
+    for(var i=0;i<total;i++){
       var item=Object.assign({}, data[i]);
       item.nilai = parseInt(item.nilai)||0;
       item.tahun = parseInt(item.tahun)||null;
       try{
         var res = await window.supabaseClient.from('assets').upsert(item);
-        if(res.error){ lastErr=res.error.message; console.warn('Sync error:', res.error.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }
+        if(res.error){ lastErr=res.error.message; fail++; console.warn('Sync error:', res.error.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }
         else count++;
-      }catch(e){ lastErr=e.message; console.warn('Sync error:', e.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }
+      }catch(e){ lastErr=e.message; fail++; console.warn('Sync error:', e.message); if(window.OfflineQueue){try{window.OfflineQueue.add('assets','upsert',item);}catch(_){}} }
+      if(window.showToast && (i+1) % 5 === 0) showToast('🔄 Sync '+(i+1)+'/'+total+'...', 'info');
+      // Yield ke event loop tiap 5 item (biar UI responsif)
+      if((i+1) % 5 === 0) await new Promise(function(r){ setTimeout(r, 0); });
     }
-    alert(count===data.length ? ('✅ '+count+'/'+data.length+' aset tersync ke cloud!') : ('⚠️ '+count+'/'+data.length+' tersync. Error: '+lastErr));
-    if(window.BankAudit){ try{window.BankAudit.log('ASSET_SYNC',{total:data.length,success:count});}catch(e){} }
+    var msg = '✅ '+count+'/'+total+' aset tersync';
+    if(fail > 0) msg += ' • ⚠️ '+fail+' gagal';
+    if(window.showToast) showToast(msg, fail > 0 ? 'warning' : 'success');
+    else alert(msg);
+    if(window.BankAudit){ try{window.BankAudit.log('ASSET_SYNC',{total:total,success:count});}catch(e){} }
   };
 
   window.exportAssetCSV=function(){
     var assets=safeGet('dreamos_assets', []);
     var csv='Nama Aset,Jenis,Lokasi,Nilai Perolehan,Tahun,Tarif Penyusutan,Status,Nilai Buku\n';
     assets.forEach(function(a){ var rate=DEP_RATE[a.jenis]!=null?DEP_RATE[a.jenis]:0.10; csv+='"'+(a.nama||'')+'","'+(a.jenis||'')+'","'+(a.lokasi||'')+'",'+(parseInt(a.nilai)||0)+','+(a.tahun||'')+','+(rate*100)+'%,"'+(a.status||'')+'",'+bookValue(a)+'\n'; });
-    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='Asset_Register_'+new Date().toISOString().split('T')[0]+'.csv'; a.click();
+    var blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Asset_Register_'+new Date().toISOString().split('T')[0]+'.csv'; a.click();
+    URL.revokeObjectURL(a.href);
+    if(window.showToast) showToast('✅ CSV ter-export ('+assets.length+' aset)', 'success');
     if(window.BankAudit){ try{window.BankAudit.log('ASSET_EXPORT_CSV',{count:assets.length});}catch(e){} }
   };
 
@@ -422,15 +461,37 @@
   var fotoEl = document.getElementById('as-foto');
   if(fotoEl) fotoEl.addEventListener('change', function(e){
     var file = e.target.files[0]; if(!file) return;
-    if(file.size > 2*1024*1024){ alert('⚠️ Maksimal 2MB'); e.target.value=''; return; }
+    // Validasi
+    if(!file.type.startsWith('image/')){ if(window.showToast) showToast('⚠️ File harus gambar', 'error'); else alert('⚠️ File harus gambar'); e.target.value=''; return; }
+    if(file.size > 10*1024*1024){ if(window.showToast) showToast('⚠️ Maksimal 10MB', 'error'); else alert('⚠️ Maksimal 10MB'); e.target.value=''; return; }
+    
     var reader = new FileReader();
-    reader.onload = function(ev){ document.getElementById('as-foto-data').value = ev.target.result; };
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        // Compress via canvas
+        var canvas = document.createElement('canvas');
+        var MAX_WIDTH = 800;
+        var scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var compressed = canvas.toDataURL('image/jpeg', 0.6);
+        document.getElementById('as-foto-data').value = compressed;
+        if(window.showToast) showToast('📷 Foto dikompres (' + Math.round(compressed.length/1024) + ' KB)', 'success');
+        // Cleanup
+        canvas.width = 0; canvas.height = 0;
+        try { img.src = ''; } catch(_){}
+      };
+      img.src = ev.target.result;
+    };
     reader.readAsDataURL(file);
   });
 
   // ===== DOWNLOAD QR per Aset =====
   window.downloadAssetQR = function(id, name){
-    if(typeof qrcode==='undefined') return alert('Library QR belum siap');
+    if(typeof qrcode==='undefined'){ if(window.showToast) showToast('⚠️ Library QR belum siap', 'error'); else alert('⚠️ Library QR belum siap'); return; }
     var qr=qrcode(0,'M'); qr.addData('DREAMOS|ASET|'+id+'|'+name); qr.make();
     var url = qr.createDataURL(6, 8);
     var a=document.createElement('a'); a.href=url; a.download='QR_'+name.replace(/\s+/g,'_')+'_'+id+'.png'; a.click();
@@ -461,7 +522,7 @@
         safeSet('dreamos_assets', data);
         logAudit('IMPORT_CSV', count+' aset diimpor');
         renderAsset(); renderAssetMetrics();
-        alert('✅ '+count+' aset berhasil diimpor!');
+        if(window.showToast) showToast('✅ '+count+' aset diimpor', 'success'); else alert('✅ '+count+' aset diimpor');
       };
       reader.readAsText(file);
     };
@@ -471,7 +532,7 @@
   // ===== PRINT ASSET REGISTER =====
   window.printAssetRegister = function(){
     var data = safeGet('dreamos_assets', []);
-    if(!data.length) return alert('⚠️ Tidak ada aset untuk dicetak');
+    if(!data.length){ if(window.showToast) showToast('⚠️ Tidak ada aset', 'warning'); else alert('⚠️ Tidak ada aset'); return; }
     var w = window.open('','_blank','width=1100,height=800');
     var html = '<!DOCTYPE html><html><head><title>Asset Register</title>'+
       '<style>@import url(https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap);'+
@@ -517,6 +578,8 @@
     switchTab('timeline');
   };
 
+  var __timelinePage = 0;
+  var __timelinePageSize = 50;
   window.renderTimeline = function(){
     var logs = safeGet('dreamos_asset_timeline', {});
     var all = [];
@@ -525,11 +588,29 @@
     });
     all.sort(function(a,b){ return new Date(b.t.time) - new Date(a.t.time); });
     var box = document.getElementById('timeline-list');
-    box.innerHTML = all.length
-      ? '<div style="font-weight:800;color:var(--purple);margin-bottom:0.5rem;">🕐 Semua Timeline ('+all.length+')</div>'+all.slice(0,100).map(function(x){
-          return '<div class="timeline-item"><div style="font-weight:700;color:var(--neon);">['+esc(x.id.slice(0,12))+'] '+esc(x.t.event)+'</div><div style="color:#cbd5e1;">'+esc(x.t.detail)+'</div><div style="color:#64748b;font-size:0.66rem;">'+fullTime(x.t.time)+' · 👤 '+esc(x.t.user)+'</div></div>';
-        }).join('')
-      : '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada timeline.</p>';
+    if(!all.length){
+      box.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada timeline.</p>';
+      return;
+    }
+    var totalPages = Math.ceil(all.length / __timelinePageSize);
+    var start = __timelinePage * __timelinePageSize;
+    var pageItems = all.slice(start, start + __timelinePageSize);
+    var html = '<div style="font-weight:800;color:var(--purple);margin-bottom:0.5rem;">🕐 Semua Timeline ('+all.length+')</div>';
+    html += pageItems.map(function(x){
+      return '<div class="timeline-item"><div style="font-weight:700;color:var(--neon);">['+esc(x.id.slice(0,12))+'] '+esc(x.t.event)+'</div><div style="color:#cbd5e1;">'+esc(x.t.detail)+'</div><div style="color:#64748b;font-size:0.66rem;">'+fullTime(x.t.time)+' · 👤 '+esc(x.t.user)+'</div></div>';
+    }).join('');
+    if(totalPages > 1){
+      html += '<div style="display:flex;gap:0.3rem;justify-content:center;margin-top:1rem;">';
+      html += '<button class="btn btn-outline" onclick="timelineNav(-1)" '+(start===0?'disabled style="opacity:0.4;"':'')+'>◀ Prev</button>';
+      html += '<span style="color:#94a3b8;padding:0.5rem;">'+(__timelinePage+1)+' / '+totalPages+'</span>';
+      html += '<button class="btn btn-outline" onclick="timelineNav(1)" '+(start+__timelinePageSize>=all.length?'disabled style="opacity:0.4;"':'')+'>Next ▶</button>';
+      html += '</div>';
+    }
+    box.innerHTML = html;
+  };
+  window.timelineNav = function(delta){
+    __timelinePage += delta;
+    renderTimeline();
   };
 
   applyRBAC(); renderAsset(); renderAssetMetrics();
