@@ -317,6 +317,15 @@
     </div>
 
     <div class="glass">
+      <div style="font-weight:800; color:var(--purple); margin-bottom:0.8rem; display:flex; justify-content:space-between; align-items:center;">
+        <span>🧠 Smart Analitik Semua Modul (Ruang Admin)</span>
+        <button class="btn btn-outline btn-sm" onclick="renderSmartAnalytics()">🔄</button>
+      </div>
+      <div class="chart-container"><canvas id="modAllChart"></canvas></div>
+      <div id="smart-insights" style="margin-top:0.8rem; display:flex; flex-direction:column; gap:0.4rem;"></div>
+    </div>
+
+    <div class="glass">
       <div style="font-weight:800; color:var(--accent); margin-bottom:0.85rem;">⚡ Status Operasional Modular</div>
       <div class="metrics">
         <div class="metric" onclick="switchTab('inbox')"><div class="metric-val" id="op-k3">0</div><div class="metric-label">K3 Safety</div></div>
@@ -832,6 +841,7 @@ window.goHomeHandler = function() {
 
     if (id === 'devmon') { if(!isDev()){ showToast('⛔ Khusus Dev.','error'); return; } renderDevMonitor(); }
     if (id === 'user-health') { if(!isDev()){ showToast(' Khusus Dev.','error'); return; } renderUserHealth(); }
+    if (id === 'dashboard') renderSmartAnalytics();
     if (id === 'inbox') renderInbox();
     if (id === 'approvals') renderApprovals();
     if (id === 'activity') renderActivity();
@@ -906,6 +916,12 @@ window.goHomeHandler = function() {
     push(safeJSON('dreamos_k3_reports', []), k => ({ id: k.id, type: 'k3', title: k.judul || k.lokasi || 'K3 Report', detail: k.pelapor||'', status: String(k.status||'pending').toLowerCase(), priority: 'high' }));
     push(safeJSON('dreamos_maintenance_tasks', []), m => ({ id: m.id, type: 'maintenance', title: m.judul || 'Maintenance', detail: m.lokasi||'', status: String(m.status||'pending').toLowerCase(), priority: 'medium' }));
 
+    push(safeJSON('dreamos_security_logs', []), s => ({ id: s.id, type: 'security', title: s.kejadian || s.lokasi || 'Jurnal Security', detail: s.petugas||'', status: String(s.status||'logged').toLowerCase(), priority: 'medium' }));
+    push(safeJSON('dreamos_janitor_indoor', []), j => ({ id: j.id, type: 'janitor_indoor', title: j.lokasi || 'Kebersihan Indoor', detail: j.catatan||'', status: String(j.status||'done').toLowerCase(), priority: 'low' }));
+    push(safeJSON('dreamos_janitor_outdoor', []), j => ({ id: j.id, type: 'janitor_outdoor', title: j.lokasi || 'Kebersihan Outdoor', detail: j.catatan||'', status: String(j.status||'done').toLowerCase(), priority: 'low' }));
+    push(safeJSON('dreamos_maint_assets', []), a => ({ id: a.id, type: 'asset', title: a.nama || 'Aset', detail: a.lokasi||'', status: String(a.status||'active').toLowerCase(), priority: 'low' }));
+    push(safeJSON('dreamos_stok_gudang', []), s => ({ id: s.id, type: 'stok', title: s.nama_barang || s.nama || 'Stok', detail: 'Qty: ' + (s.quantity||s.jumlah||0), status: Number(s.quantity||s.jumlah||0) <= 5 ? 'pending' : 'approved', priority: Number(s.quantity||s.jumlah||0) <= 5 ? 'high' : 'low' }));
+
     return tasks;
   }
 
@@ -937,7 +953,7 @@ window.goHomeHandler = function() {
     const reason = isApprove ? null : prompt('Alasan penolakan:');
     if (!isApprove && !reason) return;
 
-    const keyMap = { dana:'dreamos_dana', booking:'dreamos_bookings', k3:'dreamos_k3_reports', maintenance:'dreamos_maintenance_tasks' };
+    const keyMap = { dana:'dreamos_dana', booking:'dreamos_bookings', k3:'dreamos_k3_reports', maintenance:'dreamos_maintenance_tasks', security:'dreamos_security_logs', janitor_indoor:'dreamos_janitor_indoor', janitor_outdoor:'dreamos_janitor_outdoor', asset:'dreamos_maint_assets', stok:'dreamos_stok_gudang' };
     const list = safeJSON(keyMap[type]);
     const item = list.find(x => x.id === id);
     if (!item) return showToast('Data tidak ditemukan', 'danger');
@@ -954,8 +970,24 @@ window.goHomeHandler = function() {
 
   window.shareDirectPDF = function(ev, type, id) {
     ev.stopPropagation();
-    showToast('📄 Menyiapkan Cetak PDF Dokumen ISO...', 'warn');
-    setTimeout(() => { showToast('✅ Dokumen PDF Berhasil Dibuat!', 'success'); }, 1200);
+    var keyMap = { dana:'dreamos_dana', booking:'dreamos_bookings', k3:'dreamos_k3_reports', maintenance:'dreamos_maintenance_tasks' };
+    var item = safeJSON(keyMap[type], []).find(function(x){ return x.id===id; });
+    if (!item) return showToast('Data tidak ditemukan','danger');
+    if (typeof window.jspdf === 'undefined') return showToast('⚠️ jsPDF belum dimuat','warn');
+    var doc = new window.jspdf.jsPDF();
+    doc.setFontSize(16); doc.text('DREAM OS - DOKUMEN ' + type.toUpperCase(), 14, 18);
+    doc.setFontSize(10); doc.setTextColor(90);
+    doc.text('Dokumen terkendali - ' + new Date().toLocaleString('id-ID'), 14, 25);
+    doc.setTextColor(0); doc.setFontSize(12);
+    var y = 40;
+    Object.keys(item).slice(0,14).forEach(function(k){
+      if (k==='foto' || String(item[k]).indexOf('data:')===0) return;
+      doc.text(k + ' : ' + String(item[k]).slice(0,80), 14, y); y += 7;
+    });
+    doc.text('Diproses oleh: ' + (currentUser.nama||currentUser.email||'-'), 14, y+6);
+    doc.save('dreamos_' + type + '_' + id + '.pdf');
+    logActivity('Export PDF', type + ' ' + id);
+    showToast('✅ PDF berhasil diunduh');
   };
 
   window.uploadArchiveFile = function(input) {
@@ -1222,6 +1254,14 @@ window.goHomeHandler = function() {
     document.getElementById('m-approval').textContent = pending;
     document.getElementById('m-dana').textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const weekAgo = Date.now() - 7*86400000;
+    let overdue = 0;
+    safeJSON('dreamos_bookings', []).forEach(b => { if ((b.status||'pending').toLowerCase()==='pending' && b.tgl && b.tgl < todayStr) overdue++; });
+    safeJSON('dreamos_k3_reports', []).forEach(k => { if ((k.status||'').toLowerCase()==='pending' && new Date(k.created_at||Date.now()).getTime() < weekAgo) overdue++; });
+    safeJSON('dreamos_maintenance_tasks', []).forEach(m => { if ((m.status||'').toLowerCase()==='pending' && new Date(m.created_at||Date.now()).getTime() < weekAgo) overdue++; });
+    document.getElementById('m-overdue').textContent = overdue;
+
     document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status||'') === 'pending').length;
     document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status||'') === 'pending').length;
     document.getElementById('op-maint').textContent = safeJSON('dreamos_maintenance_tasks').filter(m => (m.status||'') === 'pending').length;
@@ -1237,6 +1277,7 @@ window.goHomeHandler = function() {
     renderCalendar();
     renderArchive();
     renderChart();
+    renderSmartAnalytics();
     if (isAdmin) renderUsers();
   };
 
@@ -1653,11 +1694,108 @@ window.goHomeHandler = function() {
   var __emEl = document.getElementById('new-user-email');
   if (__emEl) __emEl.addEventListener('input', function(){ scheduleEmailIntel(__emEl.value); });
 
+  /* ===== STOK ANALYTICS ENGINE (fix: sebelumnya tidak ada!) ===== */
+  var __stokState = { period:'bulanan', actionFilter:'all', userFilter:'all' };
+  function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON('dreamos_stok_log', [])); }
+  function auditNorm(a){ return { waktu: a.waktu||a.created_at||a.time||'', user: a.petugas||a.user||a.nama||a.by||'-', aksi: String(a.aksi||a.action||'').toUpperCase(), barang: a.barang||a.nama||a.item||'-', qty: Number(a.qty||a.jumlah||0), lokasi: a.lokasi||'-' }; }
+  function periodStart(){ var n=new Date();
+    if (__stokState.period==='harian') return new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime();
+    if (__stokState.period==='mingguan') return Date.now()-7*86400000;
+    return new Date(n.getFullYear(),n.getMonth(),1).getTime(); }
+  window.setStokPeriod = function(p){ __stokState.period=p;
+    ['harian','mingguan','bulanan'].forEach(function(x){ var el=document.getElementById('sp-'+x); if(el) el.className='btn btn-sm'+(x===p?' btn-primary':''); });
+    renderStokAnalytics(); };
+  window.setStokActionFilter = function(v){ __stokState.actionFilter=v; renderStokAnalytics(); };
+  window.setStokUserFilter = function(v){ __stokState.userFilter=v; renderStokAnalytics(); };
+
+  window.renderStokAnalytics = function(){
+    var start=periodStart();
+    var rows=stokAudit().map(auditNorm).filter(function(a){ return new Date(a.waktu).getTime()>=start; });
+    var isIn=function(a){return a.aksi==='TAMBAH';}, isOut=function(a){return a.aksi==='HAPUS'||a.aksi==='KONSUMSI';};
+    document.getElementById('sa-count').textContent=rows.length;
+    document.getElementById('sa-in').textContent=rows.filter(isIn).reduce(function(s,a){return s+a.qty;},0);
+    document.getElementById('sa-out').textContent=rows.filter(isOut).reduce(function(s,a){return s+a.qty;},0);
+    var us={}; rows.forEach(function(a){us[a.user]=1;});
+    document.getElementById('sa-users').textContent=Object.keys(us).length;
+    var uf=document.getElementById('sa-user-filter');
+    if(uf){ var cur=__stokState.userFilter;
+      uf.innerHTML='<option value="all">Semua Petugas</option>'+Object.keys(us).map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('');
+      uf.value=cur; if(uf.value!==cur) __stokState.userFilter='all'; }
+    var filtered=rows.filter(function(a){ return (__stokState.actionFilter==='all'||a.aksi===__stokState.actionFilter) && (__stokState.userFilter==='all'||a.user===__stokState.userFilter); })
+      .sort(function(a,b){ return new Date(b.waktu)-new Date(a.waktu); });
+    var tb=document.getElementById('stok-audit-body');
+    if(tb) tb.innerHTML=filtered.length?filtered.slice(0,60).map(function(a){
+      return '<tr><td style="font-size:0.7rem;white-space:nowrap;">'+new Date(a.waktu).toLocaleString('id-ID')+'</td><td>'+escU(a.user)+'</td><td><span class="badge '+(isIn(a)?'badge-approved':isOut(a)?'badge-rejected':'badge-pending')+'">'+a.aksi+'</span></td><td>'+escU(a.barang)+'</td><td><b>'+a.qty+'</b></td><td>'+escU(a.lokasi)+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">Tidak ada transaksi periode ini</td></tr>';
+    var rank={}; rows.filter(isOut).forEach(function(a){ rank[a.user]=rank[a.user]||{qty:0,trx:0,last:0}; rank[a.user].qty+=a.qty; rank[a.user].trx++; var tt=new Date(a.waktu).getTime(); if(tt>rank[a.user].last)rank[a.user].last=tt; });
+    var ranking=Object.keys(rank).map(function(u){return {u:u,q:rank[u].qty,t:rank[u].trx,l:rank[u].last};}).sort(function(a,b){return b.q-a.q;});
+    var rb=document.getElementById('stok-usercalc-body');
+    if(rb) rb.innerHTML=ranking.length?ranking.map(function(r,i){ return '<tr><td><b>#'+(i+1)+'</b></td><td>'+escU(r.u)+'</td><td><b>'+r.q+'</b></td><td>'+r.t+'</td><td style="font-size:0.7rem;">'+new Date(r.l).toLocaleDateString('id-ID')+'</td></tr>'; }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Belum ada pengambilan</td></tr>';
+    if(typeof Chart!=='undefined'){ var ex=Chart.getChart('stokUserChart'); if(ex)ex.destroy();
+      new Chart(document.getElementById('stokUserChart'),{type:'bar',data:{labels:ranking.slice(0,8).map(function(r){return r.u;}),datasets:[{data:ranking.slice(0,8).map(function(r){return r.q;}),backgroundColor:'rgba(139,92,246,0.6)',borderColor:'#8b5cf6',borderWidth:1.5,borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',precision:0},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#f1f5f9'},grid:{display:false}}}}}); }
+    // Prediksi runway
+    var stok=safeJSON('dreamos_stok_gudang',[]).concat(safeJSON('dreamos_stok',[]));
+    var out30=stokAudit().map(auditNorm).filter(function(a){ return isOut(a)&&new Date(a.waktu).getTime()>=Date.now()-30*86400000; });
+    var vel={}; out30.forEach(function(a){ vel[a.barang]=(vel[a.barang]||0)+a.qty; });
+    var pred=stok.map(function(s){ var nama=s.nama_barang||s.nama||'-'; var stock=Number(s.quantity||s.jumlah||0); var v30=vel[nama]||0; var perDay=v30/30;
+      return {nama:nama,stock:stock,v30:v30,runway:perDay>0?Math.floor(stock/perDay):999,harga:Number(s.harga||0)}; });
+    var cepat=pred.filter(function(p){return p.runway<30;}).sort(function(a,b){return a.runway-b.runway;});
+    var waspada=pred.filter(function(p){return p.runway>=30&&p.runway<=60;});
+    var jarang=pred.filter(function(p){return p.v30===0;});
+    document.getElementById('pred-count-cepat').textContent=cepat.length;
+    document.getElementById('pred-count-waspada').textContent=waspada.length;
+    document.getElementById('pred-count-jarang').textContent=jarang.length;
+    if(typeof Chart!=='undefined'){ var rc=Chart.getChart('stokRunwayChart'); if(rc)rc.destroy();
+      var rw=cepat.concat(waspada).slice(0,10);
+      new Chart(document.getElementById('stokRunwayChart'),{type:'bar',data:{labels:rw.map(function(p){return p.nama;}),datasets:[{data:rw.map(function(p){return p.runway;}),backgroundColor:rw.map(function(p){return p.runway<30?'rgba(239,68,68,0.6)':'rgba(245,158,11,0.6)';}),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,0.06)'}},x:{ticks:{color:'#f1f5f9',maxRotation:35},grid:{display:false}}}}}); }
+    var pc=document.getElementById('pred-cepat');
+    if(pc) pc.innerHTML=cepat.length?'<table><thead><tr><th>Barang</th><th>Stok</th><th>Keluar 30h</th><th>Runway</th><th>Est. Belanja</th></tr></thead><tbody>'+cepat.map(function(p){ var need=Math.max(1,p.v30-p.stock); return '<tr><td><b>'+escU(p.nama)+'</b></td><td>'+p.stock+'</td><td>'+p.v30+'</td><td><span class="badge badge-rejected">'+(p.runway>=999?'∞':p.runway+' hari')+'</span></td><td>Rp '+((need*p.harga)||0).toLocaleString('id-ID')+'</td></tr>'; }).join('')+'</tbody></table>':'<p style="color:var(--muted);padding:0.8rem;">Tidak ada barang kritis 🎉</p>';
+    var pj=document.getElementById('pred-jarang');
+    if(pj) pj.innerHTML=jarang.length?'<table><thead><tr><th>Barang</th><th>Stok</th><th>Keluar 30h</th></tr></thead><tbody>'+jarang.slice(0,10).map(function(p){ return '<tr><td>'+escU(p.nama)+'</td><td>'+p.stock+'</td><td>0</td></tr>'; }).join('')+'</tbody></table>':'<p style="color:var(--muted);padding:0.8rem;">Semua barang aktif dipakai.</p>';
+    window.__stokCepat=cepat;
+  };
+
+  window.submitStokPlanToDana = function(){
+    var cepat=window.__stokCepat||[];
+    if(!cepat.length) return showToast('✅ Tidak ada barang kritis — rencana belanja tidak diperlukan.','success');
+    var dana=safeJSON('dreamos_dana',[]); var total=0;
+    cepat.forEach(function(p){ var need=Math.max(1,p.v30-p.stock); var nom=need*(p.harga||0); total+=nom;
+      dana.unshift({id:'dana_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), judul:'📦 Rencana Belanja Stok: '+p.nama+' ('+need+' unit)', nominal:nom, status:'pending', tgl:new Date().toISOString().split('T')[0], tipe:'stok-plan', pemohon:(currentUser.nama||currentUser.email||'System')}); });
+    saveJSON('dreamos_dana',dana);
+    logActivity('Stok Plan','Mengajukan '+cepat.length+' item belanja stok (est. Rp '+total.toLocaleString('id-ID')+')');
+    showToast('📤 '+cepat.length+' item diajukan ke Dana (est. Rp '+total.toLocaleString('id-ID')+')');
+    refreshAll();
+  };
+
+  /* ===== SMART ANALITIK SEMUA MODUL ===== */
+  window.renderSmartAnalytics = function(){
+    var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[]) };
+    var labels=Object.keys(M), counts=labels.map(function(k){return M[k].length;});
+    if(typeof Chart!=='undefined'){ var ex=Chart.getChart('modAllChart'); if(ex)ex.destroy();
+      new Chart(document.getElementById('modAllChart'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:['#0072B2','#D55E00','#E69F00','#56B4E9','#CC79A7','#009E73','#999999','#F0E442','#8b5cf6','#10b981'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0},grid:{color:'rgba(255,255,255,0.06)'}},x:{ticks:{color:'#f1f5f9',maxRotation:35},grid:{display:false}}}}}); }
+    var ins=[], pend=function(arr){return arr.filter(function(x){return (x.status||'pending').toLowerCase()==='pending';});};
+    var bPend=pend(M['Booking']), kPend=pend(M['K3']), dPend=pend(M['Dana']);
+    if(bPend.length) ins.push({c:'warn',t:'⏳ '+bPend.length+' booking menunggu approval — buka Approval.',tab:'approvals'});
+    if(M['Booking'].length){ var ap=M['Booking'].filter(function(b){return (b.status||'').toLowerCase()==='approved';}).length; ins.push({c:'ok',t:'✅ Approval rate booking '+Math.round(ap/M['Booking'].length*100)+'%.',tab:'calendar'}); }
+    if(kPend.length) ins.push({c:'warn',t:'⚠️ '+kPend.length+' laporan K3 pending — prioritaskan tindak lanjut.',tab:'inbox'});
+    var dSum=dPend.reduce(function(s,d){return s+Number(d.nominal||0);},0);
+    if(dSum) ins.push({c:'warn',t:'💸 Dana pending Rp '+dSum.toLocaleString('id-ID')+' menunggu ACC.',tab:'approvals'});
+    var low=M['Stok'].filter(function(s){return Number(s.quantity||s.jumlah||0)<=5;});
+    if(low.length) ins.push({c:'bad',t:'📦 '+low.length+' item stok ≤ 5 unit — cek Analitik Stok.',tab:'stok'});
+    var today=new Date().toISOString().split('T')[0];
+    var secToday=M['Security'].filter(function(s){return String(s.created_at||'').slice(0,10)===today;}).length;
+    ins.push({c:'ok',t:'🛡️ '+secToday+' jurnal security tercatat hari ini.',tab:'activity'});
+    var box=document.getElementById('smart-insights');
+    if(box) box.innerHTML=ins.map(function(i){ var col=i.c==='bad'?'var(--danger)':i.c==='warn'?'var(--gold)':'var(--success)';
+      return '<div onclick="switchTab(\''+i.tab+'\')" style="cursor:pointer;border-left:3px solid '+col+';background:rgba(2,6,23,0.5);border-radius:8px;padding:0.55rem 0.7rem;font-size:0.75rem;">'+i.t+'</div>'; }).join('');
+  };
+
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
   initCalSelectors();
   updateMetrics();
   renderChart();
+  renderSmartAnalytics();
   setInterval(updateMetrics, 30000);
 })();
 </script>
