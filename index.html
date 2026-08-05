@@ -372,6 +372,17 @@
     } catch (err) { console.error('[Push] Unsubscribe failed:', err); }
   };
 
+  // ===== PUSH AUTOMATION: business events -> push notification =====
+  window.addEventListener('dreamos-notif', function (e) {
+    var item = e.detail || {};
+    if (!window.PushAdmin || !item.title) return;
+    // Hanya broadcast info/success (booking baru, approved, dll) — warning tetap lokal
+    if (item.type === 'warning' || item.type === 'error') return;
+    window.PushAdmin.broadcast(item.title, item.msg || '').catch(function (err) {
+      console.warn('[PushAutomation] failed:', err);
+    });
+  });
+
   // Auto-subscribe saat login (delay 10s)
   if (localStorage.getItem('dreamos_session_active') === 'true' &&
       !localStorage.getItem('dreamos_push_subscribed') &&
