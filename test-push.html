@@ -3,109 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test Push Notification • Dream OS</title>
+<title>Test Push • Dream OS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',system-ui,sans-serif;background:#0a0e27;color:#e2e8f0;padding:2rem;min-height:100vh}
-.card{background:rgba(15,23,42,0.8);backdrop-filter:blur(20px);border:1px solid rgba(0,255,157,0.25);border-radius:16px;padding:2rem;max-width:600px;margin:0 auto}
-h1{color:#00ff9d;font-size:1.5rem;margin-bottom:1rem}
-.btn{display:block;width:100%;padding:0.75rem;background:#00ff9d;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin:0.5rem 0;font-size:0.9rem}
-.btn:hover{background:#10b981}
-.btn-secondary{background:rgba(255,255,255,0.05);color:#e2e8f0;border:1px solid rgba(255,255,255,0.15)}
-input,textarea{width:100%;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e2e8f0;margin:0.5rem 0}
-.status{padding:0.75rem;background:rgba(0,0,0,0.3);border-radius:8px;margin:1rem 0;font-size:0.85rem}
-.log{background:#000;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.75rem;max-height:200px;overflow-y:auto;margin-top:1rem}
+body{font-family:monospace;background:#0a0e27;color:#e2e8f0;padding:1.5rem 1rem}
+.card{background:rgba(15,23,42,.8);border:1px solid rgba(0,255,157,.25);border-radius:16px;padding:1.5rem;max-width:600px;margin:0 auto}
+h1{color:#00ff9d;font-size:1.3rem;margin-bottom:1rem}
+.btn{display:block;width:100%;padding:.8rem;background:#00ff9d;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin:.5rem 0;font-size:.9rem}
+.btn2{background:rgba(255,255,255,.05);color:#e2e8f0;border:1px solid rgba(255,255,255,.15)}
+input,textarea{width:100%;padding:.6rem;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e2e8f0;margin:.4rem 0;font-family:monospace}
+.status{padding:.7rem;background:rgba(0,0,0,.3);border-radius:8px;margin:.8rem 0;font-size:.8rem}
+.log{background:#000;padding:.8rem;border-radius:8px;font-size:.7rem;max-height:220px;overflow-y:auto;margin-top:1rem;white-space:pre-wrap}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="card">
 <h1>🔔 Test Push Notification</h1>
-
-<div class="status" id="status">Checking subscription...</div>
-
-<button class="btn" onclick="subscribe()">1️⃣ Subscribe Push</button>
-<button class="btn btn-secondary" onclick="unsubscribe()">🔕 Unsubscribe</button>
-
-<hr style="margin:1.5rem 0;border:none;border-top:1px solid rgba(255,255,255,0.1)">
-
-<h2 style="color:#00ff9d;font-size:1.1rem;margin-bottom:0.5rem">📤 Test Kirim Push</h2>
-
-<input type="text" id="title" placeholder="Judul (contoh: Booking Baru)" value="📅 Test Push">
-<textarea id="body" rows="3" placeholder="Isi pesan">Ini adalah test push notification dari Dream OS</textarea>
-
-<button class="btn" onclick="sendBroadcast()">📢 Broadcast ke Semua</button>
-<button class="btn btn-secondary" onclick="sendToRole('kabag_umum')">👔 Kirim ke Kabag</button>
-<button class="btn btn-secondary" onclick="sendToRole('security')">🛡️ Kirim ke Security</button>
-
+<div class="status" id="status">Checking...</div>
+<button class="btn" onclick="doSubscribe()">1️⃣ Subscribe Push</button>
+<button class="btn btn2" onclick="doUnsubscribe()">🔕 Unsubscribe</button>
+<hr style="margin:1rem 0;border:none;border-top:1px solid rgba(255,255,255,.1)">
+<input id="title" value="📅 Test Push">
+<textarea id="body" rows="2">Ini adalah test push notification dari Dream OS</textarea>
+<button class="btn" onclick="doBroadcast()">📢 Broadcast ke Semua</button>
+<button class="btn btn2" onclick="doRole('kabag_umum')">👔 Kirim ke Kabag</button>
+<button class="btn btn2" onclick="doRole('security')">🛡️ Kirim ke Security</button>
 <div class="log" id="log"></div>
 </div>
-
 <script>
-const log = (msg) => {
-  const el = document.getElementById('log');
-  el.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
-  el.scrollTop = el.scrollHeight;
-};
+// ===== SELF-CONTAINED: Supabase + VAPID + Service Worker =====
+const SUPABASE_URL='https://gbigjdhifispatrrskgh.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
+const VAPID_PUBLIC_KEY='BEUyzS2estJ7CSa9tDTsyIpCFKE3RwAnQEGyAyiiapMyC0TL02SvJIGI6On_oKiEx0Z1f2ULmHeE8wPSfFaVuXU';
+window.supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 
-async function checkStatus() {
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    const status = document.getElementById('status');
-    if (sub) {
-      status.innerHTML = '✅ <strong>Subscribed</strong><br><small>' + sub.endpoint.slice(0, 50) + '...</small>';
-      status.style.background = 'rgba(16,185,129,0.1)';
-      status.style.border = '1px solid rgba(16,185,129,0.3)';
-    } else {
-      status.innerHTML = '⚠️ <strong>Not subscribed</strong>';
-      status.style.background = 'rgba(245,158,11,0.1)';
-      status.style.border = '1px solid rgba(245,158,11,0.3)';
-    }
-  } catch (err) {
-    log('❌ ' + err.message);
-  }
+const log=(m)=>{const el=document.getElementById('log');el.textContent+='['+new Date().toLocaleTimeString('id-ID')+'] '+m+'\n';el.scrollTop=el.scrollHeight;};
+
+function b64ToU8(s){const pad='='.repeat((4-s.length%4)%4);const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(b);const o=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)o[i]=raw.charCodeAt(i);return o;}
+
+async function ensureSW(){
+  if(!('serviceWorker' in navigator)) throw new Error('Service Worker tidak didukung');
+  let reg=await navigator.serviceWorker.getRegistration();
+  if(!reg) reg=await navigator.serviceWorker.register('./sw.js');
+  return await navigator.serviceWorker.ready;
 }
 
-async function subscribe() {
+async function checkStatus(){
+  try{
+    const reg=await ensureSW();
+    const sub=await reg.pushManager.getSubscription();
+    const st=document.getElementById('status');
+    if(sub){st.innerHTML='✅ <b>Subscribed</b><br><small>'+sub.endpoint.slice(0,45)+'...</small>';st.style.border='1px solid rgba(16,185,129,.4)';}
+    else{st.innerHTML='⚠️ <b>Not subscribed</b>';st.style.border='1px solid rgba(245,158,11,.4)';}
+  }catch(e){log('❌ '+e.message);}
+}
+
+async function doSubscribe(){
   log('Subscribing...');
-  if (window.subscribePush) {
-    await window.subscribePush();
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){log('❌ Permission ditolak');return;}
+    const reg=await ensureSW();
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC_KEY)});
+    log('✅ Subscribed: '+sub.endpoint.slice(0,40)+'...');
+    const p256=btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh'))));
+    const auth=btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth'))));
+    const {error}=await window.supabaseClient.from('push_subscriptions').upsert({
+      user_id:null,user_email:'test-device',user_role:null,
+      endpoint:sub.endpoint,p256dh:p256,auth:auth
+    },{onConflict:'endpoint'});
+    if(error) throw error;
+    log('✅ Subscription tersimpan di Supabase');
     checkStatus();
-  } else {
-    log('❌ subscribePush not found');
-  }
+  }catch(e){log('❌ '+e.message);}
 }
 
-async function unsubscribe() {
-  log('Unsubscribing...');
-  if (window.unsubscribePush) {
-    await window.unsubscribePush();
+async function doUnsubscribe(){
+  try{
+    const reg=await ensureSW();
+    const sub=await reg.pushManager.getSubscription();
+    if(sub){await sub.unsubscribe();await window.supabaseClient.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);log('🔕 Unsubscribed');}
     checkStatus();
-  }
+  }catch(e){log('❌ '+e.message);}
 }
 
-async function sendBroadcast() {
-  const title = document.getElementById('title').value;
-  const body = document.getElementById('body').value;
-  log(`Broadcasting: ${title}`);
-  try {
-    const result = await window.PushAdmin.broadcast(title, body);
-    log(`✅ Sent to ${result.count} users`);
-  } catch (err) {
-    log('❌ ' + err.message);
-  }
+async function sendPush(payload){
+  const {data,error}=await window.supabaseClient.functions.invoke('send-push',{body:payload});
+  if(error) throw error;
+  if(data&&data.error) throw new Error(data.error);
+  return data;
 }
 
-async function sendToRole(role) {
-  const title = document.getElementById('title').value;
-  const body = document.getElementById('body').value;
-  log(`Sending to ${role}...`);
-  try {
-    const result = await window.PushAdmin.sendToRole(role, title, body);
-    log(`✅ Sent to ${result.count} ${role}`);
-  } catch (err) {
-    log('❌ ' + err.message);
-  }
+async function doBroadcast(){
+  const t=document.getElementById('title').value,b=document.getElementById('body').value;
+  log('Broadcasting: '+t);
+  try{const r=await sendPush({title:t,body:b,target:'all'});log('✅ Sent to '+r.count+'/'+r.total);}catch(e){log('❌ '+e.message);}
+}
+async function doRole(role){
+  const t=document.getElementById('title').value,b=document.getElementById('body').value;
+  log('Sending to '+role+'...');
+  try{const r=await sendPush({title:t,body:b,target:'role',role});log('✅ Sent to '+r.count+' '+role);}catch(e){log('❌ '+e.message);}
 }
 
 checkStatus();
