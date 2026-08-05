@@ -235,11 +235,33 @@
     });
   }
   </script>
+<script>
+  // ===== FORCE REFRESH: bypass SW + clear cache =====
+  window.forceRefresh = async function() {
+    try {
+      // 1. Unregister semua service worker
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) await reg.unregister();
+      // 2. Hapus semua cache
+      const keys = await caches.keys();
+      for (const k of keys) await caches.delete(k);
+      // 3. Hapus cache browser
+      if ('caches' in window) { /* sudah dihapus */ }
+      // 4. Hard reload (bypass cache)
+      showToast('🔄 Membersihkan cache...','success');
+      setTimeout(() => { location.reload(true); }, 800);
+    } catch(e) {
+      showToast('❌ Gagal: '+e.message,'error');
+    }
+  };
+  // ===== END FORCE REFRESH =====
+</script>
 </head>
 <body oncontextmenu="return false;" ondragstart="return false;" ondrop="return false;">
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
+  <button onclick="forceRefresh()" style="position:fixed;top:0.5rem;right:0.5rem;z-index:9999;background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:0.4rem 0.8rem;border-radius:8px;font-size:0.7rem;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);" title="Force Refresh - Bersihkan Cache & SW">🔄 Force Refresh</button>
 
   <div id="security-overlay">
     <div style="font-size: 3rem; margin-bottom: 1rem;">⛔</div>
