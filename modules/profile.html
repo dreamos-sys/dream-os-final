@@ -39,7 +39,7 @@
   </style>
 </head>
 <body>
-  <button type="button" class="back-btn" onclick="goHomeSafe()">← HOME</button>
+  <button type="button" class="back-btn" onclick="if(typeof window.goHomeSafe==='function')window.goHomeSafe();else if(typeof window.goHome==='function')window.goHome();else window.location.href='../index.html';">← HOME</button>
 
   <div style="max-width:650px;margin:0 auto;padding:1rem 1rem 5rem;">
 
@@ -141,16 +141,8 @@
   </div>
 
   <script>
-(function () {
-  'use strict';
-
-  function loginUrl() {
-    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
-    return base + 'index.html';
-  }
-
-
-  function goHomeSafe() {
+  // ===== GLOBAL HOME FUNCTION (harus ada SEBELUM IIFE) =====
+  window.goHomeSafe = function() {
     try {
       if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
         window.parent.goHome();
@@ -160,9 +152,21 @@
     if (typeof window.goHome === 'function') {
       try { window.goHome(); return; } catch (e) {}
     }
-    window.location.href = loginUrl();
+    // Fallback: navigate ke index
+    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+    window.location.href = base + 'index.html';
+  };
+  
+  (function () {
+  'use strict';
+
+  function loginUrl() {
+    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+    return base + 'index.html';
   }
-  window.goHomeSafe = goHomeSafe;
+
+
+  // goHomeSafe sudah didefinisikan di global scope (sebelum IIFE)
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null'); }
@@ -224,26 +228,29 @@
 
   // ===== MODULE CLEANUP: clear timers, revoke object URLs =====
   window.__profileCleanup = function() {
-    // Clear any pending promises / timers
     __dnaCachePromise = null;
     __bookingsLoading = false;
     console.log('[Profile] Cleanup complete');
   };
   
-  // Hook ke goHomeSafe
+  // Hook cleanup ke goHomeSafe (TANPA menimpa fungsi asli)
   var __origGoHomeSafe = window.goHomeSafe;
   window.goHomeSafe = function() {
     if(window.__profileCleanup) window.__profileCleanup();
-    if(__origGoHomeSafe) return __origGoHomeSafe();
-    else {
-      try {
-        if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function'){
-          window.parent.goHome(); return;
-        }
-      } catch(e){}
-      if(typeof window.goHome === 'function'){ try{ window.goHome(); return; }catch(e){} }
-      window.location.href = loginUrl();
+    // Panggil fungsi asli (yang sudah didefinisikan di global scope)
+    if(__origGoHomeSafe && typeof __origGoHomeSafe === 'function') {
+      return __origGoHomeSafe();
     }
+    // Fallback darurat
+    console.warn('[Profile] __origGoHomeSafe not available, using fallback');
+    try {
+      if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function'){
+        window.parent.goHome(); return;
+      }
+    } catch(e){}
+    if(typeof window.goHome === 'function'){ try{ window.goHome(); return; }catch(e){} }
+    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+    window.location.href = base + 'index.html';
   };
 
 })();

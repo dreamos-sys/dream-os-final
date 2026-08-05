@@ -1,9 +1,5 @@
 <script>
-// Auto-fallback untuk fungsi global
-if (!window.goHome) window.goHome = function() { 
-  if (window.parent && window.parent.goHome) window.parent.goHome();
-  else window.location.reload();
-};
+// Auto-fallback untuk fungsi global (supabase & renderDashboard)
 if (!window.supabaseClient && window.parent && window.parent.supabaseClient) 
   window.supabaseClient = window.parent.supabaseClient;
 if (!window.renderDashboard && window.parent && window.parent.renderDashboard) 
@@ -136,7 +132,7 @@ if (typeof Html5Qrcode === 'undefined') {
 })();
 </script>
 
-<button onclick="window.goHome()" style="position:fixed;bottom: calc(2rem + env(safe-area-inset-bottom));left:1rem;background:#1e293b;border:1px solid #00ff9d;color:#00ff9d;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
+<button onclick="if(typeof window.goHome==='function')window.goHome();else if(typeof window.goHomeSafe==='function')window.goHomeSafe();else window.location.href='../index.html';" style="position:fixed;bottom: calc(2rem + env(safe-area-inset-bottom));left:1rem;background:#1e293b;border:1px solid #00ff9d;color:#00ff9d;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;z-index:1000;">← Kembali</button>
 
 <div style="min-height:100vh;background:#040814;color:#e2e8f0;font-family:'Inter',sans-serif;padding:1rem;padding-top:3.5rem;padding-bottom:5rem;" id="qr-app">
     <h2 style="color:#00ff9d;font-size:1.4rem;margin-bottom:0.5rem;">📱 QR Manager Enterprise</h2>
@@ -264,7 +260,25 @@ if (typeof Html5Qrcode === 'undefined') {
 </div>
 
 <script>
-(function(){
+  // ===== GLOBAL HOME FUNCTION (harus ada SEBELUM IIFE) =====
+  if (!window.goHome) {
+    window.goHome = function() {
+      try {
+        if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+          window.parent.goHome();
+          return;
+        }
+      } catch (e) {}
+      try {
+        if (typeof window.goHomeSafe === 'function') { window.goHomeSafe(); return; }
+      } catch(e){}
+      // Fallback: navigate ke index
+      var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+      window.location.href = base + 'index.html';
+    };
+  }
+  
+  (function(){
     var state = {
         codes: JSON.parse(localStorage.getItem('dreamos_qr_codes')||'[]'),
         history: JSON.parse(localStorage.getItem('dreamos_qr_history')||'[]'),
@@ -630,34 +644,35 @@ if (typeof Html5Qrcode === 'undefined') {
     
     // ===== MODULE CLEANUP: stop scanner, clear timers, disconnect observer =====
     window.__qrCleanup = function() {
-        // Stop scanner
         if(state.scanner) {
             try { state.scanner.stop().catch(function(){}); } catch(e){}
             state.scanner = null;
         }
-        // Clear retry timer
         if(state.__retryTimer) { clearTimeout(state.__retryTimer); state.__retryTimer = null; }
-        // Clear render timer
         if(__renderCodesTimer) { clearTimeout(__renderCodesTimer); __renderCodesTimer = null; }
-        // Clear setTimeout in executePayload
         if(state.__openTimer) { clearTimeout(state.__openTimer); state.__openTimer = null; }
         if(state.__switchTimer) { clearTimeout(state.__switchTimer); state.__switchTimer = null; }
-        // Disconnect theme observer
         if(window.__qrThemeCleanup) window.__qrThemeCleanup();
         console.log('[QR] Cleanup complete');
     };
     
-    // Hook ke goHome
+    // Hook cleanup ke goHome (TANPA menimpa fungsi asli)
     var __origGoHome = window.goHome;
     window.goHome = function() {
         if(window.__qrCleanup) window.__qrCleanup();
-        if(__origGoHome) return __origGoHome();
-        else {
-            try {
-                if(window.parent && window.parent.goHome) window.parent.goHome();
-                else window.location.reload();
-            } catch(e){ window.location.reload(); }
+        // Panggil fungsi asli (yang sudah didefinisikan di global scope)
+        if(__origGoHome && typeof __origGoHome === 'function') {
+            return __origGoHome();
         }
+        // Fallback darurat
+        console.warn('[QR] __origGoHome not available, using fallback');
+        try {
+            if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+                window.parent.goHome(); return;
+            }
+        } catch(e){}
+        var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+        window.location.href = base + 'index.html';
     };
     
     // Pause scanner saat tab hidden
