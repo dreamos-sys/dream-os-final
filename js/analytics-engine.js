@@ -96,6 +96,20 @@
     var d=getData();
     var label=document.getElementById('ana-period-label');
     if(label) label.textContent=MONTHS[state.m]+' '+state.y;
+    // NAV HARDENING v0508d: listener langsung + swipe (idempotent)
+    var pbs=document.querySelectorAll('.ana-period-btn');
+    if(pbs.length===2&&!pbs[0].hasAttribute('data-wired')){
+      pbs[0].setAttribute('data-wired','1');pbs[1].setAttribute('data-wired','1');
+      pbs[0].removeAttribute('onclick');pbs[1].removeAttribute('onclick');
+      pbs[0].addEventListener('click',function(){window.shiftPeriod(-1);});
+      pbs[1].addEventListener('click',function(){window.shiftPeriod(1);});
+    }
+    var ucard=document.querySelector('.ana-unified-card');
+    if(ucard&&!ucard.hasAttribute('data-swipe')){
+      ucard.setAttribute('data-swipe','1');var sx=0;
+      ucard.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+      ucard.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx;if(dx>60)window.shiftPeriod(-1);else if(dx<-60)window.shiftPeriod(1);},{passive:true});
+    }
 
     var header=document.querySelector('.ana-header > div');
     if(header){
@@ -202,4 +216,23 @@
   };
 
   console.log('🔒 Analytics v4 privacy-first: hanya Booking & K3 yang publik');
+})();
+
+// ===== PERIOD NAV HARDENING v0508d =====
+(function(){
+  var orig = window.shiftPeriod;
+  window.shiftPeriod = function(dd){
+    try {
+      orig(dd);
+      var l = document.getElementById('ana-period-label');
+      if (window.showToast && l) showToast('📅 ' + l.textContent, 'info');
+    } catch(e) {
+      try {
+        var errs = JSON.parse(localStorage.getItem('dreamos_errors')||'[]');
+        errs.unshift({time:new Date().toISOString(), msg:'shiftPeriod: '+e.message});
+        localStorage.setItem('dreamos_errors', JSON.stringify(errs.slice(0,20)));
+      } catch(_){}
+      if (window.showToast) showToast('❌ shiftPeriod: '+e.message, 'error');
+    }
+  };
 })();
