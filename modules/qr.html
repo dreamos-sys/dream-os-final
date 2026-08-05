@@ -23,7 +23,53 @@ if (typeof Html5Qrcode === 'undefined') {
       document.head.appendChild(s2);
     };
     document.head.appendChild(s);
-  })();
+  
+
+    // ===== MODULE CLEANUP: stop scanner, clear timers, disconnect observer =====
+    window.__qrCleanup = function() {
+        // Stop scanner
+        if(state.scanner) {
+            try { state.scanner.stop().catch(function(){}); } catch(e){}
+            state.scanner = null;
+        }
+        // Clear retry timer
+        if(state.__retryTimer) { clearTimeout(state.__retryTimer); state.__retryTimer = null; }
+        // Clear render timer
+        if(__renderCodesTimer) { clearTimeout(__renderCodesTimer); __renderCodesTimer = null; }
+        // Disconnect theme observer
+        if(window.__qrThemeCleanup) window.__qrThemeCleanup();
+        console.log('[QR] Cleanup complete');
+    };
+    
+    // Hook ke goHome
+    var __origGoHome = window.goHome;
+    window.goHome = function() {
+        if(window.__qrCleanup) window.__qrCleanup();
+        if(__origGoHome) return __origGoHome();
+        else {
+            try {
+                if(window.parent && window.parent.goHome) window.parent.goHome();
+                else window.location.reload();
+            } catch(e){ window.location.reload(); }
+        }
+    };
+    
+    // Pause scanner saat tab hidden
+    document.addEventListener('visibilitychange', function(){
+        if(document.hidden){
+            // Pause scanner
+            if(state.scanner) {
+                try { state.scanner.pause(); } catch(e){}
+            }
+        } else {
+            // Resume jika masih di tab scanner
+            if(state.activeTab === 'scanner' && state.scanner) {
+                try { state.scanner.resume(); } catch(e){}
+            }
+        }
+    });
+
+})();
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -117,6 +163,7 @@ if (typeof Html5Qrcode === 'undefined') {
 
 <script id="qr-theme-js">
 (function(){
+  var __themeObserver = null;
   function applyTheme(){
     var theme = 'dark';
     try {
@@ -130,9 +177,19 @@ if (typeof Html5Qrcode === 'undefined') {
   applyTheme();
   try {
     var parentRoot = window.parent && window.parent.document && window.parent.document.documentElement;
-    if (parentRoot) new MutationObserver(applyTheme).observe(parentRoot, { attributes: true, attributeFilter: ['data-theme'] });
+    if (parentRoot) {
+      __themeObserver = new MutationObserver(applyTheme);
+      __themeObserver.observe(parentRoot, { attributes: true, attributeFilter: ['data-theme'] });
+    }
   } catch(e){}
-  window.addEventListener('storage', function(e){ if (e.key === 'dreamos_theme') applyTheme(); });
+  var __storageHandler = function(e){ if (e.key === 'dreamos_theme') applyTheme(); };
+  window.addEventListener('storage', __storageHandler);
+  
+  // Expose cleanup
+  window.__qrThemeCleanup = function() {
+    if(__themeObserver) { __themeObserver.disconnect(); __themeObserver = null; }
+    window.removeEventListener('storage', __storageHandler);
+  };
 })();
 </script>
 
@@ -225,7 +282,7 @@ if (typeof Html5Qrcode === 'undefined') {
     <!-- Panel: Codes -->
     <div id="panel-codes" class="qr-panel" style="display:none;background:rgba(15,23,42,0.6);border:1px solid rgba(0,255,157,0.2);border-radius:1rem;padding:1rem;">
         <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-            <input type="text" id="qr-search" placeholder="🔍 Cari QR..." style="flex:1;min-width:150px;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">
+            <input type="text" id="qr-search" placeholder="🔍 Cari QR..." oninput="if(window.__qrSearchTimer)clearTimeout(window.__qrSearchTimer);window.__qrSearchTimer=setTimeout(function(){if(window.renderCodes)window.renderCodes();},300);" style="flex:1;min-width:150px;padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">
             <select id="qr-filter-category" style="padding:0.5rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.8rem;">
                 <option value="">Semua Kategori</option>
             </select>
@@ -276,9 +333,35 @@ if (typeof Html5Qrcode === 'undefined') {
     
     const DEPOK_LAT = -6.4025, DEPOK_LNG = 106.7942;
     
-    function saveCodes(){ localStorage.setItem('dreamos_qr_codes', JSON.stringify(state.codes)); }
-    function saveHistory(){ localStorage.setItem('dreamos_qr_history', JSON.stringify(state.history)); }
-    function saveScans(){ localStorage.setItem('dreamos_qr_scans', JSON.stringify(state.scans)); }
+    function safeSet(k, d){
+        try {
+            localStorage.setItem(k, JSON.stringify(d));
+        } catch(e) {
+            // Quota exceeded — kurangi data
+            try {
+                if(k === 'dreamos_qr_codes' && state.codes.length > 50) {
+                    state.codes = state.codes.slice(0, 50);
+                    localStorage.setItem(k, JSON.stringify(state.codes));
+                }
+                if(k === 'dreamos_qr_scans' && state.scans.length > 50) {
+                    state.scans = state.scans.slice(0, 50);
+                    localStorage.setItem(k, JSON.stringify(state.scans));
+                }
+                if(k === 'dreamos_qr_history' && state.history.length > 50) {
+                    state.history = state.history.slice(0, 50);
+                    localStorage.setItem(k, JSON.stringify(state.history));
+                }
+                localStorage.setItem(k, JSON.stringify(d));
+                if(window.showToast) showToast('⚠️ Storage penuh, data lama dibersihkan', 'warning');
+            } catch(e2) {
+                console.warn('[QR] localStorage quota exceeded:', e);
+                if(window.showToast) showToast('❌ Storage sangat penuh', 'error');
+            }
+        }
+    }
+    function saveCodes(){ safeSet('dreamos_qr_codes', state.codes); }
+    function saveHistory(){ safeSet('dreamos_qr_history', state.history); }
+    function saveScans(){ safeSet('dreamos_qr_scans', state.scans); }
     function getData(k){ try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return[];} }
     
     function encryptData(data){ return CryptoJS.AES.encrypt(data, state.encryptionKey).toString(); }
@@ -329,12 +412,12 @@ if (typeof Html5Qrcode === 'undefined') {
         }
         else data = (document.getElementById('qr-data')?.value||'').trim();
         
-        if(!data || data.split(':').pop()==='') return alert('⚠️ Masukkan data payload!');
+        if(!data || data.split(':').pop()==='') return if(window.showToast) showToast('⚠️ Masukkan data payload', 'error'); else alert('⚠️ Masukkan data payload!');
         
         if(encrypt || type==='encrypted') data = 'ENC:' + encryptData(data);
         if(expire || type==='expiring') {
             var expTime = document.getElementById('qr-expire-date')?.value;
-            if(!expTime) return alert('⚠️ Waktu expired wajib diisi!');
+            if(!expTime) return if(window.showToast) showToast('⚠️ Waktu expired wajib diisi', 'error'); else alert('⚠️ Waktu expired wajib diisi!');
             data = 'EXP:' + new Date(expTime).getTime() + ':' + data;
         }
         if(useGeo) data = 'GEO:' + DEPOK_LAT + ',' + DEPOK_LNG + ':' + data;
@@ -346,8 +429,16 @@ if (typeof Html5Qrcode === 'undefined') {
         }
 
         state.currentImg = imgUrl; state.currentData = data;
-        document.getElementById('qr-image-container').innerHTML = '<img src="'+state.currentImg+'" style="max-width:100%;border-radius:1rem;border:4px solid #00ff9d;box-shadow:0 0 20px rgba(0,255,157,0.4);">';
+        document.getElementById('qr-image-container').innerHTML = '<img src="'+state.currentImg+'" loading="lazy" decoding="async" style="max-width:100%;border-radius:1rem;border:4px solid #00ff9d;box-shadow:0 0 20px rgba(0,255,157,0.4);">';
         document.getElementById('qr-save-area').style.display = 'flex';
+        // Pre-convert to base64 untuk offline save (async)
+        try {
+            fetch(imgUrl).then(r => r.blob()).then(blob => {
+                var reader = new FileReader();
+                reader.onload = function(){ state.currentImgBase64 = reader.result; };
+                reader.readAsDataURL(blob);
+            }).catch(function(){});
+        } catch(e){}
     }
 
     function saveQr(){
@@ -358,11 +449,15 @@ if (typeof Html5Qrcode === 'undefined') {
             id: 'qr_' + Date.now(), label: label, type: state.currentType, image: state.currentImg, data: state.currentData,
             category: document.getElementById('qr-category')?.value || 'General', created: new Date().toISOString(), scans: 0
         });
-        saveCodes(); switchTab('codes');
+        // Limit max 200 codes
+        if(state.codes.length > 200) state.codes = state.codes.slice(0, 200);
+        saveCodes(); 
+        if(window.showToast) showToast('✅ QR disimpan: ' + label, 'success');
+        switchTab('codes');
     }
 
     function printAll(){
-        if(!state.codes.length) return alert('⚠️ Belum ada QR tersimpan!');
+        if(!state.codes.length) return if(window.showToast) showToast('⚠️ Belum ada QR tersimpan', 'warning'); else alert('⚠️ Belum ada QR tersimpan!');
         var w = window.open('','_blank','width=900,height=700');
         var html = `<!DOCTYPE html><html><head><title>Dream OS - Asset Tags</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');body{font-family:'Inter',sans-serif;background:#fff;margin:0;padding:15mm;}.header{text-align:center;margin-bottom:20px;border-bottom:2px solid #000;padding-bottom:10px;}.header h1{margin:0;font-size:24px;font-weight:800;letter-spacing:2px;}.grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:15px;}.sticker{border:2px dashed #999;padding:12px;text-align:center;border-radius:8px;position:relative;}.sticker img{width:140px;height:140px;margin-bottom:8px;}.label{font-weight:800;font-size:14px;text-transform:uppercase;margin-bottom:4px;color:#000;}.meta{font-size:10px;color:#444;background:#f0f0f0;padding:4px;border-radius:4px;display:inline-block;}.iso-badge{position:absolute;bottom:5px;right:8px;font-size:8px;font-weight:700;color:#000;}@media print{.no-print{display:none;}body{padding:0;}}</style></head><body><div class="no-print" style="margin-bottom:20px;text-align:center;"><button onclick="window.print()" style="padding:10px 20px;background:#000;color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;font-weight:bold;">🖨️ Cetak ke PDF</button></div><div class="header"><h1>DREAM OS ENTERPRISE</h1><p>OFFICIAL ASSET TAGS • ISO 55001 COMPLIANT</p></div><div class="grid">`;
         state.codes.forEach(q => { html += `<div class="sticker"><img src="${q.image}"><div class="label">${q.label}</div><div class="meta">Tipe: ${q.type.toUpperCase()} | ID: ${q.id.split('_')[1]}</div><div class="iso-badge">SECURE TAG</div></div>`; });
@@ -395,7 +490,11 @@ if (typeof Html5Qrcode === 'undefined') {
         else if (dataStr.startsWith('http://') || dataStr.startsWith('https://')) {
             displayData = '🌐 <b>[WEB LINK / URL]</b><br>' + dataStr;
             actionHtml = '<span style="color:#3b82f6;font-weight:700;">🚀 Mengalihkan Tab Secara Otomatis...</span>';
-            setTimeout(() => window.open(dataStr, '_blank'), 800);
+            if(state.__openTimer) clearTimeout(state.__openTimer);
+            state.__openTimer = setTimeout(function(){ 
+                window.open(dataStr, '_blank'); 
+                state.__openTimer = null;
+            }, 800);
         }
         else {
             var cleanId = dataStr.replace('DREAMOS-INV:', '').replace('DREAMOS-GDG:', '');
@@ -408,10 +507,12 @@ if (typeof Html5Qrcode === 'undefined') {
             } else {
                 displayData = '❓ <b>[BARCODE BARU DITEMUKAN]</b><br>Data: <span style="font-family:monospace;color:#f59e0b;">' + cleanId + '</span>';
                 actionHtml = '<span style="color:#f59e0b;font-weight:700;">⚡ Mengalihkan ke Modul Tambah Inventaris...</span>';
-                setTimeout(() => {
+                if(state.__switchTimer) clearTimeout(state.__switchTimer);
+                state.__switchTimer = setTimeout(function(){
                     try { if(window.parent && typeof window.parent.switchModule === 'function') {
                         window.parent.switchModule('inventory', { barcodeScan: cleanId });
                     } } catch(e) { console.warn('Parent switchModule failed:', e); }
+                    state.__switchTimer = null;
                 }, 1500);
             }
         }
@@ -419,13 +520,13 @@ if (typeof Html5Qrcode === 'undefined') {
         document.getElementById('scan-data').innerHTML = displayData;
         document.getElementById('scan-meta').innerHTML = timestamp + '<br>' + actionHtml;
         state.scans.unshift({ time: new Date().toISOString(), data: dataStr.substring(0,50) });
-        if(state.scans.length > 100) state.scans.pop(); saveScans();
+        if(state.scans.length > 100) state.scans = state.scans.slice(0, 100); saveScans();
     }
 
     function processSmartScan(rawDecodedText) {
         var payload = rawDecodedText;
         if (payload.startsWith('GEO:')) {
-            if(!navigator.geolocation) return alert('⛔ Perangkat tidak mendukung GPS.');
+            if(!navigator.geolocation) return if(window.showToast) showToast('⛔ GPS tidak didukung', 'error'); else alert('⛔ Perangkat tidak mendukung GPS.');
             var geoParts = payload.substring(4).split(':'); var coords = geoParts[0].split(',');
             payload = geoParts.slice(1).join(':');
             navigator.geolocation.getCurrentPosition(function(pos) {
@@ -434,7 +535,7 @@ if (typeof Html5Qrcode === 'undefined') {
                 var p = 0.017453292519943295;
                 var a = 0.5 - Math.cos((targetLat - lat) * p)/2 + Math.cos(lat * p) * Math.cos(targetLat * p) * (1 - Math.cos((targetLng - lng) * p))/2;
                 var distance = 12742 * Math.asin(Math.sqrt(a)); 
-                if (distance > 5) return alert('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1) + ' km dari Safe Core (Depok).');
+                if (distance > 5) return if(window.showToast) showToast('⛔ Lokasi ' + distance.toFixed(1) + 'km dari Depok', 'error'); else alert('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1) + ' km dari Safe Core (Depok).');
                 processNextLayers(payload);
             }, function(err) { console.warn('GPS ditolak/timeout, melanjutkan scan tanpa geo-fence'); processNextLayers(payload); }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 0});
             return;
@@ -446,15 +547,15 @@ if (typeof Html5Qrcode === 'undefined') {
         if (payload.startsWith('EXP:')) {
             var expParts = payload.substring(4).split(':');
             var expTime = parseInt(expParts[0]); payload = expParts.slice(1).join(':');
-            if (Date.now() > expTime) return alert('⏰ QR EXPIRED pada: ' + new Date(expTime).toLocaleString('id-ID'));
+            if (Date.now() > expTime) return if(window.showToast) showToast('⏰ QR sudah expired', 'error'); else alert('⏰ QR EXPIRED pada: ' + new Date(expTime).toLocaleString('id-ID'));
         }
         if (payload.startsWith('ENC:')) {
             var pin = prompt('🔐 SECURITY CHALLENGE\nMasukkan PIN Admin/Sistem untuk Dekripsi:');
             if (pin === '123456' || pin === 'SULTAN') {
                 var decrypted = decryptData(payload.substring(4));
                 if(decrypted) payload = '<span style="color:#f59e0b;">🔓 [DECRYPTED SECURE DATA]</span><br>' + decrypted;
-                else return alert('⛔ Kunci Dekripsi Gagal!');
-            } else return alert('⛔ Akses Ditolak!');
+                else return if(window.showToast) showToast('⛔ Dekripsi gagal', 'error'); else alert('⛔ Kunci Dekripsi Gagal!');
+            } else return if(window.showToast) showToast('⛔ Akses ditolak', 'error'); else alert('⛔ Akses Ditolak!');
         }
         executePayload(payload);
     }
@@ -466,13 +567,18 @@ if (typeof Html5Qrcode === 'undefined') {
         if(typeof Html5Qrcode === 'undefined') {
             retryCount = (retryCount || 0) + 1;
             if(retryCount > 40) {
-                alert('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.');
+                if(window.showToast) showToast('⚠️ Scanner gagal dimuat. Pakai manual scan.', 'warning');
+                else alert('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.');
                 var manualDiv = document.querySelector('#manual-scan-input')?.parentElement;
                 if(manualDiv) manualDiv.style.display = 'block';
                 return;
             }
-            // Tunggu senyap selama 300ms sampai library benar-benar siap
-            setTimeout(function(){ startScanner(retryCount); }, 300);
+            // Clear timeout lama sebelum buat yang baru
+            if(state.__retryTimer) clearTimeout(state.__retryTimer);
+            state.__retryTimer = setTimeout(function(){ 
+                state.__retryTimer = null;
+                startScanner(retryCount); 
+            }, 300);
             return;
         }
         
@@ -495,12 +601,12 @@ if (typeof Html5Qrcode === 'undefined') {
                 if(sBtn) sBtn.style.display = 'none';
                 if(xBtn) xBtn.style.display = 'block';
             }).catch(function(err){ 
-                alert('❌ Gagal akses kamera: ' + err); 
+                if(window.showToast) showToast('❌ Gagal akses kamera', 'error'); else alert('❌ Gagal akses kamera: ' + err); 
                 state.scanner = null; 
             });
         } catch(e) {
             state.scanner = null;
-            alert('❌ Inisialisasi Scanner Error: ' + e.message);
+            if(window.showToast) showToast('❌ Scanner error: ' + e.message, 'error'); else alert('❌ Inisialisasi Scanner Error: ' + e.message);
         }
     }
     
@@ -513,6 +619,14 @@ if (typeof Html5Qrcode === 'undefined') {
             if(sBtn) sBtn.style.display = 'block';
             if(xBtn) xBtn.style.display = 'none';
         }).catch(function(){ state.scanner = null; });
+    }
+
+
+    // Debounce helper untuk render
+    var __renderCodesTimer = null;
+    function debouncedRenderCodes() {
+        if(__renderCodesTimer) clearTimeout(__renderCodesTimer);
+        __renderCodesTimer = setTimeout(renderCodes, 300);
     }
 
     function renderCodes(){
@@ -530,7 +644,7 @@ if (typeof Html5Qrcode === 'undefined') {
         var input = prompt('Masukkan data batch (satu per baris):\n\nContoh:\nhttps://example1.com\nhttps://example2.com');
         if(!input) return;
         var lines = input.split('\n').filter(function(l){ return l.trim(); });
-        if(!lines.length) return alert('⚠️ Tidak ada data valid!');
+        if(!lines.length) return if(window.showToast) showToast('⚠️ Tidak ada data valid', 'error'); else alert('⚠️ Tidak ada data valid!');
         var count = 0;
         lines.forEach(function(line){
             state.codes.push({
@@ -546,12 +660,12 @@ if (typeof Html5Qrcode === 'undefined') {
             count++;
         });
         saveCodes();
-        alert('✅ ' + count + ' QR codes berhasil di-generate!');
+        if(window.showToast) showToast('✅ ' + count + ' QR di-generate', 'success'); else alert('✅ ' + count + ' QR codes berhasil di-generate!');
         if(state.activeTab === 'codes') renderCodes();
     }
 
     function exportQr(){
-        if(!state.codes.length) return alert('⚠️ Belum ada QR tersimpan!');
+        if(!state.codes.length) return if(window.showToast) showToast('⚠️ Belum ada QR tersimpan', 'warning'); else alert('⚠️ Belum ada QR tersimpan!');
         var data = JSON.stringify(state.codes, null, 2);
         var blob = new Blob([data], {type: 'application/json'});
         var url = URL.createObjectURL(blob);
@@ -560,11 +674,11 @@ if (typeof Html5Qrcode === 'undefined') {
         a.download = 'qr_backup_' + new Date().toISOString().split('T')[0] + '.json';
         a.click();
         URL.revokeObjectURL(url);
-        alert('✅ QR codes di-export!');
+        if(window.showToast) showToast('✅ QR di-export', 'success'); else alert('✅ QR codes di-export!');
     }
 
     function downloadQr(){
-        if(!state.currentImg) return alert('⚠️ Generate QR dulu!');
+        if(!state.currentImg) return if(window.showToast) showToast('⚠️ Generate QR dulu', 'warning'); else alert('⚠️ Generate QR dulu!');
         var a = document.createElement('a');
         a.href = state.currentImg;
         a.download = 'qr_' + Date.now() + '.png';
@@ -573,27 +687,33 @@ if (typeof Html5Qrcode === 'undefined') {
     }
 
     function shareQr(){
-        if(!state.currentImg) return alert('⚠️ Generate QR dulu!');
+        if(!state.currentImg) return if(window.showToast) showToast('⚠️ Generate QR dulu', 'warning'); else alert('⚠️ Generate QR dulu!');
         if(navigator.share){
             navigator.share({ title: 'QR Code', text: 'Scan QR Code ini', url: state.currentImg }).catch(function(e){});
         } else {
-            navigator.clipboard.writeText(state.currentImg).then(function(){ alert('✅ Link QR disalin ke clipboard!'); });
+            navigator.clipboard.writeText(state.currentImg).then(function(){ if(window.showToast) showToast('✅ Link QR disalin', 'success'); else alert('✅ Link QR disalin ke clipboard!'); });
         }
     }
 
     function switchTab(tab){
+        // Stop scanner jika user pindah dari tab scanner
+        if(state.activeTab === 'scanner' && tab !== 'scanner') {
+            stopScanner();
+        }
         state.activeTab = tab;
         document.querySelectorAll('.qr-tab').forEach(function(b){
             var isMatch = b.dataset.key === tab;
             b.classList.toggle('active', isMatch);
-            b.style.background = isMatch ? '#00ff9d' : '#1e293b';
-            b.style.color = isMatch ? '#000' : '#e2e8f0';
+            b.style.background = isMatch ? 'var(--qr-tab-active-bg, #00ff9d)' : 'var(--qr-tab-bg, #1e293b)';
+            b.style.color = isMatch ? 'var(--qr-tab-active-text, #000)' : 'var(--qr-text, #e2e8f0)';
         });
         ['generate', 'scanner', 'codes', 'history', 'stats'].forEach(function(p){
             var pEl = document.getElementById('panel-'+p);
             if(pEl) pEl.style.display = p === tab ? 'block' : 'none';
         });
-        if(tab==='codes') renderCodes();
+        if(tab==='codes') debouncedRenderCodes();
+        if(tab==='history') renderHistory();
+        if(tab==='stats') renderStats();
     }
 
     if (!window.__qr_pro_bound) {
