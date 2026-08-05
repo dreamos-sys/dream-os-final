@@ -319,7 +319,7 @@
           <h1 class="vtitle" id="vh-title">Maintenance <b>Cockpit</b></h1>
           <p class="vsub" id="vh-sub"></p>
         </div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)reconcileK3(false); Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="Cloud.push()">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)reconcileK3(false); Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="if(!window.__cloudPushThrottle || Date.now()-window.__cloudPushThrottle>2000){window.__cloudPushThrottle=Date.now();Cloud.push();}else{if(window.showToast)showToast('⏳ Tunggu 2 detik','warning');else alert('⏳ Tunggu 2 detik');}">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
       </div>
       <div id="view-root"></div>
       <details class="debug"><summary>🔍 Debug · Intip Data LocalStorage</summary><pre id="debug-data">—</pre></details>
@@ -337,7 +337,24 @@
 
   function $(id){return document.getElementById(id);}
   function safeGet(k,fb){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb));}catch(e){return fb;}}
-  function safeSet(k,d){localStorage.setItem(k,JSON.stringify(d));}
+  function safeSet(k,d){
+    try {
+      localStorage.setItem(k,JSON.stringify(d));
+    } catch(e) {
+      // Quota exceeded — hapus audit log lama
+      try {
+        var auditKey = K.audit || 'dreamos_maint_audit';
+        var logs = safeGet(auditKey, []);
+        if(logs.length > 100) safeSet(auditKey, logs.slice(0, 100));
+        // Retry save
+        localStorage.setItem(k, JSON.stringify(d));
+        if(window.showToast) showToast('⚠️ Storage penuh, audit log dibersihkan', 'warning');
+      } catch(e2) {
+        console.warn('[Maintenance] localStorage quota exceeded:', e);
+        if(window.showToast) showToast('❌ Storage sangat penuh', 'error');
+      }
+    }
+  }
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function escA(s){return esc(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
   function uid(p){return (p||'x')+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
@@ -374,7 +391,18 @@
       '<div class="ctr"><div class="pct">'+Math.round(pct)+(cap==='raw'?'':'%')+'</div>'+(cap&&cap!=='raw'?'<div class="cap">'+esc(cap)+'</div>':'')+'</div></div>';
   }
   function miniRing(pct,color){var s=42,st=5,r=(s-st)/2,c=2*Math.PI*r;return '<div class="mini"><svg width="'+s+'" height="'+s+'"><circle cx="'+(s/2)+'" cy="'+(s/2)+'" r="'+r+'" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="'+st+'"/><circle class="ring-fg" data-off="'+(c-(pct/100*c)).toFixed(1)+'" cx="'+(s/2)+'" cy="'+(s/2)+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+st+'" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+c.toFixed(1)+'"/></svg><div class="v">'+Math.round(pct)+'</div></div>';}
-  function animateRings(){requestAnimationFrame(function(){requestAnimationFrame(function(){document.querySelectorAll('.ring-fg').forEach(function(el){el.style.strokeDashoffset=el.getAttribute('data-off');});});});}
+  var __animateTimer = null;
+  function animateRings(){
+    if(__animateTimer) return; // Already scheduled
+    __animateTimer = requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        document.querySelectorAll('.ring-fg').forEach(function(el){
+          el.style.strokeDashoffset=el.getAttribute('data-off');
+        });
+        __animateTimer = null;
+      });
+    });
+  }
   function countUp(el,target,suffix){if(!el)return;var t0=null,dur=650;function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1);el.textContent=Math.round(target*p)+(suffix||'');if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
 
   function assetIcon(cat){return ({ac:'❄️',panel_induk:'⚡',panel:'🎛️',pompa:'💧',other:'🛠️'})[cat]||'🛠️';}
@@ -515,11 +543,32 @@
     {id:'iso',ic:'📜',t:'Audit & Standar'}
   ];
   function badges(){var wos=safeGet(K.wo,[]);var open=wos.filter(function(w){var s=(w.status||'').toLowerCase();return s!=='selesai'&&s!=='approved'&&s!=='done';}).length;var pms=safeGet(K.pm,[]).filter(function(p){return p.status!=='hold'&&daysBetween(now(),p.nextDue)<0;}).length;var tpl=safeGet(K.tpl,[]),draft=safeGet(K.draft,null),done=(draft&&draft.date===todayStr())?(draft.items||[]).filter(function(i){return i.result;}).length:0;return {wo:open,pm:pms,insp:done+'/'+tpl.length};}
-  function renderRail(){var b=badges();$('rail').innerHTML='<div class="brand"><svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>CMMS</div>'+
+  var __lastRailHash = '';
+  function renderRail(){
+    var b=badges();
+    // Hash berdasarkan view + badges (prevent rebuild jika sama)
+    var railHash = view + '|' + JSON.stringify(b);
+    if(__lastRailHash === railHash) return;
+    __lastRailHash = railHash;
+    
+    $('rail').innerHTML='<div class="brand"><svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>CMMS</div>'+
     NAV.map(function(n){var bdg=n.id==='wo'?(b.wo||''):n.id==='pm'?(b.pm||''):n.id==='inspect'?b.insp:'';return '<div class="nav'+(view===n.id?' active':'')+'" onclick="setView(\''+n.id+'\')"><span class="ic">'+n.ic+'</span><span>'+n.t+'</span>'+(bdg!==''?'<span class="bdg">'+bdg+'</span>':'')+'</div>';}).join('')+
     '<div class="iso"><b>Praktik:</b> loop tertutup Inspeksi ➜ Temuan  Work Order ➜ Tutup ➜ Skor Aset. Selaras ISO 55001 §8, ISO 9001 §7.1.3/§10.2, ISO 45001 §8.1.2.</div>';
   }
-  window.setView=function(v){view=v;renderRail();renderView();window.scrollTo({top:0,behavior:'smooth'});};
+  var __renderViewTimer = null;
+  function debouncedRenderView() {
+    if(__renderViewTimer) clearTimeout(__renderViewTimer);
+    __renderViewTimer = setTimeout(function(){
+      renderView();
+    }, 200);
+  }
+  
+  window.setView=function(v){
+    view=v;
+    renderRail();
+    debouncedRenderView();
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
 
   var HEAD={
     cockpit:['Operational Cockpit','Maintenance <b>Cockpit</b>','Kesehatan 29 aset lintas 6 gedung, kepatuhan perawatan, dan beban kerja hari ini dalam satu papan.'],
@@ -678,7 +727,17 @@
       '<div class="tile s6" style="--c:var(--accent);"><span class="shine"></span><div class="lab">Matriks Pemetaan Standar</div><div style="overflow-x:auto;"><table class="iso"><thead><tr><th>Standar</th><th>Klausul</th><th>Persyaratan</th><th>Cara Dream OS Memenuhi</th></tr></thead><tbody>'+matrix.map(function(m){return '<tr><td><b>ISO '+m[0]+'</b></td><td class="cl">'+m[1]+'</td><td>'+m[2]+'</td><td>'+m[3]+'</td></tr>';}).join('')+'</tbody></table></div></div>';
   }
 
-  function tick(){var d=now(),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0'),ss=String(d.getSeconds()).padStart(2,'0');var c=$('amb-clock');if(c)c.textContent=hh+':'+mm+':'+ss;var h=d.getHours(),sh=h<11?'Sif Pagi':h<15?'Sif Siang':'Sif Malam';var s=$('amb-shift');if(s)s.textContent=sh;var u=$('amb-user');if(u)u.textContent=(user().nama||user().email||'tamu');}
+  var __lastShift = null, __lastUser = null;
+  function tick(){
+    var d=now(), hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0'), ss=String(d.getSeconds()).padStart(2,'0');
+    var c=$('amb-clock'); if(c) c.textContent=hh+':'+mm+':'+ss;
+    var h=d.getHours(), sh=h<11?'Sif Pagi':h<15?'Sif Siang':'Sif Malam';
+    var s=$('amb-shift'); 
+    if(s && __lastShift !== sh) { s.textContent=sh; __lastShift = sh; }
+    var u=$('amb-user');
+    var userName = (user().nama||user().email||'tamu');
+    if(u && __lastUser !== userName) { u.textContent=userName; __lastUser = userName; }
+  }
 
   // ===== CLOUD SYNC LAYER (Supabase) =====
   var Cloud = (function(){
@@ -689,6 +748,7 @@
       {k:K.insp,   t:'maint_inspections',         cols:['id','date','inspector','items','completion','findings']},
       {k:K.wo,     t:'maintenance_tasks',         cols:['id','judul','deskripsi','lokasi','priority','status','kategori','created_at','created_by','completed_at','k3_report_id','source']}
     ];
+    var __pulling = false, __pushing = false;
     function client(){ return window.supabaseClient || (window.parent && window.parent.supabaseClient) || null; }
     function setStatus(s){ var e=document.getElementById('amb-sync'); if(e) e.textContent=s; }
     function pick(row,cols){ var o={}; cols.forEach(function(k){ if(row[k]!==undefined) o[k]=row[k]; }); return o; }
@@ -698,7 +758,9 @@
       return Object.keys(m).map(function(id){ return m[id]; });
     }
     async function pull(){
+      if(__pulling) { console.log('[Cloud] Pull already in progress, skipping'); return; }
       var cl=client(); if(!cl){ setStatus('☁️ offline'); return; }
+      __pulling = true;
       setStatus('⬇️ menarik…');
       try{
         for(var i=0;i<MAP.length;i++){
@@ -708,9 +770,12 @@
         }
         setStatus('🟢 tersinkron');
       }catch(e){ console.warn('[maint] pull', e); setStatus('🟠 tarik gagal'); }
+      finally { __pulling = false; }
     }
     async function push(){
+      if(__pushing) { console.log('[Cloud] Push already in progress, skipping'); return; }
       var cl=client(); if(!cl){ setStatus('☁️ offline'); return; }
+      __pushing = true;
       setStatus('☁️ mengirim…');
       try{
         for(var i=0;i<MAP.length;i++){
@@ -719,6 +784,7 @@
         }
         setStatus('🟢 tersinkron');
       }catch(e){ console.warn('[maint] push', e); setStatus('🟠 kirim gagal'); }
+      finally { __pushing = false; }
     }
     async function remove(table,id){ var cl=client(); if(!cl)return; try{ await cl.from(table).delete().eq('id',id); }catch(e){ console.warn('[maint] del',e); } }
     async function removeMany(table,ids){ if(!ids||!ids.length)return; var cl=client(); if(!cl)return; try{ await cl.from(table).delete().in('id',ids); }catch(e){ console.warn('[maint] delmany',e); } }
@@ -754,10 +820,17 @@
     var p=document.getElementById('eq-parent'); if(p)p.innerHTML='Induk: <b>'+esc(a.nama)+'</b> · '+esc(a.lokasi||'-');
     var n=document.getElementById('eq-name'); if(n)n.value='';
     var f=document.getElementById('eq-freq'); if(f)f.value='90';
-    openBrg('ov-eq'); setTimeout(function(){var n2=document.getElementById('eq-name');if(n2)n2.focus();},160);
+    openBrg('ov-eq');
+    // Clear timeout lama sebelum buat yang baru
+    if(window.__eqModalTimeout) clearTimeout(window.__eqModalTimeout);
+    window.__eqModalTimeout = setTimeout(function(){
+      var n2=document.getElementById('eq-name');
+      if(n2) n2.focus();
+      window.__eqModalTimeout = null;
+    }, 160);
   };
   window.saveEqModal=function(){
-    var nm=(document.getElementById('eq-name').value||'').trim(); if(!nm){alert('⚠️ Nama peralatan wajib diisi.');return;}
+    var nm=(document.getElementById('eq-name').value||'').trim(); if(!nm){ if(window.showToast) showToast('⚠️ Nama peralatan wajib diisi', 'error'); else alert('⚠️ Nama peralatan wajib diisi.'); return; }
     var a=safeGet(K_ASSET,[]).find(function(x){return x.id===__eqParent;});
     var cat=document.getElementById('eq-cat').value, crit=parseInt(document.getElementById('eq-crit').value,10)||3, freq=parseInt(document.getElementById('eq-freq').value,10)||90;
     var eqId='eq_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
@@ -781,13 +854,13 @@
     var w=safeGet(K.wo,[]).find(function(x){return x.id===woId;}); if(!w)return; __conWo=woId;
     var p=document.getElementById('con-wo'); if(p)p.textContent='WO: '+(w.judul||w.deskripsi||woId);
     var inv=safeGet(K_INV,[]).filter(function(x){return (parseInt(x.jumlah)||0)>0;});
-    if(!inv.length){alert('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.');return;}
+    if(!inv.length){ if(window.showToast) showToast('⚠️ Stok kosong', 'warning'); else alert('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.'); return; }
     document.getElementById('con-item').innerHTML=inv.map(function(x){return '<option value="'+escA(x.id)+'">'+esc(x.nama||x.nama_barang||'-')+' (sisa '+(parseInt(x.jumlah)||0)+')</option>';}).join('');
     document.getElementById('con-qty').value='1'; openBrg('ov-consume');
   };
   window.saveConsume=function(){
     var invId=document.getElementById('con-item').value, qty=parseInt(document.getElementById('con-qty').value,10)||0;
-    if(qty<=0){alert('⚠️ Jumlah tidak valid.');return;}
+    if(qty<=0){ if(window.showToast) showToast('⚠️ Jumlah tidak valid', 'error'); else alert('⚠️ Jumlah tidak valid.'); return; }
     var inv=safeGet(K_INV,[]); var it=inv.find(function(x){return x.id===invId;}); if(!it)return;
     if((parseInt(it.jumlah)||0)<qty){alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)||0)+').');return;}
     it.jumlah=(parseInt(it.jumlah)||0)-qty; it.updated_at=new Date().toISOString(); safeSet(K_INV,inv);
@@ -813,11 +886,60 @@
     safeSet('dreamos_maint_seed_v',SEED_V);
   }
   seed();
-  renderRail(); renderView(); tick(); setInterval(tick,1000);
-  Cloud.pull().then(function(){ reconcileK3(false); Cloud.pushDebounced(); renderRail(); renderView(); });
+  renderRail(); renderView(); tick();
+  var __tickInterval = setInterval(tick, 1000);
+  
+  // Debounced initial cloud pull (prevent overlap)
+  var __initPullTimeout = setTimeout(function(){
+    Cloud.pull().then(function(){ 
+      reconcileK3(false); 
+      Cloud.pushDebounced(); 
+      renderRail(); 
+      renderView(); 
+    });
+    try { pullRefs().then(function(){ renderView(); }); } catch(e){ console.warn('pullRefs', e); }
+  }, 500);
+  
+  // ===== MODULE CLEANUP: stop semua interval/timer saat user pindah modul =====
+  window.__maintCleanup = function() {
+    if(__tickInterval) { clearInterval(__tickInterval); __tickInterval = null; }
+    if(__initPullTimeout) { clearTimeout(__initPullTimeout); __initPullTimeout = null; }
+    if(__renderViewTimer) { clearTimeout(__renderViewTimer); __renderViewTimer = null; }
+    if(__animateTimer) { clearTimeout(__animateTimer); __animateTimer = null; }
+    // Clear modal timeouts
+    if(window.__eqModalTimeout) { clearTimeout(window.__eqModalTimeout); window.__eqModalTimeout = null; }
+    console.log('[Maintenance] Cleanup complete');
+  };
+  
+  // Hook ke goHome
+  var __origGoHome = window.goHome;
+  window.goHome = function() {
+    if(window.__maintCleanup) window.__maintCleanup();
+    if(__origGoHome) return __origGoHome();
+    else {
+      try {
+        var mc = document.getElementById('mod-container'); if(mc){mc.style.display='none'; mc.innerHTML='';}
+        var ma = document.getElementById('main-app'); if(ma) ma.style.display='block';
+        var bn = document.getElementById('bottom-nav'); if(bn) bn.style.display='block';
+        if(typeof window.renderDashboard === 'function') window.renderDashboard();
+        window.scrollTo(0,0);
+      } catch(e){
+        window.location.href = (location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : './') + 'index.html';
+      }
+    }
+  };
+  
+  // Visibility API: pause updates saat tab hidden
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){
+      if(__tickInterval) { clearInterval(__tickInterval); __tickInterval = null; }
+    } else {
+      if(!__tickInterval) __tickInterval = setInterval(tick, 1000);
+      tick(); // Update immediately saat visible lagi
+    }
+  });
+  
   console.log('🛰️ CMMS Maintenance ready — 29 aset real + cloud sync (assets/pm/templates/inspections/tasks)');
-
-  try{ pullRefs().then(function(){ renderView(); }); }catch(e){ console.warn('pullRefs',e); }
 })();
 </script>
 </body>
