@@ -54,12 +54,17 @@
       <textarea id="k3-deskripsi" class="bk-input" rows="3" placeholder="Deskripsi detail kejadian *" required style="min-height: 80px;"></textarea>
       
       <div style="margin-top: 0.5rem;">
-        <label style="color: #cbd5e1; font-size: 0.8125rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Kamera / Galeri Perangkat — Auto-Compress)</label>
-        <input type="file" id="k3-foto-input" accept="image/*" capture="environment" onchange="handlePhoto(this, 'k3-foto-preview')" class="bk-input" style="padding: 0.5rem;">
+        <label style="color: #cbd5e1; font-size: 0.8125rem; display: block; margin-bottom: 0.3rem;">📸 Foto Bukti (Auto-Compress)</label>
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.3rem;">
+          <input type="file" id="k3-foto-camera" accept="image/*" capture="environment" onchange="handlePhoto(this, 'k3-foto-preview')" style="display:none;">
+          <input type="file" id="k3-foto-gallery" accept="image/*" onchange="handlePhoto(this, 'k3-foto-preview')" style="display:none;">
+          <button type="button" onclick="document.getElementById('k3-foto-camera').click()" class="btn btn-primary" style="flex:1; min-height:44px;">📷 Kamera</button>
+          <button type="button" onclick="document.getElementById('k3-foto-gallery').click()" class="btn btn-success" style="flex:1; min-height:44px;">🖼️ Galeri</button>
+        </div>
         <div id="k3-foto-status" style="font-size:0.72rem; margin:0.3rem 0; min-height:1rem;"></div>
         <div class="foto-preview-container">
           <img id="k3-foto-preview">
-          <button type="button" onclick="clearPhoto('k3-foto-input', 'k3-foto-preview')" class="btn btn-danger btn-clear-foto" id="btn-clear-photo">✕ Hapus Foto</button>
+          <button type="button" onclick="clearPhoto('k3-foto-camera', 'k3-foto-gallery', 'k3-foto-preview')" class="btn btn-danger btn-clear-foto" id="btn-clear-photo">✕ Hapus Foto</button>
         </div>
       </div>
 
@@ -359,13 +364,14 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     })();
   };
 
-  window.clearPhoto = function(inputId, previewId) {
+  window.clearPhoto = function(inputId1, inputId2, previewId) {
     window.currentPhoto = null;
     currentFotoBase64 = null;
     currentFotoUrl = null;
     currentFotoStatus = null;
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
+    // Reset kedua input (kamera + galeri)
+    var i1 = document.getElementById(inputId1); if (i1) i1.value = '';
+    var i2 = document.getElementById(inputId2); if (i2) i2.value = '';
     const preview = document.getElementById(previewId);
     if (preview) preview.style.display = 'none';
     const clearBtn = document.getElementById('btn-clear-photo');
@@ -383,7 +389,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       return;
     }
 
-    if (!window.supabaseClient) return if (window.showToast) showToast('⚠️ Supabase offline', 'error');
+    if (!window.supabaseClient) { if (window.showToast) showToast('⚠️ Supabase offline', 'error'); return; }
     
     var b = document.getElementById('sync-badge');
     if(b) b.innerHTML = '🔄 Upload ' + trappedData.length + ' data...';
