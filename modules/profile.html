@@ -169,32 +169,85 @@
     catch (e) { return null; }
   }
   function saveUserLocal(u) {
-    localStorage.setItem('dreamos_bound_user', JSON.stringify(u));
+    try {
+      localStorage.setItem('dreamos_bound_user', JSON.stringify(u));
+    } catch(e) {
+      // Quota exceeded — bersihkan cache lama, retry
+      try {
+        var keys = Object.keys(localStorage).filter(function(k){ 
+          return k.indexOf('dreamos_prayer_cache_') === 0 || 
+                 k.indexOf('dreamos_weather_cache') === 0; 
+        });
+        keys.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_){} });
+        localStorage.setItem('dreamos_bound_user', JSON.stringify(u));
+        if(window.showToast) showToast('⚠️ Storage penuh, cache dibersihkan', 'warning');
+      } catch(e2) {
+        console.warn('[Profile] saveUserLocal quota exceeded:', e2);
+        if(window.showToast) showToast('❌ Storage sangat penuh', 'error');
+      }
+    }
   }
 
   async function getDNA() {
-    try {
-      var c = document.createElement('canvas');
-      var x = c.getContext('2d');
-      x.fillStyle = '#f60';
-      x.fillRect(125, 1, 62, 20);
-      x.fillStyle = '#069';
-      x.font = '14px Arial';
-      x.fillText('DreamOS', 2, 15);
-      var raw = [
-        navigator.hardwareConcurrency || 0,
-        screen.width + 'x' + screen.height,
-        screen.colorDepth || 0,
-        navigator.language || '',
-        c.toDataURL()
-      ].join('|');
-      var h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
-      return Array.from(new Uint8Array(h)).map(function (b) {
-        return b.toString(16).padStart(2, '0');
-      }).join('').substring(0, 32);
-    } catch (e) {
-      return 'UNKNOWN';
+    // Cache: SHA-256 mahal, hitung sekali per session
+    if (__dnaCache) return __dnaCache;
+    if (__dnaCachePromise) return __dnaCachePromise;
+    
+    __dnaCachePromise = (async function(){
+      try {
+        var c = document.createElement('canvas');
+        var x = c.getContext('2d');
+        x.fillStyle = '#f60';
+        x.fillRect(125, 1, 62, 20);
+        x.fillStyle = '#069';
+        x.font = '14px Arial';
+        x.fillText('DreamOS', 2, 15);
+        var raw = [
+          navigator.hardwareConcurrency || 0,
+          screen.width + 'x' + screen.height,
+          screen.colorDepth || 0,
+          navigator.language || '',
+          c.toDataURL()
+        ].join('|');
+        var h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+        var result = Array.from(new Uint8Array(h)).map(function (b) {
+          return b.toString(16).padStart(2, '0');
+        }).join('').substring(0, 32);
+        __dnaCache = result;
+        return result;
+      } catch (e) {
+        return 'UNKNOWN';
+      } finally {
+        __dnaCachePromise = null;
+      }
+    
+
+  // ===== MODULE CLEANUP: clear timers, revoke object URLs =====
+  window.__profileCleanup = function() {
+    // Clear any pending promises / timers
+    __dnaCachePromise = null;
+    __bookingsLoading = false;
+    console.log('[Profile] Cleanup complete');
+  };
+  
+  // Hook ke goHomeSafe
+  var __origGoHomeSafe = window.goHomeSafe;
+  window.goHomeSafe = function() {
+    if(window.__profileCleanup) window.__profileCleanup();
+    if(__origGoHomeSafe) return __origGoHomeSafe();
+    else {
+      try {
+        if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function'){
+          window.parent.goHome(); return;
+        }
+      } catch(e){}
+      if(typeof window.goHome === 'function'){ try{ window.goHome(); return; }catch(e){} }
+      window.location.href = loginUrl();
     }
+  };
+
+})();
+    return __dnaCachePromise;
   }
 
   var user = getUser();
@@ -204,7 +257,10 @@
   }
 
   var currentDna = '';
+  var __dnaCache = null;
+  var __dnaCachePromise = null;
 
+  function escUrl(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'%3C').replace(/>/g,'%3E'); }
   function paintHeader() {
     document.getElementById('display-name').textContent = user.nama || 'User';
     document.getElementById('display-role').textContent = String(user.role || 'staff').toUpperCase();
@@ -220,7 +276,7 @@
     document.getElementById('edit-department').value = user.department || '';
     if (user.avatar) {
       document.getElementById('avatar-preview').innerHTML =
-        '<img src="' + user.avatar + '" alt="avatar">';
+        '<img src="' + escUrl(user.avatar) + '" alt="avatar" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">';
     }
   }
   paintHeader();
@@ -304,7 +360,7 @@
     var nama = document.getElementById('edit-nama').value.trim();
     var phone = document.getElementById('edit-phone').value.trim();
     var department = document.getElementById('edit-department').value.trim();
-    if (!nama) return alert('Nama wajib diisi');
+    if (!nama) return { if(window.showToast) showToast('⚠️ Nama wajib diisi', 'error'); else alert('Nama wajib diisi'); return; }
     try {
       var row = await upsertUserFields({ nama: nama, phone: phone, department: department });
       if (row && row.id) user.id = row.id;
@@ -313,9 +369,9 @@
       user.department = department;
       saveUserLocal(user);
       paintHeader();
-      alert('✅ Profil disimpan ke cloud & lokal');
+      if(window.showToast) showToast('✅ Profil disimpan', 'success'); else alert('✅ Profil disimpan ke cloud & lokal');
     } catch (e) {
-      alert('⚠️ Gagal simpan: ' + (e.message || e));
+      if(window.showToast) showToast('❌ Gagal: ' + (e.message || e), 'error'); else alert('⚠️ Gagal simpan: ' + (e.message || e));
     }
   };
 
@@ -323,8 +379,8 @@
   document.getElementById('avatar-input').addEventListener('change', async function () {
     var file = this.files && this.files[0];
     if (!file) return;
-    if (!window.supabaseClient) return alert('Supabase tidak siap');
-    if (file.size > 2 * 1024 * 1024) return alert('Maks 2MB');
+    if (!window.supabaseClient) { if(window.showToast) showToast('⚠️ Supabase tidak siap', 'error'); else alert('Supabase tidak siap'); return; }
+    if (file.size > 2 * 1024 * 1024) { if(window.showToast) showToast('⚠️ Maksimal 2MB', 'error'); else alert('Maks 2MB'); return; }
 
     var uid = user.id || (user.email || 'anon').replace(/[^a-z0-9]/gi, '_');
     var path = uid + '/' + Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
@@ -344,7 +400,7 @@
       user.avatar = url;
       saveUserLocal(user);
       document.getElementById('avatar-preview').innerHTML = '<img src="' + url + '" alt="avatar">';
-      alert('✅ Avatar tersimpan di Storage + database');
+      if(window.showToast) showToast('✅ Avatar tersimpan', 'success'); else alert('✅ Avatar tersimpan di Storage + database');
     } catch (e) {
       alert('⚠️ Upload gagal: ' + (e.message || e) +
         '\n\nPastikan bucket "avatars" public-read + policy upload authenticated.');
@@ -357,7 +413,8 @@
     document.getElementById('info-dna').textContent = currentDna;
     document.getElementById('device-dna-now').textContent = currentDna;
 
-    var bound = user.device_dna || localStorage.getItem('dreamos_device_dna_' + (user.email || '')) || '';
+    var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
+    var bound = user.device_dna || localStorage.getItem(dnaKey) || '';
     document.getElementById('device-dna-bound').textContent = bound || '(belum diikat)';
 
     var el = document.getElementById('device-bind-status');
@@ -393,21 +450,34 @@
       }
       user.device_dna = currentDna;
       saveUserLocal(user);
-      localStorage.setItem('dreamos_device_dna_' + (user.email || ''), currentDna);
-      alert('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12) + '…');
+      var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
+      localStorage.setItem(dnaKey, currentDna);
+      if(window.showToast) showToast('✅ Device diikat: ' + currentDna.slice(0,12) + '…', 'success'); else alert('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12) + '…');
       refreshDeviceStatus();
     } catch (e) {
       // lokal tetap
       user.device_dna = currentDna;
       saveUserLocal(user);
-      localStorage.setItem('dreamos_device_dna_' + (user.email || ''), currentDna);
-      alert('⚠️ Cloud gagal (' + (e.message || e) + '). Bind lokal tetap disimpan.\nTambah kolom device_dna di tabel users.');
+      var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
+      localStorage.setItem(dnaKey, currentDna);
+      if(window.showToast) showToast('⚠️ Cloud gagal, bind lokal disimpan', 'warning'); else alert('⚠️ Cloud gagal (' + (e.message || e) + '). Bind lokal tetap disimpan.');
       refreshDeviceStatus();
     }
   };
 
-  // —— Booking saya ——
+  // —— Booking saya (dengan debounce 1s) ——
+  var __bookingsLoading = false;
+  var __bookingsLastLoad = 0;
   window.loadMyBookings = async function (fromBtn) {
+    // Debounce: cegah spam klik refresh
+    var now = Date.now();
+    if (__bookingsLoading || (now - __bookingsLastLoad) < 1000) {
+      if (fromBtn && window.showToast) showToast('⏳ Tunggu sebentar...', 'info');
+      return;
+    }
+    __bookingsLoading = true;
+    __bookingsLastLoad = now;
+    
     var el = document.getElementById('my-bookings-list');
     el.innerHTML = '<p class="hint">Memuat…</p>';
     var rows = [];
@@ -452,17 +522,29 @@
     });
     html += '</tbody></table>';
     el.innerHTML = html;
-    if (fromBtn) alert('Ditemukan ' + mine.length + ' pengajuan milik Anda');
+    if (fromBtn) { if(window.showToast) showToast('📅 ' + mine.length + ' pengajuan', 'info'); else alert('Ditemukan ' + mine.length + ' pengajuan milik Anda'); }
+    __bookingsLoading = false;
   };
 
+  var __pwChangeLastAttempt = 0;
   window.changePassword = async function () {
+    // Rate limit: 1x per 10 detik (prevent brute force)
+    var now = Date.now();
+    if (now - __pwChangeLastAttempt < 10000) {
+      var wait = Math.ceil((10000 - (now - __pwChangeLastAttempt)) / 1000);
+      if(window.showToast) showToast('⏳ Tunggu ' + wait + ' detik', 'warning');
+      else alert('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi');
+      return;
+    }
+    __pwChangeLastAttempt = now;
+    
     var oldPass = document.getElementById('old-pass').value;
     var newPass = document.getElementById('new-pass').value;
     var confirmPass = document.getElementById('confirm-pass').value;
-    if (!oldPass || !newPass || !confirmPass) return alert('Isi semua field');
-    if (newPass.length < 6) return alert('Minimal 6 karakter');
-    if (newPass !== confirmPass) return alert('Konfirmasi tidak cocok');
-    if (!window.supabaseClient) return alert('Supabase tidak siap');
+    if (!oldPass || !newPass || !confirmPass) { if(window.showToast) showToast('⚠️ Isi semua field', 'error'); else alert('Isi semua field'); return; }
+    if (newPass.length < 6) { if(window.showToast) showToast('⚠️ Minimal 6 karakter', 'error'); else alert('Minimal 6 karakter'); return; }
+    if (newPass !== confirmPass) { if(window.showToast) showToast('⚠️ Konfirmasi tidak cocok', 'error'); else alert('Konfirmasi tidak cocok'); return; }
+    if (!window.supabaseClient) { if(window.showToast) showToast('⚠️ Supabase tidak siap', 'error'); else alert('Supabase tidak siap'); return; }
 
     try {
       var s = await window.supabaseClient.auth.signInWithPassword({ email: user.email, password: oldPass });
@@ -470,13 +552,13 @@
       var u = await window.supabaseClient.auth.updateUser({ password: newPass });
       if (u.error) throw u.error;
       try { var _u=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); var _i=_u.findIndex(function(x){ return (x.email||'').toLowerCase()===String(user.email||'').toLowerCase(); }); if(_i>-1){ _u[_i].password_hash=null; localStorage.setItem('dreamos_users_db', JSON.stringify(_u)); } } catch(e){}
-      alert('✅ Password diubah. Login ulang.');
+      if(window.showToast) showToast('✅ Password diubah', 'success'); else alert('✅ Password diubah. Login ulang.');
       await window.supabaseClient.auth.signOut().catch(function () {});
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
       window.location.href = loginUrl();
     } catch (e) {
-      alert('❌ ' + (e.message || e));
+      if(window.showToast) showToast('❌ ' + (e.message || e), 'error'); else alert('❌ ' + (e.message || e));
     }
   };
 
@@ -486,15 +568,34 @@
       device: document.getElementById('notif-device').checked
     };
     localStorage.setItem('dreamos_notif_prefs', JSON.stringify(prefs));
-    alert('✅ Preferensi disimpan');
+    if(window.showToast) showToast('✅ Preferensi disimpan', 'success'); else alert('✅ Preferensi disimpan');
   };
 
   window.handleLogout = async function () {
-    if (!confirm('Yakin logout?')) return;
-    if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(function () {});
-    localStorage.removeItem('dreamos_bound_user');
-    localStorage.removeItem('dreamos_session_active');
-    window.location.href = loginUrl();
+    // Custom modal (non-blocking)
+    var modal = document.createElement('div');
+    modal.id = 'profile-logout-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(6px);';
+    modal.innerHTML = '<div style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.5rem;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);">' +
+      '<div style="font-size:3rem;margin-bottom:0.5rem;">🚪</div>' +
+      '<h3 style="color:#00ff9d;margin:0 0 0.5rem;">Logout dari Dream OS?</h3>' +
+      '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1.2rem;line-height:1.5;">Anda harus login kembali untuk mengakses sistem.</p>' +
+      '<div style="display:flex;gap:0.5rem;">' +
+      '<button id="profile-logout-cancel" style="flex:1;padding:0.7rem;background:rgba(255,255,255,0.05);color:#e2e8f0;border:1px solid rgba(255,255,255,0.15);border-radius:10px;font-weight:700;cursor:pointer;">Batal</button>' +
+      '<button id="profile-logout-confirm" style="flex:1;padding:0.7rem;background:#ef4444;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Logout</button>' +
+      '</div></div>';
+    document.body.appendChild(modal);
+    
+    document.getElementById('profile-logout-cancel').onclick = function(){ modal.remove(); };
+    document.getElementById('profile-logout-confirm').onclick = async function(){
+      modal.remove();
+      if (window.supabaseClient) await window.supabaseClient.auth.signOut().catch(function () {});
+      localStorage.removeItem('dreamos_bound_user');
+      localStorage.removeItem('dreamos_session_active');
+      if(window.BankAudit) { try { window.BankAudit.log('LOGOUT', {}); } catch(e){} }
+      window.location.href = loginUrl();
+    };
+    modal.onclick = function(e){ if(e.target === modal) modal.remove(); };
   };
 
   // Init
