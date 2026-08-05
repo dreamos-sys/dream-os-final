@@ -319,11 +319,10 @@
 
     <div class="glass">
       <div style="font-weight:800; color:var(--purple); margin-bottom:0.8rem; display:flex; justify-content:space-between; align-items:center;">
-        <span>🧠 Smart Analitik Semua Modul (Ruang Admin)</span>
+        <span>🧠 Insight Operasional (klik untuk aksi)</span>
         <button class="btn btn-outline btn-sm" onclick="renderSmartAnalytics()">🔄</button>
       </div>
-      <div class="chart-container"><canvas id="modAllChart"></canvas></div>
-      <div id="smart-insights" style="margin-top:0.8rem; display:flex; flex-direction:column; gap:0.4rem;"></div>
+      <div id="smart-insights" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
     </div>
 
     <div class="glass">
@@ -597,6 +596,14 @@
     <div class="glass">
       <div style="font-weight:800;color:var(--gold);margin-bottom:.8rem;">🏢 Booking per Divisi</div>
       <div class="chart-container"><canvas id="advDivChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:.8rem;">📊 Volume Semua Modul (Ruang Admin)</div>
+      <div class="chart-container"><canvas id="advAllChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--success);margin-bottom:.8rem;">📝 Ringkasan Eksekutif Otomatis</div>
+      <div id="adv-summary" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
     </div>
     <div class="glass">
       <div style="font-weight:800;color:var(--purple);margin-bottom:.8rem;">🔥 Heatmap Aktivitas (7 hari terakhir)</div>
@@ -1808,9 +1815,7 @@ window.goHomeHandler = function() {
   /* ===== SMART ANALITIK SEMUA MODUL ===== */
   window.renderSmartAnalytics = function(){
     var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[]) };
-    var labels=Object.keys(M), counts=labels.map(function(k){return M[k].length;});
-    if(typeof Chart!=='undefined'){ var ex=Chart.getChart('modAllChart'); if(ex)ex.destroy();
-      new Chart(document.getElementById('modAllChart'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:['#0072B2','#D55E00','#E69F00','#56B4E9','#CC79A7','#009E73','#999999','#F0E442','#8b5cf6','#10b981'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0},grid:{color:'rgba(255,255,255,0.06)'}},x:{ticks:{color:'#f1f5f9',maxRotation:35},grid:{display:false}}}}}); }
+    // (chart volume semua modul kini di tab Analytics: advRenderAll)
     var ins=[], pend=function(arr){return arr.filter(function(x){return (x.status||'pending').toLowerCase()==='pending';});};
     var bPend=pend(M['Booking']), kPend=pend(M['K3']), dPend=pend(M['Dana']);
     if(bPend.length) ins.push({c:'warn',t:'⏳ '+bPend.length+' booking menunggu approval — buka Approval.',tab:'approvals'});
@@ -1918,7 +1923,30 @@ window.goHomeHandler = function() {
     w.document.write(html);w.document.close();setTimeout(function(){w.print()},500);
     logActivity('Export Laporan','Laporan bulanan analytics (confidential)');
   };
-  window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderHeat();advRenderAI();};
+  function advRenderAll(){
+    var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[]) };
+    var labels=Object.keys(M), counts=labels.map(function(k){return M[k].length;});
+    if(typeof Chart==='undefined')return;
+    var ex=Chart.getChart('advAllChart');if(ex)ex.destroy();
+    new Chart(document.getElementById('advAllChart'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:['#0072B2','#D55E00','#E69F00','#56B4E9','#CC79A7','#009E73','#999999','#F0E442','#8b5cf6','#10b981'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0},grid:{color:'rgba(255,255,255,0.06)'}},x:{ticks:{color:'#f1f5f9',maxRotation:35},grid:{display:false}}}}});
+  }
+  function advRenderSummary(){
+    var n=new Date();
+    var per=ADV.bookings.filter(function(b){return advIn(advDate(b),ADV.period)});
+    var kper=ADV.k3.filter(function(b){return advIn(advDate(b),ADV.period)});
+    var app=per.filter(function(b){return (b.status||'').toLowerCase()==='approved'}).length;
+    var rate=per.length?Math.round(app/per.length*100):0;
+    var kpend=ADV.k3.filter(function(b){return (b.status||'').toLowerCase()==='pending'}).length;
+    var divMap={};per.forEach(function(b){var d=b.divisi||'Lain';divMap[d]=(divMap[d]||0)+1;});
+    var topDiv=Object.keys(divMap).sort(function(a,b){return divMap[b]-divMap[a]})[0]||'-';
+    var s='📋 <b>Laporan '+n.toLocaleDateString('id-ID',{month:'long',year:'numeric'})+':</b> tercatat <b>'+per.length+' booking</b> (approval rate '+rate+'%) dan <b>'+kper.length+' laporan K3</b>. ';
+    s+='Divisi paling aktif: <b>'+topDiv+'</b>. ';
+    if(kpend>0) s+='⚠️ Terdapat <b>'+kpend+' K3 pending</b> yang perlu tindak lanjut segera. ';
+    else s+='✅ Tidak ada K3 pending. ';
+    s+='Gunakan <b>Analitik Stok</b> untuk rencana belanja dan tombol <b>Export PDF</b> untuk laporan resmi.';
+    var el=document.getElementById('adv-summary'); if(el) el.innerHTML=s;
+  }
+  window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderAll();advRenderHeat();advRenderAI();advRenderSummary();};
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
