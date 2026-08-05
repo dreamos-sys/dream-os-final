@@ -149,6 +149,10 @@
 (function () {
   'use strict';
   var WORK_START = 7.5, WORK_END = 16.0;
+  var __bookingPage = 0;
+  var __bookingPageSize = 50;
+  var __bookingSearch = '';
+  var __bookingFilterStatus = '';
 
   var SARANA_LIST = ['Aula SMP', 'Aula SMA', 'Saung Besar', 'Saung Kecil', 'R Meeting SMA', 'Serbaguna', 'Lapangan Basket', 'Lapangan Volly', 'Lapangan Tanah', 'Lapangan SMA', 'Kantin SMP', 'Kantin SMA', 'Labkom SD', 'Labkom SMP', 'Labkom SMA', 'Perpustakaan SD', 'Perpustakaan SMP', 'Perpustakaan SMA', 'Area Taman Depan Masjid', 'Area Parkir Depan Dapur', 'Area Parkir Loby SMA', 'R Lain-lain'];
   var ALAT_LIST = ['Sound Portable', 'Sound Portable LCD', 'Standing Mic', 'TOA', 'Projector', 'Layar Projektor', 'Smart Box TV', 'Keyboard', 'Meja Panjang', 'Meja Kantin', 'Meja Siswa', 'Meja Oshin', 'Kursi Futura', 'Kursi Chitose', 'Kursi Siswa', 'Taplak Meja', 'Matras', 'White Board', 'Kabel AC Ekstension', 'Dispenser', 'Tirai', 'Sketsel', 'Kipas Angin Standing'];
@@ -178,7 +182,22 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function getBookings() { try { return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch (e) { return []; } }
-  function saveBookings(data) { localStorage.setItem('dreamos_bookings', JSON.stringify(data)); try { window.dispatchEvent(new CustomEvent('booking-updated')); } catch (e) {} }
+  function saveBookings(data) {
+    try {
+      localStorage.setItem('dreamos_bookings', JSON.stringify(data));
+    } catch(e) {
+      // Quota exceeded — trim data lama (sisakan 100 terbaru)
+      try {
+        var trimmed = (data || []).slice(0, 100);
+        localStorage.setItem('dreamos_bookings', JSON.stringify(trimmed));
+        if (window.showToast) showToast('⚠️ Storage penuh, booking lama di-trim', 'warning');
+      } catch(e2) {
+        console.warn('[booking] save failed:', e2);
+        if (window.showToast) showToast('❌ Storage sangat penuh', 'error');
+      }
+    }
+    try { window.dispatchEvent(new CustomEvent('booking-updated')); } catch(e) {}
+  }
   function timeToFloat(t) { var p = String(t||'0:0').split(':'); return (parseInt(p[0],10)||0) + (parseInt(p[1],10)||0)/60; }
   function nowFloatLocal(){ var n=new Date(); return n.getHours()+n.getMinutes()/60; }
   function isSubmissionWindowOpen(){ var h=nowFloatLocal(); return h>=WORK_START && h<=WORK_END; }
@@ -194,7 +213,7 @@
   function clearError() { var el = document.getElementById('booking-error'); el.style.display = 'none'; el.textContent = ''; }
 
   // ===== Notifikasi ke Command Center (tulis ke dreamos_notifications) =====
-function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getItem('dreamos_activity_feed')||'[]'); logs.unshift({ id:'act_'+Date.now(), action:action, detail:((b&&b.ruang)||'')+' · '+((b&&b.nama_peminjam)||'')+' · '+((b&&b.jam_mulai)||'')+'–'+((b&&b.jam_selesai)||''), user:(user.nama||user.email||'System'), time:new Date().toISOString() }); if(logs.length>200) logs.length=200; localStorage.setItem('dreamos_activity_feed', JSON.stringify(logs)); }catch(e){} }
+function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getItem('dreamos_activity_feed')||'[]'); logs.unshift({ id:'act_'+Date.now(), action:action, detail:((b&&b.ruang)||'')+' · '+((b&&b.nama_peminjam)||'')+' · '+((b&&b.jam_mulai)||'')+'–'+((b&&b.jam_selesai)||''), user:(user.nama||user.email||'System'), time:new Date().toISOString() }); if(logs.length>200) logs.length=200; try { localStorage.setItem('dreamos_activity_feed', JSON.stringify(logs)); } catch(qe){ /* quota - skip silently */ } }catch(e){} }
     function pushToCommandCenterNotif(item) {
     try {
       var n = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
@@ -310,13 +329,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     if (typeof window.getUserRole === 'function') { try { return ADMIN_ROLES.indexOf(String(window.getUserRole()).toLowerCase()) >= 0; } catch(e){} }
     return ADMIN_ROLES.indexOf(role) >= 0;
   }
-  window.goHomeSafe = function () {
-    try {
-      if (window.parent && typeof window.parent.goHome === 'function') window.parent.goHome();
-      else if (typeof window.goHome === 'function') window.goHome();
-      else window.location.href = '../index.html';
-    } catch (e) { window.location.href = '../index.html'; }
-  };
+  // [REMOVED] goHomeSafe sudah di-define di atas dengan cleanup hook
 
   // Populate
   var ruangSelect = document.getElementById('booking-ruang');
@@ -529,7 +542,10 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     document.getElementById('booking-ruang').selectedIndex=0; document.getElementById('booking-ruang-lain').value=''; checkLainLain();
     document.querySelectorAll('.cb-alat').forEach(function(cb){ cb.checked=false; });
 
-    if (confirm('✅ Booking tersimpan'+(cloudOk?' (server OK)':'')+'.\n\nTambah ke Google Calendar?')) openGoogleCalendar(newBooking.id);
+    // Auto-redirect ke Google Calendar dengan toast (non-blocking)
+    if (window.showToast) showToast('✅ Booking tersimpan' + (cloudOk?' (server OK)':''), 'success');
+    // Buka Google Calendar otomatis (user bisa tutup jika tidak mau)
+    setTimeout(function(){ openGoogleCalendar(newBooking.id); }, 800);
   };
 
   window.approveBooking = async function (id) {
@@ -540,7 +556,8 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     logBookingAudit('BOOKING_APPROVE', b);
     if (window.supabaseClient) { try { await window.supabaseClient.from('bookings').update({ status:'approved', approved_by:b.approved_by, approved_at:b.approved_at }).eq('id', id); } catch(e){ console.warn(e); } }
     pushToCommandCenterNotif({ type:'success', title:'Booking approved', msg:(b.nama_peminjam||'')+' · '+(b.ruang||''), booking_id:id });
-    if (confirm('Booking di-approve. Tambahkan ke Google Calendar?')) openGoogleCalendar(id);
+    if (window.showToast) showToast('✅ Booking approved', 'success');
+    setTimeout(function(){ openGoogleCalendar(id); }, 800);
   };
   window.rejectBooking = async function (id) {
     if (!isAdmin()) return alert('⛔ Hanya Kabag / Koordinator / Dev.');
@@ -637,7 +654,8 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
         var checkbox = document.querySelector('.cb-alat[value="'+alatName+'"]');
         if (checkbox) checkbox.checked = (num > 0);
       } else {
-        alert('Masukkan angka antara 0-999!');
+        if (window.showToast) showToast('⚠️ Masukkan angka 0-999', 'error');
+        else alert('Masukkan angka antara 0-999!');
       }
     }
   };
@@ -700,13 +718,15 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     });
   };
   
-  // Init
+  // Init dengan guard (prevent multi-load = multi-interval)
   renderBookings();
   renderWindowStatus();
+  if (window.__bookingStatusTimer) clearInterval(window.__bookingStatusTimer);
   window.__bookingStatusTimer = setInterval(renderWindowStatus, 30000);
   try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission(); } catch(e){}
   setSyncStatus(window.supabaseClient ? '🔄 Menarik data…' : '🟡 Mode lokal');
   setTimeout(function(){ pullBookingsFromCloud(false).then(function(){ subscribeRealtime(); }); }, 400);
+  if (window.__bookingRetryTimer) clearInterval(window.__bookingRetryTimer);
   var _rtTry=0; window.__bookingRetryTimer=setInterval(function(){ if(rtBound||_rtTry++>=12){ clearInterval(window.__bookingRetryTimer); window.__bookingRetryTimer=null; return; } subscribeRealtime(); }, 5000);
   window.addEventListener('online', function(){ pullBookingsFromCloud(false); subscribeRealtime(); });
   console.log('📅 Booking module ready — detail klik, status ACC, notif CC, GCal, first-come, RT');
