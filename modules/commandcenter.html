@@ -266,6 +266,7 @@
       <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
       <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
       <button class="tab" data-tab="stok" onclick="switchTab('stok')">📦 Analitik Stok</button>
+      <button class="tab" data-tab="analytics" onclick="switchTab('analytics')">📊 Analytics</button>
     </div>
   </div>
 
@@ -575,6 +576,40 @@
     </div>
   </div>
 
+
+  <!-- TAB: ANALYTICS (Advanced — khusus admin, RBAC) -->
+  <div id="tab-analytics" class="tab-content">
+    <div class="glass">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
+        <div style="font-weight:800;color:var(--neon);font-size:1rem;">📊 Advanced Analytics — Ruang Admin</div>
+        <div style="display:flex;gap:.4rem;">
+          <button class="btn btn-sm" id="adv-p-this" onclick="setAdvPeriod('this')" style="background:var(--accent);color:#fff;">Bulan Ini</button>
+          <button class="btn btn-sm" id="adv-p-last" onclick="setAdvPeriod('last')">Bulan Lalu</button>
+          <button class="btn btn-sm" id="adv-p-90" onclick="setAdvPeriod('90')">90 Hari</button>
+        </div>
+      </div>
+      <div class="metrics" id="adv-kpis"></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:.8rem;">📈 Trend Mingguan (Booking vs K3)</div>
+      <div class="chart-container"><canvas id="advTrendChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--gold);margin-bottom:.8rem;">🏢 Booking per Divisi</div>
+      <div class="chart-container"><canvas id="advDivChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--purple);margin-bottom:.8rem;">🔥 Heatmap Aktivitas (7 hari terakhir)</div>
+      <div id="adv-heatmap"></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--neon);margin-bottom:.8rem;">🤖 Prediksi & Deteksi Anomali</div>
+      <div id="adv-prediction"></div>
+      <div id="adv-anomalies"></div>
+      <button class="btn btn-primary" onclick="advExportReport()" style="margin-top:.8rem;">📄 Export Laporan Bulanan (PDF)</button>
+    </div>
+  </div>
+
   <!-- TAB: DEV MONITOR (khusus dev) -->
   <div id="tab-devmon" class="tab-content">
     <div class="glass">
@@ -850,6 +885,7 @@ window.goHomeHandler = function() {
     if (id === 'users') { syncUsersFromSupabase(); renderUsers(); }
 
     if (id === 'stok') renderStokAnalytics();
+    if (id === 'analytics') renderAdvAnalytics();
     renderQuickActions();
     if (id === 'announcements') {
       const saved = JSON.parse(localStorage.getItem('dreamos_cmd_announcements') || '[]');
@@ -1547,11 +1583,11 @@ window.goHomeHandler = function() {
     const tabs = document.querySelectorAll('#main-tabs .tab');
     
     const tabVisibility = {
-      'dev': ['dashboard','inbox','approvals','calendar','archive','users','devmon','user-health','activity','announcements','stok'],
-      'kabag_umum': ['dashboard','inbox','approvals','calendar','archive','users','activity','announcements','stok'],
-      'koordinator_umum': ['dashboard','inbox','calendar','users','stok','activity'],
-      'management': ['dashboard','inbox','approvals','calendar','archive','activity','stok'],
-      'komite': ['dashboard','inbox','calendar','activity'],
+      'dev': ['dashboard','inbox','approvals','calendar','archive','users','devmon','user-health','activity','announcements','stok','analytics'],
+      'kabag_umum': ['dashboard','inbox','approvals','calendar','archive','users','activity','announcements','stok','analytics'],
+      'koordinator_umum': ['dashboard','inbox','calendar','users','stok','activity','analytics'],
+      'management': ['dashboard','inbox','approvals','calendar','archive','activity','stok','analytics'],
+      'komite': ['dashboard','inbox','calendar','activity','analytics'],
       'guru': ['dashboard','calendar','activity'],
       'security': ['dashboard','calendar','activity'],
       'komandan_regu': ['dashboard','calendar','activity'],
@@ -1791,6 +1827,98 @@ window.goHomeHandler = function() {
     if(box) box.innerHTML=ins.map(function(i){ var col=i.c==='bad'?'var(--danger)':i.c==='warn'?'var(--gold)':'var(--success)';
       return '<div onclick="switchTab(\''+i.tab+'\')" style="cursor:pointer;border-left:3px solid '+col+';background:rgba(2,6,23,0.5);border-radius:8px;padding:0.55rem 0.7rem;font-size:0.75rem;">'+i.t+'</div>'; }).join('');
   };
+
+
+  /* ===== ADVANCED ANALYTICS ENGINE (konsolidasi ke Command Center) ===== */
+  var ADV={period:'this',bookings:[],k3:[]};
+  function advLoad(){ADV.bookings=safeJSON('dreamos_bookings',[]);ADV.k3=safeJSON('dreamos_k3_reports',[]);}
+  function advDate(x){return new Date(x.tgl||x.created_at||x.date||x.time||Date.now())}
+  function advIn(d,p){var n=new Date();
+    if(p==='this')return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+    if(p==='last'){var q=new Date(n.getFullYear(),n.getMonth()-1,1);return d.getMonth()===q.getMonth()&&d.getFullYear()===q.getFullYear();}
+    return (n-d)<=90*86400000;}
+  function advPrev(d,p){var n=new Date();
+    if(p==='this'){var q=new Date(n.getFullYear(),n.getMonth()-1,1);return d.getMonth()===q.getMonth()&&d.getFullYear()===q.getFullYear();}
+    if(p==='last'){var q2=new Date(n.getFullYear(),n.getMonth()-2,1);return d.getMonth()===q2.getMonth()&&d.getFullYear()===q2.getFullYear();}
+    return (n-d)>90*86400000&&(n-d)<=180*86400000;}
+  function advTrendC(cur,prev){if(prev===0)return cur>0?{t:'▲ baru',c:'up'}:{t:'—',c:'flat'};
+    var p=Math.round((cur-prev)/prev*100);
+    return p>0?{t:'▲ +'+p+'%',c:'up'}:p<0?{t:'▼ '+p+'%',c:'down'}:{t:'— 0%',c:'flat'};}
+  function advRenderKPIs(){
+    var cb=ADV.bookings.filter(function(b){return advIn(advDate(b),ADV.period)}).length;
+    var pb=ADV.bookings.filter(function(b){return advPrev(advDate(b),ADV.period)}).length;
+    var ck=ADV.k3.filter(function(b){return advIn(advDate(b),ADV.period)}).length;
+    var pk=ADV.k3.filter(function(b){return advPrev(advDate(b),ADV.period)}).length;
+    var per=ADV.bookings.filter(function(b){return advIn(advDate(b),ADV.period)});
+    var app=per.filter(function(b){return (b.status||'').toLowerCase()==='approved'}).length;
+    var rate=per.length?Math.round(app/per.length*100):0;
+    var pend=ADV.k3.filter(function(b){return (b.status||'').toLowerCase()==='pending'}).length;
+    var t1=advTrendC(cb,pb),t2=advTrendC(ck,pk);
+    document.getElementById('adv-kpis').innerHTML=
+      '<div class="metric"><div class="metric-val">'+cb+'</div><div class="metric-label">Booking</div><div class="'+t1.c+'" style="font-size:.7rem;font-weight:700;">'+t1.t+' vs sebelumnya</div></div>'+
+      '<div class="metric" style="border-left-color:var(--gold);"><div class="metric-val">'+ck+'</div><div class="metric-label">Laporan K3</div><div class="'+t2.c+'" style="font-size:.7rem;font-weight:700;">'+t2.t+'</div></div>'+
+      '<div class="metric" style="border-left-color:var(--accent);"><div class="metric-val">'+rate+'%</div><div class="metric-label">Approval Rate</div></div>'+
+      '<div class="metric" style="border-left-color:var(--danger);"><div class="metric-val">'+pend+'</div><div class="metric-label">K3 Pending</div></div>';
+  }
+  function advRenderTrend(){
+    var labels=[],bD=[],kD=[];for(var w=7;w>=0;w--){labels.push('W-'+w);bD.push(0);kD.push(0);}
+    ADV.bookings.forEach(function(b){var i=Math.floor((new Date()-advDate(b))/(7*86400000));if(i>=0&&i<=7)bD[7-i]++;});
+    ADV.k3.forEach(function(b){var i=Math.floor((new Date()-advDate(b))/(7*86400000));if(i>=0&&i<=7)kD[7-i]++;});
+    if(typeof Chart==='undefined')return;
+    var ex=Chart.getChart('advTrendChart');if(ex)ex.destroy();
+    new Chart(document.getElementById('advTrendChart'),{type:'line',data:{labels:labels,datasets:[{label:'Booking',data:bD,borderColor:'#00ff9d',backgroundColor:'rgba(0,255,157,.15)',fill:true,tension:.3},{label:'K3',data:kD,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.15)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#94a3b8'}},y:{beginAtZero:true,ticks:{color:'#94a3b8'}}},plugins:{legend:{labels:{color:'#f1f5f9'}}}}});
+  }
+  function advRenderDiv(){
+    var map={};ADV.bookings.filter(function(b){return advIn(advDate(b),ADV.period)}).forEach(function(b){var d=b.divisi||'Lain';map[d]=(map[d]||0)+1;});
+    var keys=Object.keys(map).sort(function(a,b){return map[b]-map[a]}).slice(0,7);
+    if(typeof Chart==='undefined')return;
+    var ex=Chart.getChart('advDivChart');if(ex)ex.destroy();
+    new Chart(document.getElementById('advDivChart'),{type:'bar',data:{labels:keys.length?keys:['-'],datasets:[{data:keys.length?keys.map(function(k){return map[k]}):[0],backgroundColor:'#0ea5e9',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#f1f5f9'}},y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0}}}}});
+  }
+  function advRenderHeat(){
+    var days=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);days.push(d);}
+    var divis=['TK','SD','SMP','SMA','UMUM'];var max=1,cells={};
+    divis.forEach(function(dv){days.forEach(function(d,di){var c=ADV.bookings.filter(function(b){var bd=advDate(b);return (b.divisi||'')===dv&&bd.toDateString()===d.toDateString()}).length;cells[dv+di]=c;if(c>max)max=c;});});
+    var h='<div style="display:grid;grid-template-columns:70px repeat(7,1fr);gap:3px;font-size:.62rem;"><div></div>';
+    days.forEach(function(d){h+='<div style="text-align:center;color:var(--muted);">'+d.getDate()+'/'+(d.getMonth()+1)+'</div>';});
+    divis.forEach(function(dv){h+='<div style="color:var(--muted);display:flex;align-items:center;">'+dv+'</div>';
+      days.forEach(function(d,di){var c=cells[dv+di];var a=c/max;
+        var col=c===0?'rgba(255,255,255,.06)':'rgba(0,255,157,'+(0.25+a*0.75)+')';
+        h+='<div style="background:'+col+';border-radius:4px;min-height:26px;display:flex;align-items:center;justify-content:center;color:'+(c===0?'#5d6b82':'#000')+';font-weight:700;">'+(c||'')+'</div>';});});
+    h+='</div>';
+    document.getElementById('adv-heatmap').innerHTML=h;
+  }
+  function advRenderAI(){
+    var n=new Date(),months=[];
+    for(var m=3;m>=1;m--){var q=new Date(n.getFullYear(),n.getMonth()-m,1);
+      months.push(ADV.bookings.filter(function(b){var d=advDate(b);return d.getMonth()===q.getMonth()&&d.getFullYear()===q.getFullYear()}).length);}
+    var avg=Math.round((months[0]+months[1]+months[2])/3);
+    document.getElementById('adv-prediction').innerHTML='<div style="padding:.6rem;border-left:3px solid var(--accent);background:rgba(14,165,233,.08);border-radius:6px;font-size:.78rem;">🔮 <b>Prediksi bulan depan:</b> ±'+avg+' booking <small>(moving-average 3 bln: '+months.join(', ')+')</small></div>';
+    var counts=[];for(var i=0;i<30;i++){var d=new Date();d.setDate(d.getDate()-i);
+      counts.push({d:d,c:ADV.bookings.filter(function(b){return advDate(b).toDateString()===d.toDateString()}).length});}
+    var mean=counts.reduce(function(a,b){return a+b.c},0)/30;
+    var std=Math.sqrt(counts.reduce(function(a,b){return a+Math.pow(b.c-mean,2)},0)/30)||1;
+    var anoms=counts.filter(function(x){return Math.abs(x.c-mean)/std>1.8&&x.c>0});
+    document.getElementById('adv-anomalies').innerHTML=anoms.length?anoms.map(function(x){return '<div style="padding:.5rem;border-left:3px solid var(--danger);background:rgba(239,68,68,.08);border-radius:6px;margin-bottom:.4rem;font-size:.75rem;">⚠️ <b>'+x.d.getDate()+'/'+(x.d.getMonth()+1)+'</b>: '+x.c+' booking (rata-rata '+mean.toFixed(1)+')</div>'}).join(''):'<div style="text-align:center;color:var(--muted);padding:.8rem;font-size:.75rem;">✅ Tidak ada anomali (30 hari)</div>';
+  }
+  window.setAdvPeriod=function(p){ADV.period=p;
+    ['this','last','90'].forEach(function(x){var el=document.getElementById('adv-p-'+x);if(el){el.style.background=x===p?'var(--accent)':'';el.style.color=x===p?'#fff':'';}});
+    advRenderKPIs();advRenderDiv();};
+  window.advExportReport=function(){
+    var n=new Date();var w=window.open('','_blank');
+    var per=ADV.bookings.filter(function(b){return advIn(advDate(b),'this')});
+    var kper=ADV.k3.filter(function(b){return advIn(advDate(b),'this')});
+    var html='<!DOCTYPE html><html><head><title>Laporan Bulanan Dream OS</title><style>body{font-family:Arial,sans-serif;padding:2rem;color:#111}h1{font-size:1.4rem}h2{font-size:1rem;margin-top:1.5rem;border-bottom:2px solid #333;padding-bottom:.3rem}table{width:100%;border-collapse:collapse;margin-top:.5rem}td,th{border:1px solid #999;padding:.4rem;font-size:.8rem;text-align:left}.m{color:#555}</style></head><body>';
+    html+='<h1>📊 Laporan Bulanan — Dream OS (CONFIDENTIAL)</h1><p class="m">Periode: '+n.toLocaleDateString('id-ID',{month:'long',year:'numeric'})+' • Dibuat: '+n.toLocaleString('id-ID')+' • Oleh: '+escU(currentUser.nama||currentUser.email||'-')+'</p>';
+    html+='<h2>Ringkasan KPI</h2><table><tr><th>Metrik</th><th>Nilai</th></tr><tr><td>Total Booking</td><td>'+per.length+'</td></tr><tr><td>Total Laporan K3</td><td>'+kper.length+'</td></tr><tr><td>K3 Pending</td><td>'+ADV.k3.filter(function(b){return(b.status||'').toLowerCase()==='pending'}).length+'</td></tr></table>';
+    var map={};per.forEach(function(b){var d=b.divisi||'Lain';map[d]=(map[d]||0)+1});
+    html+='<h2>Booking per Divisi</h2><table><tr><th>Divisi</th><th>Jumlah</th></tr>'+Object.keys(map).map(function(k){return '<tr><td>'+escU(k)+'</td><td>'+map[k]+'</td></tr>'}).join('')+'</table>';
+    html+='<h2>Detail Booking</h2><table><tr><th>Tanggal</th><th>Ruang</th><th>Peminjam</th><th>Divisi</th><th>Status</th></tr>'+per.slice(0,50).map(function(b){return '<tr><td>'+(b.tgl||'-')+'</td><td>'+escU(b.ruang||'-')+'</td><td>'+escU(b.nama_peminjam||'-')+'</td><td>'+escU(b.divisi||'-')+'</td><td>'+escU(b.status||'-')+'</td></tr>'}).join('')+'</table>';
+    html+='<p class="m" style="margin-top:2rem">Dokumen terkendali — Command Center Dream OS • The Power Soul Of Shalawat</p></body></html>';
+    w.document.write(html);w.document.close();setTimeout(function(){w.print()},500);
+    logActivity('Export Laporan','Laporan bulanan analytics (confidential)');
+  };
+  window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderHeat();advRenderAI();};
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
