@@ -26,20 +26,120 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
 (function(){
   console.log('🟢 Dana init');
   function safeGet(k, fb){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }catch(e){ return fb; } }
-  function safeSet(k, d){ localStorage.setItem(k, JSON.stringify(d)); }
+  function safeSet(k, d){
+    try {
+      localStorage.setItem(k, JSON.stringify(d));
+    } catch(e) {
+      // Quota exceeded — hapus audit log lama
+      try {
+        localStorage.removeItem('dreamos_profile_audit');
+        localStorage.setItem(k, JSON.stringify(d));
+        if(window.showToast) showToast('⚠️ Storage penuh, audit log dibersihkan', 'warning');
+      } catch(e2) {
+        if(window.showToast) showToast('❌ Storage sangat penuh', 'error');
+        console.warn('[Dana] localStorage quota exceeded:', e);
+      }
+    }
+  }
   function fmtRp(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
   function dt(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
-  function logAudit(act, detail){ var a=safeGet('dreamos_profile_audit',[]); a.unshift({action:act,detail:detail,time:new Date().toISOString(),device:'DanaMod'}); if(a.length>50)a.pop(); safeSet('dreamos_profile_audit',a); }
-  function verifyPin(cb){ var pin=prompt('🔐 PIN Admin/Kabag:'); var sysPin=localStorage.getItem('dreamos_pin')||'PIN_VERIFIED_BY_HASH'; if(pin===sysPin||btoa(pin)===sysPin){ cb(); } else { alert('❌ PIN salah.'); } }
+  function logAudit(act, detail){
+    try {
+      var a=safeGet('dreamos_profile_audit',[]);
+      a.unshift({action:act,detail:detail,time:new Date().toISOString(),device:'DanaMod'});
+      if(a.length>50) a.pop();
+      safeSet('dreamos_profile_audit', a);
+    } catch(e) {
+      console.warn('[Dana] Audit log failed:', e);
+    }
+  }
+  // ===== PIN VERIFICATION DENGAN MODAL (UX BETTER) =====
+  var __pinCallback = null;
+  function verifyPin(cb){
+    __pinCallback = cb;
+    var modal = document.getElementById('dana-pin-modal');
+    if(!modal){
+      // Create modal jika belum ada
+      modal = document.createElement('div');
+      modal.id = 'dana-pin-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      modal.innerHTML = '<div style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.5rem;max-width:340px;width:100%;text-align:center;">' +
+        '<h3 style="color:#00ff9d;margin:0 0 0.8rem;">🔐 Verifikasi PIN</h3>' +
+        '<input type="password" id="dana-pin-input" placeholder="Masukkan PIN" style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:1rem;text-align:center;letter-spacing:2px;margin-bottom:0.8rem;">' +
+        '<div style="display:flex;gap:0.5rem;">' +
+        '<button onclick="window.__verifyPinSubmit()" style="flex:1;padding:0.6rem;background:#10b981;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✅ Verifikasi</button>' +
+        '<button onclick="window.__verifyPinCancel()" style="flex:1;padding:0.6rem;background:#64748b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">❌ Batal</button>' +
+        '</div></div>';
+      document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    setTimeout(function(){ document.getElementById('dana-pin-input').focus(); }, 100);
+  }
+  
+  window.__verifyPinSubmit = function(){
+    var pin = document.getElementById('dana-pin-input').value;
+    var modal = document.getElementById('dana-pin-modal');
+    if(modal) modal.style.display = 'none';
+    
+    // Verify dengan bcrypt (jika tersedia) atau fallback ke base64
+    var sysPin = localStorage.getItem('dreamos_pin') || 'PIN_VERIFIED_BY_HASH';
+    var verified = false;
+    
+    if(typeof bcrypt !== 'undefined' && bcrypt.compareSync){
+      // Bcrypt verification (secure)
+      try { verified = bcrypt.compareSync(pin, sysPin); } catch(e){}
+    }
+    
+    if(!verified){
+      // Fallback: exact match atau base64 (legacy)
+      verified = (pin === sysPin || btoa(pin) === sysPin);
+    }
+    
+    if(verified){
+      if(__pinCallback) __pinCallback();
+    } else {
+      if(window.showToast) showToast('❌ PIN salah', 'error'); else alert('❌ PIN salah.');
+    }
+    __pinCallback = null;
+  };
+  
+  window.__verifyPinCancel = function(){
+    var modal = document.getElementById('dana-pin-modal');
+    if(modal) modal.style.display = 'none';
+    __pinCallback = null;
+  };
   
   var state = { filter: 'all', showForm: false };
 
+
+  // Debounce helper untuk filter
+  var __renderTimer = null;
+  function debouncedRenderApp() {
+    if(__renderTimer) clearTimeout(__renderTimer);
+    __renderTimer = setTimeout(function(){
+      renderApp();
+    }, 300);
+  }
+
+  var __lastDataHash = '';
+  var __cachedFiltered = [];
+  
   function renderApp(){
     try {
       var app = document.getElementById('dana-app-content');
       if(!app) return;
       var data = safeGet('dreamos_dana', []);
-      var filtered = state.filter === 'all' ? data : data.filter(function(d){ return d.status === state.filter; });
+      
+      // Cache filtered data (prevent re-filter jika data sama)
+      var dataHash = JSON.stringify(data) + '|' + state.filter;
+      var filtered;
+      if(dataHash === __lastDataHash){
+        filtered = __cachedFiltered;
+      } else {
+        filtered = state.filter === 'all' ? data : data.filter(function(d){ return d.status === state.filter; });
+        __lastDataHash = dataHash;
+        __cachedFiltered = filtered;
+      }
       
       var html = '<div style="display:flex;gap:0.3rem;margin-bottom:0.75rem;overflow-x:auto;">';
       ['all','pending','approved','rejected'].forEach(function(f){
@@ -79,7 +179,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     }
   }
 
-  setTimeout(function(){
+  var __initTimeout = setTimeout(function(){
     var app = document.getElementById('dana-app');
     if(!app) return;
     renderApp();
@@ -88,15 +188,19 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
       if(!t) return;
       var act = t.dataset.act, val = t.dataset.val, id = t.dataset.id;
       
-      if(act==='filter'){ state.filter=val; renderApp(); }
+      if(act==='filter'){ state.filter=val; debouncedRenderApp(); }
       else if(act==='toggle-form'){ state.showForm=!state.showForm; renderApp(); }
       else if(act==='submit'){
         var j=document.getElementById('d-judul').value.trim(), n=parseInt(document.getElementById('d-nominal').value)||0, k=document.getElementById('d-kat').value, p=document.getElementById('d-pemohon').value.trim(), c=document.getElementById('d-catatan').value.trim();
-        if(!j||!p||n<=0) return alert('⚠️ Judul, pemohon, & nominal wajib diisi (>0).');
+        if(!j||!p||n<=0){ if(window.showToast) showToast('⚠️ Judul, pemohon, & nominal wajib diisi', 'error'); else alert('⚠️ Judul, pemohon, & nominal wajib diisi (>0).'); return; }
         var data = safeGet('dreamos_dana',[]);
-        data.unshift({id:'dana_'+Date.now(), judul:j, nominal:n, kategori:k, status:'pending', pemohon:p, tanggal:new Date().toISOString(), approvedAt:null, approver:null, catatan:c});
-        safeSet('dreamos_dana', data); if(typeof window.HybridSync !== 'undefined') { window.HybridSync.push('dana', payload); } logAudit('Pengajuan dana: '+j, fmtRp(n));
-        state.showForm=false; state.filter='pending'; renderApp(); alert('✅ Pengajuan dikirim ke Papan Approval.');
+        var payload = {id:'dana_'+Date.now(), judul:j, nominal:n, kategori:k, status:'pending', pemohon:p, tanggal:new Date().toISOString(), approvedAt:null, approver:null, catatan:c};
+        data.unshift(payload);
+        safeSet('dreamos_dana', data);
+        if(typeof window.HybridSync !== 'undefined' && window.HybridSync.push) { try { window.HybridSync.push('dana', payload); } catch(e){} }
+        logAudit('Pengajuan dana: '+j, fmtRp(n));
+        state.showForm=false; state.filter='pending'; renderApp();
+        if(window.showToast) showToast('✅ Pengajuan dikirim', 'success'); else alert('✅ Pengajuan dikirim ke Papan Approval.');
       }
       else if(act==='approve' || act==='reject'){
         verifyPin(function(){
@@ -105,22 +209,75 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             if(d.id===id){ var copy=JSON.parse(JSON.stringify(d)); copy.status=act==='approve'?'approved':'rejected'; copy.approvedAt=new Date().toISOString(); copy.approver='Kabag/Koordinator'; return copy; }
             return d;
           });
-          safeSet('dreamos_dana', updated); logAudit(act==='approve'?'Dana disetujui':'Dana ditolak', id); renderApp(); alert(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.');
+          safeSet('dreamos_dana', updated); logAudit(act==='approve'?'Dana disetujui':'Dana ditolak', id); renderApp(); if(window.showToast) showToast(act==='approve'?'✅ Pengajuan disetujui':'❌ Pengajuan ditolak', act==='approve'?'success':'error'); else alert(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.');
         });
       }    });
     console.log('✅ Modul Dana ready');
   }, 150);
 
     // 🔄 REAL-TIME SYNC: dana_requests
-    if (window.SyncEngine) {
-        window.SyncEngine.subscribe('dana_requests', (newData) => {
+    var __syncUnsubscribe = null;
+    if (window.SyncEngine && window.SyncEngine.subscribe) {
+        __syncUnsubscribe = window.SyncEngine.subscribe('dana_requests', (newData) => {
             console.log('📡 Data baru untuk dana_requests:', newData);
-            renderDanaList();
+            renderApp();
         }, (deletedData) => {
             console.log('🗑️ Data dihapus dari dana_requests:', deletedData);
-            renderDanaList();
+            renderApp();
         });
     }
+    
+    // Cleanup saat modul ditutup
+    window.__danaCleanup = function() {
+        if(__syncUnsubscribe && typeof __syncUnsubscribe === 'function') {
+            try { __syncUnsubscribe(); } catch(e){}
+        }
+        if(__initTimeout) { clearTimeout(__initTimeout); __initTimeout = null; }
+        console.log('[Dana] Cleanup complete');
+    };
+    
+    // Hook ke goHome
+    var __origGoHome = window.goHome;
+    window.goHome = function() {
+        if(window.__danaCleanup) window.__danaCleanup();
+        if(__origGoHome) return __origGoHome();
+        else {
+            try {
+                if(window.parent && window.parent.goHome) window.parent.goHome();
+                else window.location.reload();
+            } catch(e){ window.location.reload(); }
+        }
+    };
+
+
+
+  // ===== PIN SETUP FUNCTION (untuk admin setup PIN pertama kali) =====
+  window.setupDanaPin = function(newPin){
+    if(!newPin || newPin.length < 4){
+      if(window.showToast) showToast('⚠️ PIN minimal 4 digit', 'error');
+      return false;
+    }
+    
+    var hashedPin;
+    if(typeof bcrypt !== 'undefined' && bcrypt.hashSync){
+      // Hash dengan bcrypt (secure)
+      try { hashedPin = bcrypt.hashSync(newPin, 10); } catch(e){}
+    }
+    
+    if(!hashedPin){
+      // Fallback: base64 (legacy, tidak secure)
+      hashedPin = btoa(newPin);
+    }
+    
+    try {
+      localStorage.setItem('dreamos_pin', hashedPin);
+      if(window.showToast) showToast('✅ PIN berhasil diatur', 'success');
+      return true;
+    } catch(e) {
+      if(window.showToast) showToast('❌ Gagal menyimpan PIN', 'error');
+      return false;
+    }
+  };
 
 })();
 </script>
