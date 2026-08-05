@@ -415,7 +415,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
 
   window.showBookingDetail = function (id) {
     var b = getBookings().find(function(x){ return x.id===id; });
-    if (!b) return alert('Data tidak ditemukan');
+    if (!b) { if(window.showToast) showToast('Data tidak ditemukan','error'); else alert('Data tidak ditemukan'); return; }
     var st = String(b.status||'pending').toLowerCase();
     var statusText = st==='approved' ? '✅ SUDAH DI-APPROVE' : st==='rejected' ? '❌ DITOLAK' : '⏳ BELUM DI-APPROVE (menunggu Kabag)';
     alert('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-')+'\nHP: '+(b.no_hp||'-')+'\nDivisi: '+(b.divisi||'-')+'\nRuang: '+(b.ruang||'-')+'\nTanggal: '+(b.tgl_display||b.tgl||'-')+'\nJam: '+(b.jam_mulai||'')+' – '+(b.jam_selesai||'')+'\nAlat: '+(b.sarana_alat||'-')+'\nKeperluan: '+(b.keperluan||'-')+'\nDibuat: '+(b.created_at||'-')+'\n'+(b.approved_by?'ACC oleh: '+b.approved_by+'\n':'')+(b.reject_reason?'Alasan tolak: '+b.reject_reason+'\n':'')+'ID: '+(b.id||''));
@@ -561,7 +561,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   };
 
   window.approveBooking = async function (id) {
-    if (!isAdmin()) return alert('⛔ Hanya Kabag / Koordinator / Dev.');
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else alert('⛔ Hanya Kabag / Koordinator / Dev.'); return; }
     var list = getBookings(); var b = list.find(function(x){ return x.id===id; }); if (!b) return;
     b.status='approved'; b.approved_by=user.email||user.nama; b.approved_at=new Date().toISOString();
     saveBookings(list); renderBookings();
@@ -572,7 +572,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     setTimeout(function(){ openGoogleCalendar(id); }, 800);
   };
   window.rejectBooking = async function (id) {
-    if (!isAdmin()) return alert('⛔ Hanya Kabag / Koordinator / Dev.');
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else alert('⛔ Hanya Kabag / Koordinator / Dev.'); return; }
     var reason = prompt('Alasan penolakan:') || '';
     var list = getBookings(); var b = list.find(function(x){ return x.id===id; }); if (!b) return;
     b.status='rejected'; b.reject_reason=reason; saveBookings(list); renderBookings();
@@ -581,7 +581,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     pushToCommandCenterNotif({ type:'warning', title:'Booking rejected', msg:(b.nama_peminjam||'')+' · '+(b.ruang||''), booking_id:id });
   };
   window.deleteBookingById = async function (id) {
-    if (!isAdmin()) return alert('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.');
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.','error'); else alert('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.'); return; }
     if (!confirm('Hapus booking ini?')) return;
     var db = getBookings().find(function(x){ return x.id===id; });
     saveBookings(getBookings().filter(function(x){ return x.id!==id; })); renderBookings();
