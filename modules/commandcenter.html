@@ -606,6 +606,19 @@
       <div id="adv-summary" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
     </div>
     <div class="glass">
+      <div style="font-weight:800;color:var(--gold);margin-bottom:.8rem;">📊 Mode Perbandingan — Bulan Ini vs Bulan Lalu</div>
+      <div class="chart-container"><canvas id="advCompareChart"></canvas></div>
+      <div id="adv-compare-delta" style="margin-top:.6rem;font-size:.75rem;color:var(--muted);"></div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--purple);margin-bottom:.8rem;">🏆 Ranking Kontributor (Apresiasi Bulanan)</div>
+      <div class="chart-container"><canvas id="advUserChart"></canvas></div>
+      <div class="table-container" style="margin-top:.8rem;"><table>
+        <thead><tr><th>Rank</th><th>Nama</th><th>Booking</th><th>K3</th><th>Stok</th><th>Total</th></tr></thead>
+        <tbody id="adv-user-body"></tbody>
+      </table></div>
+    </div>
+    <div class="glass">
       <div style="font-weight:800;color:var(--accent);margin-bottom:.8rem;">📊 Volume Semua Modul (Ruang Admin)</div>
       <div class="chart-container"><canvas id="advAllChart"></canvas></div>
     </div>
@@ -1954,7 +1967,50 @@ window.goHomeHandler = function() {
     s+='Gunakan <b>Analitik Stok</b> untuk rencana belanja dan tombol <b>Export PDF</b> untuk laporan resmi.';
     var el=document.getElementById('adv-summary'); if(el) el.innerHTML=s;
   }
-  window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderAll();advRenderHeat();advRenderAI();advRenderSummary();};
+  function advRenderCompare(){
+    var now=new Date();
+    function monthOf(d,off){var q=new Date(now.getFullYear(),now.getMonth()-off,1);return d.getMonth()===q.getMonth()&&d.getFullYear()===q.getFullYear();}
+    function stats(off){
+      var b=ADV.bookings.filter(function(x){return monthOf(advDate(x),off)});
+      var k=ADV.k3.filter(function(x){return monthOf(advDate(x),off)});
+      var ap=b.filter(function(x){return (x.status||'').toLowerCase()==='approved'}).length;
+      return {booking:b.length,approved:ap,k3:k.length};
+    }
+    var cur=stats(0), prev=stats(1);
+    if(typeof Chart!=='undefined'){
+      var ex=Chart.getChart('advCompareChart');if(ex)ex.destroy();
+      new Chart(document.getElementById('advCompareChart'),{type:'bar',data:{labels:['Booking','Approved','Laporan K3'],datasets:[
+        {label:'Bulan Lalu',data:[prev.booking,prev.approved,prev.k3],backgroundColor:'rgba(148,163,184,.5)',borderRadius:6},
+        {label:'Bulan Ini',data:[cur.booking,cur.approved,cur.k3],backgroundColor:'rgba(0,255,157,.6)',borderRadius:6}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f1f5f9'}}},scales:{y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0}},x:{ticks:{color:'#f1f5f9'}}}}});
+    }
+    function delta(c,p){if(p===0)return c>0?'▲ baru':'—';var d=Math.round((c-p)/p*100);return d>0?'▲ +'+d+'%':d<0?'▼ '+d+'%':'— 0%';}
+    var el=document.getElementById('adv-compare-delta');
+    if(el) el.innerHTML='📅 Booking: <b style="color:var(--neon)">'+delta(cur.booking,prev.booking)+'</b> • ✅ Approved: <b style="color:var(--accent)">'+delta(cur.approved,prev.approved)+'</b> • ⚠️ K3: <b style="color:var(--gold)">'+delta(cur.k3,prev.k3)+'</b>';
+  }
+  function advRenderUsers(){
+    var per={};
+    function add(name,key){if(!name||name==='-'||name==='System')return;per[name]=per[name]||{b:0,k:0,s:0};per[name][key]++;}
+    ADV.bookings.forEach(function(b){if(advIn(advDate(b),ADV.period))add(b.nama_peminjam,'b');});
+    ADV.k3.forEach(function(k){if(advIn(advDate(k),ADV.period))add(k.pelapor,'k');});
+    var cut=Date.now()-30*86400000;
+    safeJSON('dreamos_stok_audit',[]).concat(safeJSON('dreamos_stok_log',[])).forEach(function(a){
+      if(new Date(a.waktu||a.created_at||0).getTime()>=cut)add(a.petugas||a.user||a.nama,'s');});
+    var rank=Object.keys(per).map(function(n){return {n:n,b:per[n].b,k:per[n].k,s:per[n].s,t:per[n].b+per[n].k+per[n].s};})
+      .sort(function(a,b){return b.t-a.t;}).slice(0,8);
+    if(typeof Chart!=='undefined'){var ex=Chart.getChart('advUserChart');if(ex)ex.destroy();
+      new Chart(document.getElementById('advUserChart'),{type:'bar',data:{labels:rank.length?rank.map(function(r){return r.n}):['-'],datasets:[
+        {label:'Booking',data:rank.length?rank.map(function(r){return r.b}):[0],backgroundColor:'#0ea5e9',borderRadius:4},
+        {label:'K3',data:rank.length?rank.map(function(r){return r.k}):[0],backgroundColor:'#f59e0b',borderRadius:4},
+        {label:'Stok',data:rank.length?rank.map(function(r){return r.s}):[0],backgroundColor:'#8b5cf6',borderRadius:4}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{color:'#94a3b8',precision:0}},y:{stacked:true,ticks:{color:'#f1f5f9'}}},plugins:{legend:{labels:{color:'#f1f5f9'}}}}});}
+    var medals=['🥇','🥈','🥉'];
+    var tb=document.getElementById('adv-user-body');
+    if(tb) tb.innerHTML=rank.length?rank.map(function(r,i){
+      return '<tr><td><b>'+(medals[i]||'#'+(i+1))+'</b></td><td>'+escU(r.n)+'</td><td>'+r.b+'</td><td>'+r.k+'</td><td>'+r.s+'</td><td><b>'+r.t+'</b></td></tr>';}).join(''):
+      '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1rem;">Belum ada data kontributor periode ini</td></tr>';
+  }
+  window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderAll();advRenderHeat();advRenderAI();advRenderSummary();advRenderCompare();advRenderUsers();};
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
