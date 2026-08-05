@@ -359,6 +359,7 @@
     
     // Enhanced blank detector
     function checkBlankScreen() {
+      if (document.hidden || !navigator.onLine) return; // FIX: Jangan cek saat HP tidur/offline
       var dashboard = document.getElementById('dashboard-container');
       var login = document.getElementById('login-screen');
       var mainApp = document.getElementById('main-app');
@@ -1036,6 +1037,7 @@
             c.innerHTML = html;
             c.querySelectorAll('script').forEach(s => {
               const ns = document.createElement('script');
+              ns.className = 'mod-injected-script'; // FIX: Tandai script modul
               if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
               document.body.appendChild(ns);
             });
@@ -1047,6 +1049,7 @@
       window.goHome = function() {
         const c = document.getElementById('mod-container');
         if (c) { c.style.display = 'none'; c.innerHTML = ''; }
+        document.querySelectorAll('.mod-injected-script').forEach(s => s.remove()); // FIX: Bersihkan script dari DOM
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('bottom-nav').style.display = 'block';
         if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
@@ -1226,7 +1229,7 @@
         let animating = true;
         let rafId = null;
         function animate() {
-          if (!animating) { rafId = requestAnimationFrame(animate); return; }
+          if (!animating) return; // FIX: Hentikan loop saat layar mati
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.fillStyle = '#e2e8f0';
           stars.forEach(s => {
@@ -1243,6 +1246,7 @@
         // Pause saat tab hidden (save battery & memory)
         document.addEventListener('visibilitychange', function() {
           animating = !document.hidden;
+          if (animating) animate(); // FIX: Restart loop
           // Juga pause carousel
           if (typeof window.__sliderStop === 'function') {
             if (document.hidden) window.__sliderStop();

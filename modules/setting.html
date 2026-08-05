@@ -397,12 +397,15 @@
   };
 
   // Listener: sync dropdown saat bahasa berubah dari modul lain
-  window.addEventListener('dreamos-lang-changed', function(e) {
+  if (!window.__langListenerAdded) {
+    window.__langListenerAdded = true;
+    window.addEventListener('dreamos-lang-changed', function(e) {
     if (e.detail && e.detail.lang) {
       state.lang = e.detail.lang;
       updateAllUI();
     }
   });
+  }
 
   window.resetLangToAuto = function() {
     if (confirm('🔄 Reset bahasa ke deteksi otomatis (timezone/browser)?')) {
@@ -463,11 +466,10 @@
     const clockEl = document.getElementById('sys-clock');
     if (clockEl) {
       clockEl.textContent = new Date().toLocaleTimeString('id-ID'); // Set awal
-      if (!clockInterval) {
-        clockInterval = setInterval(() => {
-          clockEl.textContent = new Date().toLocaleTimeString('id-ID');
-        }, 1000);
-      }
+      if (window.__sysClockInterval) clearInterval(window.__sysClockInterval);
+      window.__sysClockInterval = setInterval(() => {
+        clockEl.textContent = new Date().toLocaleTimeString('id-ID');
+      }, 1000);
     }
 
     const langMap = {'id':'🇮🇩 Indonesia', 'en':'🇬🇧 English', 'ar':'🇸🇦 العربية', 'zh':'🇨🇳 中文'};
