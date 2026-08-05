@@ -17,7 +17,7 @@ self.addEventListener('fetch', function (e) {
 });
 // ===== END CACHE BUSTER =====
 /* Dream OS Service Worker — cache + web push */
-const CACHE_NAME = 'dreamos-v16-20260805';
+const CACHE_NAME = 'dreamos-v17-0508b';
 const ASSETS = [
   './',
   './index.html',
