@@ -223,32 +223,121 @@
   <script src="js/auth-security.js"></script>
   <script src="js/enterprise-core.js?v=1"></script>
   <script>
-  // SW UPDATE NUDGE v20260805
+  // ===== PWA SERVICE WORKER v2.0 =====
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.update(); }); }); } catch (e) {}
-      }, 1500);
+    window.addEventListener('load', async function () {
+      try {
+        // Unregister SW lama (cleanup cache buster)
+        const oldRegs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of oldRegs) {
+          if (reg.scope.includes('dream-os-final')) {
+            await reg.unregister();
+            console.log('[PWA] Unregistered old SW');
+          }
+        }
+        
+        // Register SW baru
+        const registration = await navigator.serviceWorker.register('./sw.js?v=2.0.0', {
+          scope: './'
+        });
+        console.log('[PWA] SW registered:', registration.scope);
+        
+        // Listen for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[PWA] New SW available');
+              if (window.showToast) {
+                showToast('🔄 Update tersedia! Refresh untuk apply.', 'info');
+              }
+            }
+          });
+        });
+        
+        // Listen for messages dari SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SYNC_BOOKINGS') {
+            console.log('[PWA] Syncing offline bookings...');
+            if (window.syncCloudData) window.syncCloudData();
+          }
+        });
+        
+      } catch (err) {
+        console.warn('[PWA] SW registration failed:', err);
+      }
     });
   }
+  
+  // ===== PWA INSTALL PROMPT =====
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    console.log('[PWA] Install prompt captured');
+    
+    // Tampilkan banner setelah 30 detik (jika belum install)
+    if (!localStorage.getItem('dreamos_pwa_installed')) {
+      setTimeout(() => {
+        const banner = document.getElementById('pwa-banner');
+        if (banner && !banner.classList.contains('show')) {
+          banner.classList.add('show');
+        }
+      }, 30000);
+    }
+  });
+  
+  window.installPWA = async function() {
+    if (!deferredPrompt) {
+      if (window.showToast) showToast('⚠️ Install prompt tidak tersedia', 'warning');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[PWA] Install outcome:', outcome);
+    if (outcome === 'accepted') {
+      localStorage.setItem('dreamos_pwa_installed', 'true');
+      if (window.showToast) showToast('✅ Dream OS terinstall!', 'success');
+    }
+    deferredPrompt = null;
+    const banner = document.getElementById('pwa-banner');
+    if (banner) banner.classList.remove('show');
+  };
+  
+  window.addEventListener('appinstalled', () => {
+    console.log('[PWA] App installed');
+    localStorage.setItem('dreamos_pwa_installed', 'true');
+    if (window.showToast) showToast('🎉 Dream OS siap digunakan offline!', 'success');
+  });
   </script>
 <script>
   // ===== FORCE REFRESH: bypass SW + clear cache =====
   window.forceRefresh = async function() {
     try {
-      // 1. Unregister semua service worker
+      showToast('🔄 Membersihkan cache...', 'info');
+      
+      // 1. Clear SW cache via message
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+      }
+      
+      // 2. Unregister SW (optional, biar fresh install)
       const regs = await navigator.serviceWorker.getRegistrations();
-      for (const reg of regs) await reg.unregister();
-      // 2. Hapus semua cache
-      const keys = await caches.keys();
-      for (const k of keys) await caches.delete(k);
-      // 3. Hapus cache browser
-      if ('caches' in window) { /* sudah dihapus */ }
-      // 4. Hard reload (bypass cache)
-      showToast('🔄 Membersihkan cache...','success');
-      setTimeout(() => { location.reload(true); }, 800);
+      for (const reg of regs) {
+        await reg.unregister();
+        console.log('[Force Refresh] SW unregistered');
+      }
+      
+      // 3. Clear browser cache
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        for (const k of keys) await caches.delete(k);
+      }
+      
+      // 4. Hard reload
+      setTimeout(() => { location.reload(true); }, 500);
     } catch(e) {
-      showToast('❌ Gagal: '+e.message,'error');
+      showToast('❌ Gagal: '+e.message, 'error');
     }
   };
   // ===== END FORCE REFRESH =====
