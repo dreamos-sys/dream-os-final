@@ -39,7 +39,7 @@
   <script src="idb-store.js?v=1"></script>
   <script src="js/cloud-photo.js?v=1"></script>
   <script src="js/input-mode.js?v=1"></script>
-  <script src="js/analytics-engine.js?v=6"></script>
+  <script src="js/analytics-engine.js?v=8"></script>
   
   <style>
     :root { --neon: #00ff9d; --accent: #0ea5e9; --warning: #e11d48; --gold: #d4af37; --glass-bg: rgba(10, 15, 30, 0.85); --glass-border: rgba(0, 255, 157, 0.25); }
@@ -201,19 +201,19 @@
     .ana-canvas-wrap { position:relative; height:260px; }
     
     
-    /* ===== KPI UNIFIED — satu kartu sejati ===== */
-    .ana-kpi-unified{background:var(--ana-card);border-radius:14px;padding:0.65rem 0.9rem;box-shadow:0 4px 14px rgba(15,23,42,0.08);}
-    .kpu-row{display:flex;align-items:center;justify-content:space-between;gap:0.35rem;flex-wrap:nowrap;}
-    .kpu-icon{font-size:1rem;line-height:1;}
-    .kpu-val{font-size:1rem;font-weight:800;color:var(--ana-text);line-height:1;}
-    .kpu-label{font-size:0.62rem;color:var(--ana-sub);line-height:1;margin-right:0.1rem;}
-    .kpu-trend{font-size:0.55rem;font-weight:800;color:#16a34a;background:rgba(22,163,74,0.12);padding:0.1rem 0.35rem;border-radius:999px;line-height:1;white-space:nowrap;}
-    .kpu-trend.down{color:#dc2626;background:rgba(220,38,38,0.12);}
-    .kpu-trend.neutral{color:#94a3b8;background:rgba(100,116,139,0.15);}
-    .kpu-dot{color:rgba(148,163,184,0.5);font-size:0.8rem;margin:0 0.15rem;}
-    /* ===== KPU MERGED — baris KPI di dalam kartu periode ===== */
-    .ana-period{flex-wrap:wrap;}
-    .ana-period .kpu-row{flex-basis:100%;margin-top:0.55rem;padding-top:0.55rem;border-top:1px solid rgba(148,163,184,0.18);}
+    /* ===== MERGED ANALYTICS CARD (UI COMPACT v0508c) ===== */
+    .ana-unified-card { background: var(--ana-card); border-radius: 16px; padding: 0.8rem 1rem; box-shadow: 0 4px 14px rgba(15,23,42,0.08); border: 1px solid var(--glass-border); margin-bottom: 0.8rem; }
+    .ana-period-compact { display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px dashed rgba(148,163,184,0.2); margin-bottom: 0.5rem; }
+    .ana-kpi-compact { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.4rem; padding-bottom: 0.6rem; border-bottom: 1px dashed rgba(148,163,184,0.2); margin-bottom: 0.6rem; }
+    .ana-tabs-compact { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin-bottom: 0.6rem; }
+    .kpu-row { display: flex; align-items: center; justify-content: center; gap: 0.35rem; }
+    .kpu-icon { font-size: 1rem; line-height: 1; }
+    .kpu-val { font-size: 1.1rem; font-weight: 800; color: var(--ana-text); line-height: 1; }
+    .kpu-label { font-size: 0.65rem; color: var(--ana-sub); line-height: 1; margin-right: 0.1rem; }
+    .kpu-trend { font-size: 0.55rem; font-weight: 800; color: #16a34a; background: rgba(22,163,74,0.12); padding: 0.15rem 0.4rem; border-radius: 999px; line-height: 1; white-space: nowrap; }
+    .kpu-trend.down { color: #dc2626; background: rgba(220,38,38,0.12); }
+    .kpu-trend.neutral { color: #94a3b8; background: rgba(100,116,139,0.15); }
+    .kpu-dot { color: rgba(148,163,184,0.5); font-size: 0.8rem; margin: 0 0.25rem; }
 
     #security-overlay.show { display: flex; }
   </style>
@@ -729,19 +729,25 @@
             <div class="ana-header">
               <div>
                 <div class="ana-title">📊 Laporan Analitik</div>
-                <div class="ana-subtitle">Data Publik: Booking & K3 • Privasi • UI v0508b</div>
+                <div class="ana-subtitle">Data Publik: Booking & K3 • Privasi • UI v0508c</div>
               </div>
               <button class="ana-icon-btn" onclick="exportAnalyticsCSV()" title="Export CSV">📄</button>
             </div>
 
-            <div class="ana-period">
-              <button class="ana-period-btn" onclick="shiftPeriod(-1)">‹</button>
-              <div>
-                <div class="ana-period-label" id="ana-period-label">—</div>
-                <div class="ana-period-sub">Periode Laporan</div>
+            <!-- SATU KARTU UNTUK SEMUA (MENGHEMAT SPASI RUANG) -->
+            <div class="ana-unified-card glass">
+              <!-- 1. Kontrol Periode -->
+              <div class="ana-period-compact">
+                <button class="ana-period-btn" onclick="shiftPeriod(-1)">‹</button>
+                <div>
+                  <div class="ana-period-label" id="ana-period-label">—</div>
+                  <div class="ana-period-sub">Periode Laporan</div>
+                </div>
+                <button class="ana-period-btn" onclick="shiftPeriod(1)">›</button>
               </div>
-              <button class="ana-period-btn" onclick="shiftPeriod(1)">›</button>
-              <div class="kpu-row">
+
+              <!-- 2. Data KPI -->
+              <div class="ana-kpi-compact kpu-row">
                 <span class="kpu-icon">🏢</span>
                 <div class="kpu-val" id="kpi-booking">0</div>
                 <div class="kpu-label">Booking</div>
@@ -752,19 +758,19 @@
                 <div class="kpu-label">K3</div>
                 <span class="kpu-trend" id="trend-k3">↗ +0%</span>
               </div>
-            </div>
 
-            <button class="ana-export" onclick="exportAnalyticsCSV()">📥 Export Ringkasan CSV</button>
+              <!-- 3. Tabs Navigasi -->
+              <div class="ana-tabs-compact">
+                <button class="ana-tab active" onclick="setAnaTab('overview', this)">Overview</button>
+                <button class="ana-tab" onclick="setAnaTab('booking', this)">Booking</button>
+                <button class="ana-tab" onclick="setAnaTab('k3', this)">K3</button>
+              </div>
 
-            <div class="ana-tabs">
-              <button class="ana-tab active" onclick="setAnaTab('overview', this)">Overview</button>
-              <button class="ana-tab" onclick="setAnaTab('booking', this)">Booking</button>
-              <button class="ana-tab" onclick="setAnaTab('k3', this)">K3</button>
-            </div>
-
-            <div class="ana-chart-card">
-              <div class="ana-chart-title" id="ana-chart-title">Perbandingan Modul</div>
-              <div class="ana-canvas-wrap"><canvas id="unifiedMarketChart"></canvas></div>
+              <!-- 4. Graphic Chart Area -->
+              <div>
+                <div class="ana-chart-title" id="ana-chart-title" style="margin-bottom:0.4rem; text-align:center;">Perbandingan Modul Publik</div>
+                <div class="ana-canvas-wrap" style="height:230px;"><canvas id="unifiedMarketChart"></canvas></div>
+              </div>
             </div>
           </div>
 

@@ -105,15 +105,12 @@
 
     VISIBLE.forEach(function(k){
       var val=document.getElementById('kpi-'+k), badge=document.getElementById('trend-'+k);
-      var card=val?val.closest('.ana-kpi-card'):null; if(!card) return;
+      if(!val) return;
       var tr=trendInfo(k,d[k].cur,d[k].prev);
       val.textContent=fmt(d[k].cur);
-      badge.textContent=tr.arrow+' '+tr.txt; badge.className='ana-kpi-trend '+tr.cls;
-      var delta=ensure(card,'div','ana-kpi-delta');
-      delta.textContent=(tr.delta>=0?'+':'')+fmt(tr.delta)+' vs '+d.prevLabel;
-      var spark=ensure(card,'canvas','ana-spark');
-      drawSpark(spark, dailySeries(ls(k==='booking'?'dreamos_bookings':'dreamos_k3_reports')), OKABE[k]);
-      card.setAttribute('aria-label', LABELS[k]+': '+fmt(d[k].cur));
+      if(badge){ badge.textContent=tr.arrow+' '+tr.txt; badge.className='kpu-trend '+(tr.cls==='bad'?'down':(tr.cls==='neutral'?'neutral':'')); }
+      var host=val.closest('.kpu-row')||val.parentElement;
+      if(host) host.setAttribute('aria-label', LABELS[k]+': '+fmt(d[k].cur));
     });
 
     var title=document.getElementById('ana-chart-title');
