@@ -1,0 +1,27 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DreamOS Test</title>
+<style>body{font-family:monospace;background:#0a0e27;color:#e2e8f0;padding:1rem}
+h1{color:#00ff9d}.pass{color:#10b981;padding:0.3rem}.fail{color:#ef4444;padding:0.3rem}
+#score{font-size:2rem;text-align:center;padding:1rem;background:rgba(0,255,157,0.1);border-radius:12px}</style>
+</head><body><h1>Dream OS Runtime Test</h1><div id="score">Running...</div><div id="r"></div>
+<script>
+const M=["booking","qr","setting","profile","about","maintenance"];
+let ok=0,fail=0;const d=document.getElementById("r");
+function t(n,s,m){const e=document.createElement("div");e.className=s;
+e.innerHTML=(s==="pass"?"[PASS] ":"[FAIL] ")+n+" -- "+m;d.appendChild(e);
+s==="pass"?ok++:fail++;
+document.getElementById("score").innerHTML="Score: "+ok+"/"+(ok+fail)+" ("+Math.round(ok/(ok+fail)*100)+"%)";
+}
+async function run(){
+t("Suite","pass","started");
+for(const m of M){
+try{const r=await fetch("modules/"+m+".html?v="+Date.now());
+if(r.ok){const txt=await r.text();
+if(txt.length>1000)t("Module "+m,"pass","loads OK ("+txt.length+"b)");
+else t("Module "+m,"fail","too small");}
+else t("Module "+m,"fail","HTTP "+r.status);}
+catch(e){t("Module "+m,"fail",e.message);}}
+t("goHome",typeof window.goHome==="function"?"pass":"fail","check");
+t("showToast",typeof window.showToast==="function"?"pass":"fail","check");
+}
+run();
+</script></body></html>
