@@ -796,9 +796,23 @@
           window.supabaseClient.from('stok_gudang').select('*').limit(500)
         ]);
         
-        if (bRes.data && !bRes.error) localStorage.setItem('dreamos_bookings', JSON.stringify(bRes.data));
-        if (kRes.data && !kRes.error) localStorage.setItem('dreamos_k3_reports', JSON.stringify(kRes.data));
-        if (sRes.data && !sRes.error) localStorage.setItem('dreamos_stok_gudang', JSON.stringify(sRes.data));
+        try {
+          if (bRes.data && !bRes.error) localStorage.setItem('dreamos_bookings', JSON.stringify(bRes.data));
+          if (sRes.data && !sRes.error) localStorage.setItem('dreamos_stok_gudang', JSON.stringify(sRes.data));
+          if (kRes.data && !kRes.error) {
+            // FIX FATAL: Lucuti Base64/Image agar memori HP tidak meledak!
+            const safeK3 = kRes.data.map(item => {
+              const { foto, foto_base64, ...rest } = item;
+              return rest;
+            });
+            localStorage.setItem('dreamos_k3_reports', JSON.stringify(safeK3));
+          }
+        } catch (storageErr) {
+          console.warn('⚠️ LocalStorage Penuh! Membersihkan cache K3 dan Booking...');
+          localStorage.removeItem('dreamos_k3_reports');
+          localStorage.removeItem('dreamos_bookings');
+          localStorage.removeItem('dreamos_stok_gudang');
+        }
         
         return true;
       } catch (err) {
@@ -920,8 +934,17 @@
           const result = await window.doSecureLogin(email, password, '');
           const userData = { id: result.user.id, email: result.user.email, nama: result.user.nama, role: result.user.role, source: result.source };
 
-          localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
-          localStorage.setItem('dreamos_session_active', 'true');
+          try {
+            localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
+            localStorage.setItem('dreamos_session_active', 'true');
+          } catch(e) {
+            // Jika memori mentok saat login, paksa buang sampah cache modul!
+            localStorage.removeItem('dreamos_k3_reports');
+            localStorage.removeItem('dreamos_bookings');
+            localStorage.removeItem('dreamos_stok_gudang');
+            localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
+            localStorage.setItem('dreamos_session_active', 'true');
+          }
           try{ logLoginAttempt(email,'success','Login berhasil',(result&&result.source)||''); startPresenceHeartbeat(); }catch(_){}
           // 📦 Cache kredensial (hash bcrypt) agar bisa login offline berikutnya
           try {
@@ -956,6 +979,12 @@
         renderDashboard();
       }
 
+      window.debouncedUpdateSlides = function() {
+        if (window.__debUpdateTimer) clearTimeout(window.__debUpdateTimer);
+        window.__debUpdateTimer = setTimeout(() => {
+          if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
+        }, 400);
+      };
       var __renderDashTimer = null;
       window.renderDashboard = function(force) {
         // Debounce: jika dipanggil berkali-kali dalam 500ms, hanya 1x yang dieksekusi
