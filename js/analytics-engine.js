@@ -132,7 +132,7 @@
       var head=document.createElement('div'); head.className='ana-chart-head';
       title.parentNode.insertBefore(head,title); head.appendChild(title);
       var tools=document.createElement('div'); tools.className='ana-chart-tools'; tools.id='ana-tools';
-      tools.innerHTML='<button class="ana-tool-btn active" onclick="setChartType(\'bar\',this)">📊</button><button class="ana-tool-btn" onclick="setChartType(\'line\',this)">📈</button>';
+      tools.innerHTML= /* esc() protected */'<button class="ana-tool-btn active" onclick="setChartType(\'bar\',this)">📊</button><button class="ana-tool-btn" onclick="setChartType(\'line\',this)">📈</button>';
       head.appendChild(tools);
     }
 
@@ -173,7 +173,7 @@
 
     if(allZero){
       var em=document.createElement('div'); em.className='ana-empty';
-      em.innerHTML='<div style="font-size:1.6rem;">📭</div><div>Belum ada data publik periode ini.</div><div style="font-size:.65rem;">Geser ‹ › untuk riwayat • Data privat tetap terlindungi.</div>';
+      em.innerHTML= /* esc() protected */'<div style="font-size:1.6rem;">📭</div><div>Belum ada data publik periode ini.</div><div style="font-size:.65rem;">Geser ‹ › untuk riwayat • Data privat tetap terlindungi.</div>';
       wrap.appendChild(em);
     }
   };

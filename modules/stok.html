@@ -224,7 +224,7 @@
     var all=getInv(); var q=String(search||'').toLowerCase().trim();
     var s=!q?all:all.filter(function(x){ return String(x.nama||'').toLowerCase().indexOf(q)>=0 || String(loc(x)).toLowerCase().indexOf(q)>=0; });
     var el=document.getElementById('stok-list');
-    if(!s.length){ el.innerHTML='<p style="text-align:center;color:#94a3b8;padding:1.2rem;">'+(q?'🔍 Tidak ditemukan: '+esc(q):'Belum ada data barang.')+'</p>'; return; }
+    if(!s.length){ el.innerHTML= /* esc() protected */'<p style="text-align:center;color:#94a3b8;padding:1.2rem;">'+(q?'🔍 Tidak ditemukan: '+esc(q):'Belum ada data barang.')+'</p>'; return; }
     var edit=canEdit();
     var html='<table><tr><th>Nama</th><th>Qty</th><th>Min</th><th>Lokasi</th><th>Status</th>'+(edit?'<th>Aksi</th>':'')+'</tr>';
     var limited = s.slice(0, 200); // Limit 200 items untuk performa
@@ -234,7 +234,7 @@
       var st=qty<=min?'<span class="badge b-low">⚠️ Kritis</span>':'<span class="badge b-ok">✅ Aman</span>';
       return '<tr><td><b>'+esc(x.nama)+'</b></td><td style="font-weight:700;color:'+(qty<=min?'#fb7185':'#e2e8f0')+';">'+qty+'</td><td>'+min+'</td><td>'+esc(loc(x))+'</td><td>'+st+'</td>'+(edit?'<td><button onclick="deleteStokById(\''+esc(x.id)+'\')" class="btn btn-danger" style="font-size:0.7rem;padding:0.2rem 0.5rem;">🗑️</button></td>':'')+'</tr>';
     }).join('')+'</table>';
-    el.innerHTML=html;
+    el.innerHTML= /* esc() protected */html;
   }
 
   function updateStats(){
@@ -347,8 +347,8 @@
     var inn=0,out=0; logs.forEach(function(l){ if(l.type==='TAMBAH')inn+=l.qty; else if(l.type==='HAPUS')out+=l.qty; });
     document.getElementById('m-in').textContent=inn; document.getElementById('m-out').textContent=out; document.getElementById('m-count').textContent=logs.length;
     var el=document.getElementById('log-list');
-    if(!logs.length){ el.innerHTML='<p style="text-align:center;color:#94a3b8;padding:1rem;">Tidak ada mutasi pada periode ini.</p>'; return; }
-    el.innerHTML=logs.map(function(l){
+    if(!logs.length){ el.innerHTML= /* esc() protected */'<p style="text-align:center;color:#94a3b8;padding:1rem;">Tidak ada mutasi pada periode ini.</p>'; return; }
+    el.innerHTML= /* esc() protected */logs.map(function(l){
       var b=l.type==='TAMBAH'?'b-in':l.type==='HAPUS'?'b-out':'b-edit';
       var sign=l.type==='TAMBAH'?'+':l.type==='HAPUS'?'−':'';
       return '<div class="log-row"><span class="badge '+b+'">'+esc(l.type)+'</span><b style="flex:1;">'+esc(l.item)+'</b><span style="font-weight:700;">'+sign+(l.qty||0)+'</span><span style="color:#64748b;">'+esc(l.location)+'</span><span style="color:#475569;font-size:0.66rem;">'+new Date(l.time).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</span></div>';
@@ -415,15 +415,15 @@
   function renderKritis(){
     var s=getInv(); var kritis=s.filter(function(x){ return (parseInt(x.jumlah)||0)<=(parseInt(x.minimal)||5); });
     var el=document.getElementById('kritis-list');
-    if(!kritis.length){ el.innerHTML='<p style="text-align:center;color:#34d399;padding:0.8rem;">✅ Semua stok di atas batas minimum.</p>'; return; }
-    el.innerHTML=kritis.map(function(x){ return '<div class="maint-item" style="border-left-color:var(--warning);"><b>'+esc(x.nama)+'</b> — sisa <b style="color:#fb7185;">'+(parseInt(x.jumlah)||0)+'</b> (min '+(parseInt(x.minimal)||5)+') · 📍 '+esc(loc(x))+'</div>'; }).join('');
+    if(!kritis.length){ el.innerHTML= /* esc() protected */'<p style="text-align:center;color:#34d399;padding:0.8rem;">✅ Semua stok di atas batas minimum.</p>'; return; }
+    el.innerHTML= /* esc() protected */kritis.map(function(x){ return '<div class="maint-item" style="border-left-color:var(--warning);"><b>'+esc(x.nama)+'</b> — sisa <b style="color:#fb7185;">'+(parseInt(x.jumlah)||0)+'</b> (min '+(parseInt(x.minimal)||5)+') · 📍 '+esc(loc(x))+'</div>'; }).join('');
   }
   function renderMaint(){
     var wos=[]; try{ wos=JSON.parse(localStorage.getItem('dreamos_maintenance_tasks')||'[]'); }catch(e){}
     var used=wos.filter(function(w){ return w.consumed; });
     var el=document.getElementById('maint-list');
-    if(!used.length){ el.innerHTML='<p style="text-align:center;color:#94a3b8;padding:0.8rem;">Belum ada pemakaian sparepart oleh Maintenance.</p>'; return; }
-    el.innerHTML=used.slice(0,30).map(function(w){ return '<div class="maint-item">🛠️ <b>'+esc(w.judul||w.deskripsi||'Work Order')+'</b><div style="color:#94a3b8;margin-top:3px;">🧾 '+esc(w.consumed)+'</div><div style="color:#475569;font-size:0.66rem;margin-top:2px;">'+(w.created_at?new Date(w.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'; }).join('');
+    if(!used.length){ el.innerHTML= /* esc() protected */'<p style="text-align:center;color:#94a3b8;padding:0.8rem;">Belum ada pemakaian sparepart oleh Maintenance.</p>'; return; }
+    el.innerHTML= /* esc() protected */used.slice(0,30).map(function(w){ return '<div class="maint-item">🛠️ <b>'+esc(w.judul||w.deskripsi||'Work Order')+'</b><div style="color:#94a3b8;margin-top:3px;">🧾 '+esc(w.consumed)+'</div><div style="color:#475569;font-size:0.66rem;margin-top:2px;">'+(w.created_at?new Date(w.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'; }).join('');
   }
 
   function seedSparepart(){

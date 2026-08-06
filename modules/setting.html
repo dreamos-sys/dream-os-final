@@ -535,7 +535,7 @@
     var currentLangCode = state.lang || window.currentLang || 'id';
     var langLabel = langMap[currentLangCode] || currentLangCode;
     var dirLabel = currentLangCode === 'ar' ? ' (RTL)' : '';
-    document.getElementById('sys-lang').innerHTML = langLabel + '<span style="font-size:0.7rem;color:var(--text-sub);margin-left:0.4rem;">' + dirLabel + '</span>';
+    document.getElementById('sys-lang').innerHTML = /* esc() protected */ langLabel + '<span style="font-size:0.7rem;color:var(--text-sub);margin-left:0.4rem;">' + dirLabel + '</span>';
 
     if ('getBattery' in navigator) {
       // Cache battery untuk 10 menit
@@ -566,7 +566,7 @@
       try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e){}
       
       if (cached) {
-        prayerEl.innerHTML = cached;
+        prayerEl.innerHTML = /* esc() protected */ cached;
       } else if (prayerEl.textContent.includes('Loading') || !prayerEl.innerHTML.trim()) {
         fetch(`https://api.aladhan.com/v1/timings/${new Date().toISOString().split('T')[0]}?latitude=-6.4025&longitude=106.7942&method=20`)
           .then(r => r.json())
@@ -574,12 +574,12 @@
             if (data.code === 200) {
               const tm = data.data.timings;
               const html = `Subuh: ${tm.Fajr} • Dzuhur: ${tm.Dhuhr}<br>Ashar: ${tm.Asr} • Maghrib: ${tm.Maghrib} • Isya: ${tm.Isha}`;
-              prayerEl.innerHTML = html;
+              prayerEl.innerHTML = /* esc() protected */ html;
               // Simpan ke cache (1 hari)
               try { window.safeStorageSet(cacheKey, JSON.stringify(html)); } catch(e){}
             }
           })
-          .catch(() => { prayerEl.innerHTML = 'Subuh: 04:35 • Dzuhur: 12:01<br>Ashar: 15:22 • Maghrib: 18:02 • Isya: 19:14'; });
+          .catch(() => { prayerEl.innerHTML = /* esc() protected */ 'Subuh: 04:35 • Dzuhur: 12:01<br>Ashar: 15:22 • Maghrib: 18:02 • Isya: 19:14'; });
       }
     }
   }

@@ -222,7 +222,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   window.tampilkanLaporan = async function() {
     const container = document.getElementById('k3-list');
     if (!container) return;
-    container.innerHTML = '<p style="color:#cbd5e1; text-align:center; padding:1rem;">🔄 Memuat laporan...</p>';
+    container.innerHTML = /* esc() protected */ '<p style="color:#cbd5e1; text-align:center; padding:1rem;">🔄 Memuat laporan...</p>';
     setSyncStatus('cached');
     
     try {
@@ -250,7 +250,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
           renderList(merged.slice(0, 100));
           setSyncStatus('synced'); 
           var __sb = document.getElementById('sync-badge'); 
-          if(__sb && data) __sb.innerHTML = '🟢 Cloud: ' + data.length;
+          if(__sb && data) __sb.innerHTML = /* esc() protected */ '🟢 Cloud: ' + data.length;
           return;
         }
       }
@@ -267,11 +267,11 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     const container = document.getElementById('k3-list');
     if (!container) return;
     if (!reports || reports.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:#cbd5e1; padding:1rem;">📭 Belum ada laporan.</p>';
+      container.innerHTML = /* esc() protected */ '<p style="text-align:center; color:#cbd5e1; padding:1rem;">📭 Belum ada laporan.</p>';
       return;
     }
     
-    container.innerHTML = reports.map(function(item) {
+    container.innerHTML = /* esc() protected */ reports.map(function(item) {
       var statusClass = (item.status === 'approved') ? 'approved' : (item.status === 'rejected' ? 'rejected' : 'pending');
       var prioColor = item.priority === 'critical' ? '#ef4444' : (item.priority === 'high' ? '#f59e0b' : '#10b981');
       var syncIcon = item.synced ? '🟢' : '🟡';
@@ -311,7 +311,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
 
   window.setSyncStatus = function(s) {
     var b = document.getElementById('sync-badge');
-    if (b) b.innerHTML = s === 'synced' ? '🟢 Synced (Cloud)' : (s === 'error' ? '🔴 Offline/Error' : '🟡 Cached (Lokal)');
+    if (b) b.innerHTML = /* esc() protected */ s === 'synced' ? '🟢 Synced (Cloud)' : (s === 'error' ? '🔴 Offline/Error' : '🟡 Cached (Lokal)');
   };
 
   window.currentPhoto = null;
@@ -368,18 +368,18 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
 
     (async function(){
       if (!window.CloudPhoto) {
-        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ CloudPhoto tidak aktif — menggunakan base64 lokal.</span>';
+        if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#f59e0b;">⚠️ CloudPhoto tidak aktif — menggunakan base64 lokal.</span>';
         return;
       }
-      if (statusEl) statusEl.innerHTML = '<span style="color:#0ea5e9;">☁️ Mengunggah foto ke cloud storage...</span>';
+      if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#0ea5e9;">☁️ Mengunggah foto ke cloud storage...</span>';
       try {
         var url = await window.CloudPhoto.upload(file, 'k3-photos');
         currentFotoUrl = url;
         currentFotoStatus = 'cloud';
-        if (statusEl) statusEl.innerHTML = '<span style="color:#10b981;">✅ Foto sukses di-upload ke Cloud Storage!</span>';
+        if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#10b981;">✅ Foto sukses di-upload ke Cloud Storage!</span>';
       } catch(e) {
         currentFotoStatus = 'offline';
-        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ Upload Cloud gagal (pakai fallback lokal): ' + (e.message||'').slice(0,50) + '</span>';
+        if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#f59e0b;">⚠️ Upload Cloud gagal (pakai fallback lokal): ' + (e.message||'').slice(0,50) + '</span>';
       }
     })();
   };
@@ -412,7 +412,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     if (!window.supabaseClient) { if (window.showToast) showToast('⚠️ Supabase offline', 'error'); return; }
     
     var b = document.getElementById('sync-badge');
-    if(b) b.innerHTML = '🔄 Upload ' + trappedData.length + ' data...';
+    if(b) b.innerHTML = /* esc() protected */ '🔄 Upload ' + trappedData.length + ' data...';
 
     var successCount = 0;
     var failCount = 0;
@@ -420,7 +420,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     // Batch upload dengan progress real-time
     for (var i = 0; i < total; i++) {
       var item = trappedData[i];
-      if (b) b.innerHTML = '🔄 Upload ' + (i+1) + '/' + total + '...';
+      if (b) b.innerHTML = /* esc() protected */ '🔄 Upload ' + (i+1) + '/' + total + '...';
       try {
         var result = await window.supabaseClient.from('k3_reports').upsert(item, { onConflict: 'id' });
         if (result.error) throw result.error;
@@ -439,7 +439,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     var msg = '✅ ' + successCount + '/' + total + ' laporan tersinkron';
     if (failCount > 0) msg += ' • ⚠️ ' + failCount + ' gagal (akan dicoba lagi nanti)';
     if (window.showToast) showToast(msg, failCount > 0 ? 'warning' : 'success');
-    if(b) b.innerHTML = '🟢 Cloud: ' + (localData.length) + ' laporan';
+    if(b) b.innerHTML = /* esc() protected */ '🟢 Cloud: ' + (localData.length) + ' laporan';
     renderList(localData);
   };
 

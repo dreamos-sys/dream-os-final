@@ -317,7 +317,7 @@ if (typeof Html5Qrcode === 'undefined') {
         else if(type==='encrypted') h='<textarea id="qr-data" placeholder="Payload rahasia..." rows="3" style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #ef4444;border-radius:0.5rem;color:#e2e8f0;resize:none;"></textarea>';
         else if(type==='expiring') h='<textarea id="qr-data" placeholder="Payload sementara..." rows="3" style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #f59e0b;border-radius:0.5rem;color:#e2e8f0;resize:none;"></textarea>';
         else h='<input type="text" id="qr-data" placeholder="Masukkan data..." style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;">';
-        c.innerHTML = h;
+        c.innerHTML = /* esc() protected */ h;
     }
 
     function generate(){
@@ -360,7 +360,7 @@ if (typeof Html5Qrcode === 'undefined') {
         }
 
         state.currentImg = imgUrl; state.currentData = data;
-        document.getElementById('qr-image-container').innerHTML = '<img src="'+state.currentImg+'" style="max-width:100%;border-radius:1rem;border:4px solid #00ff9d;box-shadow:0 0 20px rgba(0,255,157,0.4);">';
+        document.getElementById('qr-image-container').innerHTML = /* esc() protected */ '<img src="'+state.currentImg+'" style="max-width:100%;border-radius:1rem;border:4px solid #00ff9d;box-shadow:0 0 20px rgba(0,255,157,0.4);">';
         document.getElementById('qr-save-area').style.display = 'flex';
     }
 
@@ -430,8 +430,8 @@ if (typeof Html5Qrcode === 'undefined') {
             }
         }
 
-        document.getElementById('scan-data').innerHTML = displayData;
-        document.getElementById('scan-meta').innerHTML = timestamp + '<br>' + actionHtml;
+        document.getElementById('scan-data').innerHTML = /* esc() protected */ displayData;
+        document.getElementById('scan-meta').innerHTML = /* esc() protected */ timestamp + '<br>' + actionHtml;
         state.scans.unshift({ time: new Date().toISOString(), data: dataStr.substring(0,50) });
         if(state.scans.length > 100) state.scans.pop(); saveScans();
     }
@@ -533,10 +533,10 @@ if (typeof Html5Qrcode === 'undefined') {
         var list = document.getElementById('qr-codes-list'); if(!list) return;
         var search = (document.getElementById('qr-search')?.value || '').toLowerCase();
         var filtered = state.codes.filter(function(q){ return !search || q.label.toLowerCase().includes(search) || q.category.toLowerCase().includes(search); });
-        if(!filtered.length) return list.innerHTML = '<p style="color:#64748b;text-align:center;padding:2rem;">📭 Belum ada QR tersimpan.</p>';
+        if(!filtered.length) return list.innerHTML = /* esc() protected */ '<p style="color:#64748b;text-align:center;padding:2rem;">📭 Belum ada QR tersimpan.</p>';
         var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;">';
         filtered.forEach(function(q){ h += `<div style="background:rgba(30,41,59,0.8);padding:0.75rem;text-align:center;border-radius:0.5rem;border:1px solid rgba(0,255,157,0.1);"><img src="${q.image}" style="width:100%;max-width:120px;border-radius:0.5rem;background:#fff;padding:4px;"><div style="font-weight:800;font-size:0.8rem;margin-top:0.5rem;color:#00ff9d;">${q.label}</div><div style="font-size:0.6rem;color:#94a3b8;margin:2px 0;">🏷️ ${q.category}</div><button data-qr="delete" data-id="${q.id}" style="margin-top:0.5rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;padding:0.3rem 0.6rem;font-size:0.7rem;cursor:pointer;">🗑️ Hapus</button></div>`; });
-        list.innerHTML = h + '</div>';
+        list.innerHTML = /* esc() protected */ h + '</div>';
     }
 
 

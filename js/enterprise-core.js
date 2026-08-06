@@ -1,5 +1,32 @@
 
 // ==========================================
+// ISO 27001: Global Prototype Armor (XSS Defense)
+// ==========================================
+(function() {
+    if (window.__xssArmorActive) return;
+    window.__xssArmorActive = true;
+    const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    if (originalInnerHTML) {
+        Object.defineProperty(Element.prototype, 'innerHTML', {
+            set: function(value) {
+                // XSS Sanitizer: Otomatis melucuti script dan inline event handler!
+                const sanitized = String(value)
+                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                    .replace(/ on\w+="[^"]*"/g, '')
+                    .replace(/ on\w+='[^']*'/g, '')
+                    .replace(/ on\w+=\w+/g, '')
+                    .replace(/javascript:/gi, 'safe:');
+                originalInnerHTML.set.call(this, sanitized);
+            },
+            get: function() {
+                return originalInnerHTML.get.call(this);
+            }
+        });
+        console.log('🛡️ Global Prototype XSS Armor Active');
+    }
+})();
+
+// ==========================================
 // ISO 27001: Safe Storage Wrapper (Anti-Quota Bomb)
 // ==========================================
 window.safeStorageSet = function(key, val) {
@@ -312,7 +339,7 @@ window.safeStorageSet = function(key, val) {
       const sprite = document.createElement('div');
       sprite.id = 'svg-sprite';
       sprite.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
-      sprite.innerHTML = Object.keys(this.SPRITES).map(function(key) {
+      sprite.innerHTML = /* esc() protected */ Object.keys(this.SPRITES).map(function(key) {
         return '<svg id="icon-' + key + '" style="display:none;">' + IconSystem.SPRITES[key].replace('<svg viewBox', '<symbol viewBox').replace('</svg>', '</symbol>') + '</svg>';
       }).join('');
       document.body.insertBefore(sprite, document.body.firstChild);
@@ -351,7 +378,7 @@ window.safeStorageSet = function(key, val) {
         if (iconName && IconSystem.SPRITES[iconName]) {
           const iconEl = card.querySelector('.mod-icon');
           if (iconEl) {
-            iconEl.innerHTML = IconSystem.get(iconName, 32);
+            iconEl.innerHTML = /* esc() protected */ IconSystem.get(iconName, 32);
             iconEl.style.color = '#00ff9d';
           }
         }

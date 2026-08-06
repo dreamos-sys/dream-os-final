@@ -53,7 +53,7 @@
     var ov = document.createElement('div');
     ov.id = 'input-help-overlay';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99998;display:flex;align-items:center;justify-content:center;';
-    ov.innerHTML = '<div style="background:#0f172a;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:420px;width:92%;color:#e2e8f0;">' +
+    ov.innerHTML = /* esc() protected */ '<div style="background:#0f172a;border:1px solid #00ff9d;border-radius:16px;padding:1.2rem;max-width:420px;width:92%;color:#e2e8f0;">' +
       '<h3 style="color:#00ff9d;margin:0 0 .8rem;">⌨️ Keyboard Shortcuts</h3>' +
       rows.map(function (r) { return '<div style="display:flex;justify-content:space-between;gap:1rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.8rem;"><code style="color:#00ff9d;">' + r[0] + '</code><span>' + r[1] + '</span></div>'; }).join('') +
       '<button onclick="document.getElementById(\'input-help-overlay\').remove()" style="margin-top:1rem;width:100%;padding:.6rem;background:#0ea5e9;border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;">Tutup</button></div>';

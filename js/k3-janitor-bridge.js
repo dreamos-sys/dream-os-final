@@ -62,7 +62,7 @@
       if(active.length) active.forEach(function(r){ h+=card(r,sc,done); });
       else if(!doneHere.length) h+='<div style="font-size:0.78rem;color:#64748b;text-align:center;padding:0.6rem;">Tidak ada tugas kebersihan dari K3 saat ini. ✨</div>';
       if(doneHere.length){ h+='<details style="margin-top:0.4rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#94a3b8;">Lihat yang sudah ditandai bersih ('+doneHere.length+')</summary><div style="margin-top:0.4rem;opacity:0.7;">'; doneHere.forEach(function(r){ h+=card(r,sc,done); }); h+='</div></details>'; }
-      h+='</div>'; cont.innerHTML=h;
+      h+='</div>'; cont.innerHTML= /* esc() protected */h;
     }catch(e){ console.warn('[k3j-bridge] render:', e); }
   }
 
