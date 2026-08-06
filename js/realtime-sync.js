@@ -10,7 +10,7 @@
   function client(){ return window.supabaseClient || (window.parent && window.parent.supabaseClient) || null; }
   function ensureClient(){ try{ if(typeof window.initSupabase==='function' && !client()) window.initSupabase(); }catch(e){} return client(); }
   function getLog(){ try{ return JSON.parse(localStorage.getItem(LOG)||'[]'); }catch(e){ return []; } }
-  function setLog(a){ try{ localStorage.setItem(LOG, JSON.stringify(a)); }catch(e){} }
+  function setLog(a){ try{ window.safeStorageSet(LOG, JSON.stringify(a)); }catch(e){} }
   function newId(){ return 'sm_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
 
   window.pushStockMovement = function(entry){
@@ -60,13 +60,13 @@
         if(tbl === 'k3_followups'){
           var cache = {}; try{ cache = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
           r.data.forEach(function(x){ if(x&&x.id) cache[x.id] = { by:x.by, at:x.at, scope:x.scope }; });
-          localStorage.setItem(key, JSON.stringify(cache));
+          window.safeStorageSet(key, JSON.stringify(cache));
         } else if(tbl === 'users'){
           var loc = []; try{ loc = JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){}
           r.data.forEach(function(cu){ var i=loc.findIndex(function(lu){return (lu.email||'').toLowerCase()===(cu.email||'').toLowerCase();}); if(i===-1) loc.push({id:cu.id,email:cu.email,nama:cu.nama,role:cu.role,status:cu.status,source:'cloud'}); else { loc[i].nama=cu.nama||loc[i].nama; loc[i].role=cu.role||loc[i].role; loc[i].status=cu.status||loc[i].status; } });
-          localStorage.setItem(key, JSON.stringify(loc));
+          window.safeStorageSet(key, JSON.stringify(loc));
         } else {
-          localStorage.setItem(key, JSON.stringify(r.data));
+          window.safeStorageSet(key, JSON.stringify(r.data));
         }
         refreshDash();
       } catch(e){ try{ console.warn('[realtime] apply '+tbl+':', e&&e.message); }catch(_){} }

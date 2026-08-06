@@ -17,7 +17,7 @@
     catch (e) { return []; }
   }
   function saveLocal(arr) {
-    localStorage.setItem('dreamos_bookings', JSON.stringify(arr));
+    window.safeStorageSet('dreamos_bookings', JSON.stringify(arr));
     try { global.dispatchEvent(new CustomEvent('booking-updated', { detail: { source: 'realtime' } })); } catch (e) {}
   }
 
@@ -73,7 +73,7 @@
       var n = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
       n.unshift({ type: 'info', msg: title + ' — ' + body, time: new Date().toISOString() });
       if (n.length > 50) n.length = 50;
-      localStorage.setItem('dreamos_notifications', JSON.stringify(n));
+      window.safeStorageSet('dreamos_notifications', JSON.stringify(n));
     } catch (e) {}
   }
 

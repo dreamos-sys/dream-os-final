@@ -42,7 +42,7 @@ const BankEncryption = {
 
   async secureSet(key, value) {
     const encrypted = await this.encrypt(JSON.stringify(value));
-    localStorage.setItem('enc_' + key, encrypted);
+    window.safeStorageSet('enc_' + key, encrypted);
   },
 
   async secureGet(key) {

@@ -255,7 +255,7 @@
   }
 
   function writeSettings(st) {
-    try { localStorage.setItem('dreamos_settings', JSON.stringify(st)); } catch (e) {}
+    try { window.safeStorageSet('dreamos_settings', JSON.stringify(st)); } catch (e) {}
   }
 
   function langFromTimezone() {
@@ -335,7 +335,7 @@
     writeSettings(st);
     
     // Sync to dreamos_lang (cache)
-    localStorage.setItem('dreamos_lang', lang);
+    window.safeStorageSet('dreamos_lang', lang);
 
     // Apply to document
     document.documentElement.lang = lang;

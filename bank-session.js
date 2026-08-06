@@ -15,7 +15,7 @@ const BankSession = {
       expires: Date.now() + this.DURATION,
       last: Date.now()
     };
-    localStorage.setItem('sid', session.id);
+    window.safeStorageSet('sid', session.id);
     BankEncryption.secureSet('session', session);
     return session;
   },

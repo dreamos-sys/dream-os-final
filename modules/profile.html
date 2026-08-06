@@ -174,7 +174,7 @@
   }
   function saveUserLocal(u) {
     try {
-      localStorage.setItem('dreamos_bound_user', JSON.stringify(u));
+      window.safeStorageSet('dreamos_bound_user', JSON.stringify(u));
     } catch(e) {
       // Quota exceeded — bersihkan cache lama, retry
       try {
@@ -183,7 +183,7 @@
                  k.indexOf('dreamos_weather_cache') === 0; 
         });
         keys.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_){} });
-        localStorage.setItem('dreamos_bound_user', JSON.stringify(u));
+        window.safeStorageSet('dreamos_bound_user', JSON.stringify(u));
         if(window.showToast) showToast('⚠️ Storage penuh, cache dibersihkan', 'warning');
       } catch(e2) {
         console.warn('[Profile] saveUserLocal quota exceeded:', e2);
@@ -458,7 +458,7 @@
       user.device_dna = currentDna;
       saveUserLocal(user);
       var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
-      localStorage.setItem(dnaKey, currentDna);
+      window.safeStorageSet(dnaKey, currentDna);
       if(window.showToast) showToast('✅ Device diikat: ' + currentDna.slice(0,12) + '…', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12, 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12, 'warning') : alert('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12))) + '…');
       refreshDeviceStatus();
     } catch (e) {
@@ -466,7 +466,7 @@
       user.device_dna = currentDna;
       saveUserLocal(user);
       var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
-      localStorage.setItem(dnaKey, currentDna);
+      window.safeStorageSet(dnaKey, currentDna);
       if(window.showToast) showToast('⚠️ Cloud gagal, bind lokal disimpan', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Cloud gagal (' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Cloud gagal (' + (e.message || e, 'warning') : alert('⚠️ Cloud gagal (' + (e.message || e))) + '). Bind lokal tetap disimpan.');
       refreshDeviceStatus();
     }
@@ -558,7 +558,7 @@
       if (s.error) throw new Error('Password lama salah');
       var u = await window.supabaseClient.auth.updateUser({ password: newPass });
       if (u.error) throw u.error;
-      try { var _u=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); var _i=_u.findIndex(function(x){ return (x.email||'').toLowerCase()===String(user.email||'').toLowerCase(); }); if(_i>-1){ _u[_i].password_hash=null; localStorage.setItem('dreamos_users_db', JSON.stringify(_u)); } } catch(e){}
+      try { var _u=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); var _i=_u.findIndex(function(x){ return (x.email||'').toLowerCase()===String(user.email||'').toLowerCase(); }); if(_i>-1){ _u[_i].password_hash=null; window.safeStorageSet('dreamos_users_db', JSON.stringify(_u)); } } catch(e){}
       if(window.showToast) showToast('✅ Password diubah', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Password diubah. Login ulang.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Password diubah. Login ulang.', 'warning') : alert('✅ Password diubah. Login ulang.')));
       await window.supabaseClient.auth.signOut().catch(function () {});
       localStorage.removeItem('dreamos_bound_user');
@@ -574,7 +574,7 @@
       email: document.getElementById('notif-email').checked,
       device: document.getElementById('notif-device').checked
     };
-    localStorage.setItem('dreamos_notif_prefs', JSON.stringify(prefs));
+    window.safeStorageSet('dreamos_notif_prefs', JSON.stringify(prefs));
     if(window.showToast) showToast('✅ Preferensi disimpan', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Preferensi disimpan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Preferensi disimpan', 'warning') : alert('✅ Preferensi disimpan')));
   };
 

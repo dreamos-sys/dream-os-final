@@ -775,7 +775,7 @@ window.goHomeHandler = function() {
     try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback !== undefined ? fallback : [])); }
     catch(e) { return fallback !== undefined ? fallback : []; }
   }
-  function saveJSON(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function saveJSON(key, data) { window.safeStorageSet(key, JSON.stringify(data)); }
 
   function showToast(msg, type) {
     const c = document.getElementById('toast-container');
@@ -1350,7 +1350,7 @@ window.goHomeHandler = function() {
     const s6 = document.getElementById('slide-6-input').value.trim();
     const s7 = document.getElementById('slide-7-input').value.trim();
 
-    localStorage.setItem('dreamos_cmd_announcements', JSON.stringify([
+    window.safeStorageSet('dreamos_cmd_announcements', JSON.stringify([
       { type: 'management', msg: s5 },
       { type: 'umum', msg: s6 },
       { type: 'ucapan', msg: s7 }
@@ -1473,7 +1473,7 @@ window.goHomeHandler = function() {
         if (!data || !data.keys) throw new Error('Format backup tidak valid');
         var n = Object.keys(data.keys).length;
         if (!confirm('Restore ' + n + ' keys? Data lokal saat ini akan DITIMPA.')) return;
-        Object.keys(data.keys).forEach(function(k){ localStorage.setItem(k, data.keys[k]); });
+        Object.keys(data.keys).forEach(function(k){ window.safeStorageSet(k, data.keys[k]); });
         var st = document.getElementById('backup-status');
         if (st) st.textContent = '✅ ' + n + ' keys di-restore. Memuat ulang…';
         if (window.BankAudit) { try { BankAudit.log('LOCAL_BACKUP_RESTORE', { keys:n }); } catch(e){} }

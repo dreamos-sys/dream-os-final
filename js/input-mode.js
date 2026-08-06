@@ -6,7 +6,7 @@
   function setMode(mode) {
     if (root.getAttribute('data-input') === mode) return;
     root.setAttribute('data-input', mode);
-    try { localStorage.setItem('dreamos_input_mode', mode); } catch (e) {}
+    try { window.safeStorageSet('dreamos_input_mode', mode); } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('input-mode-changed', { detail: { mode: mode } })); } catch (e) {}
   }
 

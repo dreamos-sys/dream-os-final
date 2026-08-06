@@ -252,15 +252,15 @@
 
   function saveState(key) {
     try {
-      localStorage.setItem('dreamos_settings', JSON.stringify(state));
-      localStorage.setItem('dreamos_theme', state.theme);
+      window.safeStorageSet('dreamos_settings', JSON.stringify(state));
+      window.safeStorageSet('dreamos_theme', state.theme);
     } catch(e) {
       // Quota exceeded — hapus cache lama
       try {
         var keys = Object.keys(localStorage).filter(function(k){ return k.indexOf('dreamos_prayer_cache_') === 0; });
         keys.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_){} });
-        localStorage.setItem('dreamos_settings', JSON.stringify(state));
-        localStorage.setItem('dreamos_theme', state.theme);
+        window.safeStorageSet('dreamos_settings', JSON.stringify(state));
+        window.safeStorageSet('dreamos_theme', state.theme);
         if(window.showToast) showToast('⚠️ Storage penuh, cache lama dibersihkan', 'warning');
       } catch(e2) {
         if(window.showToast) showToast('❌ Storage sangat penuh', 'error');
@@ -420,7 +420,7 @@
       // Fallback: langsung update document + localStorage
       document.documentElement.lang = val;
       document.documentElement.setAttribute('dir', val === 'ar' ? 'rtl' : 'ltr');
-      localStorage.setItem('dreamos_lang', val);
+      window.safeStorageSet('dreamos_lang', val);
       try {
         if (window.parent && window.parent !== window && window.parent.setLanguage) {
           window.parent.setLanguage(val, { skipSync: true });
@@ -549,7 +549,7 @@
         navigator.getBattery().then(b => {
           var text = (b.charging ? '⚡ ' : '🔋 ') + Math.round(b.level * 100) + '%';
           if (batteryEl) batteryEl.textContent = text;
-          try { localStorage.setItem('dreamos_battery_cache', JSON.stringify({text: text, ts: Date.now()})); } catch(e){}
+          try { window.safeStorageSet('dreamos_battery_cache', JSON.stringify({text: text, ts: Date.now()})); } catch(e){}
         }).catch(function(){});
       }
     }
@@ -576,7 +576,7 @@
               const html = `Subuh: ${tm.Fajr} • Dzuhur: ${tm.Dhuhr}<br>Ashar: ${tm.Asr} • Maghrib: ${tm.Maghrib} • Isya: ${tm.Isha}`;
               prayerEl.innerHTML = html;
               // Simpan ke cache (1 hari)
-              try { localStorage.setItem(cacheKey, JSON.stringify(html)); } catch(e){}
+              try { window.safeStorageSet(cacheKey, JSON.stringify(html)); } catch(e){}
             }
           })
           .catch(() => { prayerEl.innerHTML = 'Subuh: 04:35 • Dzuhur: 12:01<br>Ashar: 15:22 • Maghrib: 18:02 • Isya: 19:14'; });

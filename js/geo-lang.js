@@ -12,7 +12,7 @@
       return c.lang;
     } catch (e) { return null; }
   }
-  function writeCache(lang) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ lang: lang, at: Date.now() })); } catch (e) {} }
+  function writeCache(lang) { try { window.safeStorageSet(CACHE_KEY, JSON.stringify({ lang: lang, at: Date.now() })); } catch (e) {} }
   function langFromCoords(lat, lng) {
     if (lat >= -11 && lat <= 6 && lng >= 95 && lng <= 141) return 'id';
     if (lat >= 18 && lat <= 54 && lng >= 73 && lng <= 135) return 'zh';

@@ -1,3 +1,17 @@
+
+// ==========================================
+// ISO 27001: Safe Storage Wrapper (Anti-Quota Bomb)
+// ==========================================
+window.safeStorageSet = function(key, val) {
+    try {
+        localStorage.setItem(key, val);
+    } catch (e) {
+        console.warn('⚠️ Storage Quota Jebol! Gagal menyimpan:', key);
+        if (typeof window.showToast === 'function') {
+            window.showToast('⚠️ Storage Penuh! Gagal menyimpan ' + key, 'error');
+        }
+    }
+};
 /**
  * DREAM OS ENTERPRISE CORE v1.0
  * Cognitive Facility Operating System - Pro Global Standard
@@ -67,7 +81,7 @@
         const logs = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
         logs.unshift({ type, data, id: 'tel_' + Date.now() });
         if (logs.length > this.MAX_LOGS) logs.length = this.MAX_LOGS;
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(logs));
+        window.safeStorageSet(this.STORAGE_KEY, JSON.stringify(logs));
         
         // Send to Supabase if available
         if (window.supabaseClient && type === 'ERROR') {
@@ -137,11 +151,11 @@
           iv: Array.from(iv),
           data: Array.from(new Uint8Array(encrypted))
         };
-        localStorage.setItem('sec_' + key, JSON.stringify(stored));
+        window.safeStorageSet('sec_' + key, JSON.stringify(stored));
         return true;
       } catch(e) {
         console.warn('SecureStore.set failed, falling back to plain:', e);
-        localStorage.setItem(key, JSON.stringify(value)); // Fallback
+        window.safeStorageSet(key, JSON.stringify(value)); // Fallback
         return false;
       }
     },
@@ -211,7 +225,7 @@
           timestamp: new Date().toISOString(),
           retries: 0
         });
-        localStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+        window.safeStorageSet(this.QUEUE_KEY, JSON.stringify(queue));
       } catch(e) {
         console.warn('CloudSync.queue failed:', e);
       }
@@ -247,8 +261,8 @@
           }
         }
         
-        localStorage.setItem(this.QUEUE_KEY, JSON.stringify(remaining));
-        localStorage.setItem(this.LAST_SYNC_KEY, new Date().toISOString());
+        window.safeStorageSet(this.QUEUE_KEY, JSON.stringify(remaining));
+        window.safeStorageSet(this.LAST_SYNC_KEY, new Date().toISOString());
         
         if (remaining.length > 0) {
           console.log('☁️ CloudSync: ' + remaining.length + ' items pending retry');

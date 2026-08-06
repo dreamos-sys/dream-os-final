@@ -57,7 +57,7 @@ window.OfflineQueue = {
   
   add(table, action, data) {
     this.queue.push({ table, action, data, timestamp: Date.now(), synced: false });
-    localStorage.setItem('offline_queue', JSON.stringify(this.queue));
+    window.safeStorageSet('offline_queue', JSON.stringify(this.queue));
     this.updateBadge();
   },
   
@@ -99,7 +99,7 @@ window.OfflineQueue = {
       }
     }
     this.queue = this.queue.filter(item => !item.synced);
-    localStorage.setItem('offline_queue', JSON.stringify(this.queue));
+    window.safeStorageSet('offline_queue', JSON.stringify(this.queue));
     this.updateBadge();
   },
   

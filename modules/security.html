@@ -365,7 +365,7 @@
   function getFullMatrix() { try { return JSON.parse(localStorage.getItem('dreamos_matrix') || '[]'); } catch(e) { return []; } }
   function saveMatrix(data) {
     try {
-      localStorage.setItem('dreamos_matrix', JSON.stringify(data));
+      window.safeStorageSet('dreamos_matrix', JSON.stringify(data));
     } catch(e) {
       if (window.showToast) showToast('⚠️ Storage penuh, data tidak tersimpan', 'error');
       console.warn('[Security] localStorage quota exceeded:', e);
@@ -393,7 +393,7 @@
     return r.pat[((days + r.off) % L + L) % L];
   }
   function getOverrides(){ try { return JSON.parse(localStorage.getItem('dreamos_matrix_ovr') || '{}'); } catch(e){ return {}; } }
-  function saveOverrides(o){ localStorage.setItem('dreamos_matrix_ovr', JSON.stringify(o)); }
+  function saveOverrides(o){ window.safeStorageSet('dreamos_matrix_ovr', JSON.stringify(o)); }
   function cellShift(nama, y, m, d){
     var ovr = getOverrides();
     var v = ovr[nama + '|' + dateKey(y,m,d)];
@@ -404,7 +404,7 @@
       var logs = JSON.parse(localStorage.getItem('dreamos_matrix_log') || '[]');
       var u = {}; try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}') || {}; } catch(e){}
       logs.unshift({ at: new Date().toISOString(), user: u.nama || u.email || 'system', action: action, detail: detail });
-      localStorage.setItem('dreamos_matrix_log', JSON.stringify(logs.slice(0, 300)));
+      window.safeStorageSet('dreamos_matrix_log', JSON.stringify(logs.slice(0, 300)));
     } catch(e){}
   }
   function migrateOldMatrix(){
@@ -631,7 +631,7 @@
       const key = 'dreamos_laporan_terpadu_' + document.getElementById('report-date-daily').value;
       const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[],"mutasi":{}}');
       if (!d.personnel[i]) d.personnel[i] = {}; d.personnel[i][f] = v;
-      try { localStorage.setItem(key, JSON.stringify(d)); } catch(e) { if (window.showToast) showToast('⚠️ Storage penuh', 'error'); }
+      try { window.safeStorageSet(key, JSON.stringify(d)); } catch(e) { if (window.showToast) showToast('⚠️ Storage penuh', 'error'); }
     }, 500); // Debounce 500ms
   };
   var __updateActivityTimer = null;
@@ -641,7 +641,7 @@
       const key = 'dreamos_laporan_terpadu_' + document.getElementById('report-date-daily').value;
       const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[],"mutasi":{}}');
       d['activities' + col.toUpperCase()][i][f] = v;
-      try { localStorage.setItem(key, JSON.stringify(d)); } catch(e) { if (window.showToast) showToast('⚠️ Storage penuh', 'error'); }
+      try { window.safeStorageSet(key, JSON.stringify(d)); } catch(e) { if (window.showToast) showToast('⚠️ Storage penuh', 'error'); }
     }, 500); // Debounce 500ms
   };
   window.addActivityRow = function(col) {
@@ -649,13 +649,13 @@
     const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[],"mutasi":{}}');
     if(!d['activities' + col.toUpperCase()]) d['activities' + col.toUpperCase()] = [];
     d['activities' + col.toUpperCase()].push({ masuk: '', keluar: '', uraian: '', ket: '' });
-    localStorage.setItem(key, JSON.stringify(d)); loadDailyReport();
+    window.safeStorageSet(key, JSON.stringify(d)); loadDailyReport();
   };
   window.deleteActivity = function(col, i) {
     const key = 'dreamos_laporan_terpadu_' + document.getElementById('report-date-daily').value;
     const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[],"mutasi":{}}');
     d['activities' + col.toUpperCase()].splice(i, 1);
-    localStorage.setItem(key, JSON.stringify(d)); loadDailyReport();
+    window.safeStorageSet(key, JSON.stringify(d)); loadDailyReport();
   };
   window.saveDailyReport = function() {
     const key = 'dreamos_laporan_terpadu_' + document.getElementById('report-date-daily').value;
@@ -663,7 +663,7 @@
     d.mutasi = { penyerah: document.getElementById('lap-penyerah').value, penerima: document.getElementById('lap-penerima').value, aset: document.getElementById('lap-aset').value,
       s1: document.getElementById('sop-1').checked, s2: document.getElementById('sop-2').checked, s3: document.getElementById('sop-3').checked,
       sigPenyerah: window.currentSignatures.penyerah || '', sigPenerima: window.currentSignatures.penerima || '' };
-    localStorage.setItem(key, JSON.stringify(d));
+    window.safeStorageSet(key, JSON.stringify(d));
     renderReportHistory();
     if (window.showToast) showToast('💾 Jurnal tersimpan', 'success'); else (typeof window.showToast === 'function' ? window.showToast('💾 Tersimpan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('💾 Tersimpan', 'warning') : alert('💾 Tersimpan')));
   };
@@ -751,11 +751,11 @@ Auto-Sync by Dream OS ver. 13`;
   // ===== SLIDE BRIDGE: menulis ke jembatan yang dibaca Slide 1 Dashboard =====
   var __lastSlidePublished = null;
   function writeSlideToBridge(text){
-    try { localStorage.setItem('dreamos_slide_petugas', text); } catch(e){}
+    try { window.safeStorageSet('dreamos_slide_petugas', text); } catch(e){}
     try {
       var by = 'Security';
       try { by = (JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}')||{}).nama || 'Security'; } catch(e){}
-      localStorage.setItem('dreamos_slide_petugas_meta', JSON.stringify({ updated_at: new Date().toISOString(), by: by }));
+      window.safeStorageSet('dreamos_slide_petugas_meta', JSON.stringify({ updated_at: new Date().toISOString(), by: by }));
     } catch(e){}
     try {
       window.dispatchEvent(new Event('dreamos-slide-updated'));
@@ -842,7 +842,7 @@ Auto-Sync by Dream OS ver. 13`;
   var SEC_DONE_CACHE = 'dreamos_k3_followups_cache';
   function secEscQ(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function secGetDone(){ try{ return JSON.parse(localStorage.getItem(SEC_DONE_CACHE)||'{}'); }catch(e){ return {}; } }
-  function secSetDone(d){ try{ localStorage.setItem(SEC_DONE_CACHE, JSON.stringify(d)); }catch(e){} }
+  function secSetDone(d){ try{ window.safeStorageSet(SEC_DONE_CACHE, JSON.stringify(d)); }catch(e){} }
   function secDkey(id,sc){ return id+'::'+sc; }
   function secClient(){ return window.supabaseClient || (window.parent && window.parent.supabaseClient) || null; }
   function secIsIncident(r){ return /kehilangan|kecelakaan|bahaya/i.test((r&&r.kategori)||''); }

@@ -37,7 +37,7 @@
       });
     },
     async set(store, key, val) {
-      if (!ready) return localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : val);
+      if (!ready) return window.safeStorageSet(key, typeof val === 'object' ? JSON.stringify(val) : val);
       return new Promise((res, rej) => {
         const r = tx(store, 'readwrite').put(val, key);
         r.onsuccess = () => res();
@@ -89,7 +89,7 @@
           localStorage.removeItem(k);
         } catch(e) { console.warn(`Migrasi ${k} gagal:`, e); }
       }
-      localStorage.setItem('dreamos_schema_v', '1');
+      window.safeStorageSet('dreamos_schema_v', '1');
       console.log('✅ Migrasi selesai. Schema v1 aktif.');
     },
     // 🗄️ AUTO-ARCHIVE >90 HARI (ISO 27001 RETENTION)

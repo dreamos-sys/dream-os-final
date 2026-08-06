@@ -191,12 +191,12 @@
   function getBookings() { try { return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch (e) { return []; } }
   function saveBookings(data) {
     try {
-      localStorage.setItem('dreamos_bookings', JSON.stringify(data));
+      window.safeStorageSet('dreamos_bookings', JSON.stringify(data));
     } catch(e) {
       // Quota exceeded — trim data lama (sisakan 100 terbaru)
       try {
         var trimmed = (data || []).slice(0, 100);
-        localStorage.setItem('dreamos_bookings', JSON.stringify(trimmed));
+        window.safeStorageSet('dreamos_bookings', JSON.stringify(trimmed));
         if (window.showToast) showToast('⚠️ Storage penuh, booking lama di-trim', 'warning');
       } catch(e2) {
         console.warn('[booking] save failed:', e2);
@@ -220,13 +220,13 @@
   function clearError() { var el = document.getElementById('booking-error'); el.style.display = 'none'; el.textContent = ''; }
 
   // ===== Notifikasi ke Command Center (tulis ke dreamos_notifications) =====
-function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getItem('dreamos_activity_feed')||'[]'); logs.unshift({ id:'act_'+Date.now(), action:action, detail:((b&&b.ruang)||'')+' · '+((b&&b.nama_peminjam)||'')+' · '+((b&&b.jam_mulai)||'')+'–'+((b&&b.jam_selesai)||''), user:(user.nama||user.email||'System'), time:new Date().toISOString() }); if(logs.length>200) logs.length=200; try { localStorage.setItem('dreamos_activity_feed', JSON.stringify(logs)); } catch(qe){ /* quota - skip silently */ } }catch(e){} }
+function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getItem('dreamos_activity_feed')||'[]'); logs.unshift({ id:'act_'+Date.now(), action:action, detail:((b&&b.ruang)||'')+' · '+((b&&b.nama_peminjam)||'')+' · '+((b&&b.jam_mulai)||'')+'–'+((b&&b.jam_selesai)||''), user:(user.nama||user.email||'System'), time:new Date().toISOString() }); if(logs.length>200) logs.length=200; try { window.safeStorageSet('dreamos_activity_feed', JSON.stringify(logs)); } catch(qe){ /* quota - skip silently */ } }catch(e){} }
     function pushToCommandCenterNotif(item) {
     try {
       var n = JSON.parse(localStorage.getItem('dreamos_notifications') || '[]');
       n.unshift({ type: item.type||'info', title: item.title||'Booking', msg: item.msg||'', booking_id: item.booking_id||null, time: new Date().toISOString(), read: false });
       if (n.length > 80) n.length = 80;
-      localStorage.setItem('dreamos_notifications', JSON.stringify(n));
+      window.safeStorageSet('dreamos_notifications', JSON.stringify(n));
       window.dispatchEvent(new CustomEvent('dreamos-notif', { detail: item }));
     } catch (e) {}
   }

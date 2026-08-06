@@ -50,7 +50,7 @@
 
     // Simpan lokal + kirim ke backend Anda
     try {
-      localStorage.setItem('dreamos_push_sub', JSON.stringify(sub.toJSON()));
+      window.safeStorageSet('dreamos_push_sub', JSON.stringify(sub.toJSON()));
     } catch (e) {}
 
     // Contoh kirim ke Supabase table push_subscriptions (buat tabel dulu)

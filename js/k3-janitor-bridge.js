@@ -12,7 +12,7 @@
   function user(){try{return JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');}catch(e){return {};}}
   function getK3(){try{return JSON.parse(localStorage.getItem(K3)||'[]');}catch(e){return [];}}
   function getDone(){try{return JSON.parse(localStorage.getItem(CACHE)||'{}');}catch(e){return {};}}
-  function setDone(d){try{localStorage.setItem(CACHE,JSON.stringify(d));}catch(e){}}
+  function setDone(d){try{window.safeStorageSet(CACHE,JSON.stringify(d));}catch(e){}}
   function dkey(id,sc){return id+'::'+sc;}
   function client(){return window.supabaseClient||(window.parent&&window.parent.supabaseClient)||null;}
   function isClean(r){return /kebersihan/i.test((r&&r.kategori)||'');}

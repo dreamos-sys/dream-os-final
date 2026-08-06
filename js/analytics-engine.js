@@ -230,7 +230,7 @@
       try {
         var errs = JSON.parse(localStorage.getItem('dreamos_errors')||'[]');
         errs.unshift({time:new Date().toISOString(), msg:'shiftPeriod: '+e.message});
-        localStorage.setItem('dreamos_errors', JSON.stringify(errs.slice(0,20)));
+        window.safeStorageSet('dreamos_errors', JSON.stringify(errs.slice(0,20)));
       } catch(_){}
       if (window.showToast) showToast('❌ shiftPeriod: '+e.message, 'error');
     }

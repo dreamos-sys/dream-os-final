@@ -339,7 +339,7 @@
   function safeGet(k,fb){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb));}catch(e){return fb;}}
   function safeSet(k,d){
     try {
-      localStorage.setItem(k,JSON.stringify(d));
+      window.safeStorageSet(k,JSON.stringify(d));
     } catch(e) {
       // Quota exceeded — hapus audit log lama
       try {
@@ -347,7 +347,7 @@
         var logs = safeGet(auditKey, []);
         if(logs.length > 100) safeSet(auditKey, logs.slice(0, 100));
         // Retry save
-        localStorage.setItem(k, JSON.stringify(d));
+        window.safeStorageSet(k, JSON.stringify(d));
         if(window.showToast) showToast('⚠️ Storage penuh, audit log dibersihkan', 'warning');
       } catch(e2) {
         console.warn('[Maintenance] localStorage quota exceeded:', e);
@@ -870,7 +870,7 @@
       var __u = (typeof user === 'function') ? user() : {};
       var __entry = { id: 'sm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), type: 'KONSUMSI', item: (it.nama || it.nama_barang || 'sparepart'), qty: qty, location: (it.lokasi_gudang || it.lokasi || 'Gudang'), user_name: (__u.nama || __u.email || 'teknisi'), role: (__u.role || 'maintenance'), user: (__u.role || 'maintenance'), time: new Date().toISOString(), wo_id: __conWo, synced: false };
       __sl.unshift(__entry);
-      localStorage.setItem('dreamos_stock_log', JSON.stringify(__sl.slice(0, 400)));
+      window.safeStorageSet('dreamos_stock_log', JSON.stringify(__sl.slice(0, 400)));
       if (window.pushStockMovement) { try { window.pushStockMovement(__entry); } catch(e){} }
     } catch (e) { console.warn('[maint] stock consumption log:', e && e.message); }
     var wos=safeGet(K.wo,[]); var w=wos.find(function(x){return x.id===__conWo;});

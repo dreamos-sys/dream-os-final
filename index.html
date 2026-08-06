@@ -296,7 +296,7 @@
     const { outcome } = await deferredPrompt.userChoice;
     console.log('[PWA] Install outcome:', outcome);
     if (outcome === 'accepted') {
-      localStorage.setItem('dreamos_pwa_installed', 'true');
+      window.safeStorageSet('dreamos_pwa_installed', 'true');
       if (window.showToast) showToast('✅ Dream OS terinstall!', 'success');
     }
     deferredPrompt = null;
@@ -347,7 +347,7 @@
         }, { onConflict: 'endpoint' });
         if (error) throw error;
       }
-      localStorage.setItem('dreamos_push_subscribed', 'true');
+      window.safeStorageSet('dreamos_push_subscribed', 'true');
       if (window.showToast) showToast('🔔 Push notification aktif!', 'success');
       return true;
     } catch (err) {
@@ -389,14 +389,14 @@
       !localStorage.getItem('dreamos_push_declined')) {
     setTimeout(() => {
       subscribePush().then((ok) => {
-        if (!ok) localStorage.setItem('dreamos_push_declined', 'true');
+        if (!ok) window.safeStorageSet('dreamos_push_declined', 'true');
       });
     }, 10000);
   }
 
   window.addEventListener('appinstalled', () => {
     console.log('[PWA] App installed');
-    localStorage.setItem('dreamos_pwa_installed', 'true');
+    window.safeStorageSet('dreamos_pwa_installed', 'true');
     if (window.showToast) showToast('🎉 Dream OS siap digunakan offline!', 'success');
   });
 
@@ -437,7 +437,7 @@
         if (res) {
           const data = await res.json();
           data.received_at = new Date().toISOString();
-          localStorage.setItem('dreamos_shared_content', JSON.stringify(data));
+          window.safeStorageSet('dreamos_shared_content', JSON.stringify(data));
           const cache = await caches.open('dreamos-share-v2.0.0');
           await cache.delete('./__share__.json');
           const label = (data.title || data.text || data.url || 'konten').slice(0, 40);
@@ -640,7 +640,7 @@
           warning.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ef4444;color:#fff;padding:1rem 2rem;border-radius:8px;z-index:99999;font-weight:700;box-shadow:0 10px 40px rgba(0,0,0,0.5);';
           warning.textContent = '⚠️ Sistem mendeteksi layar kosong, memuat ulang...';
           document.body.appendChild(warning);
-          try { localStorage.setItem('dreamos_needs_refresh', '1'); } catch(e){}
+          try { window.safeStorageSet('dreamos_needs_refresh', '1'); } catch(e){}
           setTimeout(function(){ location.reload(); }, 2000);
         } else {
           if (typeof window.renderDashboard === 'function') {
@@ -678,7 +678,7 @@
     console.log('🛡️ Ultimate stability engine v2 active (with cleanup)');
   })();
 
-    // DEBUG MODE: set localStorage.setItem('dreamos_debug','1') untuk enable console di production
+    // DEBUG MODE: set window.safeStorageSet('dreamos_debug','1') untuk enable console di production
     var __DEBUG = localStorage.getItem('dreamos_debug') === '1';
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !__DEBUG) {
       var _origLog = console.log, _origWarn = console.warn, _origError = console.error;
@@ -696,10 +696,10 @@
           // Strict limit: max 20 entries (slice bukan length assignment)
           if (errors.length > 20) errors = errors.slice(0, 20);
           try {
-            localStorage.setItem('dreamos_errors', JSON.stringify(errors));
+            window.safeStorageSet('dreamos_errors', JSON.stringify(errors));
           } catch(qe) {
             // Storage penuh — paksa trim lebih agresif
-            try { localStorage.setItem('dreamos_errors', JSON.stringify(errors.slice(0, 5))); } catch(_){}
+            try { window.safeStorageSet('dreamos_errors', JSON.stringify(errors.slice(0, 5))); } catch(_){}
           }
         } catch(e){}
       };
@@ -726,7 +726,7 @@
     })();
 
     window.SecureStore = {
-      set(k, v) { try { localStorage.setItem(k, btoa(JSON.stringify(v))); } catch(e){} },
+      set(k, v) { try { window.safeStorageSet(k, btoa(JSON.stringify(v))); } catch(e){} },
       get(k) { try { const b = localStorage.getItem(k); return b ? JSON.parse(atob(b)) : null; } catch(e){ return null; } }
     };
 
@@ -797,15 +797,15 @@
         ]);
         
         try {
-          if (bRes.data && !bRes.error) localStorage.setItem('dreamos_bookings', JSON.stringify(bRes.data));
-          if (sRes.data && !sRes.error) localStorage.setItem('dreamos_stok_gudang', JSON.stringify(sRes.data));
+          if (bRes.data && !bRes.error) window.safeStorageSet('dreamos_bookings', JSON.stringify(bRes.data));
+          if (sRes.data && !sRes.error) window.safeStorageSet('dreamos_stok_gudang', JSON.stringify(sRes.data));
           if (kRes.data && !kRes.error) {
             // FIX FATAL: Lucuti Base64/Image agar memori HP tidak meledak!
             const safeK3 = kRes.data.map(item => {
               const { foto, foto_base64, ...rest } = item;
               return rest;
             });
-            localStorage.setItem('dreamos_k3_reports', JSON.stringify(safeK3));
+            window.safeStorageSet('dreamos_k3_reports', JSON.stringify(safeK3));
           }
         } catch (storageErr) {
           console.warn('⚠️ LocalStorage Penuh! Membersihkan cache K3 dan Booking...');
@@ -919,8 +919,8 @@
             if (errorEl) { errorEl.textContent = '🍪 Centang persetujuan Cookie & Hak Akses untuk melanjutkan!'; errorEl.style.display = 'block'; }
             return;
           }
-          localStorage.setItem('dreamos_cookie_consent', 'true');
-          localStorage.setItem('dreamos_cookie_consent_time', new Date().toISOString());
+          window.safeStorageSet('dreamos_cookie_consent', 'true');
+          window.safeStorageSet('dreamos_cookie_consent_time', new Date().toISOString());
           var consentBoxEl = document.getElementById('cookie-consent');
           if (consentBoxEl) consentBoxEl.style.display = 'none';
         }
@@ -935,15 +935,15 @@
           const userData = { id: result.user.id, email: result.user.email, nama: result.user.nama, role: result.user.role, source: result.source };
 
           try {
-            localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
-            localStorage.setItem('dreamos_session_active', 'true');
+            window.safeStorageSet('dreamos_bound_user', JSON.stringify(userData));
+            window.safeStorageSet('dreamos_session_active', 'true');
           } catch(e) {
             // Jika memori mentok saat login, paksa buang sampah cache modul!
             localStorage.removeItem('dreamos_k3_reports');
             localStorage.removeItem('dreamos_bookings');
             localStorage.removeItem('dreamos_stok_gudang');
-            localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
-            localStorage.setItem('dreamos_session_active', 'true');
+            window.safeStorageSet('dreamos_bound_user', JSON.stringify(userData));
+            window.safeStorageSet('dreamos_session_active', 'true');
           }
           try{ logLoginAttempt(email,'success','Login berhasil',(result&&result.source)||''); startPresenceHeartbeat(); }catch(_){}
           // 📦 Cache kredensial (hash bcrypt) agar bisa login offline berikutnya
@@ -953,7 +953,7 @@
             var pHash = (typeof bcrypt!=='undefined') ? bcrypt.hashSync(password, 10) : null;
             if (eIdx > -1) { if(pHash) usersDb[eIdx].password_hash=pHash; usersDb[eIdx].role=userData.role; usersDb[eIdx].nama=userData.nama; }
             else if (pHash) { usersDb.push({ id:userData.id, email:userData.email, nama:userData.nama, role:userData.role, password_hash:pHash, source:userData.source }); }
-            localStorage.setItem('dreamos_users_db', JSON.stringify(usersDb));
+            window.safeStorageSet('dreamos_users_db', JSON.stringify(usersDb));
           } catch(e){}
 
           if (window.BankSession) BankSession.create(userData);
@@ -1232,7 +1232,7 @@
                 wCache.data = icon + ' ' + temp + '°C - ' + desc;
                 wCache.hourly = hourlyHtml;
                 wCache.ts = now;
-                localStorage.setItem('dreamos_weather_cache', JSON.stringify(wCache));
+                window.safeStorageSet('dreamos_weather_cache', JSON.stringify(wCache));
               } catch(e) { wCache.data = '🌤️ Gagal memuat cuaca.'; wCache.hourly = ''; }
             }
             const s4 = document.getElementById('slide-4'); if(s4) s4.innerHTML = `<strong>🌤️ Cuaca Real-time</strong><br>${wCache.data||'Memuat...'}<br><small style="color:#94a3b8;">Prediksi: ${wCache.hourly||'-'} | Open-Meteo</small>`;
@@ -1397,7 +1397,7 @@
           if(window.__dreamosClearAllIntervals) window.__dreamosClearAllIntervals();
           
           localStorage.removeItem('dreamos_bound_user');
-          localStorage.setItem('dreamos_session_active', 'false');
+          window.safeStorageSet('dreamos_session_active', 'false');
           if(window.BankAudit) { try { window.BankAudit.log('LOGOUT', {}); } catch(e){} }
           location.reload();
         };
@@ -1515,14 +1515,14 @@
       window.__slide1AutoRefresh = true;
       // (120s interval dipindah ke freeze detector di atas)
       window.addEventListener('storage', function(e){ if(e.key==='dreamos_matrix' && typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); });
-      // Lapis 2: SAME-TAB (monkey-patch localStorage.setItem — modul di-inject 1 window, storage event TIDAK fire!)
+      // Lapis 2: SAME-TAB (monkey-patch window.safeStorageSet — modul di-inject 1 window, storage event TIDAK fire!)
       (function(){
         if (window.__dreamos_ls_patched) return;
         window.__dreamos_ls_patched = true;
-        var origSet = localStorage.setItem.bind(localStorage);
+        var origSet = window.safeStorageSet.bind(localStorage);
         var watchKeys = ['dreamos_matrix','dreamos_slide_petugas','dreamos_bookings','dreamos_k3_reports','dreamos_cmd_announcements','dreamos_sec_today','dreamos_stok_gudang','dreamos_security_jadwal'];
         var deb = null;
-        localStorage.setItem = function(k, v) {
+        window.safeStorageSet = function(k, v) {
           origSet(k, v);
           if (watchKeys.indexOf(k) !== -1) {
             clearTimeout(deb);

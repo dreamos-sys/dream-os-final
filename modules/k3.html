@@ -104,13 +104,13 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   function safeGet(k, fb) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e) { return fb; } }
   function safeSet(k, d) {
     try {
-      localStorage.setItem(k, JSON.stringify(d));
+      window.safeStorageSet(k, JSON.stringify(d));
     } catch(e) {
       // Quota exceeded — buang item non-kritis lama
       try {
         var keys = Object.keys(localStorage).filter(function(x){ return x.indexOf('dreamos_')===0 && x !== k && x !== 'dreamos_bound_user' && x !== 'dreamos_session_active'; });
         keys.slice(0, 3).forEach(function(x){ try{ localStorage.removeItem(x); }catch(_){} });
-        localStorage.setItem(k, JSON.stringify(d));
+        window.safeStorageSet(k, JSON.stringify(d));
       } catch(e2) {
         if (window.showToast) showToast('⚠️ Storage penuh, beberapa cache dibersihkan', 'warning');
       }

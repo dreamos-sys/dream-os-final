@@ -8,7 +8,7 @@ if(typeof bcrypt==='undefined'){
 }
 
 function safeUsers(){ try{return JSON.parse(localStorage.getItem('dreamos_users_db')||'[]');}catch(e){return [];} }
-function saveUsers(a){ localStorage.setItem('dreamos_users_db', JSON.stringify(a)); }
+function saveUsers(a){ window.safeStorageSet('dreamos_users_db', JSON.stringify(a)); }
 
 // device-hash: algoritma PERSIS sama dengan yang dipakai halaman bootstrap
 function deviceHash(plain){
@@ -34,11 +34,11 @@ window.hashPasswordBcrypt=function(plain){
 // rate-limit (anti brute-force di sisi klien)
 function getFail(){ try{return JSON.parse(localStorage.getItem('dreamos_login_fails')||'{}')||{};}catch(e){return {};} }
 function checkRate(){ var d=getFail(); if(Date.now()<(d.until||0)){ var s=Math.ceil((d.until-Date.now())/1000); throw new Error('🔒 Terlalu banyak percobaan. Coba lagi '+s+' detik'); } }
-function recordFail(){ var d=getFail(); d.count=(Number(d.count)||0)+1; if(d.count>=5){ d.until=Date.now()+Math.min(300000,30000*Math.pow(2,Math.max(0,d.count-5))); d.count=0; } localStorage.setItem('dreamos_login_fails',JSON.stringify(d)); }
+function recordFail(){ var d=getFail(); d.count=(Number(d.count)||0)+1; if(d.count>=5){ d.until=Date.now()+Math.min(300000,30000*Math.pow(2,Math.max(0,d.count-5))); d.count=0; } window.safeStorageSet('dreamos_login_fails',JSON.stringify(d)); }
 function clearFail(){ localStorage.removeItem('dreamos_login_fails'); }
 
 // device MFA pin
-window.setDeviceMfaPin=function(pin){ if(!pin||String(pin).length<4) throw new Error('PIN minimal 4 digit'); localStorage.setItem('dreamos_mfa_pin_hash',window.hashPasswordBcrypt(pin)); localStorage.setItem('dreamos_mfa_enabled','true'); return true; };
+window.setDeviceMfaPin=function(pin){ if(!pin||String(pin).length<4) throw new Error('PIN minimal 4 digit'); window.safeStorageSet('dreamos_mfa_pin_hash',window.hashPasswordBcrypt(pin)); window.safeStorageSet('dreamos_mfa_enabled','true'); return true; };
 window.verifyDeviceMfaPin=function(pin){ var s=localStorage.getItem('dreamos_mfa_pin_hash'); if(!s) return true; return window.verifyPassword(pin,s); };
 window.isMfaEnabled=function(){ return localStorage.getItem('dreamos_mfa_enabled')==='true' && !!localStorage.getItem('dreamos_mfa_pin_hash'); };
 
