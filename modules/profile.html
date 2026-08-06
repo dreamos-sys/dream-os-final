@@ -39,7 +39,7 @@
   </style>
 </head>
 <body>
-  <button type="button" class="back-btn" onclick="if(typeof window.goHomeSafe==='function')window.goHomeSafe();else if(typeof window.goHome==='function')window.goHome();else var _b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=_b+'index.html';">← HOME</button>
+  <button type="button" class="back-btn" onclick="try{if(window.parent&&window.parent!==window&&typeof window.parent.goHome==='function'){window.parent.goHome();}else if(typeof window.goHomeSafe==='function'){window.goHomeSafe();}else if(typeof window.goHome==='function'){window.goHome();}else{var b=location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';location.href=b+'index.html';}}catch(e){location.href='../index.html';}">← HOME</button>
 
   <div style="max-width:650px;margin:0 auto;padding:1rem 1rem 5rem;">
 
@@ -192,12 +192,11 @@
     }
   }
 
+  
   async function getDNA() {
-    // Cache: SHA-256 mahal, hitung sekali per session
     if (__dnaCache) return __dnaCache;
     if (__dnaCachePromise) return __dnaCachePromise;
-    
-    __dnaCachePromise = (async function(){
+    __dnaCachePromise = (async function () {
       try {
         var c = document.createElement('canvas');
         var x = c.getContext('2d');
@@ -224,40 +223,10 @@
       } finally {
         __dnaCachePromise = null;
       }
-    
+    var __dnaCache = null;
+  var __dnaCachePromise = null;
 
-  // ===== MODULE CLEANUP: clear timers, revoke object URLs =====
-  window.__profileCleanup = function() {
-    __dnaCachePromise = null;
-    __bookingsLoading = false;
-    console.log('[Profile] Cleanup complete');
-  };
-  
-  // Hook cleanup ke goHomeSafe (TANPA menimpa fungsi asli)
-  var __origGoHomeSafe = window.goHomeSafe;
-  window.goHomeSafe = function() {
-    if(window.__profileCleanup) window.__profileCleanup();
-    // Panggil fungsi asli (yang sudah didefinisikan di global scope)
-    if(__origGoHomeSafe && typeof __origGoHomeSafe === 'function') {
-      return __origGoHomeSafe();
-    }
-    // Fallback darurat
-    console.warn('[Profile] __origGoHomeSafe not available, using fallback');
-    try {
-      if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function'){
-        window.parent.goHome(); return;
-      }
-    } catch(e){}
-    if(typeof window.goHome === 'function'){ try{ window.goHome(); return; }catch(e){} }
-    var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
-    window.location.href = base + 'index.html';
-  };
-
-})();
-    return __dnaCachePromise;
-  }
-
-  var user = getUser();
+var user = getUser();
   if (!user) {
     document.body.innerHTML = /* esc() protected */ '<div style="text-align:center;padding:4rem;color:#ef4444;"><h2>🔒 Silakan login.</h2><button class="btn btn-primary" onclick="location.href=\''+loginUrl()+'\'">Ke Login</button></div>';
     return;
@@ -367,7 +336,7 @@
     var nama = document.getElementById('edit-nama').value.trim();
     var phone = document.getElementById('edit-phone').value.trim();
     var department = document.getElementById('edit-department').value.trim();
-    if (!nama) return { if(window.showToast) showToast('⚠️ Nama wajib diisi', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Nama wajib diisi', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Nama wajib diisi', 'warning') : alert('Nama wajib diisi'))); return; }
+    if (!nama) { if (window.showToast) showToast('⚠️ Nama wajib diisi', 'error'); else alert('Nama wajib diisi'); return; }
     try {
       var row = await upsertUserFields({ nama: nama, phone: phone, department: department });
       if (row && row.id) user.id = row.id;
@@ -378,7 +347,7 @@
       paintHeader();
       if(window.showToast) showToast('✅ Profil disimpan', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Profil disimpan ke cloud & lokal', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Profil disimpan ke cloud & lokal', 'warning') : alert('✅ Profil disimpan ke cloud & lokal')));
     } catch (e) {
-      if(window.showToast) showToast('❌ Gagal: ' + (e.message || e), 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Gagal simpan: ' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Gagal simpan: ' + (e.message || e, 'warning') : alert('⚠️ Gagal simpan: ' + (e.message || e))));
+      if(window.showToast) showToast('❌ Gagal: ' + (e.message || e), 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Gagal simpan: ' + (e.message || e), 'error') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Gagal simpan: ' + (e.message || e), 'error') : alert('⚠️ Gagal simpan: ' + (e.message || e))));
     }
   };
 
@@ -409,7 +378,7 @@
       document.getElementById('avatar-preview').innerHTML = /* esc() protected */ '<img src="' + url + '" alt="avatar">';
       if(window.showToast) showToast('✅ Avatar tersimpan', 'success'); else if(window.showToast) showToast('✅ Avatar tersimpan di Storage + database','info'); else (typeof window.showToast === 'function' ? window.showToast('✅ Avatar tersimpan di Storage + database', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Avatar tersimpan di Storage + database', 'warning') : alert('✅ Avatar tersimpan di Storage + database')));
     } catch (e) {
-      (typeof window.showToast === 'function' ? window.showToast('⚠️ Upload gagal: ' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Upload gagal: ' + (e.message || e, 'warning') : alert('⚠️ Upload gagal: ' + (e.message || e))) +
+      (typeof window.showToast === 'function' ? window.showToast('⚠️ Upload gagal: ' + (e.message || e), 'error') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Upload gagal: ' + (e.message || e), 'error') : alert('⚠️ Upload gagal: ' + (e.message || e))) +
         '\n\nPastikan bucket "avatars" public-read + policy upload authenticated.');
     }
   });
@@ -459,7 +428,7 @@
       saveUserLocal(user);
       var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
       window.safeStorageSet(dnaKey, currentDna);
-      if(window.showToast) showToast('✅ Device diikat: ' + currentDna.slice(0,12) + '…', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12, 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12, 'warning') : alert('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12))) + '…');
+      if(window.showToast) showToast('✅ Device diikat: ' + currentDna.slice(0,12) + '…', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12) + '…', 'success') : (typeof window.showToast === 'function' ? window.showToast('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12) + '…', 'success') : alert('✅ Device ini diikat ke akun.\nDNA: ' + currentDna.slice(0, 12))) + '…');
       refreshDeviceStatus();
     } catch (e) {
       // lokal tetap
@@ -467,7 +436,7 @@
       saveUserLocal(user);
       var dnaKey = 'dreamos_device_dna_' + (user.id || user.email || 'anon');
       window.safeStorageSet(dnaKey, currentDna);
-      if(window.showToast) showToast('⚠️ Cloud gagal, bind lokal disimpan', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Cloud gagal (' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Cloud gagal (' + (e.message || e, 'warning') : alert('⚠️ Cloud gagal (' + (e.message || e))) + '). Bind lokal tetap disimpan.');
+      if(window.showToast) showToast('⚠️ Cloud gagal, bind lokal disimpan', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Cloud gagal (' + (e.message || e), 'error') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Cloud gagal (' + (e.message || e), 'error') : alert('⚠️ Cloud gagal (' + (e.message || e))) + '). Bind lokal tetap disimpan.');
       refreshDeviceStatus();
     }
   };
@@ -565,7 +534,7 @@
       localStorage.removeItem('dreamos_session_active');
       window.location.href = loginUrl();
     } catch (e) {
-      if(window.showToast) showToast('❌ ' + (e.message || e), 'error'); else (typeof window.showToast === 'function' ? window.showToast('❌ ' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('❌ ' + (e.message || e, 'warning') : alert('❌ ' + (e.message || e))));
+      if(window.showToast) showToast('❌ ' + (e.message || e), 'error'); else (typeof window.showToast === 'function' ? window.showToast('❌ ' + (e.message || e), 'error') : (typeof window.showToast === 'function' ? window.showToast('❌ ' + (e.message || e), 'error') : alert('❌ ' + (e.message || e))));
     }
   };
 
@@ -618,6 +587,27 @@
   if (window.BankAudit) {
     try { window.BankAudit.log('ACCESS_PROFILE_MODULE', { role: user.role }); } catch (e) {}
   }
+
+  window.__profileCleanup = function () {
+    __dnaCachePromise = null;
+    __bookingsLoading = false;
+  };
+  (function () {
+    var orig = window.goHomeSafe;
+    window.goHomeSafe = function () {
+      try { if (window.__profileCleanup) window.__profileCleanup(); } catch (e) {}
+      if (typeof orig === 'function') return orig();
+      try {
+        if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+          window.parent.goHome(); return;
+        }
+      } catch (e) {}
+      if (typeof window.goHome === 'function') { try { window.goHome(); return; } catch (e) {} }
+      var base = location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+      location.href = base + 'index.html';
+    };
+  })();
+
 })();
   </script>
 </body>
