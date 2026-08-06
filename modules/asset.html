@@ -303,9 +303,9 @@
   };
 
   window.saveAsset=function(){
-    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
     var nama=document.getElementById('as-nama').value.trim();
-    if(!nama){ if(window.showToast) showToast('⚠️ Nama aset wajib diisi', 'error'); else alert('⚠️ Nama aset wajib diisi'); return; }
+    if(!nama){ if(window.showToast) showToast('⚠️ Nama aset wajib diisi', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Nama aset wajib diisi', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Nama aset wajib diisi', 'warning') : alert('⚠️ Nama aset wajib diisi'))); return; }
     var fotoData = document.getElementById('as-foto-data').value || null;
     var item={ id:document.getElementById('as-edit-id').value || ('asset_'+Date.now()), nama:nama, jenis:document.getElementById('as-jenis').value, lokasi:document.getElementById('as-lokasi').value, nilai:parseInt(document.getElementById('as-nilai').value)||0, tahun:parseInt(document.getElementById('as-tahun').value)||null, status:document.getElementById('as-status').value, foto:fotoData, updated_at:new Date().toISOString() };
     var data=safeGet('dreamos_assets', []); var editId=document.getElementById('as-edit-id').value;
@@ -319,7 +319,7 @@
   };
 
   window.editAsset=function(id){
-    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
     var data=safeGet('dreamos_assets', []); var item=data.find(function(a){return a.id===id;}); if(!item)return;
     document.getElementById('as-nama').value=item.nama||'';
     document.getElementById('as-jenis').value=item.jenis||'Gedung';
@@ -332,7 +332,7 @@
   };
 
   window.deleteAsset=function(id){
-    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
     var data=safeGet('dreamos_assets', []); var deleted=data.find(function(a){return a.id===id;});
     if(!confirm('Hapus aset "'+(deleted?deleted.nama:id)+'"?')) return;
     data=data.filter(function(a){return a.id!==id;}); safeSet('dreamos_assets', data);
@@ -349,24 +349,24 @@
   };
 
   window.submitRABAset=function(){
-    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
     var el=document.getElementById('rab-aset-total'); var total=parseInt(el.dataset.value||0); var items=[]; try{items=JSON.parse(el.dataset.items||'[]');}catch(e){}
-    if(!total||!items.length){ if(window.showToast) showToast('⚠️ Tidak ada aset', 'warning'); else alert('⚠️ Tidak ada aset'); return; }
+    if(!total||!items.length){ if(window.showToast) showToast('⚠️ Tidak ada aset', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada aset', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada aset', 'warning') : alert('⚠️ Tidak ada aset'))); return; }
     var desc='Pengadaan/penggantian aset: '+items.map(function(i){return i.nama+' ('+i.status+', '+fmtRp(i.nilai)+')';}).join('; ');
     var dana=safeGet('dreamos_dana', []);
     dana.push({ id:'rabaset_'+Date.now(), judul:'Pengadaan Aset Strategis (Auto-RAB)', nominal:total, deskripsi:desc, status:'pending', divisi:'Bagian Umum', tanggal:new Date().toLocaleDateString('id-ID'), created_at:new Date().toISOString() });
     safeSet('dreamos_dana', dana);
     if(window.OfflineQueue){ try{window.OfflineQueue.add('dana','insert',dana[dana.length-1]);}catch(e){} }
     logAudit('AJUKAN_RAB_ASET', 'Total: '+fmtRp(total));
-    if(window.showToast) showToast('✅ RAB Aset '+fmtRp(total)+' tersimpan', 'success'); else alert('✅ RAB Aset tersimpan');
+    if(window.showToast) showToast('✅ RAB Aset '+fmtRp(total)+' tersimpan', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ RAB Aset tersimpan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ RAB Aset tersimpan', 'warning') : alert('✅ RAB Aset tersimpan')));
   };
 
   window.syncAssetToCloud=async function(){
-    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
-    if(!window.supabaseClient){ if(window.showToast) showToast('⚠️ Koneksi tidak tersedia', 'error'); else alert('⚠️ Koneksi tidak tersedia'); return; }
+    if(!isAdmin()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
+    if(!window.supabaseClient){ if(window.showToast) showToast('⚠️ Koneksi tidak tersedia', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Koneksi tidak tersedia', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Koneksi tidak tersedia', 'warning') : alert('⚠️ Koneksi tidak tersedia'))); return; }
     var sess = await window.supabaseClient.auth.getSession();
-    if(!sess || !sess.data || !sess.data.session){ if(window.showToast) showToast('⚠️ Sesi Supabase belum ada', 'error'); else alert('⚠️ Sesi Supabase belum ada'); return; }
-    var data=safeGet('dreamos_assets', []); if(!data.length){ if(window.showToast) showToast('⚠️ Tidak ada data', 'warning'); else alert('⚠️ Tidak ada data'); return; }
+    if(!sess || !sess.data || !sess.data.session){ if(window.showToast) showToast('⚠️ Sesi Supabase belum ada', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Sesi Supabase belum ada', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Sesi Supabase belum ada', 'warning') : alert('⚠️ Sesi Supabase belum ada'))); return; }
+    var data=safeGet('dreamos_assets', []); if(!data.length){ if(window.showToast) showToast('⚠️ Tidak ada data', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada data', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada data', 'warning') : alert('⚠️ Tidak ada data'))); return; }
     var count=0, fail=0, total=data.length, lastErr='';
     if(window.showToast) showToast('🔄 Sync 0/'+total+'...', 'info');
     for(var i=0;i<total;i++){
@@ -385,7 +385,7 @@
     var msg = '✅ '+count+'/'+total+' aset tersync';
     if(fail > 0) msg += ' • ⚠️ '+fail+' gagal';
     if(window.showToast) showToast(msg, fail > 0 ? 'warning' : 'success');
-    else alert(msg);
+    else (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : alert(msg)));
     if(window.BankAudit){ try{window.BankAudit.log('ASSET_SYNC',{total:total,success:count});}catch(e){} }
   };
 
@@ -415,7 +415,7 @@
     var mid=__idMap[pathOrId]||String(pathOrId).replace(/^.*\//,'').replace(/\.html$/,'');
     try { if(typeof window.openMod==='function'){ window.openMod(mid); return; } } catch(e){}
     try { if(window.parent && typeof window.parent.openMod==='function'){ window.parent.openMod(mid); return; } } catch(e){}
-    if(window.showToast) showToast('📦 Buka modul "'+label+'" melalui menu di Dashboard.','info'); else alert('📦 Buka modul "'+label+'" melalui menu di Dashboard.');
+    if(window.showToast) showToast('📦 Buka modul "'+label+'" melalui menu di Dashboard.','info'); else (typeof window.showToast === 'function' ? window.showToast('📦 Buka modul "'+label+'" melalui menu di Dashboard.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('📦 Buka modul "'+label+'" melalui menu di Dashboard.', 'warning') : alert('📦 Buka modul "'+label+'" melalui menu di Dashboard.')));
   };
 
 
@@ -462,8 +462,8 @@
   if(fotoEl) fotoEl.addEventListener('change', function(e){
     var file = e.target.files[0]; if(!file) return;
     // Validasi
-    if(!file.type.startsWith('image/')){ if(window.showToast) showToast('⚠️ File harus gambar', 'error'); else alert('⚠️ File harus gambar'); e.target.value=''; return; }
-    if(file.size > 10*1024*1024){ if(window.showToast) showToast('⚠️ Maksimal 10MB', 'error'); else alert('⚠️ Maksimal 10MB'); e.target.value=''; return; }
+    if(!file.type.startsWith('image/')){ if(window.showToast) showToast('⚠️ File harus gambar', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ File harus gambar', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ File harus gambar', 'warning') : alert('⚠️ File harus gambar'))); e.target.value=''; return; }
+    if(file.size > 10*1024*1024){ if(window.showToast) showToast('⚠️ Maksimal 10MB', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Maksimal 10MB', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Maksimal 10MB', 'warning') : alert('⚠️ Maksimal 10MB'))); e.target.value=''; return; }
     
     var reader = new FileReader();
     reader.onload = function(ev){
@@ -491,7 +491,7 @@
 
   // ===== DOWNLOAD QR per Aset =====
   window.downloadAssetQR = function(id, name){
-    if(typeof qrcode==='undefined'){ if(window.showToast) showToast('⚠️ Library QR belum siap', 'error'); else alert('⚠️ Library QR belum siap'); return; }
+    if(typeof qrcode==='undefined'){ if(window.showToast) showToast('⚠️ Library QR belum siap', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Library QR belum siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Library QR belum siap', 'warning') : alert('⚠️ Library QR belum siap'))); return; }
     var qr=qrcode(0,'M'); qr.addData('DREAMOS|ASET|'+id+'|'+name); qr.make();
     var url = qr.createDataURL(6, 8);
     var a=document.createElement('a'); a.href=url; a.download='QR_'+name.replace(/\s+/g,'_')+'_'+id+'.png'; a.click();
@@ -522,7 +522,7 @@
         safeSet('dreamos_assets', data);
         logAudit('IMPORT_CSV', count+' aset diimpor');
         renderAsset(); renderAssetMetrics();
-        if(window.showToast) showToast('✅ '+count+' aset diimpor', 'success'); else if(window.showToast) showToast('✅ '+count+' aset diimpor','info'); else alert('✅ '+count+' aset diimpor');
+        if(window.showToast) showToast('✅ '+count+' aset diimpor', 'success'); else if(window.showToast) showToast('✅ '+count+' aset diimpor','info'); else (typeof window.showToast === 'function' ? window.showToast('✅ '+count+' aset diimpor', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ '+count+' aset diimpor', 'warning') : alert('✅ '+count+' aset diimpor')));
       };
       reader.readAsText(file);
     };
@@ -532,7 +532,7 @@
   // ===== PRINT ASSET REGISTER =====
   window.printAssetRegister = function(){
     var data = safeGet('dreamos_assets', []);
-    if(!data.length){ if(window.showToast) showToast('⚠️ Tidak ada aset', 'warning'); else alert('⚠️ Tidak ada aset'); return; }
+    if(!data.length){ if(window.showToast) showToast('⚠️ Tidak ada aset', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada aset', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada aset', 'warning') : alert('⚠️ Tidak ada aset'))); return; }
     var w = window.open('','_blank','width=1100,height=800');
     var html = '<!DOCTYPE html><html><head><title>Asset Register</title>'+
       '<style>@import url(https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap);'+

@@ -319,7 +319,7 @@
           <h1 class="vtitle" id="vh-title">Maintenance <b>Cockpit</b></h1>
           <p class="vsub" id="vh-sub"></p>
         </div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)reconcileK3(false); Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="if(!window.__cloudPushThrottle || Date.now()-window.__cloudPushThrottle>2000){window.__cloudPushThrottle=Date.now();Cloud.push();}else{if(window.showToast)showToast('⏳ Tunggu 2 detik','warning');else alert('⏳ Tunggu 2 detik');}">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)reconcileK3(false); Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="if(!window.__cloudPushThrottle || Date.now()-window.__cloudPushThrottle>2000){window.__cloudPushThrottle=Date.now();Cloud.push();}else{if(window.showToast)showToast('⏳ Tunggu 2 detik','warning');else (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu 2 detik', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu 2 detik', 'warning') : alert('⏳ Tunggu 2 detik')));}">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
       </div>
       <div id="view-root"></div>
       <details class="debug"><summary>🔍 Debug · Intip Data LocalStorage</summary><pre id="debug-data">—</pre></details>
@@ -830,7 +830,7 @@
     }, 160);
   };
   window.saveEqModal=function(){
-    var nm=(document.getElementById('eq-name').value||'').trim(); if(!nm){ if(window.showToast) showToast('⚠️ Nama peralatan wajib diisi', 'error'); else alert('⚠️ Nama peralatan wajib diisi.'); return; }
+    var nm=(document.getElementById('eq-name').value||'').trim(); if(!nm){ if(window.showToast) showToast('⚠️ Nama peralatan wajib diisi', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Nama peralatan wajib diisi.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Nama peralatan wajib diisi.', 'warning') : alert('⚠️ Nama peralatan wajib diisi.'))); return; }
     var a=safeGet(K_ASSET,[]).find(function(x){return x.id===__eqParent;});
     var cat=document.getElementById('eq-cat').value, crit=parseInt(document.getElementById('eq-crit').value,10)||3, freq=parseInt(document.getElementById('eq-freq').value,10)||90;
     var eqId='eq_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
@@ -854,15 +854,15 @@
     var w=safeGet(K.wo,[]).find(function(x){return x.id===woId;}); if(!w)return; __conWo=woId;
     var p=document.getElementById('con-wo'); if(p)p.textContent='WO: '+(w.judul||w.deskripsi||woId);
     var inv=safeGet(K_INV,[]).filter(function(x){return (parseInt(x.jumlah)||0)>0;});
-    if(!inv.length){ if(window.showToast) showToast('⚠️ Stok kosong', 'warning'); else alert('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.'); return; }
+    if(!inv.length){ if(window.showToast) showToast('⚠️ Stok kosong', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.', 'warning') : alert('⚠️ Stok kosong. Input barang dulu di modul Stok / Gudang.'))); return; }
     document.getElementById('con-item').innerHTML=inv.map(function(x){return '<option value="'+escA(x.id)+'">'+esc(x.nama||x.nama_barang||'-')+' (sisa '+(parseInt(x.jumlah)||0)+')</option>';}).join('');
     document.getElementById('con-qty').value='1'; openBrg('ov-consume');
   };
   window.saveConsume=function(){
     var invId=document.getElementById('con-item').value, qty=parseInt(document.getElementById('con-qty').value,10)||0;
-    if(qty<=0){ if(window.showToast) showToast('⚠️ Jumlah tidak valid', 'error'); else alert('⚠️ Jumlah tidak valid.'); return; }
+    if(qty<=0){ if(window.showToast) showToast('⚠️ Jumlah tidak valid', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Jumlah tidak valid.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Jumlah tidak valid.', 'warning') : alert('⚠️ Jumlah tidak valid.'))); return; }
     var inv=safeGet(K_INV,[]); var it=inv.find(function(x){return x.id===invId;}); if(!it)return;
-    if((parseInt(it.jumlah)||0)<qty){alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)||0)+').');return;}
+    if((parseInt(it.jumlah)||0)<qty){(typeof window.showToast === 'function' ? window.showToast('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah, 'warning') : alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)))||0)+').');return;}
     it.jumlah=(parseInt(it.jumlah)||0)-qty; it.updated_at=new Date().toISOString(); safeSet(K_INV,inv);
         // 📦 Log konsumsi sparepart → mutasi stok + sync cloud (Gelombang 2)
     try {
@@ -887,7 +887,7 @@
   }
   seed();
   renderRail(); renderView(); tick();
-  var __tickInterval = setInterval(tick, 1000);
+  var __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000);
   
   // Debounced initial cloud pull (prevent overlap)
   var __initPullTimeout = setTimeout(function(){
@@ -934,7 +934,7 @@
     if(document.hidden){
       if(__tickInterval) { clearInterval(__tickInterval); __tickInterval = null; }
     } else {
-      if(!__tickInterval) __tickInterval = setInterval(tick, 1000);
+      if(!__tickInterval) __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000);
       tick(); // Update immediately saat visible lagi
     }
   });

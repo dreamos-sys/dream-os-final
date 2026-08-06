@@ -267,12 +267,12 @@
   }
 
   window.addStok=function(){
-    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
     var nama=document.getElementById('stok-nama').value.trim();
     var qty=parseInt(document.getElementById('stok-qty').value)||0;
     var lokasi=document.getElementById('stok-lokasi').value.trim()||'-';
     var min=parseInt(document.getElementById('stok-min').value)||5;
-    if(!nama||qty<=0){ if(window.showToast) showToast('⚠️ Nama & jumlah wajib diisi', 'error'); else alert('⚠️ Nama & jumlah wajib diisi'); return; }
+    if(!nama||qty<=0){ if(window.showToast) showToast('⚠️ Nama & jumlah wajib diisi', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Nama & jumlah wajib diisi', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Nama & jumlah wajib diisi', 'warning') : alert('⚠️ Nama & jumlah wajib diisi'))); return; }
     var s=getInv();
     var exist=s.find(function(x){ return String(x.nama||'').toLowerCase()===nama.toLowerCase() && loc(x)===lokasi; });
     var target;
@@ -282,11 +282,11 @@
     document.getElementById('stok-nama').value=''; document.getElementById('stok-qty').value='';
     if(window.supabaseClient){ window.supabaseClient.from('inventory').upsert({ id:target.id, nama_barang:target.nama, kategori:target.kategori, quantity:parseInt(target.jumlah)||0, min_stock:parseInt(target.minimal)||5, lokasi_gudang:loc(target), kondisi:target.kondisi }).then(function(){}).catch(function(e){ console.warn('Stok sync error:', e.message); try{ if(window.OfflineQueue) window.OfflineQueue.add('inventory','upsert',target); }catch(_){} }); }
     if(window.BankAudit){ try{ window.BankAudit.log('STOK_ADD',{nama:nama,qty:qty}); }catch(e){} }
-    if(window.showToast) showToast('✅ '+(exist?'Stok ditambahkan':'Barang disimpan'), 'success'); else alert('✅ '+(exist?'Stok ditambahkan':'Barang disimpan'));
+    if(window.showToast) showToast('✅ '+(exist?'Stok ditambahkan':'Barang disimpan'), 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ '+(exist?'Stok ditambahkan':'Barang disimpan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ '+(exist?'Stok ditambahkan':'Barang disimpan', 'warning') : alert('✅ '+(exist?'Stok ditambahkan':'Barang disimpan'))));
   };
 
   window.deleteStokById=function(id){
-    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
+    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
     var s=getInv(); var idx=s.findIndex(function(x){ return x.id===id; }); if(idx<0) return;
     if(!confirm('Hapus barang "'+s[idx].nama+'"?')) return;
     var deleted=s[idx]; s.splice(idx,1); setInv(s);
@@ -297,9 +297,9 @@
   };
 
   window.syncToCloud=async function(){
-    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
-    if(!window.supabaseClient){ if(window.showToast) showToast('⚠️ Koneksi tidak tersedia', 'error'); else alert('⚠️ Koneksi tidak tersedia'); return; }
-    var s=getInv(); if(!s.length){ if(window.showToast) showToast('⚠️ Tidak ada data', 'warning'); else alert('⚠️ Tidak ada data'); return; }
+    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
+    if(!window.supabaseClient){ if(window.showToast) showToast('⚠️ Koneksi tidak tersedia', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Koneksi tidak tersedia', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Koneksi tidak tersedia', 'warning') : alert('⚠️ Koneksi tidak tersedia'))); return; }
+    var s=getInv(); if(!s.length){ if(window.showToast) showToast('⚠️ Tidak ada data', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada data', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada data', 'warning') : alert('⚠️ Tidak ada data'))); return; }
     var count=0, fail=0, total=s.length;
     if(window.showToast) showToast('🔄 Sync 0/'+total+'...', 'info');
     for(var i=0;i<total;i++){
@@ -320,7 +320,7 @@
     var msg = '✅ '+count+'/'+total+' barang tersync';
     if(fail > 0) msg += ' • ⚠️ '+fail+' gagal';
     if(window.showToast) showToast(msg, fail > 0 ? 'warning' : 'success');
-    else alert(msg);
+    else (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : alert(msg)));
     if(window.BankAudit){ try{ window.BankAudit.log('STOK_SYNC',{total:total,success:count}); }catch(e){} }
   };
 
@@ -329,12 +329,12 @@
     var csv='Nama,Qty,Min,Lokasi,Kategori,Kondisi,ID\n'+s.map(function(x){ return '"'+(x.nama||'')+'",'+(x.jumlah||0)+','+(x.minimal||5)+',"'+loc(x)+'","'+(x.kategori||'')+'","'+(x.kondisi||'')+'","'+(x.id||'')+'"'; }).join('\n');
     var blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'});
     var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='stok_gudang_'+new Date().toISOString().split('T')[0]+'.csv'; a.click(); URL.revokeObjectURL(a.href);
-    if(window.showToast) showToast('✅ CSV ter-export', 'success'); else alert('✅ CSV ter-export');
+    if(window.showToast) showToast('✅ CSV ter-export', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ CSV ter-export', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ CSV ter-export', 'warning') : alert('✅ CSV ter-export')));
   };
 
   window.clearAll=function(){
-    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else alert('⛔ Hanya admin'); return; }
-    if(confirm('⚠️ HAPUS SEMUA DATA STOK? Aksi ini tidak bisa dibatalkan!')){ localStorage.removeItem(INV); renderList(); updateStats(); renderCharts(); if(window.BankAudit){ try{ window.BankAudit.log('STOK_CLEAR_ALL'); }catch(e){} } if(window.showToast) showToast('✅ Semua data dihapus', 'success'); else alert('✅ Semua data dihapus'); }
+    if(!canEdit()){ if(window.showToast) showToast('⛔ Hanya admin', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya admin', 'warning') : alert('⛔ Hanya admin'))); return; }
+    if(confirm('⚠️ HAPUS SEMUA DATA STOK? Aksi ini tidak bisa dibatalkan!')){ localStorage.removeItem(INV); renderList(); updateStats(); renderCharts(); if(window.BankAudit){ try{ window.BankAudit.log('STOK_CLEAR_ALL'); }catch(e){} } if(window.showToast) showToast('✅ Semua data dihapus', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Semua data dihapus', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Semua data dihapus', 'warning') : alert('✅ Semua data dihapus'))); }
   };
 
   // ===== LAPORAN PERIODE (harian/mingguan/bulanan) =====

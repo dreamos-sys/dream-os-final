@@ -187,7 +187,7 @@
     
     init: function() {
       // Auto-sync every 5 minutes
-      setInterval(function() {
+      window.__dreamosRegisterInterval(setInterval(function() {
         CloudSync.processQueue();
       }, 300000);
       

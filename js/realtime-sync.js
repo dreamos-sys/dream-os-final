@@ -94,7 +94,7 @@
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 600); });
   else setTimeout(boot, 800);
-  setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true'){ ensureClient(); if(!window.__rtChannel) startRealtime(); } }, 10000);
-  setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true') window.syncStockLog(); }, 60000);
+  window.__dreamosRegisterInterval(setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true'){ ensureClient(); if(!window.__rtChannel) startRealtime(); } }, 10000);
+  window.__dreamosRegisterInterval(setInterval(function(){ if(localStorage.getItem('dreamos_session_active')==='true') window.syncStockLog(); }, 60000);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden && localStorage.getItem('dreamos_session_active')==='true'){ ensureClient(); startRealtime(); window.syncStockLog(); } });
 })();

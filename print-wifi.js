@@ -109,7 +109,7 @@ window.printWireless = function(htmlContent, options = {}) {
  */
 window.printTable = function(tableId, title = 'Laporan') {
   const table = document.getElementById(tableId);
-  if (!table) return alert('⚠️ Tabel tidak ditemukan!');
+  if (!table) return (typeof window.showToast === 'function' ? window.showToast('⚠️ Tabel tidak ditemukan!', 'warning') : alert('⚠️ Tabel tidak ditemukan!'));
   
   const html = `
     <div style="overflow-x:auto;">

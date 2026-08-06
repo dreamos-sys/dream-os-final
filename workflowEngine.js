@@ -38,7 +38,7 @@ const WorkflowEngine = {
 
     if (error) {
       console.error('❌ Gagal approve:', error);
-      alert('Gagal menyetujui: ' + error.message);
+      (typeof window.showToast === 'function' ? window.showToast('Gagal menyetujui: ' + error.message, 'warning') : alert('Gagal menyetujui: ' + error.message));
     } else {
       console.log('✅ Berhasil disetujui:', data);
       // Notif ke user akan di-handle oleh Edge Function (opsional) atau cukup lewat UI Sync
@@ -60,7 +60,7 @@ const WorkflowEngine = {
 
     if (error) {
       console.error('❌ Gagal reject:', error);
-      alert('Gagal menolak: ' + error.message);
+      (typeof window.showToast === 'function' ? window.showToast('Gagal menolak: ' + error.message, 'warning') : alert('Gagal menolak: ' + error.message));
     } else {
       console.log('✅ Berhasil ditolak:', data);
     }

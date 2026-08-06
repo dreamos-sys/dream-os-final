@@ -75,8 +75,8 @@
   window.__k3jUndo=function(id,sc){ try{ var d=getDone(); delete d[dkey(id,sc)]; setDone(d); _fp=null; render(); }catch(e){ console.warn('[k3j-bridge] undo:', e); } };
 
   pullFollowups(render);
-  setInterval(render, 2000);
-  setInterval(function(){ pullFollowups(render); }, 20000);
+  window.__dreamosRegisterInterval(setInterval(render, 2000);
+  window.__dreamosRegisterInterval(setInterval(function(){ pullFollowups(render); }, 20000);
   window.addEventListener('storage', function(e){ if(e.key===K3||e.key===CACHE){ _fp=null; render(); } });
   document.addEventListener('visibilitychange', function(){ if(!document.hidden){ _fp=null; pullFollowups(render); } });
 })();

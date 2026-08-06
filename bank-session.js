@@ -54,11 +54,11 @@ const BankSession = {
 window.BankSession = BankSession;
 
 // Auto-validate setiap 30 detik
-setInterval(async () => {
+window.__dreamosRegisterInterval(setInterval(async () => {
   if (localStorage.getItem('dreamos_session_active') === 'true') {
     const valid = await BankSession.valid();
     if (!valid) {
-      alert('⏰ Sesi berakhir. Silakan login ulang.');
+      (typeof window.showToast === 'function' ? window.showToast('⏰ Sesi berakhir. Silakan login ulang.', 'warning') : alert('⏰ Sesi berakhir. Silakan login ulang.'));
       BankSession.logout();
     }
   }

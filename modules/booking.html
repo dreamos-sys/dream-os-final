@@ -273,10 +273,10 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     return __ensuring;
   }
   window.pullBookingsFromCloud = async function (showAlert) {
-    if (!window.supabaseClient) { setSyncStatus('🟡 Offline — data lokal', false); if (showAlert) { if (window.showToast) showToast('⚠️ Supabase belum siap', 'warning'); else alert('Supabase belum siap'); } return; }
+    if (!window.supabaseClient) { setSyncStatus('🟡 Offline — data lokal', false); if (showAlert) { if (window.showToast) showToast('⚠️ Supabase belum siap', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : alert('Supabase belum siap'))); } return; }
     setSyncStatus('🔄 Pull server…');
-    try { await ensureServerBookings(); renderBookings(); setSyncStatus('🟢 Sync OK · ' + getBookings().length + ' booking', true); if (showAlert) { if (window.showToast) showToast('✅ Pull: ' + getBookings().length + ' data', 'success'); else alert('Pull selesai: ' + getBookings().length + ' data'); } }
-    catch (e) { setSyncStatus('🟠 Pull gagal: ' + (e.message||e), false); if (showAlert) { if (window.showToast) showToast('❌ ' + (e.message||e), 'error'); else alert(String(e.message||e)); } }
+    try { await ensureServerBookings(); renderBookings(); setSyncStatus('🟢 Sync OK · ' + getBookings().length + ' booking', true); if (showAlert) { if (window.showToast) showToast('✅ Pull: ' + getBookings().length + ' data', 'success'); else (typeof window.showToast === 'function' ? window.showToast('Pull selesai: ' + getBookings(, 'warning') : (typeof window.showToast === 'function' ? window.showToast('Pull selesai: ' + getBookings(, 'warning') : alert('Pull selesai: ' + getBookings())).length + ' data'); } }
+    catch (e) { setSyncStatus('🟠 Pull gagal: ' + (e.message||e), false); if (showAlert) { if (window.showToast) showToast('❌ ' + (e.message||e), 'error'); else (typeof window.showToast === 'function' ? window.showToast(String(e.message||e, 'warning') : (typeof window.showToast === 'function' ? window.showToast(String(e.message||e, 'warning') : alert(String(e.message||e)))); } }
   };
 
   var rtBound = false;
@@ -415,10 +415,10 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
 
   window.showBookingDetail = function (id) {
     var b = getBookings().find(function(x){ return x.id===id; });
-    if (!b) { if(window.showToast) showToast('Data tidak ditemukan','error'); else alert('Data tidak ditemukan'); return; }
+    if (!b) { if(window.showToast) showToast('Data tidak ditemukan','error'); else (typeof window.showToast === 'function' ? window.showToast('Data tidak ditemukan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Data tidak ditemukan', 'warning') : alert('Data tidak ditemukan'))); return; }
     var st = String(b.status||'pending').toLowerCase();
     var statusText = st==='approved' ? '✅ SUDAH DI-APPROVE' : st==='rejected' ? '❌ DITOLAK' : '⏳ BELUM DI-APPROVE (menunggu Kabag)';
-    alert('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-')+'\nHP: '+(b.no_hp||'-')+'\nDivisi: '+(b.divisi||'-')+'\nRuang: '+(b.ruang||'-')+'\nTanggal: '+(b.tgl_display||b.tgl||'-')+'\nJam: '+(b.jam_mulai||'')+' – '+(b.jam_selesai||'')+'\nAlat: '+(b.sarana_alat||'-')+'\nKeperluan: '+(b.keperluan||'-')+'\nDibuat: '+(b.created_at||'-')+'\n'+(b.approved_by?'ACC oleh: '+b.approved_by+'\n':'')+(b.reject_reason?'Alasan tolak: '+b.reject_reason+'\n':'')+'ID: '+(b.id||''));
+    (typeof window.showToast === 'function' ? window.showToast('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-', 'warning') : (typeof window.showToast === 'function' ? window.showToast('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-', 'warning') : alert('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-')))+'\nHP: '+(b.no_hp||'-')+'\nDivisi: '+(b.divisi||'-')+'\nRuang: '+(b.ruang||'-')+'\nTanggal: '+(b.tgl_display||b.tgl||'-')+'\nJam: '+(b.jam_mulai||'')+' – '+(b.jam_selesai||'')+'\nAlat: '+(b.sarana_alat||'-')+'\nKeperluan: '+(b.keperluan||'-')+'\nDibuat: '+(b.created_at||'-')+'\n'+(b.approved_by?'ACC oleh: '+b.approved_by+'\n':'')+(b.reject_reason?'Alasan tolak: '+b.reject_reason+'\n':'')+'ID: '+(b.id||''));
   };
 
   function toGCalStamp(dateStr, timeStr) {
@@ -540,7 +540,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
           renderBookings();
           return showError((e.message || e) + '\n\n⛔ Pengajuan tidak disimpan di mana pun.');
         } else {
-          alert('Tersimpan di HP ini (fallback admin).\nServer: ' + (e.message || e));
+          (typeof window.showToast === 'function' ? window.showToast('Tersimpan di HP ini (fallback admin, 'warning') : (typeof window.showToast === 'function' ? window.showToast('Tersimpan di HP ini (fallback admin, 'warning') : alert('Tersimpan di HP ini (fallback admin))).\nServer: ' + (e.message || e));
         }
       }
     } else { setSyncStatus('🟡 Hanya lokal', false); }
@@ -561,7 +561,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   };
 
   window.approveBooking = async function (id) {
-    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else alert('⛔ Hanya Kabag / Koordinator / Dev.'); return; }
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : alert('⛔ Hanya Kabag / Koordinator / Dev.'))); return; }
     var list = getBookings(); var b = list.find(function(x){ return x.id===id; }); if (!b) return;
     b.status='approved'; b.approved_by=user.email||user.nama; b.approved_at=new Date().toISOString();
     saveBookings(list); renderBookings();
@@ -572,7 +572,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     setTimeout(function(){ openGoogleCalendar(id); }, 800);
   };
   window.rejectBooking = async function (id) {
-    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else alert('⛔ Hanya Kabag / Koordinator / Dev.'); return; }
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : alert('⛔ Hanya Kabag / Koordinator / Dev.'))); return; }
     var reason = prompt('Alasan penolakan:') || '';
     var list = getBookings(); var b = list.find(function(x){ return x.id===id; }); if (!b) return;
     b.status='rejected'; b.reject_reason=reason; saveBookings(list); renderBookings();
@@ -581,7 +581,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     pushToCommandCenterNotif({ type:'warning', title:'Booking rejected', msg:(b.nama_peminjam||'')+' · '+(b.ruang||''), booking_id:id });
   };
   window.deleteBookingById = async function (id) {
-    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.','error'); else alert('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.'); return; }
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.', 'warning') : alert('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.'))); return; }
     if (!confirm('Hapus booking ini?')) return;
     var db = getBookings().find(function(x){ return x.id===id; });
     saveBookings(getBookings().filter(function(x){ return x.id!==id; })); renderBookings();
@@ -609,7 +609,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     URL.revokeObjectURL(a.href);
   };
   window.syncToCloud = async function () {
-    if (!window.supabaseClient) { if (window.showToast) showToast('⚠️ Supabase offline', 'error'); else alert('Supabase belum siap'); return; }
+    if (!window.supabaseClient) { if (window.showToast) showToast('⚠️ Supabase offline', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : alert('Supabase belum siap'))); return; }
     var bookings = getBookings();
     if (!bookings.length) { if (window.showToast) showToast('ℹ️ Tidak ada booking untuk di-sync', 'info'); return; }
     var ok=0, fail=0, total=bookings.length;
@@ -628,7 +628,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     var msg = '✅ '+ok+'/'+total+' booking tersinkron';
     if (fail > 0) msg += ' • ⚠️ '+fail+' gagal';
     if (window.showToast) showToast(msg, fail > 0 ? 'warning' : 'success');
-    else alert(msg);
+    else (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : alert(msg)));
   };
 
   // ===== Fungsi Counter Alat =====
@@ -667,7 +667,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
         if (checkbox) checkbox.checked = (num > 0);
       } else {
         if (window.showToast) showToast('⚠️ Masukkan angka 0-999', 'error');
-        else alert('Masukkan angka antara 0-999!');
+        else (typeof window.showToast === 'function' ? window.showToast('Masukkan angka antara 0-999!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Masukkan angka antara 0-999!', 'warning') : alert('Masukkan angka antara 0-999!')));
       }
     }
   };
@@ -734,12 +734,12 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   renderBookings();
   renderWindowStatus();
   if (window.__bookingStatusTimer) clearInterval(window.__bookingStatusTimer);
-  window.__bookingStatusTimer = setInterval(renderWindowStatus, 30000);
+  window.__bookingStatusTimer = window.__dreamosRegisterInterval(setInterval(renderWindowStatus, 30000);
   try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission(); } catch(e){}
   setSyncStatus(window.supabaseClient ? '🔄 Menarik data…' : '🟡 Mode lokal');
   setTimeout(function(){ pullBookingsFromCloud(false).then(function(){ subscribeRealtime(); }); }, 400);
   if (window.__bookingRetryTimer) clearInterval(window.__bookingRetryTimer);
-  var _rtTry=0; window.__bookingRetryTimer=setInterval(function(){ if(rtBound||_rtTry++>=12){ clearInterval(window.__bookingRetryTimer); window.__bookingRetryTimer=null; return; } subscribeRealtime(); }, 5000);
+  var _rtTry=0; window.__bookingRetryTimer=window.__dreamosRegisterInterval(setInterval(function(){ if(rtBound||_rtTry++>=12){ clearInterval(window.__bookingRetryTimer); window.__bookingRetryTimer=null; return; } subscribeRealtime(); }, 5000);
   window.addEventListener('online', function(){ pullBookingsFromCloud(false); subscribeRealtime(); });
   console.log('📅 Booking module ready — detail klik, status ACC, notif CC, GCal, first-come, RT');
 // ===== Fungsi untuk show/hide input "R Lain-lain" =====
