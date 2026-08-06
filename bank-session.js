@@ -62,6 +62,6 @@ window.__dreamosRegisterInterval(setInterval(async () => {
       BankSession.logout();
     }
   }
-}, 30000);
+}, 30000));
 
 console.log('🏦 Session Management Ready');

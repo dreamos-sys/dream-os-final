@@ -230,7 +230,7 @@ window.safeStorageSet = function(key, val) {
       // Auto-sync every 5 minutes
       window.__dreamosRegisterInterval(setInterval(function() {
         CloudSync.processQueue();
-      }, 300000);
+      }, 300000));
       
       // Sync on visibility change (when app comes back)
       document.addEventListener('visibilitychange', function() {
