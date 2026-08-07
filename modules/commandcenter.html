@@ -610,27 +610,8 @@
       <div class="chart-container"><canvas id="advCompareChart"></canvas></div>
       <div id="adv-compare-delta" style="margin-top:.6rem;font-size:.75rem;color:var(--muted);"></div>
     </div>
-    <div class="glass">
-      <div style="font-weight:800;color:var(--purple);margin-bottom:.8rem;">🏆 Ranking Kontributor (Apresiasi Bulanan)</div>
-      <div class="chart-container"><canvas id="advUserChart"></canvas></div>
-      <div class="table-container" style="margin-top:.8rem;"><table>
-        <thead><tr><th>Rank</th><th>Nama</th><th>Booking</th><th>K3</th><th>Stok</th><th>Total</th></tr></thead>
-        <tbody id="adv-user-body"></tbody>
-      </table></div>
-    </div>
-    <div class="glass">
-      <div style="font-weight:800;color:var(--gold);margin-bottom:.8rem;">📊 Mode Perbandingan — Bulan Ini vs Bulan Lalu</div>
-      <div class="chart-container"><canvas id="advCompareChart"></canvas></div>
-      <div id="adv-compare-delta" style="margin-top:.6rem;font-size:.75rem;color:var(--muted);"></div>
-    </div>
-    <div class="glass">
-      <div style="font-weight:800;color:var(--purple);margin-bottom:.8rem;">🏆 Ranking Kontributor (Apresiasi Bulanan)</div>
-      <div class="chart-container"><canvas id="advUserChart"></canvas></div>
-      <div class="table-container" style="margin-top:.8rem;"><table>
-        <thead><tr><th>Rank</th><th>Nama</th><th>Booking</th><th>K3</th><th>Stok</th><th>Total</th></tr></thead>
-        <tbody id="adv-user-body"></tbody>
-      </table></div>
-    </div>
+  </div>
+
   <!-- TAB: DEV MONITOR (khusus dev) -->
   <div id="tab-devmon" class="tab-content">
     <div class="glass">
@@ -786,6 +767,8 @@ window.goHomeHandler = function() {
 };
 
 (function() {
+  function isDev(){ return (window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined' && currentUser ? currentUser.role : '')) === 'dev'; }
+    function escU(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function safeJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback !== undefined ? fallback : [])); }
     catch(e) { return fallback !== undefined ? fallback : []; }
@@ -1365,11 +1348,11 @@ window.goHomeHandler = function() {
     const s6 = document.getElementById('slide-6-input').value.trim();
     const s7 = document.getElementById('slide-7-input').value.trim();
 
-    window.safeStorageSet('dreamos_cmd_announcements', JSON.stringify([
+    saveJSON('dreamos_cmd_announcements', [
       { type: 'management', msg: s5 },
       { type: 'umum', msg: s6 },
       { type: 'ucapan', msg: s7 }
-    ]));
+    ]);
 
     const st = document.getElementById('slide-save-status');
     st.textContent = '✅ Slide tersimpan & langsung aktif!';
@@ -1378,7 +1361,6 @@ window.goHomeHandler = function() {
   };
 
   /* helpers_v2 */
-  function escU(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function pushLocalUser(u){ var users=safeJSON('dreamos_users_db',[]); var i=users.findIndex(function(x){return (x.email||'').toLowerCase()===(u.email||'').toLowerCase();}); if(i>-1) users[i]=Object.assign({},users[i],u); else users.push(u); saveJSON('dreamos_users_db',users); }
   async function callAdminUsers(action, payload){
     if(!window.supabaseClient) throw new Error('offline');
@@ -1409,7 +1391,6 @@ window.goHomeHandler = function() {
     showToast(cloudOk?'✅ Password direset via cloud. Sampaikan password baru ke petugas.':(u&&u.password_hash?'⚠️ Cloud gagal; password lokal direset (device ini saja).':'⚠️ Gagal reset (deploy Edge Function admin-users dulu).'), cloudOk?'success':'warning');
   };
   /* dev_monitor_v2 */
-  function isDev(){ return (window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined' && currentUser ? currentUser.role : '')) === 'dev'; }
   function fmtDT(iso){ if(!iso) return '-'; try{ return new Date(iso).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}); }catch(e){ return String(iso); } }
   window.renderDevMonitor = async function(){
     if(!isDev()) return;
@@ -1510,9 +1491,6 @@ window.goHomeHandler = function() {
     koordinator_umum: ALL_ROLES_C.filter(function(r){ return ['dev','kabag_umum','koordinator_umum'].indexOf(r)<0; })
   };
   function _myRole(){ return window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined'&&currentUser?currentUser.role:''); }
-    // [DEDUP] function isDev()
-;
-  
   window.unlockUser = async function(userId) {
     if (!isDev()) return showToast('⛔ Hanya Dev', 'error');
     if (!confirm('Unlock user ini? Login failures akan direset.')) return;
