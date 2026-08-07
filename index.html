@@ -66,6 +66,17 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
     .toggle-pin { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem; color: var(--neon); user-select: none; }
     .access-btn { width: 100%; padding: 1.1rem; background: #10b981; color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
     .access-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+    
+    /* ===== ZOOM PREVENTION (anti-accidental zoom di HP) ===== */
+    button, a, .mod-card, .nav-item, .kpi-chip, .slide-dot, .ana-period-btn, .ana-tab, .cast-btn, [onclick], [role="button"] {
+      touch-action: manipulation; /* Disable double-tap zoom delay di iOS */
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Disable pinch-zoom di seluruh app (kecuali text area input) */
+    body { touch-action: pan-x pan-y; overscroll-behavior: none; }
+    input, textarea, select { touch-action: manipulation; }
+    /* Prevent pull-to-refresh di Chrome Android */
+    html { overscroll-behavior: none; }
     .access-btn:disabled { opacity: 0.7; cursor: not-allowed; }
     .error-msg { color: var(--warning); font-size: 0.85rem; margin-top: 0.8rem; display: none; }
     #main-app { display: none; position: relative; z-index: 10; padding-bottom: 6rem; min-height: 100vh; }
@@ -1593,6 +1604,40 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
         });
       }
     });
+  </script>
+  <script>
+  // ===== ZOOM PREVENTION ENGINE =====
+  (function(){
+    'use strict';
+    // Block pinch-zoom (2 finger)
+    document.addEventListener('touchmove', function(e) {
+      if (e.scale && e.scale !== 1) { e.preventDefault(); }
+      if (e.touches && e.touches.length > 1) { e.preventDefault(); }
+    }, { passive: false });
+    
+    // Block double-tap zoom (legacy iOS)
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+      lastTouchEnd = now;
+    }, { passive: false });
+    
+    // Block Ctrl++ / Ctrl-- / Ctrl+0 (keyboard zoom)
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+    
+    // Block wheel zoom (mouse)
+    document.addEventListener('wheel', function(e) {
+      if (e.ctrlKey) { e.preventDefault(); }
+    }, { passive: false });
+    
+    console.log('🔒 Zoom prevention active (pinch + double-tap + keyboard)');
+  })();
   </script>
   <script src="js/realtime-sync.js?v=1"></script>
   <script src="js/k3-janitor-bridge.js?v=1"></script>
