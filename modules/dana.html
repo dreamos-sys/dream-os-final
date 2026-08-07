@@ -1,5 +1,26 @@
 
 <script>
+
+  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
+  window.safeStorageSet = window.safeStorageSet || function(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch(e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('[Storage] Quota exceeded, trimming old keys...');
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+        if (keys.length > 20) {
+          // Hapus 10 key tertua (berdasarkan urutan)
+          keys.slice(0, 10).forEach(k => {
+            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
+          });
+          try { localStorage.setItem(key, value); return true; } catch(_){}
+        }
+        console.error('[Storage] Still failed after trim');
+      }
+      return false;
+    }
+  };
+
 // Auto-fallback untuk fungsi global
 if (!window.goHome) window.goHome = function() { 
   if (window.parent && window.parent.goHome) window.parent.goHome();
@@ -238,46 +259,8 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     
     // Hook ke goHome
     var __origGoHome = window.goHome;
-    window.goHome = function() {
-        if(window.__danaCleanup) window.__danaCleanup();
-        if(__origGoHome) return __origGoHome();
-        else {
-            try {
-                if(window.parent && window.parent.goHome) window.parent.goHome();
-                else window.location.reload();
-            } catch(e){ window.location.reload(); }
-        }
-    };
+      // [DEDUP] window.goHome (kept first definition)
 
-
-
-  // ===== PIN SETUP FUNCTION (untuk admin setup PIN pertama kali) =====
-  window.setupDanaPin = function(newPin){
-    if(!newPin || newPin.length < 4){
-      if(window.showToast) showToast('⚠️ PIN minimal 4 digit', 'error');
-      return false;
-    }
-    
-    var hashedPin;
-    if(typeof bcrypt !== 'undefined' && bcrypt.hashSync){
-      // Hash dengan bcrypt (secure)
-      try { hashedPin = bcrypt.hashSync(newPin, 10); } catch(e){}
-    }
-    
-    if(!hashedPin){
-      // Fallback: base64 (legacy, tidak secure)
-      hashedPin = btoa(newPin);
-    }
-    
-    try {
-      window.safeStorageSet('dreamos_pin', hashedPin);
-      if(window.showToast) showToast('✅ PIN berhasil diatur', 'success');
-      return true;
-    } catch(e) {
-      if(window.showToast) showToast('❌ Gagal menyimpan PIN', 'error');
-      return false;
-    }
-  };
 
 })();
 </script>

@@ -99,6 +99,27 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+
+  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
+  window.safeStorageSet = window.safeStorageSet || function(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch(e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('[Storage] Quota exceeded, trimming old keys...');
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+        if (keys.length > 20) {
+          // Hapus 10 key tertua (berdasarkan urutan)
+          keys.slice(0, 10).forEach(k => {
+            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
+          });
+          try { localStorage.setItem(key, value); return true; } catch(_){}
+        }
+        console.error('[Storage] Still failed after trim');
+      }
+      return false;
+    }
+  };
+
     const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzY1OTIsImV4cCI6MjA5Njc1MjU5Mn0.eqAFloptEHV3oIUjortuTsWvkhJgjb3xsXHM9nXfF8k';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

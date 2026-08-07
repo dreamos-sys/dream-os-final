@@ -86,6 +86,27 @@
 </div>
 
 <script>
+
+  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
+  window.safeStorageSet = window.safeStorageSet || function(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch(e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('[Storage] Quota exceeded, trimming old keys...');
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+        if (keys.length > 20) {
+          // Hapus 10 key tertua (berdasarkan urutan)
+          keys.slice(0, 10).forEach(k => {
+            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
+          });
+          try { localStorage.setItem(key, value); return true; } catch(_){}
+        }
+        console.error('[Storage] Still failed after trim');
+      }
+      return false;
+    }
+  };
+
 if (!window.goHome) window.goHome = function() { 
   if (window.parent && window.parent.goHome) window.parent.goHome();
   else var _b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=_b+'index.html';
@@ -472,10 +493,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   };
   // Hook ke goHome
   var __origGoHome = window.goHome;
-  window.goHome = function(){
-    if (window.__k3Cleanup) window.__k3Cleanup();
-    if (__origGoHome) return __origGoHome();
-  };
+    // [DEDUP] window.goHome (kept first definition)
+
 
   window.forceK3Sync = function(){ if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan(); };
   tampilkanLaporan();

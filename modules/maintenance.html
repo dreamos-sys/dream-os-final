@@ -328,6 +328,27 @@
 </div>
 
 <script>
+
+  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
+  window.safeStorageSet = window.safeStorageSet || function(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch(e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('[Storage] Quota exceeded, trimming old keys...');
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+        if (keys.length > 20) {
+          // Hapus 10 key tertua (berdasarkan urutan)
+          keys.slice(0, 10).forEach(k => {
+            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
+          });
+          try { localStorage.setItem(key, value); return true; } catch(_){}
+        }
+        console.error('[Storage] Still failed after trim');
+      }
+      return false;
+    }
+  };
+
 (function(){
   'use strict';
   var K={ wo:'dreamos_maintenance_tasks', k3:'dreamos_k3_reports', assets:'dreamos_maint_assets', pm:'dreamos_maint_pm', tpl:'dreamos_maint_tpl', insp:'dreamos_maint_inspections', audit:'dreamos_maint_audit', draft:'dreamos_maint_draft' };
@@ -913,21 +934,8 @@
   
   // Hook ke goHome
   var __origGoHome = window.goHome;
-  window.goHome = function() {
-    if(window.__maintCleanup) window.__maintCleanup();
-    if(__origGoHome) return __origGoHome();
-    else {
-      try {
-        var mc = document.getElementById('mod-container'); if(mc){mc.style.display='none'; mc.innerHTML= /* esc() protected */'';}
-        var ma = document.getElementById('main-app'); if(ma) ma.style.display='block';
-        var bn = document.getElementById('bottom-nav'); if(bn) bn.style.display='block';
-        if(typeof window.renderDashboard === 'function') window.renderDashboard();
-        window.scrollTo(0,0);
-      } catch(e){
-        window.location.href = (location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : './') + 'index.html';
-      }
-    }
-  };
+    // [DEDUP] window.goHome (kept first definition)
+
   
   // Visibility API: pause updates saat tab hidden
   document.addEventListener('visibilitychange', function(){

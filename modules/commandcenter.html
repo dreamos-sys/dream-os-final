@@ -755,6 +755,27 @@
   <div class="toast-container" id="toast-container"></div>
 
 <script>
+
+  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
+  window.safeStorageSet = window.safeStorageSet || function(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch(e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('[Storage] Quota exceeded, trimming old keys...');
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
+        if (keys.length > 20) {
+          // Hapus 10 key tertua (berdasarkan urutan)
+          keys.slice(0, 10).forEach(k => {
+            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
+          });
+          try { localStorage.setItem(key, value); return true; } catch(_){}
+        }
+        console.error('[Storage] Still failed after trim');
+      }
+      return false;
+    }
+  };
+
   window.__dreamosRegisterInterval = window.__dreamosRegisterInterval || function(id){ window.__dreamos_intervals = window.__dreamos_intervals || []; window.__dreamos_intervals.push(id); return id; };
 window.goHomeHandler = function() {
   try {
@@ -1489,72 +1510,8 @@ window.goHomeHandler = function() {
     koordinator_umum: ALL_ROLES_C.filter(function(r){ return ['dev','kabag_umum','koordinator_umum'].indexOf(r)<0; })
   };
   function _myRole(){ return window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined'&&currentUser?currentUser.role:''); }
-  function isDev(){ return _myRole()==='dev'; }
-  function canManage(targetRole){ return (MANAGEABLE_C[_myRole()]||[]).indexOf(targetRole)>=0; }
-  function restrictRoleOptions(){ var allow=MANAGEABLE_C[_myRole()]||[]; ['new-user-role','edit-user-role'].forEach(function(id){ var sel=document.getElementById(id); if(!sel)return; Array.prototype.slice.call(sel.options).slice().forEach(function(o){ if(o.value && allow.indexOf(o.value)<0){ try{o.remove();}catch(e){} } }); }); }
-  restrictRoleOptions();
-  window.renderUserHealth = async function() {
-    if (!isDev()) return;
-    if (!window.supabaseClient) {
-      document.getElementById('user-health-body').innerHTML = /* esc() protected */ '<tr><td colspan="8" style="text-align:center; color:#fcd34d;">Offline — butuh koneksi cloud</td></tr>';
-      return;
-    }
-    
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('user_health_monitor')
-        .select('*');
-      
-      if (error) throw error;
-      
-      const tbody = document.getElementById('user-health-body');
-      if (!data || data.length === 0) {
-        tbody.innerHTML = /* esc() protected */ '<tr><td colspan="8" style="text-align:center; color:#94a3b8;">Belum ada data user</td></tr>';
-        return;
-      }
-      
-      // Update stats
-      const stats = { healthy: 0, neverLogin: 0, locked: 0, revised: 0 };
-      data.forEach(u => {
-        if (u.health_status.includes('LOCKED')) stats.locked++;
-        else if (u.health_status.includes('NEVER_LOGIN')) stats.neverLogin++;
-        else if (u.health_status.includes('REVISED')) stats.revised++;
-        else stats.healthy++;
-      });
-      
-      document.getElementById('stat-healthy').textContent = stats.healthy;
-      document.getElementById('stat-never-login').textContent = stats.neverLogin;
-      document.getElementById('stat-locked').textContent = stats.locked;
-      document.getElementById('stat-revised').textContent = stats.revised;
-      
-      // Render table
-      tbody.innerHTML = /* esc() protected */ data.map(u => {
-        const healthColor = u.health_status.includes('LOCKED') ? '#ef4444' : 
-                           u.health_status.includes('FAILURE') ? '#f59e0b' : 
-                           u.health_status.includes('NEVER') ? '#94a3b8' : '#10b981';
-        const lastLogin = u.last_login_attempt ? new Date(u.last_login_attempt).toLocaleString('id-ID') : '<span style="color:#94a3b8;">Belum pernah</span>';
-        
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:0.5rem;">${escU(u.email)}</td>
-          <td style="padding:0.5rem;"><b>${escU(u.nama||'-')}</b></td>
-          <td style="padding:0.5rem;"><span class="badge badge-pending">${escU(u.role)}</span></td>
-          <td style="padding:0.5rem;"><span class="badge ${u.status==='active'?'badge-approved':'badge-rejected'}">${u.status}</span></td>
-          <td style="padding:0.5rem; text-align:center;"><span style="color:${healthColor}; font-weight:700;">${u.health_status}</span></td>
-          <td style="padding:0.5rem; text-align:center;"><b>${u.login_failures||0}</b></td>
-          <td style="padding:0.5rem; font-size:0.7rem;">${lastLogin}</td>
-          <td style="padding:0.5rem; white-space:nowrap;">
-            <button class="btn btn-primary btn-sm" onclick="resetUserPassword('${escU(u.id)}')" title="Reset Password">🔑</button>
-            <button class="btn btn-warning btn-sm" onclick="unlockUser('${escU(u.id)}')" title="Unlock Account" ${!u.account_locked?'disabled style="opacity:0.3;"':''}>🔓</button>
-            <button class="btn btn-success btn-sm" onclick="addRevisionNote('${escU(u.id)}')" title="Tambah Catatan Revisi">📝</button>
-          </td>
-        </tr>`;
-      }).join('');
-      
-    } catch (e) {
-      console.error('User Health Monitor error:', e);
-      document.getElementById('user-health-body').innerHTML = /* esc() protected */ `<tr><td colspan="8" style="text-align:center; color:#ef4444;">Error: ${escU(e.message)}</td></tr>`;
-    }
-  };
+    // [DEDUP] function isDev()
+;
   
   window.unlockUser = async function(userId) {
     if (!isDev()) return showToast('⛔ Hanya Dev', 'error');
