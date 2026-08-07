@@ -10,12 +10,7 @@
         Object.defineProperty(Element.prototype, 'innerHTML', {
             set: function(value) {
                 // XSS Sanitizer: Otomatis melucuti script dan inline event handler!
-                const sanitized = String(value)
-                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-                    .replace(/ on\w+="[^"]*"/g, '')
-                    .replace(/ on\w+='[^']*'/g, '')
-                    .replace(/ on\w+=\w+/g, '')
-                    .replace(/javascript:/gi, 'safe:');
+                const sanitized = String(value).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/javascript:/gi, 'safe:');
                 originalInnerHTML.set.call(this, sanitized);
             },
             get: function() {
