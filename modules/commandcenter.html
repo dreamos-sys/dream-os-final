@@ -790,6 +790,19 @@ window.goHomeHandler = function() {
 
 (function() {
   function isDev(){ return (window.getUserRole ? window.getUserRole() : (typeof currentUser!=='undefined' && currentUser ? currentUser.role : '')) === 'dev'; }
+
+  // ===== XSS-SAFE ATTRIBUTE ESCAPER (untuk onclick dinamis) =====
+  function escAttr(s) {
+    return String(s==null?'':s)
+      .replace(/\/g, '\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, ' ')
+      .replace(/\r/g, '')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
     function escU(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function safeJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback !== undefined ? fallback : [])); }
@@ -799,12 +812,14 @@ window.goHomeHandler = function() {
 
   function showToast(msg, type) {
     const c = document.getElementById('toast-container');
+    // Limit max 3 toast di screen (buang yang paling lama)
+    while (c && c.children.length >= 3) c.removeChild(c.firstChild);
     const t = document.createElement('div');
     t.className = 'toast';
     t.style.borderLeftColor = type === 'danger' ? 'var(--danger)' : (type === 'warn' ? 'var(--gold)' : 'var(--success)');
     t.textContent = msg;
     c.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
+    setTimeout(() => { try { t.remove(); } catch(e){} }, 3500);
   }
 
   function logActivity(action, detail) {
@@ -900,7 +915,7 @@ window.goHomeHandler = function() {
           '<div style="font-size:0.75rem; color:var(--muted); margin-top:0.2rem;">' + h.extra + '</div>' +
         '</div>'
       ).join('');
-    }, 250);
+    }, 400);
   };
 
   const bound = safeJSON('dreamos_bound_user', null);
@@ -1027,8 +1042,8 @@ window.goHomeHandler = function() {
       const pc = t.priority === 'high' ? 'badge-high' : 'badge-medium';
       const sc = t.status === 'approved' ? 'badge-approved' : t.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
       let actions = t.status === 'pending'
-        ? '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',true)">✅</button> <button class="btn btn-danger btn-sm" onclick="doApprove(\'' + t.type + '\',\'' + t.id + '\',false)">❌</button>'
-        : '<button class="btn btn-success btn-sm" onclick="shareDirectPDF(event, \'' + t.type + '\',\'' + t.id + '\')">📤 PDF</button>';
+        ? '<button class="btn btn-success btn-sm" onclick="doApprove(\'' + escAttr(t.type) + '\',\'' + escAttr(t.id) + '\',true)">✅</button> <button class="btn btn-danger btn-sm" onclick="doApprove(\'' + escAttr(t.type) + '\',\'' + escAttr(t.id) + '\',false)">❌</button>'
+        : '<button class="btn btn-success btn-sm" onclick="shareDirectPDF(event, \'' + escAttr(t.type) + '\',\'' + escAttr(t.id) + '\')">📤 PDF</button>';
       return '<tr><td><span class="badge ' + pc + '">' + t.priority + '</span></td><td>' + t.type + '</td><td><strong>' + t.title + '</strong><div style="font-size:0.75rem; color:var(--muted);">' + t.detail + '</div></td><td><span class="badge ' + sc + '">' + t.status + '</span></td><td>' + actions + '</td></tr>';
     }).join('');
   };
@@ -1248,6 +1263,23 @@ window.goHomeHandler = function() {
       '<tr><td>' + new Date(f.created_at).toLocaleDateString('id-ID') + '</td><td><span class="badge badge-pending">' + f.record_type + '</span></td><td>' + f.file_name + '</td><td>' + f.file_size_kb + ' KB</td><td>' + f.uploaded_by + '</td><td><a href="' + f.file_url + '" download="' + f.file_name + '" style="color:var(--accent); font-weight:700; text-decoration:none;">📄 Buka / Download</a></td></tr>'
     ).join('');
   };
+
+
+  // ===== CAN-MANAGE HELPER (fallback if parent window tidak inject) =====
+  function canManage(targetRole) {
+    var myRole = (window.getUserRole ? window.getUserRole() : (currentUser && currentUser.role) || 'staff').toLowerCase();
+    var hierarchy = {
+      'dev': 100, 'kabag_umum': 90, 'koordinator_umum': 80, 'management': 70,
+      'komite': 60, 'guru': 30, 'security': 20, 'komandan_regu': 25,
+      'janitor_indoor': 15, 'janitor_outdoor': 15, 'maintenance': 20, 'staff': 10
+    };
+    var myLevel = hierarchy[myRole] || 0;
+    var targetLevel = hierarchy[targetRole] || 0;
+    if (myRole === 'dev') return true;
+    if (myRole === 'kabag_umum') return targetRole !== 'dev' && targetRole !== 'kabag_umum';
+    if (myRole === 'koordinator_umum') return !['dev','kabag_umum','koordinator_umum'].includes(targetRole);
+    return myLevel > targetLevel;
+  }
 
       window.renderUsers = function() { /* ru_v3 */
     const users = safeJSON('dreamos_users_db', []);
@@ -1702,7 +1734,10 @@ window.goHomeHandler = function() {
     if (window.supabaseClient){ try{ var r = await window.supabaseClient.from('users').select('email').eq('email', em).maybeSingle(); if(r.data){ box.innerHTML= /* esc() protected */'⚠️ Email sudah terdaftar di cloud'; box.style.color='var(--gold)'; return; } }catch(e){} }
     // Lapis 4: cek MX record (domain punya mail server?)
     try{
-      var mx = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) + '&type=MX');
+      var dnsCtrl = new AbortController();
+      var dnsTimer = setTimeout(function(){ dnsCtrl.abort(); }, 5000);
+      var mx = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) + '&type=MX', { signal: dnsCtrl.signal });
+      clearTimeout(dnsTimer);
       var mj = await mx.json();
       if (mj && mj.Answer && mj.Answer.length > 0){ box.innerHTML= /* esc() protected */'✅ Email valid & domain punya mail server'; box.style.color='var(--success)'; }
       else { box.innerHTML= /* esc() protected */'⚠️ Domain tidak punya mail server (email asal?)'; box.style.color='var(--gold)'; }
@@ -1855,7 +1890,14 @@ window.goHomeHandler = function() {
   function advRenderHeat(){
     var days=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);days.push(d);}
     var divis=['TK','SD','SMP','SMA','UMUM'];var max=1,cells={};
-    divis.forEach(function(dv){days.forEach(function(d,di){var c=ADV.bookings.filter(function(b){var bd=advDate(b);return (b.divisi||'')===dv&&bd.toDateString()===d.toDateString()}).length;cells[dv+di]=c;if(c>max)max=c;});});
+    // ===== OPTIMIZED: Pre-index bookings by date+divisi (O(n) instead of O(n²)) =====
+    var bookingsByDateDiv = {};
+    ADV.bookings.forEach(function(b){
+      var bd = advDate(b);
+      var key = bd.toDateString() + '|' + (b.divisi||'');
+      bookingsByDateDiv[key] = (bookingsByDateDiv[key] || 0) + 1;
+    });
+    divis.forEach(function(dv){days.forEach(function(d,di){var c=bookingsByDateDiv[d.toDateString()+'|'+dv]||0;cells[dv+di]=c;if(c>max)max=c;});});
     var h='<div style="display:grid;grid-template-columns:70px repeat(7,1fr);gap:3px;font-size:.62rem;"><div></div>';
     days.forEach(function(d){h+='<div style="text-align:center;color:var(--muted);">'+d.getDate()+'/'+(d.getMonth()+1)+'</div>';});
     divis.forEach(function(dv){h+='<div style="color:var(--muted);display:flex;align-items:center;">'+dv+'</div>';
@@ -1883,6 +1925,18 @@ window.goHomeHandler = function() {
     advRenderKPIs();advRenderDiv();};
   window.advExportReport=function(){
     var n=new Date();var w=window.open('','_blank');
+    // ===== FALLBACK: kalau browser block popup, download sebagai file =====
+    if (!w || w.closed || typeof w.document === 'undefined') {
+      var n=new Date();var per=ADV.bookings.filter(function(b){return advIn(advDate(b),'this')});
+      var kper=ADV.k3.filter(function(b){return advIn(advDate(b),'this')});
+      var text='LAPORAN BULANAN DREAM OS\nPeriode: '+n.toLocaleDateString('id-ID',{month:'long',year:'numeric'})+'\n';
+      text+='Total Booking: '+per.length+'\nTotal K3: '+kper.length+'\n';
+      var blob=new Blob([text],{type:'text/plain'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='laporan-bulanan-'+n.toISOString().slice(0,10)+'.txt'; a.click();
+      showToast('📄 Popup diblokir, laporan diunduh sebagai file', 'warn');
+      return;
+    }
     var per=ADV.bookings.filter(function(b){return advIn(advDate(b),'this')});
     var kper=ADV.k3.filter(function(b){return advIn(advDate(b),'this')});
     var html='<!DOCTYPE html><html><head><title>Laporan Bulanan Dream OS</title><style>body{font-family:Arial,sans-serif;padding:2rem;color:#111}h1{font-size:1.4rem}h2{font-size:1rem;margin-top:1.5rem;border-bottom:2px solid #333;padding-bottom:.3rem}table{width:100%;border-collapse:collapse;margin-top:.5rem}td,th{border:1px solid #999;padding:.4rem;font-size:.8rem;text-align:left}.m{color:#555}</style></head><body>';
@@ -1962,6 +2016,24 @@ window.goHomeHandler = function() {
       '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1rem;">Belum ada data kontributor periode ini</td></tr>';
   }
   window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderAll();advRenderHeat();advRenderAI();advRenderSummary();advRenderCompare();advRenderUsers();};
+
+
+  // ===== MODAL CLOSE ON OUTSIDE CLICK (UX) =====
+  document.addEventListener('click', function(e) {
+    var overlay = e.target.closest('.modal-overlay');
+    if (overlay && e.target === overlay) {
+      overlay.classList.remove('show');
+    }
+  });
+
+
+  // ===== CLEANUP ON UNLOAD (hemat memory + battery) =====
+  window.addEventListener('beforeunload', function() {
+    if (window.__dreamos_intervals && Array.isArray(window.__dreamos_intervals)) {
+      window.__dreamos_intervals.forEach(function(id){ try { clearInterval(id); } catch(e){} });
+      window.__dreamos_intervals = [];
+    }
+  });
 
   // INIT
   document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
