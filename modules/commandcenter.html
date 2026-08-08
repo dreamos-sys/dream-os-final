@@ -619,14 +619,6 @@
       </table></div>
     </div>
     <div class="glass">
-      <div style="font-weight:800;color:var(--accent);margin-bottom:.8rem;">📊 Volume Semua Modul (Ruang Admin)</div>
-      <div class="chart-container"><canvas id="advAllChart"></canvas></div>
-    </div>
-    <div class="glass">
-      <div style="font-weight:800;color:var(--success);margin-bottom:.8rem;">📝 Ringkasan Eksekutif Otomatis</div>
-      <div id="adv-summary" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
-    </div>
-    <div class="glass">
       <div style="font-weight:800;color:var(--purple);margin-bottom:.8rem;">🔥 Heatmap Aktivitas (7 hari terakhir)</div>
       <div id="adv-heatmap"></div>
     </div>
@@ -1401,18 +1393,27 @@ window.goHomeHandler = function() {
     var presEl=document.getElementById('devmon-presence');
     var logEl=document.getElementById('devmon-loginlog');
     if(!window.supabaseClient){ if(presEl)presEl.innerHTML='<p style="color:#fcd34d;">Offline — presence & log butuh koneksi cloud.</p>'; if(logEl)logEl.innerHTML=''; return; }
-    if(presEl) presEl.innerHTML='Memuat...'; if(logEl) logEl.innerHTML='Memuat...';
+    if(presEl) presEl.innerHTML='<p style="color:#94a3b8;">🔄 Memuat presence...</p>'; 
+    if(logEl) logEl.innerHTML='<p style="color:#94a3b8;">🔄 Memuat login log...</p>';
     try {
       var cutoff=new Date(Date.now()-2*60000).toISOString();
       var rp=await window.supabaseClient.from('user_presence').select('*').gte('last_seen',cutoff).order('last_seen',{ascending:false});
+      if(rp && rp.error) throw rp.error;
       var rows=(rp&&rp.data)||[];
-      if(presEl) presEl.innerHTML = rows.length ? ('<table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Terakhir</th><th>Device</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td><b>'+escU(r.nama||'-')+'</b></td><td>'+escU(r.email||'-')+'</td><td><span class="badge badge-pending">'+escU(r.role||'-')+'</span></td><td style="font-size:0.66rem;">'+fmtDT(r.last_seen)+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((r.device||'').slice(0,40))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">Tidak ada user online saat ini.</p>';
-    } catch(e){ if(presEl) presEl.innerHTML='<p style="color:#fca5a5;">Gagal memuat presence: '+escU(e.message||String(e))+'</p>'; }
+      if(presEl) presEl.innerHTML = rows.length ? ('<table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Terakhir</th><th>Device</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td><b>'+escU(r.nama||'-')+'</b></td><td>'+escU(r.email||'-')+'</td><td><span class="badge badge-pending">'+escU(r.role||'-')+'</span></td><td style="font-size:0.66rem;">'+fmtDT(r.last_seen)+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((r.device||'').slice(0,40))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">✅ Tidak ada user online saat ini.</p>';
+    } catch(e){ 
+      console.error('[DevMonitor] presence error:', e);
+      if(presEl) presEl.innerHTML='<p style="color:#fca5a5;">⚠️ Gagal memuat presence: '+escU((e&&e.message)||String(e))+'<br><small style="color:#64748b;">Pastikan tabel user_presence ada di Supabase.</small></p>'; 
+    }
     try {
       var rl=await window.supabaseClient.from('login_attempts').select('*').order('created_at',{ascending:false}).limit(50);
+      if(rl && rl.error) throw rl.error;
       var logs=(rl&&rl.data)||[];
-      if(logEl) logEl.innerHTML = logs.length ? ('<table><thead><tr><th>Waktu</th><th>Email</th><th>Status</th><th>Detail</th><th>Source</th><th>Device</th></tr></thead><tbody>'+logs.map(function(l){ var ok=l.status==='success'; return '<tr><td style="font-size:0.66rem;white-space:nowrap;">'+fmtDT(l.created_at)+'</td><td>'+escU(l.email||'-')+'</td><td><span class="badge '+(ok?'badge-approved':'badge-rejected')+'">'+(ok?'✅ sukses':'❌ gagal')+'</span></td><td style="font-size:0.66rem;">'+escU(l.detail||'-')+'</td><td>'+escU(l.source||'-')+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((l.device||'').slice(0,28))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">Belum ada percobaan login tercatat.</p>';
-    } catch(e){ if(logEl) logEl.innerHTML='<p style="color:#fca5a5;">Gagal memuat log: '+escU(e.message||String(e))+'</p>'; }
+      if(logEl) logEl.innerHTML = logs.length ? ('<table><thead><tr><th>Waktu</th><th>Email</th><th>Status</th><th>Detail</th><th>Source</th><th>Device</th></tr></thead><tbody>'+logs.map(function(l){ var ok=l.status==='success'; return '<tr><td style="font-size:0.66rem;white-space:nowrap;">'+fmtDT(l.created_at)+'</td><td>'+escU(l.email||'-')+'</td><td><span class="badge '+(ok?'badge-approved':'badge-rejected')+'">'+(ok?'✅ sukses':'❌ gagal')+'</span></td><td style="font-size:0.66rem;">'+escU(l.detail||'-')+'</td><td>'+escU(l.source||'-')+'</td><td style="font-size:0.6rem;color:#94a3b8;">'+escU((l.device||'').slice(0,28))+'</td></tr>';}).join('')+'</tbody></table>') : '<p style="color:#94a3b8;">✅ Belum ada percobaan login tercatat.</p>';
+    } catch(e){ 
+      console.error('[DevMonitor] login log error:', e);
+      if(logEl) logEl.innerHTML='<p style="color:#fca5a5;">⚠️ Gagal memuat log: '+escU((e&&e.message)||String(e))+'<br><small style="color:#64748b;">Pastikan tabel login_attempts ada di Supabase.</small></p>'; 
+    }
   };
   // ===== BACKUP & RESTORE LOKAL (asuransi data perangkat) =====
   // ===== PHOTO CLOUD HEALING: base64 lama -> upload cloud -> update URL =====
@@ -1519,12 +1520,13 @@ window.goHomeHandler = function() {
         return;
       }
       
-      // Update stats
+      // Update stats (dengan null safety)
       const stats = { healthy: 0, neverLogin: 0, locked: 0, revised: 0 };
       data.forEach(u => {
-        if (u.health_status.includes('LOCKED')) stats.locked++;
-        else if (u.health_status.includes('NEVER_LOGIN')) stats.neverLogin++;
-        else if (u.health_status.includes('REVISED')) stats.revised++;
+        const hs = String(u.health_status || '').toUpperCase();
+        if (hs.includes('LOCKED')) stats.locked++;
+        else if (hs.includes('NEVER_LOGIN') || hs.includes('NEVER')) stats.neverLogin++;
+        else if (hs.includes('REVISED')) stats.revised++;
         else stats.healthy++;
       });
       
@@ -1533,32 +1535,36 @@ window.goHomeHandler = function() {
       document.getElementById('stat-locked').textContent = stats.locked;
       document.getElementById('stat-revised').textContent = stats.revised;
       
-      // Render table
+      // Render table (dengan null safety di semua field)
       tbody.innerHTML = data.map(u => {
-        const healthColor = u.health_status.includes('LOCKED') ? '#ef4444' : 
-                           u.health_status.includes('FAILURE') ? '#f59e0b' : 
-                           u.health_status.includes('NEVER') ? '#94a3b8' : '#10b981';
+        const hs = String(u.health_status || '');
+        const hsUpper = hs.toUpperCase();
+        const healthColor = hsUpper.includes('LOCKED') ? '#ef4444' : 
+                           hsUpper.includes('FAILURE') ? '#f59e0b' : 
+                           hsUpper.includes('NEVER') ? '#94a3b8' : '#10b981';
         const lastLogin = u.last_login_attempt ? new Date(u.last_login_attempt).toLocaleString('id-ID') : '<span style="color:#94a3b8;">Belum pernah</span>';
+        const statusBadge = (u.status||'active')==='active'?'badge-approved':'badge-rejected';
+        const isLocked = !!u.account_locked;
         
         return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:0.5rem;">${escU(u.email)}</td>
+          <td style="padding:0.5rem;">${escU(u.email||'-')}</td>
           <td style="padding:0.5rem;"><b>${escU(u.nama||'-')}</b></td>
-          <td style="padding:0.5rem;"><span class="badge badge-pending">${escU(u.role)}</span></td>
-          <td style="padding:0.5rem;"><span class="badge ${u.status==='active'?'badge-approved':'badge-rejected'}">${u.status}</span></td>
-          <td style="padding:0.5rem; text-align:center;"><span style="color:${healthColor}; font-weight:700;">${u.health_status}</span></td>
+          <td style="padding:0.5rem;"><span class="badge badge-pending">${escU(u.role||'-')}</span></td>
+          <td style="padding:0.5rem;"><span class="badge ${statusBadge}">${escU(u.status||'active')}</span></td>
+          <td style="padding:0.5rem; text-align:center;"><span style="color:${healthColor}; font-weight:700;">${escU(hs||'OK')}</span></td>
           <td style="padding:0.5rem; text-align:center;"><b>${u.login_failures||0}</b></td>
           <td style="padding:0.5rem; font-size:0.7rem;">${lastLogin}</td>
           <td style="padding:0.5rem; white-space:nowrap;">
-            <button class="btn btn-primary btn-sm" onclick="resetUserPassword('${escU(u.id)}')" title="Reset Password">🔑</button>
-            <button class="btn btn-warning btn-sm" onclick="unlockUser('${escU(u.id)}')" title="Unlock Account" ${!u.account_locked?'disabled style="opacity:0.3;"':''}>🔓</button>
-            <button class="btn btn-success btn-sm" onclick="addRevisionNote('${escU(u.id)}')" title="Tambah Catatan Revisi">📝</button>
+            <button class="btn btn-primary btn-sm" onclick="resetUserPassword('${escU(u.id||'')}')" title="Reset Password">🔑</button>
+            <button class="btn btn-warning btn-sm" onclick="unlockUser('${escU(u.id||'')}')" title="Unlock Account" ${!isLocked?'disabled style="opacity:0.3;"':''}>🔓</button>
+            <button class="btn btn-success btn-sm" onclick="addRevisionNote('${escU(u.id||'')}')" title="Tambah Catatan Revisi">📝</button>
           </td>
         </tr>`;
       }).join('');
       
     } catch (e) {
       console.error('User Health Monitor error:', e);
-      document.getElementById('user-health-body').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444;">Error: ${escU(e.message)}</td></tr>`;
+      document.getElementById('user-health-body').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444;">Error: ${escU(e&&e.message||String(e))}</td></tr>`;
     }
   };
   
