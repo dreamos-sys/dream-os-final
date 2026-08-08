@@ -255,7 +255,6 @@
 
 
   if (!window.supabaseClient && window.parent && window.parent.supabaseClient) window.supabaseClient = window.parent.supabaseClient;
-  window.__dreamosRegisterInterval = window.__dreamosRegisterInterval || function(id){ return id; };
   window.goHomeSafe = function() {
     try { if(window.parent && typeof window.parent.goHome === 'function'){ window.parent.goHome(); return; } }catch(e){}
     if(typeof window.goHome === 'function'){ try{ window.goHome(); return; }catch(e){} }
@@ -529,8 +528,12 @@
   // LOGIKA SISTEM & JAM LIVE
   let clockInterval;
   function updateSystemStatus() {
-    var u = {};
-    try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}') || {}; } catch(e) { u = {}; }
+    try {
+      const u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    } catch(parseErr) {
+      console.error('[Setting] updateSystemStatus error:', parseErr);
+      return;
+    }
     try {
       var nameEl = document.getElementById('sys-user-name');
       var roleEl = document.getElementById('sys-user-role');
@@ -579,11 +582,9 @@
       }
     }
 
-    var connEl = document.getElementById('sys-connection');
-    if (connEl) {
-      if (!navigator.onLine) { connEl.textContent = '🔴 Offline'; connEl.style.color = '#ef4444'; }
-      else { connEl.textContent = '🟢 Online Cloud Sync'; connEl.style.color = '#10b981'; }
-    }
+    const connEl = document.getElementById('sys-connection');
+    if (!navigator.onLine) { connEl.textContent = '🔴 Offline'; connEl.style.color = '#ef4444'; }
+    else { connEl.textContent = '🟢 Online Cloud Sync'; connEl.style.color = '#10b981'; }
 
     const prayerEl = document.getElementById('sys-prayer');
     if (prayerEl) {
@@ -594,7 +595,7 @@
       
       if (cached) {
         prayerEl.innerHTML = cached;
-      } else if ((prayerEl.textContent || '').includes('Loading') || !prayerEl.innerHTML.trim()) {
+      } else if (prayerEl.textContent.includes('Loading') || !prayerEl.innerHTML.trim()) {
         fetch(`https://api.aladhan.com/v1/timings/${new Date().toISOString().split('T')[0]}?latitude=-6.4025&longitude=106.7942&method=20`)
           .then(r => r.json())
           .then(data => {
