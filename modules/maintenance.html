@@ -355,6 +355,11 @@
       }
     }
   }
+  function _toast(msg, type) {
+    if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
+    else alert(msg);
+  }
+
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function escA(s){return esc(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
   function uid(p){return (p||'x')+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
@@ -862,7 +867,7 @@
     var invId=document.getElementById('con-item').value, qty=parseInt(document.getElementById('con-qty').value,10)||0;
     if(qty<=0){ if(window.showToast) showToast('⚠️ Jumlah tidak valid', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Jumlah tidak valid.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Jumlah tidak valid.', 'warning') : alert('⚠️ Jumlah tidak valid.'))); return; }
     var inv=safeGet(K_INV,[]); var it=inv.find(function(x){return x.id===invId;}); if(!it)return;
-    if((parseInt(it.jumlah)||0)<qty){(typeof window.showToast === 'function' ? window.showToast('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah, 'warning') : alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)))||0)+').');return;}
+    if((parseInt(it.jumlah)||0)<qty){ if(window.showToast) showToast('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)||0)+')', 'warning'); else alert('⚠️ Stok tidak cukup (sisa '+(parseInt(it.jumlah)||0)+')'); return; }
     it.jumlah=(parseInt(it.jumlah)||0)-qty; it.updated_at=new Date().toISOString(); safeSet(K_INV,inv);
         // 📦 Log konsumsi sparepart → mutasi stok + sync cloud (Gelombang 2)
     try {
@@ -887,7 +892,7 @@
   }
   seed();
   renderRail(); renderView(); tick();
-  var __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000);
+  var __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000));
   
   // Debounced initial cloud pull (prevent overlap)
   var __initPullTimeout = setTimeout(function(){
@@ -934,7 +939,7 @@
     if(document.hidden){
       if(__tickInterval) { clearInterval(__tickInterval); __tickInterval = null; }
     } else {
-      if(!__tickInterval) __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000);
+      if(!__tickInterval) __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000));
       tick(); // Update immediately saat visible lagi
     }
   });
