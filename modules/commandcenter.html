@@ -266,6 +266,7 @@
       <button class="tab" data-tab="activity" onclick="switchTab('activity')">📜 Activity</button>
       <button class="tab" data-tab="announcements" onclick="switchTab('announcements')">📢 Pengumuman</button>
       <button class="tab" data-tab="stok" onclick="switchTab('stok')">📦 Analitik Stok</button>
+      <button class="tab" data-tab="dana" onclick="switchTab('dana')">💰 Dana</button>
       <button class="tab" data-tab="analytics" onclick="switchTab('analytics')">📊 Analytics</button>
     </div>
   </div>
@@ -575,6 +576,9 @@
     </div>
   </div>
 
+
+  <!-- TAB: DANA (terintegrasi dari dana.html) -->
+  <div id="tab-dana" class="tab-content"><div id="dana-content"></div></div>
 
   <!-- TAB: ANALYTICS (Advanced — khusus admin, RBAC) -->
   <div id="tab-analytics" class="tab-content">
@@ -917,6 +921,7 @@ window.goHomeHandler = function() {
     if (id === 'users') { syncUsersFromSupabase(); renderUsers(); }
 
     if (id === 'stok') renderStokAnalytics();
+    if (id === 'dana') renderDanaTab();
     if (id === 'analytics') renderAdvAnalytics();
     renderQuickActions();
     if (id === 'announcements') {
@@ -1643,7 +1648,7 @@ window.goHomeHandler = function() {
       'staff': ['dashboard','calendar','activity']
     };
     
-    const allowedTabs = tabVisibility[role] || tabVisibility['staff'];
+    const allowedTabs = (tabVisibility[role] || tabVisibility['staff']).concat(['dana']);
     
     tabs.forEach(tab => {
       const tabId = tab.getAttribute('data-tab');
@@ -2029,6 +2034,148 @@ window.goHomeHandler = function() {
       '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1rem;">Belum ada data kontributor periode ini</td></tr>';
   }
   window.renderAdvAnalytics=function(){advLoad();advRenderKPIs();advRenderTrend();advRenderDiv();advRenderAll();advRenderHeat();advRenderAI();advRenderSummary();advRenderCompare();advRenderUsers();};
+
+  /* ===== DANA MODULE (terintegrasi dari dana.html) ===== */
+  var danaState = { filter:'all', showForm:false };
+  var __danaLastHash='', __danaCache=[], __danaPinCb=null;
+  function danaRp(v){ return 'Rp '+(parseInt(v)||0).toLocaleString('id-ID'); }
+  function danaDate(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+  function danaPin(cb){
+    __danaPinCb = cb;
+    var modal = document.getElementById('dana-pin-modal');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'dana-pin-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      modal.innerHTML = '<div style="background:var(--panel);border:1px solid var(--border-glow);border-radius:16px;padding:1.5rem;max-width:340px;width:100%;text-align:center;">' +
+        '<h3 style="color:var(--neon);margin:0 0 0.8rem;">🔐 Verifikasi PIN</h3>' +
+        '<p style="color:var(--muted);font-size:0.75rem;margin-bottom:0.8rem;">Masukkan PIN untuk approve/reject pengajuan</p>' +
+        '<input type="password" id="dana-pin-input" placeholder="Masukkan PIN (min 4 digit)" style="width:100%;padding:0.6rem;background:rgba(2,6,23,0.7);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;text-align:center;letter-spacing:2px;margin-bottom:0.8rem;">' +
+        '<div style="display:flex;gap:0.5rem;">' +
+        '<button onclick="window.__danaPinSubmit()" style="flex:1;padding:0.6rem;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✅ Verifikasi</button>' +
+        '<button onclick="window.__danaPinCancel()" style="flex:1;padding:0.6rem;background:#64748b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">❌ Batal</button>' +
+        '</div></div>';
+      document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    setTimeout(function(){ var i=document.getElementById('dana-pin-input'); if(i) i.focus(); }, 100);
+  }
+  window.__danaPinSubmit = function(){
+    var pin = (document.getElementById('dana-pin-input').value||'');
+    var modal = document.getElementById('dana-pin-modal'); if(modal) modal.style.display='none';
+    var sysPin = localStorage.getItem('dreamos_pin') || 'PIN_VERIFIED_BY_HASH';
+    var verified = false;
+    if(typeof bcrypt!=='undefined' && bcrypt.compareSync){ try{ verified = bcrypt.compareSync(pin, sysPin); }catch(e){} }
+    if(!verified){ verified = (pin===sysPin || btoa(pin)===sysPin); }
+    if(verified){ if(__danaPinCb) __danaPinCb(); } else { showToast('❌ PIN salah','error'); }
+    __danaPinCb = null;
+  };
+  window.__danaPinCancel = function(){ var m=document.getElementById('dana-pin-modal'); if(m) m.style.display='none'; __danaPinCb=null; };
+
+  function danaDoApprove(id, approve){
+    danaPin(function(){
+      var data = safeJSON('dreamos_dana', []);
+      var updated = data.map(function(d){ if(d.id===id){ var c=JSON.parse(JSON.stringify(d)); c.status=approve?'approved':'rejected'; c.approvedAt=new Date().toISOString(); c.approver='Kabag/Koordinator'; return c; } return d; });
+      saveJSON('dreamos_dana', updated);
+      logActivity(approve?'Dana disetujui':'Dana ditolak', id);
+      renderDanaTab();
+      showToast(approve?'✅ Pengajuan disetujui':'❌ Pengajuan ditolak', approve?'success':'error');
+    });
+  }
+
+  window.renderDanaTab = function(){
+    try {
+      var app = document.getElementById('dana-content');
+      if(!app) return;
+      var data = safeJSON('dreamos_dana', []);
+      var hash = JSON.stringify(data)+'|'+danaState.filter;
+      var filtered;
+      if(hash===__danaLastHash){ filtered=__danaCache; }
+      else { filtered = danaState.filter==='all'?data:data.filter(function(d){return d.status===danaState.filter;}); __danaLastHash=hash; __danaCache=filtered; }
+
+      var stats={pending:0,approved:0,rejected:0,tp:0,ta:0};
+      data.forEach(function(d){ stats[d.status]=(stats[d.status]||0)+1; if(d.status==='pending')stats.tp+=parseInt(d.nominal||0); if(d.status==='approved')stats.ta+=parseInt(d.nominal||0); });
+
+      var html = '<div class="metrics">'
+        + '<div class="metric" style="border-left-color:var(--accent);"><div class="metric-val">'+data.length+'</div><div class="metric-label">Total</div></div>'
+        + '<div class="metric" style="border-left-color:var(--gold);"><div class="metric-val">'+stats.pending+'</div><div class="metric-label">Pending</div></div>'
+        + '<div class="metric" style="border-left-color:var(--success);"><div class="metric-val">'+stats.approved+'</div><div class="metric-label">Disetujui</div></div>'
+        + '<div class="metric" style="border-left-color:var(--danger);"><div class="metric-val">'+stats.rejected+'</div><div class="metric-label">Ditolak</div></div>'
+        + '</div>';
+      html += '<div class="glass" style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.8rem;"><div><span style="font-size:0.65rem;color:var(--muted);">💰 Pending:</span> <strong style="color:var(--gold);">'+danaRp(stats.tp)+'</strong></div><div><span style="font-size:0.65rem;color:var(--muted);">✅ Approved:</span> <strong style="color:var(--success);">'+danaRp(stats.ta)+'</strong></div></div>';
+      html += '<div style="display:flex;gap:0.3rem;margin-bottom:0.75rem;overflow-x:auto;">';
+      ['all','pending','approved','rejected'].forEach(function(f){
+        var lbl = f==='all'?'📋 Semua':f==='pending'?'⏳ Pending':f==='approved'?'✅ Disetujui':'❌ Ditolak';
+        html += '<button data-dana="filter" data-val="'+escU(f)+'" class="btn btn-sm '+(danaState.filter===f?'btn-primary':'btn-outline')+'" style="white-space:nowrap;">'+escU(lbl)+'</button>';
+      });
+      html += '</div>';
+      html += '<div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;"><button data-dana="toggle" class="btn btn-primary" style="flex:1;">'+(danaState.showForm?'❌ Batal':'+ Buat Pengajuan')+'</button>'+(data.length?'<button data-dana="csv" class="btn btn-sm" style="background:var(--purple);color:#fff;">📥 CSV</button>':'')+'</div>';
+      if(danaState.showForm){
+        html += '<div class="glass"><input id="d-judul" class="bk-input" placeholder="Judul Pengajuan *"><input id="d-nominal" type="number" class="bk-input" placeholder="Nominal (Rp) *"><select id="d-kat" class="bk-input"><option>Operasional</option><option>Maintenance</option><option>K3 Safety</option><option>Kebersihan</option><option>Lainnya</option></select><input id="d-pemohon" class="bk-input" placeholder="Nama Pemohon *"><textarea id="d-catatan" class="bk-input" rows="2" placeholder="Catatan / Keterangan" style="resize:none;"></textarea><button data-dana="submit" class="btn btn-success" style="width:100%;">📤 Ajukan ke Papan Approval</button></div>';
+      }
+      if(!filtered.length){
+        html += '<div style="text-align:center;color:var(--muted);padding:2rem;">'+(danaState.filter==='all'?'Belum ada pengajuan dana.':'Tidak ada data dengan filter ini.')+'</div>';
+      } else {
+        html += '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
+        filtered.forEach(function(d){
+          var bc = d.status==='pending'?'var(--gold)':d.status==='approved'?'var(--success)':'var(--danger)';
+          var badgeCls = d.status==='pending'?'badge-pending':d.status==='approved'?'badge-approved':'badge-rejected';
+          var statusLbl = d.status==='pending'?'⏳ Pending':d.status==='approved'?'✅ Disetujui':'❌ Ditolak';
+          html += '<div class="glass" style="border-left:4px solid '+bc+';margin-bottom:0;">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.3rem;"><div><strong>'+escU(d.judul)+'</strong><br><span style="font-size:0.65rem;color:var(--muted);">'+escU(d.kategori)+' | '+escU(d.pemohon)+'</span></div><span class="badge '+badgeCls+'">'+escU(statusLbl)+'</span></div>';
+          html += '<div style="color:var(--neon);font-weight:700;margin-bottom:0.2rem;">'+danaRp(d.nominal)+'</div>';
+          if(d.catatan) html += '<div style="font-size:0.7rem;color:var(--muted);font-style:italic;margin-bottom:0.3rem;">"'+escU(d.catatan)+'"</div>';
+          html += '<div style="font-size:0.6rem;color:var(--muted);">📅 '+danaDate(d.tanggal)+(d.approvedAt?' | ✅ '+danaDate(d.approvedAt)+' oleh '+escU(d.approver):'')+'</div>';
+          if(d.status==='pending'){
+            html += '<div style="display:flex;gap:0.3rem;margin-top:0.4rem;"><button data-dana="approve" data-id="'+escU(d.id)+'" class="btn btn-success btn-sm" style="flex:1;">✅ Setujui</button><button data-dana="reject" data-id="'+escU(d.id)+'" class="btn btn-danger btn-sm" style="flex:1;">❌ Tolak</button></div>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      app.innerHTML = html;
+    } catch(e){
+      console.error('[Dana] render error:', e);
+      var app2 = document.getElementById('dana-content');
+      if(app2) app2.innerHTML = '<div style="color:var(--danger);padding:1rem;">⚠️ Gagal memuat Dana: '+escU(e.message||String(e))+'</div>';
+    }
+  };
+
+  (function(){
+    var panel = document.getElementById('tab-dana');
+    if(!panel) return;
+    panel.addEventListener('click', function(e){
+      var t = e.target.closest('[data-dana]');
+      if(!t) return;
+      var act = t.getAttribute('data-dana'), val = t.getAttribute('data-val'), id = t.getAttribute('data-id');
+      if(act==='filter'){ danaState.filter=val; renderDanaTab(); }
+      else if(act==='toggle'){ danaState.showForm=!danaState.showForm; renderDanaTab(); }
+      else if(act==='csv'){
+        var data = safeJSON('dreamos_dana', []);
+        if(!data.length){ showToast('⚠️ Tidak ada data untuk diexport','error'); return; }
+        var csv = 'ID,Tanggal,Judul,Kategori,Pemohon,Nominal,Status,Approver,Approved At\n';
+        data.forEach(function(d){ csv += [d.id, d.tanggal, '"'+String(d.judul||'').replace(/"/g,'""')+'"', d.kategori, d.pemohon, d.nominal, d.status, d.approver||'', d.approvedAt||''].join(',') + '\n'; });
+        var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        var link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+        link.download = 'dana_export_' + new Date().toISOString().slice(0,10) + '.csv'; link.click();
+        logActivity('Export CSV Dana', data.length + ' records');
+        showToast('✅ Export ' + data.length + ' records ke CSV','success');
+      }
+      else if(act==='submit'){
+        var j=(document.getElementById('d-judul').value||'').trim(), n=parseInt(document.getElementById('d-nominal').value)||0, k=document.getElementById('d-kat').value, p=(document.getElementById('d-pemohon').value||'').trim(), c=(document.getElementById('d-catatan').value||'').trim();
+        if(!j||!p||n<=0){ showToast('⚠️ Judul, pemohon, & nominal wajib diisi (>0)','error'); return; }
+        var data = safeJSON('dreamos_dana', []);
+        var payload = {id:'dana_'+Date.now(), judul:j, nominal:n, kategori:k, status:'pending', pemohon:p, tanggal:new Date().toISOString(), approvedAt:null, approver:null, catatan:c};
+        data.unshift(payload); saveJSON('dreamos_dana', data);
+        logActivity('Pengajuan dana: '+j, danaRp(n));
+        danaState.showForm=false; danaState.filter='pending'; renderDanaTab();
+        showToast('✅ Pengajuan dikirim','success');
+      }
+      else if(act==='approve'){ danaDoApprove(id, true); }
+      else if(act==='reject'){ danaDoApprove(id, false); }
+    });
+  })();
 
   // ===== INIT dengan ERROR BOUNDARY =====
   try {
