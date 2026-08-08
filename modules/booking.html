@@ -209,7 +209,13 @@
   };
 
 
-  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function esc(s) {
+    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"'`=/]/g, function(c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
+    });
+  }
   function getBookings() { try { return JSON.parse(localStorage.getItem('dreamos_bookings') || '[]'); } catch (e) { return []; } }
   function saveBookings(data) {
     try {
