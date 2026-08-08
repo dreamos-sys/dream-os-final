@@ -257,7 +257,7 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
         }
         
         // Register SW baru
-        const registration = await navigator.serviceWorker.register('./sw.js?v=2.0.0', {
+        const registration = await navigator.serviceWorker.register('./sw.js?v=3.0.0', {
           scope: './'
         });
         console.log('[PWA] SW registered:', registration.scope);
@@ -1326,6 +1326,12 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
         }
       };
 
+
+      // Cleanup semua modul sebelumnya (anti leak interval/scanner/observer)
+      function cleanupAllModules(){
+        ['__qrCleanup','__secCleanup','__bookingCleanup','__profileCleanup','__maintCleanup','__settingCleanup']
+          .forEach(function(fn){ if(typeof window[fn]==='function'){ try{ window[fn](); }catch(e){} } });
+      }
       window.openMod = function(moduleId) {
         if (!canAccess(moduleId)) { window.showToast('⛔ Akses Ditolak!', 'error'); return; }
         const map = {
@@ -1338,6 +1344,7 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
         const file = map[moduleId];
         if (!file) { window.showToast('⛔ Modul tidak dikenali.', 'error'); return; }
 
+        cleanupAllModules();
         let c = document.getElementById('mod-container');
         if (!c) {
           c = document.createElement('div'); c.id = 'mod-container';
@@ -1644,5 +1651,31 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
   <!-- <script src="js/realtime-sync.js?v=1"></script> -->
   <!-- <script src="js/k3-janitor-bridge.js?v=1"></script> -->
   <script src="push-admin.js"></script>
+
+  <script>
+  // ===== STORAGE DOCTOR: cegah bengkak penyimpanan =====
+  (async function storageDoctor(){
+    try{
+      if(navigator.storage && navigator.storage.estimate){
+        const est = await navigator.storage.estimate();
+        const usedMB = (est.usage||0)/1048576;
+        console.log('[StorageDoctor] pemakaian: '+usedMB.toFixed(1)+' MB');
+        if(usedMB > 50){
+          if('caches' in window){ const ks = await caches.keys(); for(const k of ks) await caches.delete(k); }
+          console.log('[StorageDoctor] >50MB → semua CacheStorage dibersihkan');
+        }
+      }
+      // pangkas localStorage: buang entry dreamos_file_archive yg berisi data: URL besar
+      try{
+        const fa = localStorage.getItem('dreamos_file_archive');
+        if(fa && fa.length > 1024*1024){
+          const arr = JSON.parse(fa).filter(x => !(x.file_url||'').startsWith('data:'));
+          localStorage.setItem('dreamos_file_archive', JSON.stringify(arr));
+          console.log('[StorageDoctor] dreamos_file_archive dipangkas (buang base64)');
+        }
+      }catch(e){}
+    }catch(e){}
+  })();
+  </script>
 </body>
 </html>
