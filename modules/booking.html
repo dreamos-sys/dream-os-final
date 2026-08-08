@@ -283,7 +283,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     if (!window.supabaseClient) { setSyncStatus('🟡 Offline — data lokal', false); if (showAlert) { if (window.showToast) showToast('⚠️ Supabase belum siap', 'warning'); else _toast('Supabase belum siap', 'warning'); } return; }
     setSyncStatus('🔄 Pull server…');
     try { await ensureServerBookings(); renderBookings(); setSyncStatus('🟢 Sync OK · ' + getBookings().length + ' booking', true); if (showAlert) { if (window.showToast) showToast('✅ Pull: ' + getBookings().length + ' data', 'success'); else _toast('Pull selesai: ' + getBookings().length + ' data', 'success'); } }
-    catch (e) { setSyncStatus('🟠 Pull gagal: ' + (e.message||e), false); if (showAlert) { if (window.showToast) showToast('❌ ' + (e.message||e), 'error'); else _toast(String(e.message||e, 'warning')); } }
+    catch (e) { setSyncStatus('🟠 Pull gagal: ' + (e.message||e), false); if (showAlert) { if (window.showToast) showToast('❌ ' + (e.message||e), 'error'); else _toast(String(e.message||e), 'warning'); } }
   };
 
   var rtBound = false;
@@ -425,7 +425,8 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     if (!b) { if(window.showToast) showToast('Data tidak ditemukan','error'); else _toast('Data tidak ditemukan', 'warning'); return; }
     var st = String(b.status||'pending').toLowerCase();
     var statusText = st==='approved' ? '✅ SUDAH DI-APPROVE' : st==='rejected' ? '❌ DITOLAK' : '⏳ BELUM DI-APPROVE (menunggu Kabag)';
-    _toast('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-', 'warning')+'\nHP: '+(b.no_hp||'-')+'\nDivisi: '+(b.divisi||'-')+'\nRuang: '+(b.ruang||'-')+'\nTanggal: '+(b.tgl_display||b.tgl||'-')+'\nJam: '+(b.jam_mulai||'')+' – '+(b.jam_selesai||'')+'\nAlat: '+(b.sarana_alat||'-')+'\nKeperluan: '+(b.keperluan||'-')+'\nDibuat: '+(b.created_at||'-')+'\n'+(b.approved_by?'ACC oleh: '+b.approved_by+'\n':'')+(b.reject_reason?'Alasan tolak: '+b.reject_reason+'\n':'')+'ID: '+(b.id||''));
+    var detail = '📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-')+'\nHP: '+(b.no_hp||'-')+'\nDivisi: '+(b.divisi||'-')+'\nRuang: '+(b.ruang||'-')+'\nTanggal: '+(b.tgl_display||b.tgl||'-')+'\nJam: '+(b.jam_mulai||'')+' – '+(b.jam_selesai||'')+'\nAlat: '+(b.sarana_alat||'-')+'\nKeperluan: '+(b.keperluan||'-')+'\nDibuat: '+(b.created_at||'-')+'\n'+(b.approved_by?'ACC oleh: '+b.approved_by+'\n':'')+(b.reject_reason?'Alasan tolak: '+b.reject_reason+'\n':'')+'ID: '+(b.id||'');
+    alert(detail);
   };
 
   function toGCalStamp(dateStr, timeStr) {
@@ -547,7 +548,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
           renderBookings();
           return showError((e.message || e) + '\n\n⛔ Pengajuan tidak disimpan di mana pun.');
         } else {
-          _toast('Tersimpan di HP ini (fallback admin, 'warning').\nServer: ' + (e.message || e));
+          _toast('Tersimpan di HP ini (fallback admin).\nServer: ' + (e.message || e), 'warning');
         }
       }
     } else { setSyncStatus('🟡 Hanya lokal', false); }
