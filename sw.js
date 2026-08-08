@@ -2,7 +2,7 @@
 // Generated: 2026-08-07 15:50:10
 // Version: 6c594c1b
 
-const CACHE_VERSION = 'v7-homefix-1786159015';
+const CACHE_VERSION = 'v7-homefix-1786160330';
 const CACHE_NAME = `dreamos-cache-${CACHE_VERSION}`;
 
 // Files yang HARUS selalu fresh (no cache)
