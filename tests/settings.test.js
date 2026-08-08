@@ -34,8 +34,8 @@ describe('Settings State Management', () => {
     
     expect(state.theme).toBe('light');
     expect(state.fontSize).toBe(120);
-    expect(state.starfield).toBe(true); // default
-    expect(state.lang).toBe('id'); // default
+    expect(state.starfield).toBe(true);
+    expect(state.lang).toBe('id');
   });
 
   it('handles corrupted JSON gracefully', () => {
@@ -63,7 +63,12 @@ describe('Settings State Management', () => {
   });
 
   it('validates fontSize bounds (80-140%)', () => {
-    const validateFontSize = (val) => Math.max(80, Math.min(140, parseInt(val)));
+    // Robust validator: fallback ke default (80) kalau parseInt NaN
+    const validateFontSize = (val) => {
+      const parsed = parseInt(val);
+      if (isNaN(parsed)) return 80;
+      return Math.max(80, Math.min(140, parsed));
+    };
     
     expect(validateFontSize(100)).toBe(100);
     expect(validateFontSize(50)).toBe(80);
@@ -72,11 +77,16 @@ describe('Settings State Management', () => {
   });
 
   it('validates glassIntensity bounds (30-100%)', () => {
-    const validateGlass = (val) => Math.max(30, Math.min(100, parseInt(val)));
+    const validateGlass = (val) => {
+      const parsed = parseInt(val);
+      if (isNaN(parsed)) return 30;
+      return Math.max(30, Math.min(100, parsed));
+    };
     
     expect(validateGlass(85)).toBe(85);
     expect(validateGlass(10)).toBe(30);
     expect(validateGlass(150)).toBe(100);
+    expect(validateGlass('xyz')).toBe(30);
   });
 
   it('computes correct alpha for glass panel', () => {
@@ -99,7 +109,6 @@ describe('Settings Export/Import', () => {
     expect(jsonStr).toContain('"theme": "light"');
     expect(jsonStr).toContain('"fontSize": 120');
     
-    // Re-parse to validate
     const parsed = JSON.parse(jsonStr);
     expect(parsed.theme).toBe('light');
   });

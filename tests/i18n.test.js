@@ -11,12 +11,14 @@ describe('i18n Engine — Dream OSSecurity.esc()', () => {
 
   it('escapes HTML special characters (XSS prevention)', () => {
     expect(esc('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;&#47;script&gt;');
-    expect(esc('"onmouseover="alert(1)')).toBe('&quot;onmouseover=&quot;alert(1)');
-    expect(esc("'><img src=x onerror=alert(1)>")).toBe('&#39;&gt;&lt;img src=x onerror=alert(1)&gt;');
+    // = juga di-escape menjadi &#61; oleh esc()
+    expect(esc('"onmouseover="alert(1)')).toBe('&quot;onmouseover&#61;&quot;alert(1)');
+    expect(esc("'><img src=x onerror=alert(1)>")).toBe('&#39;&gt;&lt;img src&#61;x onerror&#61;alert(1)&gt;');
   });
 
   it('escapes backticks and equals (template literal injection)', () => {
-    expect(esc('`template` ${x}')).toBe('&#96;template&#96; &#36;&#123;x&#125;');
+    // $ dan {} TIDAK di-escape oleh esc() (hanya &<>"'`=/)
+    expect(esc('`template` ${x}')).toBe('&#96;template&#96; ${x}');
     expect(esc('a=b')).toBe('a&#61;b');
   });
 
@@ -34,7 +36,6 @@ describe('i18n Engine — Dream OSSecurity.esc()', () => {
 
 describe('Language Detection Logic', () => {
   it('detects Indonesia timezone', () => {
-    // Mock Intl
     const origIntl = global.Intl;
     global.Intl = {
       DateTimeFormat: () => ({

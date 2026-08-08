@@ -92,8 +92,27 @@ describe('Authentication — Input Sanitization', () => {
     expect(esc(malicious)).not.toContain('<script>');
   });
 
-  it('sanitizes name input', () => {
+  it('sanitizes name input (prevents attribute injection)', () => {
     const malicious = '"><img src=x onerror=alert(1)>';
-    expect(esc(malicious)).not.toContain('onerror');
+    const result = esc(malicious);
+    // = di-escape menjadi &#61;, sehingga onerror=alert(1) tidak jadi atribut HTML
+    expect(result).not.toContain('">');
+    expect(result).not.toContain('=<');
+    expect(result).toContain('&#61;'); // = sudah di-escape
+    expect(result).toContain('&lt;img'); // < sudah di-escape
+  });
+
+  it('neutralizes script tags', () => {
+    const malicious = '<script>alert("XSS")</script>';
+    const result = esc(malicious);
+    expect(result).not.toContain('<script>');
+    expect(result).toContain('&lt;script&gt;');
+  });
+
+  it('neutralizes event handlers (via = escape)', () => {
+    const malicious = 'onload=alert(1)';
+    const result = esc(malicious);
+    // = di-escape, jadi tidak bisa jadi event handler attribute
+    expect(result).toBe('onload&#61;alert(1)');
   });
 });
