@@ -36,7 +36,7 @@
   };
 
   // Terjemahkan semua elemen [data-i18n]
-  window.applyTranslations = function(root){
+  window.applyTranslations = function(root){ try {
     var scope = root || document;
     var nodes = scope.querySelectorAll('[data-i18n]');
     for (var i=0;i<nodes.length;i++){
@@ -53,9 +53,9 @@
       var t2 = window.t(k2);
       if (t2) el2.setAttribute('placeholder', t2);
     }
-  };
+  } catch(e){} };
 
-  window.setLanguage = function(lang, opts){
+  window.setLanguage = function(lang, opts){ try {
     if (!I18N[lang]) lang = 'id';
     window.currentLang = lang;
     try { localStorage.setItem(LANG_KEY, lang); } catch(e){}
@@ -69,7 +69,7 @@
     if (!(opts && opts.skipSync) && window.parent && window.parent !== window && window.parent.setLanguage) {
       try { window.parent.setLanguage(lang, { skipSync: true }); } catch(e){}
     }
-  };
+  } catch(e){} };
 
   window.resetToAutoDetect = function(){
     var d = detectLang();
