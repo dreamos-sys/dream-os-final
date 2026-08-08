@@ -154,9 +154,6 @@
 <script>
 (function(){
   'use strict';
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
 
   function _toast(msg, type) {
     if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
@@ -170,14 +167,7 @@
   var INV='dreamos_inventory', LOG='dreamos_stock_log', SUMMARY='dreamos_stok_summary';
   var currentPeriod='harian', _charts={}, _lastNotif=0;
 
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function iso(){ return new Date().toISOString(); }
   function getInv(){ try{ return JSON.parse(localStorage.getItem(INV)||'[]'); }catch(e){ return []; } }
   function setInv(d){
@@ -206,11 +196,11 @@
     var entry={ id:'sm_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), type:type, item:itemName, qty:parseInt(qty)||0, location:location, user_name:u.nama||u.email||'Tidak Diketahui', role:u.role||'staff', user:getRole(), time:iso(), synced:false };
     logs.unshift(entry);
     try{
-      window.safeStorageSet(LOG, JSON.stringify(logs.slice(0, (CFG.LOG_MAX_LENGTH || 400))));
+      window.safeStorageSet(LOG, JSON.stringify(logs.slice(0,400)));
     }catch(e){
       // Quota exceeded — kurangi log
       try {
-        window.safeStorageSet(LOG, JSON.stringify(logs.slice(0, (CFG.LOG_TRIM_THRESHOLD || 100))));
+        window.safeStorageSet(LOG, JSON.stringify(logs.slice(0,100)));
       } catch(e2) {
         console.warn('[Stok] Log storage failed:', e2);
       }
@@ -228,7 +218,7 @@
   window.switchTab=function(t){
     document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===t); });
     ['barang','laporan','integrasi'].forEach(function(p){ document.getElementById('panel-'+p).style.display = (p===t)?'':'none'; });
-    if(t==='laporan'){ renderReport(); setTimeout(renderCharts, (CFG.RENDER_CHARTS_DELAY_MS || 60)); }
+    if(t==='laporan'){ renderReport(); setTimeout(renderCharts, 60); }
     if(t==='integrasi'){ renderKritis(); renderMaint(); }
   };
   window.setPeriod=function(p){
@@ -244,9 +234,8 @@
     if(!s.length){ el.innerHTML='<p style="text-align:center;color:#94a3b8;padding:1.2rem;">'+(q?'🔍 Tidak ditemukan: '+esc(q):'Belum ada data barang.')+'</p>'; return; }
     var edit=canEdit();
     var html='<table><tr><th>Nama</th><th>Qty</th><th>Min</th><th>Lokasi</th><th>Status</th>'+(edit?'<th>Aksi</th>':'')+'</tr>';
-    var displayLimit = (CFG.LIST_DISPLAY_LIMIT || 200);
-    var limited = s.slice(0, displayLimit);
-    if(s.length > displayLimit) html += '<tr><td colspan="'+(edit?'6':'5')+'" style="text-align:center;color:#f59e0b;padding:0.5rem;">⚠️ Menampilkan '+displayLimit+' dari '+s.length+' item (gunakan search untuk filter)</td></tr>';
+    var limited = s.slice(0, 200); // Limit 200 items untuk performa
+    if(s.length > 200) html += '<tr><td colspan="'+(edit?'6':'5')+'" style="text-align:center;color:#f59e0b;padding:0.5rem;">⚠️ Menampilkan 200 dari '+s.length+' item (gunakan search untuk filter)</td></tr>';
     html+=limited.map(function(x){
       var qty=parseInt(x.jumlah)||0, min=parseInt(x.minimal)||5;
       var st=qty<=min?'<span class="badge b-low">⚠️ Kritis</span>':'<span class="badge b-ok">✅ Aman</span>';
@@ -265,7 +254,7 @@
     var lastT=s.reduce(function(m,x){ var t=x.updated_at||x.created_at; return t>m?t:m; }, '');
     document.getElementById('stat-last').textContent=lastT?new Date(lastT).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'-';
     // ringkasan untuk Command Center
-    window.safeStorageSet(SUMMARY, JSON.stringify({ total_items:s.length, total_qty:s.reduce(function(a,x){return a+(parseInt(x.jumlah)||0);},0), lokasi_count:new Set(s.map(function(x){return loc(x);})).size, kritis_count:kritis.length, kritis_items:kritis.map(function(x){return x.nama;}).slice(0, (CFG.SUMMARY_KRITIS_ITEMS_LIMIT || 12)), last_update:iso() }));
+    window.safeStorageSet(SUMMARY, JSON.stringify({ total_items:s.length, total_qty:s.reduce(function(a,x){return a+(parseInt(x.jumlah)||0);},0), lokasi_count:new Set(s.map(function(x){return loc(x);})).size, kritis_count:kritis.length, kritis_items:kritis.map(function(x){return x.nama;}).slice(0,12), last_update:iso() }));
   }
 
   var __lastCriticalHash = '';
@@ -276,7 +265,7 @@
     var hash = kritis.map(function(x){ return x.nama+':'+x.jumlah; }).join('|');
     if(!force && hash === __lastCriticalHash) return;
     var now=Date.now();
-    if(!force && (now-_lastNotif)<(CFG.NOTIFICATION_THROTTLE_MS || 300000)) return; // throttle 5 menit
+    if(!force && (now-_lastNotif)<300000) return; // throttle 5 menit
     _lastNotif=now;
     __lastCriticalHash = hash;
     if(typeof window.addNotification==='function'){
@@ -393,7 +382,7 @@
     if(__renderChartsTimer) clearTimeout(__renderChartsTimer);
     __renderChartsTimer = setTimeout(function(){
       renderCharts();
-    }, (CFG.RENDER_CHARTS_DEBOUNCE_MS || 500));
+    }, 500);
   }
 
   function renderCharts(){ loadChartJS(function(){ drawMutasi(); drawLokasi(); drawKategori(); }); }
@@ -416,7 +405,7 @@
   function drawLokasi(){
     var cv=document.getElementById('chartLokasi'); if(!cv||!window.Chart) return; destroy('lokasi');
     var s=getInv(); var byLoc={}; s.forEach(function(x){ var l=loc(x); byLoc[l]=(byLoc[l]||0)+(parseInt(x.jumlah)||0); });
-    var entries=Object.keys(byLoc).map(function(k){ return [k,byLoc[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0, (CFG.CHART_LOKASI_MAX_ENTRIES || 8));
+    var entries=Object.keys(byLoc).map(function(k){ return [k,byLoc[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
     _charts.lokasi=new Chart(cv.getContext('2d'),{ type:'bar', data:{ labels:entries.map(function(e){return e[0];}), datasets:[{ label:'Qty', data:entries.map(function(e){return e[1];}), backgroundColor:'#0ea5e9', borderRadius:6 }] },
       options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{ color:'#64748b', font:{size:9} }, grid:{display:false} }, y:{ ticks:{ color:'#64748b', font:{size:9} }, grid:{ color:'rgba(255,255,255,0.04)'}, beginAtZero:true } } } });
   }
@@ -441,7 +430,7 @@
     var used=wos.filter(function(w){ return w.consumed; });
     var el=document.getElementById('maint-list');
     if(!used.length){ el.innerHTML='<p style="text-align:center;color:#94a3b8;padding:0.8rem;">Belum ada pemakaian sparepart oleh Maintenance.</p>'; return; }
-    el.innerHTML=used.slice(0, (CFG.MAINT_USAGE_DISPLAY_LIMIT || 30)).map(function(w){ return '<div class="maint-item">🛠️ <b>'+esc(w.judul||w.deskripsi||'Work Order')+'</b><div style="color:#94a3b8;margin-top:3px;">🧾 '+esc(w.consumed)+'</div><div style="color:#475569;font-size:0.66rem;margin-top:2px;">'+(w.created_at?new Date(w.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'; }).join('');
+    el.innerHTML=used.slice(0,30).map(function(w){ return '<div class="maint-item">🛠️ <b>'+esc(w.judul||w.deskripsi||'Work Order')+'</b><div style="color:#94a3b8;margin-top:3px;">🧾 '+esc(w.consumed)+'</div><div style="color:#475569;font-size:0.66rem;margin-top:2px;">'+(w.created_at?new Date(w.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'; }).join('');
   }
 
   function seedSparepart(){
@@ -481,22 +470,13 @@
     if(__searchTimer) clearTimeout(__searchTimer);
     __searchTimer = setTimeout(function(){
       renderList(e.target.value);
-    }, (CFG.SEARCH_DEBOUNCE_MS || 300));
+    }, 300);
   });
-  // ===== INIT dengan ERROR BOUNDARY =====
-  try {
-    seedSparepart();
-    applyRBAC(); renderList(); updateStats(); notifyCritical(false);
-    window.addEventListener('storage', function(e){ if(e.key===INV||e.key==='dreamos_maintenance_tasks'){ renderList(document.getElementById('search-stok').value); updateStats(); renderCharts(); if(document.getElementById('panel-integrasi').style.display!=='none'){ renderKritis(); renderMaint(); } } });
-    if(window.BankAudit){ try{ window.BankAudit.log('ACCESS_STOK_MODULE',{role:getRole()}); }catch(e){} }
-    console.log('📦 Stok Gudang Ready — Enterprise: mutasi periode + grafik live + integrasi');
-  } catch(initErr) {
-    console.error('[Stok] init error:', initErr);
-    if (window.DreamOSSecurity && window.DreamOSSecurity.report) window.DreamOSSecurity.report(initErr);
-    _toast('⚠️ Gagal init Stok: ' + (initErr.message || initErr), 'error');
-    var listEl = document.getElementById('stok-list');
-    if (listEl) listEl.innerHTML = '<div class="glass" style="color:#ef4444;text-align:center;">⚠️ Error: ' + esc(initErr.message || String(initErr)) + '</div>';
-  }
+  seedSparepart();
+  applyRBAC(); renderList(); updateStats(); notifyCritical(false);
+  window.addEventListener('storage', function(e){ if(e.key===INV||e.key==='dreamos_maintenance_tasks'){ renderList(document.getElementById('search-stok').value); updateStats(); renderCharts(); if(document.getElementById('panel-integrasi').style.display!=='none'){ renderKritis(); renderMaint(); } } });
+  if(window.BankAudit){ try{ window.BankAudit.log('ACCESS_STOK_MODULE',{role:getRole()}); }catch(e){} }
+  console.log('📦 Stok Gudang Ready — mutasi periode + grafik live + integrasi');
 })();
 </script>
 </body>
