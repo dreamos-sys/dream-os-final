@@ -235,18 +235,6 @@
 <script>
 (function() {
   'use strict';
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
 
   function _toast(msg, type) {
     if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
@@ -296,7 +284,7 @@
   var __setSyncTimer = null;
   function debouncedCloudSync(){
     clearTimeout(__setSyncTimer);
-    __setSyncTimer = setTimeout(function(){ syncSettingsToCloud(); }, (CFG.SETTINGS_SYNC_DELAY_MS || 1200));
+    __setSyncTimer = setTimeout(function(){ syncSettingsToCloud(); }, 1200);
   }
 
   // LOGIKA UTAMA YANG SEBELUMNYA HILANG - KINI MENERAPKAN EFEK NYATA KE UI
@@ -377,7 +365,7 @@
   }
   function debouncedUpdateJSONPreview() {
     if (__jsonPreviewTimer) clearTimeout(__jsonPreviewTimer);
-    __jsonPreviewTimer = setTimeout(updateJSONPreview, (CFG.JSON_PREVIEW_DEBOUNCE_MS || 500));
+    __jsonPreviewTimer = setTimeout(updateJSONPreview, 500);
   }
 
   window.switchTab = function(name, btn) { if(name==='advanced'){ var u=JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}'); if((u.role||'')!=='dev'){ if(window.showToast) showToast('⛔ Advanced Settings hanya untuk Developer', 'error'); else _toast('⛔ Advanced Settings hanya untuk Developer.', 'warning'); return; } }
@@ -405,7 +393,7 @@
     if(__sliderTimer) clearTimeout(__sliderTimer);
     __sliderTimer = setTimeout(function(){
       saveState(key);
-    }, (CFG.SLIDER_DEBOUNCE_MS || 300));
+    }, 300);
   }
   
   window.updateFontSize = function(val) {
@@ -530,17 +518,9 @@
   function updateSystemStatus() {
     try {
       const u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
-    } catch(parseErr) {
-      console.error('[Setting] updateSystemStatus error:', parseErr);
-      return;
-    }
-    try {
-      var nameEl = document.getElementById('sys-user-name');
-      var roleEl = document.getElementById('sys-user-role');
-      var emailEl = document.getElementById('sys-user-email');
-      if (nameEl) nameEl.textContent = esc(u.nama || u.email || 'User');
-      if (roleEl) roleEl.textContent = 'Role: ' + esc(String(u.role || 'staff').toUpperCase());
-      if (emailEl) emailEl.textContent = esc(u.email || '---');
+      document.getElementById('sys-user-name').textContent = u.nama || u.email || 'User';
+      document.getElementById('sys-user-role').textContent = 'Role: ' + (u.role || 'staff').toUpperCase();
+      document.getElementById('sys-user-email').textContent = u.email || '---';
     } catch(e) {}
 
     // LIVE CLOCK dengan proper cleanup
@@ -555,7 +535,7 @@
       // Buat interval baru
       window.__sysClockInterval = window.__dreamosRegisterInterval(setInterval(function(){
         clockEl.textContent = new Date().toLocaleTimeString('id-ID');
-      }, (CFG.CLOCK_UPDATE_INTERVAL_MS || 1000)));
+      }, 1000));
     }
 
     const langMap = {'id':'🇮🇩 Indonesia', 'en':'🇬🇧 English', 'ar':'🇸🇦 العربية', 'zh':'🇨🇳 中文'};
@@ -600,8 +580,8 @@
           .then(data => {
             if (data.code === 200) {
               const tm = data.data.timings;
-              const html = `Subuh: ${esc(tm.Fajr)} • Dzuhur: ${esc(tm.Dhuhr)}<br>Ashar: ${esc(tm.Asr)} • Maghrib: ${esc(tm.Maghrib)} • Isya: ${esc(tm.Isha)}`;
-              if (prayerEl) prayerEl.innerHTML = html;
+              const html = `Subuh: ${tm.Fajr} • Dzuhur: ${tm.Dhuhr}<br>Ashar: ${tm.Asr} • Maghrib: ${tm.Maghrib} • Isya: ${tm.Isha}`;
+              prayerEl.innerHTML = html;
               // Simpan ke cache (1 hari)
               try { window.safeStorageSet(cacheKey, JSON.stringify(html)); } catch(e){}
             }
@@ -611,23 +591,14 @@
     }
   }
 
-  // ===== INIT dengan ERROR BOUNDARY =====
-  try {
-    loadSettingsFromCloud();
-    // Retry sekali jika gagal (1500ms)
-    setTimeout(function(){ if(!window.__settingsLoaded) loadSettingsFromCloud(); }, (CFG.CLOUD_LOAD_RETRY_DELAY_MS || 1500));
-    updateAllUI();
-    applySettings();
-  } catch(initErr) {
-    console.error('[Setting] init error:', initErr);
-    if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
-    _toast('⚠️ Gagal init Settings: ' + (initErr.message || initErr), 'error');
-  }
+  // Init
+  loadSettingsFromCloud();
+  // Retry sekali jika gagal (1500ms)
+  setTimeout(function(){ if(!window.__settingsLoaded) loadSettingsFromCloud(); }, 1500);
+  updateAllUI();
+  applySettings();
   async function syncSettingsToCloud() {
-    if (!window.supabaseClient) {
-      console.warn('[Setting] Supabase not ready, skip sync');
-      return;
-    }
+    if (!window.supabaseClient) return;
     try {
       var sess = await window.supabaseClient.auth.getSession();
       if (!sess || !sess.data || !sess.data.session) { console.warn('Settings sync: sesi Supabase belum ada (login online sekali untuk aktifkan).'); return; }
@@ -638,10 +609,7 @@
     } catch(e) { console.warn('Cloud sync failed:', e.message); }
   }
   async function loadSettingsFromCloud() {
-    if (!window.supabaseClient) {
-      console.warn('[Setting] Supabase not ready, skip load');
-      return;
-    }
+    if (!window.supabaseClient) return;
     try {
       var u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
       if (!u.email) return;
