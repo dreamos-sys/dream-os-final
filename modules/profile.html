@@ -182,6 +182,12 @@
 
   // goHomeSafe sudah didefinisikan di global scope (sebelum IIFE)
 
+  function ensureSupabase() {
+    if (window.supabaseClient) return true;
+    if (typeof window.initSupabase === 'function') { try { return !!window.initSupabase(); } catch(e){} }
+    return false;
+  }
+
   function _toast(msg, type) {
     if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
     else alert(msg);
@@ -289,6 +295,7 @@
   /** Load profil dari Supabase (sumber cloud) */
   async function loadProfileFromCloud() {
     var statusEl = document.getElementById('cloud-status');
+    ensureSupabase();
     if (!window.supabaseClient) {
       setTxt('cloud-status', 'Cloud: offline — data lokal');
       return;
@@ -408,6 +415,7 @@
     var file = this.files && this.files[0];
     this.value = ''; // reset biar file sama bisa dipilih lagi
     if (!file) return;
+    ensureSupabase();
     if (!window.supabaseClient) { _toast('⚠️ Supabase tidak siap', 'error'); return; }
     if (file.size > (CFG.AVATAR_MAX_BYTES || 10 * 1024 * 1024)) { _toast('⚠️ Maksimal 10MB (sebelum kompresi)', 'error'); return; }
 
@@ -477,6 +485,7 @@
 
   window.bindThisDevice = async function () {
     currentDna = await getDNA();
+    ensureSupabase();
     try {
       if (window.supabaseClient) {
         await upsertUserFields({

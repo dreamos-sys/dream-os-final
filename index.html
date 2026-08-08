@@ -809,6 +809,8 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
       try { if (typeof window.supabase !== 'undefined') { window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); return true; } } catch(e) {}
       return false;
     }
+    // Expose biar modul bisa self-heal kalau supabaseClient null
+    window.initSupabase = initSupabase;
 
     // 📡 FITUR ONLINE-FIRST SYNC: Tarik data Cloud dulu sebelum ngerender lokal
     window.syncCloudData = async function() {
@@ -1574,6 +1576,7 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
       }, 60000));
 
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
+        initSupabase(); // FIX: pastikan cloud siap saat reload dengan sesi aktif
         const user = getStoredUser(); 
         if (user.role) showDashboard(); startPresenceHeartbeat(); // boot 
       }
