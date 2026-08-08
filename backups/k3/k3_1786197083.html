@@ -97,9 +97,6 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
 (function() {
   'use strict';
   
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
   let currentFotoBase64 = null;
   let currentFotoUrl = null;     
   let currentFotoStatus = null;  
@@ -119,20 +116,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       }
     }
   }
-  
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
-  
-  function _toast(msg, type) {
-    if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
-    else alert(msg);
-  }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
   function generateUUID() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -230,7 +214,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
     window.currentPhoto = null;
     var stEl = document.getElementById('k3-foto-status'); if (stEl) stEl.textContent = '';
     clearTimeout(window.__k3StatusTimer);
-    window.__k3StatusTimer = setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, (CFG.STATUS_CLEAR_DELAY_MS || 4000));
+    window.__k3StatusTimer = setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 4000);
   }
 
   document.getElementById('k3-form').addEventListener('submit', laporK3);
@@ -247,7 +231,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
           .from('k3_reports')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(CFG.K3_QUERY_LIMIT || 100);
+          .limit(100);
         
         if (error) throw error;
         
@@ -294,8 +278,8 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       
       var html = '<div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; margin-bottom:0.5rem; border-left: 4px solid ' + prioColor + ';">' +
         '<div style="display:flex; justify-content:space-between; align-items:start;">' +
-          '<b style="color:#e2e8f0;">' + esc(item.kategori ? item.kategori.toUpperCase() : 'UMUM') + ' <span style="font-size:0.7rem;">'+syncIcon+'</span></b>' +
-          '<span class="badge badge-' + statusClass + '">' + esc(item.status || 'pending') + '</span>' +
+          '<b style="color:#e2e8f0;">' + (item.kategori ? esc(item.kategori).toUpperCase() : 'UMUM') + ' <span style="font-size:0.7rem;">'+syncIcon+'</span></b>' +
+          '<span class="badge badge-' + statusClass + '">' + (item.status || 'pending') + '</span>' +
         '</div>' +
         '<div style="font-size:0.8125rem; color:#cbd5e1; margin:0.3rem 0;">' +
           '📍 ' + esc(item.lokasi||'-') + ' • 👤 ' + esc(item.nama_pelapor || item.pelapor_nama || item.pelapor_id || '-') +
@@ -343,7 +327,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       return;
     }
     
-    if (file.size > (CFG.MAX_PHOTO_SIZE_BYTES || 10 * 1024 * 1024)) {
+    if (file.size > 10 * 1024 * 1024) {
       if (window.showToast) showToast('⚠️ Maksimal 10MB', 'error');
       input.value = '';
       return;
@@ -357,7 +341,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
       const img = new Image();
       img.onload = function() {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = (CFG.PHOTO_MAX_WIDTH || 800);
+        const MAX_WIDTH = 800;
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
@@ -365,7 +349,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        currentFotoBase64 = canvas.toDataURL('image/jpeg', (CFG.PHOTO_QUALITY || 0.6));
+        currentFotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
         window.currentPhoto = currentFotoBase64;
         // Cleanup canvas & image untuk hemat memori
         canvas.width = 0; canvas.height = 0;
@@ -471,7 +455,6 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
           // Debounce 2 detik — cegah re-render bertubi-tubi
           clearTimeout(__k3rtDebounce);
           __k3rtDebounce = setTimeout(function(){
-            // Debounce realtime updates
             if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan();
           }, 2000);
         })
@@ -495,17 +478,7 @@ if (!window.supabaseClient && window.parent && window.parent.supabaseClient) {
   };
 
   window.forceK3Sync = function(){ if (typeof window.tampilkanLaporan === 'function') window.tampilkanLaporan(); };
-  
-  // ===== INIT dengan ERROR BOUNDARY =====
-  try {
-    tampilkanLaporan();
-    console.log('🌌 K3 Module - Enterprise Hybrid Soul Active');
-  } catch(initErr) {
-    console.error('[K3] init error:', initErr);
-    if (window.DreamOSSecurity && window.DreamOSSecurity.report) window.DreamOSSecurity.report(initErr);
-    _toast('⚠️ Gagal init K3: ' + (initErr.message || initErr), 'error');
-    var container = document.getElementById('k3-list');
-    if (container) container.innerHTML = '<div class="glass" style="color:#ef4444;text-align:center;">⚠️ Error: ' + esc(initErr.message || String(initErr)) + '</div>';
-  }
+  tampilkanLaporan();
+  console.log('🌌 K3 Module - Hybrid Soul Active with Robust Sync');
 })();
 </script>
