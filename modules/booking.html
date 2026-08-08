@@ -148,6 +148,20 @@
   <script>
 (function () {
   'use strict';
+  // HOME NAVIGATION GUARD: pastikan window.goHome ada sebelum redefinisi
+  if (typeof window.goHome !== 'function') {
+    window.goHome = function() {
+      try {
+        if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
+          window.parent.goHome();
+          return;
+        }
+      } catch(e) {}
+      var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+      window.location.href = base + 'index.html';
+    };
+  }
+
 
   function _toast(msg, type) {
     if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
