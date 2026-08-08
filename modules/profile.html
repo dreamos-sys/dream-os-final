@@ -143,16 +143,18 @@
   <script>
   // ===== GLOBAL HOME FUNCTION (harus ada SEBELUM IIFE) =====
   window.goHomeSafe = function() {
+    // Prioritas 1: panggil goHome dari scope yang sama (bukan iframe)
+    if (typeof window.goHome === 'function') {
+      try { window.goHome(); return; } catch(e) {}
+    }
+    // Prioritas 2: parent (jika iframe)
     try {
       if (window.parent && window.parent !== window && typeof window.parent.goHome === 'function') {
         window.parent.goHome();
         return;
       }
-    } catch (e) {}
-    if (typeof window.goHome === 'function') {
-      try { window.goHome(); return; } catch (e) {}
-    }
-    // Fallback: navigate ke index
+    } catch(e) {}
+    // Fallback: navigate
     var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
     window.location.href = base + 'index.html';
   };
