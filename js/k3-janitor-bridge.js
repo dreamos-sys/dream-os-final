@@ -76,7 +76,7 @@
 
   pullFollowups(render);
   window.__dreamosRegisterInterval(setInterval(render, 2000));
-  window.__dreamosRegisterInterval(setInterval(function(){ pullFollowups(render); }, 20000);
+  window.__dreamosRegisterInterval(setInterval(function(){ pullFollowups(render); }, 20000));
   window.addEventListener('storage', function(e){ if(e.key===K3||e.key===CACHE){ _fp=null; render(); } });
   document.addEventListener('visibilitychange', function(){ if(!document.hidden){ _fp=null; pullFollowups(render); } });
 })();
