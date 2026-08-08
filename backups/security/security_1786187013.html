@@ -333,15 +333,6 @@
 (function() {
   'use strict';
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
-  
-  // Helper: guard __dreamosRegisterInterval (bisa belum ada kalau load sequence issue)
-  function safeInterval(fn, ms) {
-    var id = setInterval(fn, ms);
-    if (typeof window.__dreamosRegisterInterval === 'function') {
-      try { return window.__dreamosRegisterInterval(id); } catch(e) {}
-    }
-    return id;
-  }
   document.getElementById('user-display').textContent = user ? (user.nama || 'User') : '🔒';
 
   // === ENTERPRISE CONFIG (DreamOSConfig) ===
@@ -858,7 +849,7 @@ Auto-Sync by Dream OS ver. 13`;
     loadDailyReport();
     renderReportHistory();
     updateDashboardSlide();
-    safeInterval(updateDashboardSlide, (CFG.SLIDE_INTERVAL_MS || 30000)); // 30 detik (hemat battery)
+    window.__dreamosRegisterInterval(setInterval(updateDashboardSlide, (CFG.SLIDE_INTERVAL_MS || 30000))); // 30 detik (hemat battery)
   };
 
   // ===== INSIDEN K3: tarik laporan kehilangan/kecelakaan/bahaya, klaim tindak-lanjut =====
@@ -909,8 +900,8 @@ Auto-Sync by Dream OS ver. 13`;
   }
   var __secTabBtn=document.querySelector('[data-target="tab-insiden"]'); if(__secTabBtn) __secTabBtn.addEventListener('click', function(){ secPullFollowups(secRenderInsiden); });
   secPullFollowups(secRenderInsiden);
-  var __secRenderTimer = safeInterval(function(){ var p=document.getElementById('tab-insiden'); if(p && p.style.display!=='none') secRenderInsiden(); }, 10000); // 10 detik)
-  var __secPullTimer = safeInterval(function(){ var p=document.getElementById('tab-insiden'); if(p && p.style.display!=='none') secPullFollowups(secRenderInsiden); }, 60000); // 60 detik, hanya saat tab aktif)
+  var __secRenderTimer = window.__dreamosRegisterInterval(setInterval(function(){ var p=document.getElementById('tab-insiden'); if(p && p.style.display!=='none') secRenderInsiden(); }, 10000)); // 10 detik)
+  var __secPullTimer = window.__dreamosRegisterInterval(setInterval(function(){ var p=document.getElementById('tab-insiden'); if(p && p.style.display!=='none') secPullFollowups(secRenderInsiden); }, 60000)); // 60 detik, hanya saat tab aktif)
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden) {
       // Hanya pull saat tab aktif + tab insiden terbuka
