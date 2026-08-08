@@ -48,7 +48,7 @@
   var TABLES = ['inventory','stock_movements','maintenance_tasks','k3_followups','users'];
   var KEYMAP = { inventory:'dreamos_inventory', maintenance_tasks:'dreamos_maintenance_tasks', k3_followups:'dreamos_k3_followups_cache', users:'dreamos_users_db' };
   var _rd = null;
-  function refreshDash(){ clearTimeout(_rd); _rd = setTimeout(function(){ if(typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); }, 300); }
+  function refreshDash(){ clearTimeout(_rd); _rd = setTimeout(function(){ if(typeof window.updateDashboardSlides==='function') window.updateDashboardSlides(); }, 300)); }
 
   function pullTable(tbl){
     var c = ensureClient(); if(!c) return;
