@@ -437,7 +437,12 @@
       var url = pub && pub.data && pub.data.publicUrl;
       if (!url) throw new Error('Gagal dapat public URL');
 
-      await upsertUserFields({ avatar_url: url });
+      try {
+        await upsertUserFields({ avatar_url: url });
+      } catch (pe) {
+        console.warn('[Profile] update avatar_url ditolak RLS — fallback lokal:', (pe && pe.message) || pe);
+        _toast('⚠️ Cloud profile ditolak — avatar disimpan lokal', 'warning');
+      }
       user.avatar = url;
       saveUserLocal(user);
       var apv2 = document.getElementById('avatar-preview');
