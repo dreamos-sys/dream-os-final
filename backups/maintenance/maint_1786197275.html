@@ -330,10 +330,6 @@
 <script>
 (function(){
   'use strict';
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
   var K={ wo:'dreamos_maintenance_tasks', k3:'dreamos_k3_reports', assets:'dreamos_maint_assets', pm:'dreamos_maint_pm', tpl:'dreamos_maint_tpl', insp:'dreamos_maint_inspections', audit:'dreamos_maint_audit', draft:'dreamos_maint_draft' };
   var K_ASSET='dreamos_assets', K_INV='dreamos_inventory'; // read-only refs ke modul Aset & Stok
   var SEED_V=2; // naikkan ini kalau struktur seed berubah lagi
@@ -349,7 +345,7 @@
       try {
         var auditKey = K.audit || 'dreamos_maint_audit';
         var logs = safeGet(auditKey, []);
-        if(logs.length > (CFG.AUDIT_LOG_TRIM_THRESHOLD || 100)) safeSet(auditKey, logs.slice(0, 100));
+        if(logs.length > 100) safeSet(auditKey, logs.slice(0, 100));
         // Retry save
         window.safeStorageSet(k, JSON.stringify(d));
         if(window.showToast) showToast('⚠️ Storage penuh, audit log dibersihkan', 'warning');
@@ -364,14 +360,7 @@
     else alert(msg);
   }
 
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function escA(s){return esc(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
   function uid(p){return (p||'x')+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
   function now(){return new Date();}
@@ -384,8 +373,8 @@
   function timeAgo(s){if(!s)return '-';var m=Math.floor((now()-new Date(s))/60000);if(m<1)return 'baru saja';if(m<60)return m+' mnt';var h=Math.floor(m/60);if(h<24)return h+' jam';var d=Math.floor(h/24);return d+' hari';}
   function user(){return safeGet('dreamos_bound_user',{});}
 
-  function toast(msg,type){var c=$('cmms-toast');if(!c)return;var t=document.createElement('div');t.className='toast'+(type?(' '+type):'');var ic=type==='err'?'⛔':type==='warn'?'⚠️':'✅';t.innerHTML='<span>'+ic+'</span><span>'+esc(msg)+'</span>';c.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(42px)';setTimeout(function(){t.remove();},300);},(CFG.TOAST_DURATION_MS || 3200));}
-  function audit(action,detail){var l=safeGet(K.audit,[]);l.unshift({ts:iso(),user:(user().nama||user().email||'sistem'),action:action,detail:detail||''});if(l.length>(CFG.AUDIT_LOG_MAX_LENGTH || 400))l.length=(CFG.AUDIT_LOG_MAX_LENGTH || 400);safeSet(K.audit,l);}
+  function toast(msg,type){var c=$('cmms-toast');if(!c)return;var t=document.createElement('div');t.className='toast'+(type?(' '+type):'');var ic=type==='err'?'⛔':type==='warn'?'⚠️':'✅';t.innerHTML='<span>'+ic+'</span><span>'+esc(msg)+'</span>';c.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(42px)';setTimeout(function(){t.remove();},300);},3200);}
+  function audit(action,detail){var l=safeGet(K.audit,[]);l.unshift({ts:iso(),user:(user().nama||user().email||'sistem'),action:action,detail:detail||''});if(l.length>400)l.length=400;safeSet(K.audit,l);}
 
   window.goHome=function(){
     try{
@@ -780,7 +769,7 @@
       setStatus('⬇️ menarik…');
       try{
         for(var i=0;i<MAP.length;i++){
-          var r=await cl.from(MAP[i].t).select('*').limit(CFG.SUPABASE_QUERY_LIMIT || 2000);
+          var r=await cl.from(MAP[i].t).select('*').limit(2000);
           if(r.error) throw r.error;
           safeSet(MAP[i].k, merge(safeGet(MAP[i].k,[]), r.data||[]));
         }
@@ -804,7 +793,7 @@
     }
     async function remove(table,id){ var cl=client(); if(!cl)return; try{ await cl.from(table).delete().eq('id',id); }catch(e){ console.warn('[maint] del',e); } }
     async function removeMany(table,ids){ if(!ids||!ids.length)return; var cl=client(); if(!cl)return; try{ await cl.from(table).delete().in('id',ids); }catch(e){ console.warn('[maint] delmany',e); } }
-    var _t=null; function pushDebounced(){ if(_t)clearTimeout(_t); _t=setTimeout(push, (CFG.PUSH_DEBOUNCE_MS || 900)); }
+    var _t=null; function pushDebounced(){ if(_t)clearTimeout(_t); _t=setTimeout(push, 900); }
     return {pull:pull, push:push, pushDebounced:pushDebounced, remove:remove, removeMany:removeMany, setStatus:setStatus};
   })();
   window.Cloud = Cloud;
@@ -817,9 +806,9 @@
   async function pullRefs(){ // tarik induk (Aset) + stok (Stok) — read-only, jangan push balik
     var c=cl2(); if(!c)return;
     try{
-      var a=await c.from('assets').select('*').limit(CFG.SUPABASE_QUERY_LIMIT || 2000);
+      var a=await c.from('assets').select('*').limit(2000);
       if(!a.error&&a.data){var loc=safeGet(K_ASSET,[]),m={};loc.forEach(function(x){if(x&&x.id)m[x.id]=x;});a.data.forEach(function(x){if(x&&x.id)m[x.id]=Object.assign({},m[x.id]||{},x);});safeSet(K_ASSET,Object.keys(m).map(function(id){return m[id];}));}
-      var s=await c.from('inventory').select('*').limit(CFG.SUPABASE_QUERY_LIMIT || 2000);
+      var s=await c.from('inventory').select('*').limit(2000);
       if(!s.error&&s.data){var loc2=safeGet(K_INV,[]),m2={};loc2.forEach(function(x){if(x&&x.id)m2[x.id]=x;});s.data.forEach(function(x){if(x&&x.id)m2[x.id]=Object.assign({},m2[x.id]||{},x);});safeSet(K_INV,Object.keys(m2).map(function(id){return m2[id];}));}
     }catch(e){console.warn('[bridge] pullRefs',e);}
   }
@@ -896,23 +885,14 @@
     closeBrg('ov-consume'); renderView(); toast('Pemakaian dicatat · stok dikurangi · ke-audit');
   };
 
-  // ===== INIT dengan ERROR BOUNDARY =====
-  try {
-    // ---------- init (dengan versioning seed) ----------
-    if(safeGet('dreamos_maint_seed_v',0)<SEED_V){
-      [K.assets,K.pm,K.tpl,K.insp,K.draft].forEach(function(k){localStorage.removeItem(k);});
-      safeSet('dreamos_maint_seed_v',SEED_V);
-    }
-    seed();
-    renderRail(); renderView(); tick();
-  } catch(initErr) {
-    console.error('[Maintenance] init error:', initErr);
-    if (window.DreamOSSecurity && window.DreamOSSecurity.report) window.DreamOSSecurity.report(initErr);
-    _toast('⚠️ Gagal init Maintenance: ' + (initErr.message || initErr), 'error');
-    var root = document.getElementById('view-root');
-    if (root) root.innerHTML = '<div class="empty"><h3>⚠️ Error</h3><p>' + esc(initErr.message || String(initErr)) + '</p></div>';
+  // ---------- init (dengan versioning seed) ----------
+  if(safeGet('dreamos_maint_seed_v',0)<SEED_V){
+    [K.assets,K.pm,K.tpl,K.insp,K.draft].forEach(function(k){localStorage.removeItem(k);});
+    safeSet('dreamos_maint_seed_v',SEED_V);
   }
-  var __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, (CFG.CLOCK_INTERVAL_MS || 1000)));
+  seed();
+  renderRail(); renderView(); tick();
+  var __tickInterval = window.__dreamosRegisterInterval(setInterval(tick, 1000));
   
   // Debounced initial cloud pull (prevent overlap)
   var __initPullTimeout = setTimeout(function(){
@@ -923,7 +903,7 @@
       renderView(); 
     });
     try { pullRefs().then(function(){ renderView(); }); } catch(e){ console.warn('pullRefs', e); }
-  }, (CFG.INITIAL_PULL_DELAY_MS || 500));
+  }, 500);
   
   // ===== MODULE CLEANUP: stop semua interval/timer saat user pindah modul =====
   window.__maintCleanup = function() {
