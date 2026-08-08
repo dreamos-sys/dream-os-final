@@ -100,23 +100,6 @@
 <script>
 (function() {
   'use strict';
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
-  
-  function _toast(msg, type) {
-    if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
-    else alert(msg);
-  }
 
   const AREAS = {
     toilet_male: { title: '🚹 Toilet Laki-Laki', items: ['Pintu Utama','Pintu Kubikal','Kaca / Cermin','Exhoust','Dinding','Tempat Wudhu','Lantai','Floor Drain','Kloset','Flapond / Ceilling','Tempat Sampah','Tempat Handsoap','Gayung','Ember','Hanger / Gantungan Pakaian'] },
@@ -134,7 +117,7 @@
     currentFotoUrl: null,
     currentFotoStatus: null,
     historyPage: 0,
-    historyPageSize: (CFG.HISTORY_PAGE_SIZE || 10)
+    historyPageSize: 10
   };
 
   // ===== STORAGE HELPERS (with quota handling) =====
@@ -176,7 +159,7 @@
       input.value = '';
       return;
     }
-    if (file.size > (CFG.MAX_PHOTO_SIZE_BYTES || 10 * 1024 * 1024)) {
+    if (file.size > 10 * 1024 * 1024) {
       if (window.showToast) showToast('⚠️ Maksimal 10MB', 'error');
       input.value = '';
       return;
@@ -191,14 +174,14 @@
       img.onload = function() {
         // Compress via canvas
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = (CFG.PHOTO_MAX_WIDTH || 800);
+        const MAX_WIDTH = 800;
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        state.currentFotoBase64 = canvas.toDataURL('image/jpeg', (CFG.PHOTO_QUALITY || 0.6));
+        state.currentFotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
         
         const preview = document.getElementById(previewId);
         if (preview) {
@@ -342,7 +325,7 @@
         if (window.showToast) showToast('⚠️ File harus gambar', 'error');
         return;
       }
-      if (file.size > (CFG.MAX_PHOTO_SIZE_BYTES || 10 * 1024 * 1024)) {
+      if (file.size > 10 * 1024 * 1024) {
         if (window.showToast) showToast('⚠️ Maksimal 10MB', 'error');
         return;
       }
@@ -353,7 +336,7 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = (CFG.PHOTO_AREA_MAX_WIDTH || 600);
+          const MAX_WIDTH = 600;
           const scaleSize = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
@@ -361,7 +344,7 @@
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
           let key = state.shift + '-' + area;
-          let base64 = canvas.toDataURL('image/jpeg', (CFG.PHOTO_AREA_QUALITY || 0.5));
+          let base64 = canvas.toDataURL('image/jpeg', 0.5);
           
           try {
             state.data[state.date].photos[key] = base64;
@@ -409,21 +392,21 @@
 
       html += '<div class="glass">';
       html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">';
-      html += '<div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="toggleExpand(\'' + esc(areaKey) + '\', event)">';
-      html += '<h4 style="color: var(--neon); font-size: 0.9375rem; margin: 0;">' + esc(area.title) + '</h4>';
+      html += '<div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="toggleExpand(\'' + areaKey + '\', event)">';
+      html += '<h4 style="color: var(--neon); font-size: 0.9375rem; margin: 0;">' + area.title + '</h4>';
       html += '<span style="font-size: 0.8125rem; color: #cbd5e1;">' + checked + '/' + total + '</span></div>';
       html += '<div style="display: flex; align-items: center; gap: 0.5rem;">';
       html += '<button onclick="uploadPhoto(\'' + areaKey + '\', event)" class="btn" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.2rem 0.5rem; font-size: 0.8125rem;">' + (photo ? '📸✓' : '📸') + '</button>';
       html += '<div style="width: 60px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;"><div style="width: ' + pct + '%; height: 100%; background: ' + col + '; border-radius: 3px; transition: 0.3s;"></div></div>';
       html += '</div></div>';
-      if (photo) html += '<img src="' + esc(photo) + '" loading="lazy" decoding="async" style="max-width: 100%; max-height: 120px; border-radius: 8px; margin-bottom: 0.5rem;">';
+      if (photo) html += '<img src="' + photo + '" loading="lazy" decoding="async" style="max-width: 100%; max-height: 120px; border-radius: 8px; margin-bottom: 0.5rem;">';
       if (isExp) {
         html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.3rem; margin-top: 0.3rem;">';
         area.items.forEach(item => {
           let isChecked = shiftData[item] ? true : false;
           html += '<label class="check-label ' + (isChecked ? 'checked' : '') + '">';
-          html += '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleItem(\'' + esc(areaKey) + '\', \'' + esc(item).replace(/'/g, "\\'") + '\', this, event)"> ';
-          html += '<span>' + esc(item) + '</span></label>';
+          html += '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleItem(\'' + areaKey + '\', \'' + item.replace(/'/g, "\\'") + '\', this, event)"> ';
+          html += '<span>' + item + '</span></label>';
         });
         html += '</div>';
       }
@@ -477,7 +460,7 @@
       pageEntries.forEach(e => {
         html += '<div class="glass" style="margin-bottom: 0.5rem;">';
         html += '<h4 style="color: var(--neon); margin: 0;">📅 ' + new Date(e.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + e.shift.toUpperCase() + '</h4>';
-        html += '<p style="font-size: 0.8125rem; color: #cbd5e1;">👤 ' + esc(e.dayData.petugas || '-') + ' | 🏢 ' + esc(e.dayData.gedung || '-') + ' | Lantai: ' + esc(e.dayData.lantai || '-') + '</p>';
+        html += '<p style="font-size: 0.8125rem; color: #cbd5e1;">👤 ' + (e.dayData.petugas || '-') + ' | 🏢 ' + (e.dayData.gedung || '-') + ' | Lantai: ' + (e.dayData.lantai || '-') + '</p>';
         html += '<p style="font-size: 0.8125rem;">✅ Progress: ' + e.checked + '/' + e.total + ' (' + e.pct + '%)</p>';
         html += '</div>';
       });
@@ -617,19 +600,9 @@
     }
   };
 
-  // ===== INIT dengan ERROR BOUNDARY =====
-  try {
-    loadData();
-    if (window.BankAudit && window.BankAudit.log) {
-      try { BankAudit.log('ACCESS_JANITOR_INDOOR', { role: window.getUserRole ? window.getUserRole() : 'staff' }); } catch(_){}
-    }
-    console.log('🧹 Janitor Indoor Ready — Enterprise Clean Architecture');
-  } catch(initErr) {
-    console.error('[JanIndoor] init error:', initErr);
-    if (window.DreamOSSecurity && window.DreamOSSecurity.report) window.DreamOSSecurity.report(initErr);
-    _toast('⚠️ Gagal init Janitor Indoor: ' + (initErr.message || initErr), 'error');
-    var container = document.getElementById('ji-checklist');
-    if (container) container.innerHTML = '<div class="glass" style="color:#ef4444;text-align:center;">⚠️ Error: ' + esc(initErr.message || String(initErr)) + '</div>';
-  }
+  // ===== INIT (single, clean) =====
+  loadData();
+  if (window.BankAudit) BankAudit.log('ACCESS_JANITOR_INDOOR', { role: window.getUserRole ? window.getUserRole() : 'staff' });
+  console.log('🧹 Janitor Indoor Ready — Clean Architecture');
 })();
 </script>
