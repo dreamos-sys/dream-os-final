@@ -168,6 +168,11 @@
 
   // goHomeSafe sudah didefinisikan di global scope (sebelum IIFE)
 
+  function _toast(msg, type) {
+    if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
+    else alert(msg);
+  }
+
   function getUser() {
     try { return JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null'); }
     catch (e) { return null; }
@@ -224,7 +229,9 @@
       } finally {
         __dnaCachePromise = null;
       }
-    
+      __dnaCachePromise = null;
+    })();
+  }
 
   // ===== MODULE CLEANUP: clear timers, revoke object URLs =====
   window.__profileCleanup = function() {
@@ -233,16 +240,12 @@
     console.log('[Profile] Cleanup complete');
   };
   
-  // Hook cleanup ke goHomeSafe (TANPA menimpa fungsi asli)
   var __origGoHomeSafe = window.goHomeSafe;
   window.goHomeSafe = function() {
     if(window.__profileCleanup) window.__profileCleanup();
-    // Panggil fungsi asli (yang sudah didefinisikan di global scope)
     if(__origGoHomeSafe && typeof __origGoHomeSafe === 'function') {
       return __origGoHomeSafe();
     }
-    // Fallback darurat
-    console.warn('[Profile] __origGoHomeSafe not available, using fallback');
     try {
       if(window.parent && window.parent !== window && typeof window.parent.goHome === 'function'){
         window.parent.goHome(); return;
@@ -252,8 +255,6 @@
     var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
     window.location.href = base + 'index.html';
   };
-
-})();
     return __dnaCachePromise;
   }
 
@@ -367,7 +368,7 @@
     var nama = document.getElementById('edit-nama').value.trim();
     var phone = document.getElementById('edit-phone').value.trim();
     var department = document.getElementById('edit-department').value.trim();
-    if (!nama) return { if(window.showToast) showToast('⚠️ Nama wajib diisi', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Nama wajib diisi', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Nama wajib diisi', 'warning') : alert('Nama wajib diisi'))); return; }
+    if (!nama) return _toast('⚠️ Nama wajib diisi', 'error'));
     try {
       var row = await upsertUserFields({ nama: nama, phone: phone, department: department });
       if (row && row.id) user.id = row.id;
@@ -376,7 +377,7 @@
       user.department = department;
       saveUserLocal(user);
       paintHeader();
-      if(window.showToast) showToast('✅ Profil disimpan', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Profil disimpan ke cloud & lokal', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Profil disimpan ke cloud & lokal', 'warning') : alert('✅ Profil disimpan ke cloud & lokal')));
+      _toast('✅ Profil disimpan', 'success');
     } catch (e) {
       if(window.showToast) showToast('❌ Gagal: ' + (e.message || e), 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Gagal simpan: ' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Gagal simpan: ' + (e.message || e, 'warning') : alert('⚠️ Gagal simpan: ' + (e.message || e))));
     }
@@ -386,8 +387,8 @@
   document.getElementById('avatar-input').addEventListener('change', async function () {
     var file = this.files && this.files[0];
     if (!file) return;
-    if (!window.supabaseClient) { if(window.showToast) showToast('⚠️ Supabase tidak siap', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Supabase tidak siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Supabase tidak siap', 'warning') : alert('Supabase tidak siap'))); return; }
-    if (file.size > 2 * 1024 * 1024) { if(window.showToast) showToast('⚠️ Maksimal 2MB', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Maks 2MB', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Maks 2MB', 'warning') : alert('Maks 2MB'))); return; }
+    if (!window.supabaseClient) { _toast('⚠️ Supabase tidak siap', 'error'); return; }
+    if (file.size > 2 * 1024 * 1024) { _toast('⚠️ Maksimal 2MB', 'error'); return; }
 
     var uid = user.id || (user.email || 'anon').replace(/[^a-z0-9]/gi, '_');
     var path = uid + '/' + Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
@@ -407,7 +408,7 @@
       user.avatar = url;
       saveUserLocal(user);
       document.getElementById('avatar-preview').innerHTML = '<img src="' + url + '" alt="avatar">';
-      if(window.showToast) showToast('✅ Avatar tersimpan', 'success'); else if(window.showToast) showToast('✅ Avatar tersimpan di Storage + database','info'); else (typeof window.showToast === 'function' ? window.showToast('✅ Avatar tersimpan di Storage + database', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Avatar tersimpan di Storage + database', 'warning') : alert('✅ Avatar tersimpan di Storage + database')));
+      if(window.showToast) showToast('✅ Avatar tersimpan', 'success'); else _toast('✅ Avatar tersimpan di Storage + database', 'info');
     } catch (e) {
       (typeof window.showToast === 'function' ? window.showToast('⚠️ Upload gagal: ' + (e.message || e, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Upload gagal: ' + (e.message || e, 'warning') : alert('⚠️ Upload gagal: ' + (e.message || e))) +
         '\n\nPastikan bucket "avatars" public-read + policy upload authenticated.');
@@ -529,7 +530,7 @@
     });
     html += '</tbody></table>';
     el.innerHTML = html;
-    if (fromBtn) { if(window.showToast) showToast('📅 ' + mine.length + ' pengajuan', 'info'); else if(window.showToast) showToast('Ditemukan ' + mine.length + ' pengajuan milik Anda','info'); else (typeof window.showToast === 'function' ? window.showToast('Ditemukan ' + mine.length + ' pengajuan milik Anda', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Ditemukan ' + mine.length + ' pengajuan milik Anda', 'warning') : alert('Ditemukan ' + mine.length + ' pengajuan milik Anda'))); }
+    if (fromBtn) { if(window.showToast) showToast('📅 ' + mine.length + ' pengajuan', 'info'); else _toast('Ditemukan ' + mine.length + ' pengajuan milik Anda', 'info'); }
     __bookingsLoading = false;
   };
 
@@ -540,7 +541,7 @@
     if (now - __pwChangeLastAttempt < 10000) {
       var wait = Math.ceil((10000 - (now - __pwChangeLastAttempt)) / 1000);
       if(window.showToast) showToast('⏳ Tunggu ' + wait + ' detik', 'warning');
-      else if(window.showToast) showToast('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi','info'); else (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi', 'warning') : alert('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi')));
+      else _toast('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi', 'info');
       return;
     }
     __pwChangeLastAttempt = now;
@@ -548,10 +549,10 @@
     var oldPass = document.getElementById('old-pass').value;
     var newPass = document.getElementById('new-pass').value;
     var confirmPass = document.getElementById('confirm-pass').value;
-    if (!oldPass || !newPass || !confirmPass) { if(window.showToast) showToast('⚠️ Isi semua field', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Isi semua field', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Isi semua field', 'warning') : alert('Isi semua field'))); return; }
-    if (newPass.length < 6) { if(window.showToast) showToast('⚠️ Minimal 6 karakter', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Minimal 6 karakter', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Minimal 6 karakter', 'warning') : alert('Minimal 6 karakter'))); return; }
-    if (newPass !== confirmPass) { if(window.showToast) showToast('⚠️ Konfirmasi tidak cocok', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Konfirmasi tidak cocok', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Konfirmasi tidak cocok', 'warning') : alert('Konfirmasi tidak cocok'))); return; }
-    if (!window.supabaseClient) { if(window.showToast) showToast('⚠️ Supabase tidak siap', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Supabase tidak siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Supabase tidak siap', 'warning') : alert('Supabase tidak siap'))); return; }
+    if (!oldPass || !newPass || !confirmPass) { _toast('⚠️ Isi semua field', 'error'); return; }
+    if (newPass.length < 6) { _toast('⚠️ Minimal 6 karakter', 'error'); return; }
+    if (newPass !== confirmPass) { _toast('⚠️ Konfirmasi tidak cocok', 'error'); return; }
+    if (!window.supabaseClient) { _toast('⚠️ Supabase tidak siap', 'error'); return; }
 
     try {
       var s = await window.supabaseClient.auth.signInWithPassword({ email: user.email, password: oldPass });
@@ -559,7 +560,7 @@
       var u = await window.supabaseClient.auth.updateUser({ password: newPass });
       if (u.error) throw u.error;
       try { var _u=JSON.parse(localStorage.getItem('dreamos_users_db')||'[]'); var _i=_u.findIndex(function(x){ return (x.email||'').toLowerCase()===String(user.email||'').toLowerCase(); }); if(_i>-1){ _u[_i].password_hash=null; window.safeStorageSet('dreamos_users_db', JSON.stringify(_u)); } } catch(e){}
-      if(window.showToast) showToast('✅ Password diubah', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Password diubah. Login ulang.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Password diubah. Login ulang.', 'warning') : alert('✅ Password diubah. Login ulang.')));
+      _toast('✅ Password diubah', 'success');
       await window.supabaseClient.auth.signOut().catch(function () {});
       localStorage.removeItem('dreamos_bound_user');
       localStorage.removeItem('dreamos_session_active');
@@ -575,7 +576,7 @@
       device: document.getElementById('notif-device').checked
     };
     window.safeStorageSet('dreamos_notif_prefs', JSON.stringify(prefs));
-    if(window.showToast) showToast('✅ Preferensi disimpan', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Preferensi disimpan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Preferensi disimpan', 'warning') : alert('✅ Preferensi disimpan')));
+    _toast('✅ Preferensi disimpan', 'success');
   };
 
   window.handleLogout = async function () {
