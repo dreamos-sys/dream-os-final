@@ -161,18 +161,6 @@
   
   (function () {
   'use strict';
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
 
   function loginUrl() {
     var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
@@ -372,7 +360,7 @@
     var file = this.files && this.files[0];
     if (!file) return;
     if (!window.supabaseClient) { _toast('⚠️ Supabase tidak siap', 'error'); return; }
-    if (file.size > (CFG.AVATAR_MAX_BYTES || 2 * 1024 * 1024)) { _toast('⚠️ Maksimal 2MB', 'error'); return; }
+    if (file.size > 2 * 1024 * 1024) { _toast('⚠️ Maksimal 2MB', 'error'); return; }
 
     var uid = user.id || (user.email || 'anon').replace(/[^a-z0-9]/gi, '_');
     var path = uid + '/' + Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
@@ -462,7 +450,7 @@
   window.loadMyBookings = async function (fromBtn) {
     // Debounce: cegah spam klik refresh
     var now = Date.now();
-    if (__bookingsLoading || (now - __bookingsLastLoad) < (CFG.DEBOUNCE_MS || 1000)) {
+    if (__bookingsLoading || (now - __bookingsLastLoad) < 1000) {
       if (fromBtn && window.showToast) showToast('⏳ Tunggu sebentar...', 'info');
       return;
     }
@@ -475,13 +463,13 @@
     try {
       if (window.supabaseClient) {
         var since = new Date();
-        since.setDate(since.getDate() - (CFG.BOOKINGS_RETENTION_DAYS || 30));
+        since.setDate(since.getDate() - 30);
         var res = await window.supabaseClient
           .from('bookings')
           .select('id,tgl,tgl_display,ruang,nama_peminjam,jam_mulai,jam_selesai,status,created_at,created_by,divisi')
           .gte('created_at', since.toISOString())
           .order('created_at', { ascending: false })
-          .limit(CFG.BOOKINGS_FETCH_LIMIT || 100);
+          .limit(100);
         if (res.error) throw res.error;
         rows = res.data || [];
       } else {
@@ -507,9 +495,9 @@
       var st = String(b.status || 'pending').toLowerCase();
       var badge = st === 'approved' ? 'approved' : st === 'rejected' ? 'rejected' : 'pending';
       var label = st === 'approved' ? '✅ Approved' : st === 'rejected' ? '❌ Rejected' : '⏳ Pending';
-      html += '<tr><td>' + esc(b.tgl_display || b.tgl || '') + '</td><td>' + esc(b.ruang || '') +
-        '</td><td>' + esc(b.jam_mulai || '') + '–' + esc(b.jam_selesai || '') +
-        '</td><td><span class="badge badge-' + esc(badge) + '">' + esc(label) + '</span></td></tr>';
+      html += '<tr><td>' + (b.tgl_display || b.tgl || '') + '</td><td>' + (b.ruang || '') +
+        '</td><td>' + (b.jam_mulai || '') + '–' + (b.jam_selesai || '') +
+        '</td><td><span class="badge badge-' + badge + '">' + label + '</span></td></tr>';
     });
     html += '</tbody></table>';
     el.innerHTML = html;
@@ -521,7 +509,7 @@
   window.changePassword = async function () {
     // Rate limit: 1x per 10 detik (prevent brute force)
     var now = Date.now();
-    if (now - __pwChangeLastAttempt < (CFG.PASSWORD_RATE_LIMIT_MS || 10000)) {
+    if (now - __pwChangeLastAttempt < 10000) {
       var wait = Math.ceil((10000 - (now - __pwChangeLastAttempt)) / 1000);
       if(window.showToast) showToast('⏳ Tunggu ' + wait + ' detik', 'warning');
       else _toast('⏳ Tunggu ' + wait + ' detik sebelum mencoba lagi', 'info');
@@ -533,7 +521,7 @@
     var newPass = document.getElementById('new-pass').value;
     var confirmPass = document.getElementById('confirm-pass').value;
     if (!oldPass || !newPass || !confirmPass) { _toast('⚠️ Isi semua field', 'error'); return; }
-    if (newPass.length < (CFG.MIN_PASSWORD_LENGTH || 6)) { _toast('⚠️ Minimal 6 karakter', 'error'); return; }
+    if (newPass.length < 6) { _toast('⚠️ Minimal 6 karakter', 'error'); return; }
     if (newPass !== confirmPass) { _toast('⚠️ Konfirmasi tidak cocok', 'error'); return; }
     if (!window.supabaseClient) { _toast('⚠️ Supabase tidak siap', 'error'); return; }
 
@@ -589,17 +577,10 @@
     modal.onclick = function(e){ if(e.target === modal) modal.remove(); };
   };
 
-  // Init dengan error boundary
-  (async function initModule() {
-    try {
-      await loadProfileFromCloud();
-      await refreshDeviceStatus();
-    } catch(initErr) {
-      console.error('[Profile] init error:', initErr);
-      if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
-      if (window.showToast) showToast('⚠️ Gagal load profile: ' + (initErr.message || initErr), 'error');
-    }
-  })();
+  // Init
+  loadProfileFromCloud().then(function () {
+    return refreshDeviceStatus();
+  });
   try {
     var prefs = JSON.parse(localStorage.getItem('dreamos_notif_prefs') || '{}');
     if (typeof prefs.email === 'boolean') document.getElementById('notif-email').checked = prefs.email;
