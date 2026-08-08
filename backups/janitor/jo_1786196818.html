@@ -123,23 +123,6 @@
 <script>
 (function() {
   'use strict';
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
-  
-  function _toast(msg, type) {
-    if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
-    else alert(msg);
-  }
 
   const DAILY = [
     'Jalan Utama','Lorong dan Jalan Kecil','Parkir Motor / Mobil','Area Loby','Play Ground','Taman','Lapangan',
@@ -162,7 +145,7 @@
     currentFotoUrl: null,
     currentFotoStatus: null,
     historyPage: 0,
-    historyPageSize: (CFG.HISTORY_PAGE_SIZE || 10)
+    historyPageSize: 10
   };
 
   // ===== STORAGE HELPERS (with quota handling) =====
@@ -203,7 +186,7 @@
       input.value = '';
       return;
     }
-    if (file.size > (CFG.MAX_PHOTO_SIZE_BYTES || 10 * 1024 * 1024)) {
+    if (file.size > 10 * 1024 * 1024) {
       if (window.showToast) showToast('⚠️ Maksimal 10MB', 'error');
       input.value = '';
       return;
@@ -218,14 +201,14 @@
       img.onload = function() {
         // Compress via canvas
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = (CFG.PHOTO_MAX_WIDTH || 800);
+        const MAX_WIDTH = 800;
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        state.currentFotoBase64 = canvas.toDataURL('image/jpeg', (CFG.PHOTO_QUALITY || 0.6));
+        state.currentFotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
         
         const preview = document.getElementById(previewId);
         if (preview) {
@@ -375,7 +358,7 @@
         if (window.showToast) showToast('⚠️ File harus gambar', 'error');
         return;
       }
-      if (file.size > (CFG.MAX_PHOTO_SIZE_BYTES || 10 * 1024 * 1024)) {
+      if (file.size > 10 * 1024 * 1024) {
         if (window.showToast) showToast('⚠️ Maksimal 10MB', 'error');
         return;
       }
@@ -386,7 +369,7 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = (CFG.PHOTO_AREA_MAX_WIDTH || 600);
+          const MAX_WIDTH = 600;
           const scaleSize = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
@@ -394,7 +377,7 @@
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
           let key = state.shift + '-' + section;
-          let base64 = canvas.toDataURL('image/jpeg', (CFG.PHOTO_AREA_QUALITY || 0.5));
+          let base64 = canvas.toDataURL('image/jpeg', 0.5);
           
           try {
             state.data[state.date].photos[key] = base64;
@@ -434,8 +417,8 @@
     let dailyHTML = state.expanded.daily ? DAILY.map(item => {
       let isChecked = shiftData[item] ? true : false;
       return '<label class="check-label ' + (isChecked ? 'checked' : '') + '">' +
-        '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleItem(\'' + esc(item).replace(/'/g, "\\'") + '\', this, event)"> ' +
-        '<span>' + esc(item) + '</span></label>';
+        '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleItem(\'' + item.replace(/'/g, "\\'") + '\', this, event)"> ' +
+        '<span>' + item + '</span></label>';
     }).join('') : '';
     document.getElementById('jo-daily-list').innerHTML = dailyHTML;
     document.getElementById('jo-daily-list').style.display = state.expanded.daily ? 'block' : 'none';
@@ -444,8 +427,8 @@
     let weeklyHTML = state.expanded.weekly ? WEEKLY.map(task => {
       let isChecked = weeklyData[task] ? true : false;
       return '<label class="check-label weekly ' + (isChecked ? 'checked' : '') + '">' +
-        '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleWeekly(\'' + esc(task).replace(/'/g, "\\'") + '\', this, event)"> ' +
-        '<span>' + esc(task) + '</span></label>';
+        '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleWeekly(\'' + task.replace(/'/g, "\\'") + '\', this, event)"> ' +
+        '<span>' + task + '</span></label>';
     }).join('') : '';
     document.getElementById('jo-weekly-list').innerHTML = weeklyHTML;
     document.getElementById('jo-weekly-list').style.display = state.expanded.weekly ? 'block' : 'none';
@@ -457,7 +440,7 @@
       let photo = state.data[state.date].photos[photoKey];
       if (photo) {
         photoHTML += '<div style="margin-bottom:0.5rem;"><div style="font-size: 0.875rem;color:#cbd5e1;margin-bottom:0.3rem;">📸 Foto ' + (section === 'daily' ? 'Harian' : 'Mingguan') + '</div>';
-        photoHTML += '<img src="' + esc(photo) + '" loading="lazy" decoding="async" style="max-width:100%;max-height:150px;border-radius:8px;"></div>';
+        photoHTML += '<img src="' + photo + '" loading="lazy" decoding="async" style="max-width:100%;max-height:150px;border-radius:8px;"></div>';
       }
       let btn = document.getElementById('btn-photo-' + section);
       if (btn) btn.innerHTML = photo ? '📸✓ Foto' : '📸 Foto';
@@ -506,7 +489,7 @@
       pageEntries.forEach(e => {
         html += '<div class="glass" style="margin-bottom: 0.5rem;">';
         html += '<h4 style="color: var(--green); margin: 0;">📅 ' + new Date(e.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + e.shift.toUpperCase() + '</h4>';
-        html += '<p style="font-size: 0.875rem; color: #cbd5e1;">👤 ' + esc(e.dayData.petugas || '-') + ' | 🌳 ' + esc(e.dayData.area || '-') + ' | 📍 ' + esc(e.dayData.zona || '-') + '</p>';
+        html += '<p style="font-size: 0.875rem; color: #cbd5e1;">👤 ' + (e.dayData.petugas || '-') + ' | 🌳 ' + (e.dayData.area || '-') + ' | 📍 ' + (e.dayData.zona || '-') + '</p>';
         html += '<p style="font-size: 0.875rem;">✅ Progress: ' + e.checked + '/' + e.total + ' (' + e.pct + '%)</p>';
         html += '</div>';
       });
@@ -635,19 +618,9 @@
     }
   };
 
-  // ===== INIT dengan ERROR BOUNDARY =====
-  try {
-    loadData();
-    if (window.BankAudit && window.BankAudit.log) {
-      try { BankAudit.log('ACCESS_JANITOR_OUTDOOR', { role: window.getUserRole ? window.getUserRole() : 'staff' }); } catch(_){}
-    }
-    console.log('🌿 Janitor Outdoor Ready — Enterprise Clean Architecture');
-  } catch(initErr) {
-    console.error('[JanOutdoor] init error:', initErr);
-    if (window.DreamOSSecurity && window.DreamOSSecurity.report) window.DreamOSSecurity.report(initErr);
-    _toast('⚠️ Gagal init Janitor Outdoor: ' + (initErr.message || initErr), 'error');
-    var container = document.getElementById('jo-daily-list');
-    if (container) container.innerHTML = '<div class="glass" style="color:#ef4444;text-align:center;">⚠️ Error: ' + esc(initErr.message || String(initErr)) + '</div>';
-  }
+  // ===== INIT (single, clean) =====
+  loadData();
+  if (window.BankAudit) BankAudit.log('ACCESS_JANITOR_OUTDOOR', { role: window.getUserRole ? window.getUserRole() : 'staff' });
+  console.log('🌿 Janitor Outdoor Ready — Clean Architecture');
 })();
 </script>
