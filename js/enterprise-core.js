@@ -201,7 +201,7 @@ window.safeStorageSet = function(key, val) {
     
     init: function() {
       // Auto-sync every 5 minutes
-      window.__dreamosRegisterInterval(setInterval(function() {
+      window.__dreamosRegisterInterval(setInterval(function() {))
         CloudSync.processQueue();
       }, 300000);
       
