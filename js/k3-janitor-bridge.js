@@ -62,7 +62,7 @@
       if(active.length) active.forEach(function(r){ h+=card(r,sc,done); });
       else if(!doneHere.length) h+='<div style="font-size:0.78rem;color:#64748b;text-align:center;padding:0.6rem;">Tidak ada tugas kebersihan dari K3 saat ini. ✨</div>';
       if(doneHere.length){ h+='<details style="margin-top:0.4rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#94a3b8;">Lihat yang sudah ditandai bersih ('+doneHere.length+')</summary><div style="margin-top:0.4rem;opacity:0.7;">'; doneHere.forEach(function(r){ h+=card(r,sc,done); }); h+='</div></details>'; }
-      h+='</div>'; cont.innerHTML= /* esc() protected */h;
+      h+='</div>'; cont.innerHTML=h;
     }catch(e){ console.warn('[k3j-bridge] render:', e); }
   }
 
@@ -75,8 +75,8 @@
   window.__k3jUndo=function(id,sc){ try{ var d=getDone(); delete d[dkey(id,sc)]; setDone(d); _fp=null; render(); }catch(e){ console.warn('[k3j-bridge] undo:', e); } };
 
   pullFollowups(render);
-  window.__dreamosRegisterInterval(setInterval(render, 2000));
-  window.__dreamosRegisterInterval(setInterval(function(){ pullFollowups(render); }, 20000));
+  window.__dreamosRegisterInterval(setInterval(render, 2000);
+  window.__dreamosRegisterInterval(setInterval(function(){ pullFollowups(render); }, 20000);
   window.addEventListener('storage', function(e){ if(e.key===K3||e.key===CACHE){ _fp=null; render(); } });
   document.addEventListener('visibilitychange', function(){ if(!document.hidden){ _fp=null; pullFollowups(render); } });
 })();

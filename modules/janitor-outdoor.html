@@ -121,27 +121,6 @@
 </div>
 
 <script>
-
-  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
-  window.safeStorageSet = window.safeStorageSet || function(key, value) {
-    try { localStorage.setItem(key, value); return true; }
-    catch(e) {
-      if (e.name === 'QuotaExceededError' || e.code === 22) {
-        console.warn('[Storage] Quota exceeded, trimming old keys...');
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-        if (keys.length > 20) {
-          // Hapus 10 key tertua (berdasarkan urutan)
-          keys.slice(0, 10).forEach(k => {
-            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
-          });
-          try { localStorage.setItem(key, value); return true; } catch(_){}
-        }
-        console.error('[Storage] Still failed after trim');
-      }
-      return false;
-    }
-  };
-
 (function() {
   'use strict';
 
@@ -249,18 +228,18 @@
     // Cloud upload (single, clean)
     (async function(){
       if (!window.CloudPhoto) {
-        if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#f59e0b;">⚠️ CloudPhoto tidak aktif — base64 lokal</span>';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ CloudPhoto tidak aktif — base64 lokal</span>';
         return;
       }
-      if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#0ea5e9;">☁️ Mengunggah ke cloud…</span>';
+      if (statusEl) statusEl.innerHTML = '<span style="color:#0ea5e9;">☁️ Mengunggah ke cloud…</span>';
       try {
         var url = await window.CloudPhoto.upload(file, 'janitor-photos');
         state.currentFotoUrl = url;
         state.currentFotoStatus = 'cloud';
-        if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#10b981;">✅ Cloud tersimpan (' + Math.round(file.size/1024) + ' KB)</span>';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#10b981;">✅ Cloud tersimpan (' + Math.round(file.size/1024) + ' KB)</span>';
       } catch(e) {
         state.currentFotoStatus = 'offline';
-        if (statusEl) statusEl.innerHTML = /* esc() protected */ '<span style="color:#f59e0b;">⚠️ Cloud gagal — base64 fallback</span>';
+        if (statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;">⚠️ Cloud gagal — base64 fallback</span>';
       }
     })();
   };
@@ -441,7 +420,7 @@
         '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleItem(\'' + item.replace(/'/g, "\\'") + '\', this, event)"> ' +
         '<span>' + item + '</span></label>';
     }).join('') : '';
-    document.getElementById('jo-daily-list').innerHTML = /* esc() protected */ dailyHTML;
+    document.getElementById('jo-daily-list').innerHTML = dailyHTML;
     document.getElementById('jo-daily-list').style.display = state.expanded.daily ? 'block' : 'none';
 
     // Weekly checklist (dengan class .weekly untuk styling berbeda)
@@ -451,7 +430,7 @@
         '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="toggleWeekly(\'' + task.replace(/'/g, "\\'") + '\', this, event)"> ' +
         '<span>' + task + '</span></label>';
     }).join('') : '';
-    document.getElementById('jo-weekly-list').innerHTML = /* esc() protected */ weeklyHTML;
+    document.getElementById('jo-weekly-list').innerHTML = weeklyHTML;
     document.getElementById('jo-weekly-list').style.display = state.expanded.weekly ? 'block' : 'none';
 
     // Photos per section
@@ -464,9 +443,9 @@
         photoHTML += '<img src="' + photo + '" loading="lazy" decoding="async" style="max-width:100%;max-height:150px;border-radius:8px;"></div>';
       }
       let btn = document.getElementById('btn-photo-' + section);
-      if (btn) btn.innerHTML = /* esc() protected */ photo ? '📸✓ Foto' : '📸 Foto';
+      if (btn) btn.innerHTML = photo ? '📸✓ Foto' : '📸 Foto';
     });
-    document.getElementById('jo-photo-container').innerHTML = /* esc() protected */ photoHTML;
+    document.getElementById('jo-photo-container').innerHTML = photoHTML;
   }
 
   // ===== HISTORY WITH PAGINATION =====
@@ -515,7 +494,7 @@
         html += '</div>';
       });
     }
-    document.getElementById('history-content').innerHTML = /* esc() protected */ html;
+    document.getElementById('history-content').innerHTML = html;
 
     // Pagination controls
     let pagHtml = '';
@@ -524,7 +503,7 @@
       pagHtml += '<span style="color:#cbd5e1; padding:0.5rem;">' + (state.historyPage + 1) + ' / ' + totalPages + '</span>';
       pagHtml += '<button class="btn btn-outline" onclick="historyNav(1)" ' + (state.historyPage >= totalPages - 1 ? 'disabled style="opacity:0.4;"' : '') + '>Next ▶</button>';
     }
-    document.getElementById('history-pagination').innerHTML = /* esc() protected */ pagHtml;
+    document.getElementById('history-pagination').innerHTML = pagHtml;
   }
 
   window.historyNav = function(delta) {
@@ -567,8 +546,7 @@
     let shiftData = (state.data[state.date] && state.data[state.date].shifts[state.shift]) || {};
     let weeklyData = (state.data[state.date] && state.data[state.date].weekly) || {};
     let win = window.open('', '_blank', 'width=900,height=600');
-    let doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Janitor Outdoor</title><style>body{font-family:sans-serif;padding:20px;color:#111;}h2,h3{text-align:center;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #000;padding:6px;text-align:left;}th{background:#eee;}.chk{color:#10b981;font-weight:bold;}.unchk{color:#ef4444;}img{max-width:300px;}@media print{button{display:none;}}</style>  <script src="../js/dreamos-error-reporter.js?v=1"></script>
-</head><body>';
+    let doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Janitor Outdoor</title><style>body{font-family:sans-serif;padding:20px;color:#111;}h2,h3{text-align:center;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #000;padding:6px;text-align:left;}th{background:#eee;}.chk{color:#10b981;font-weight:bold;}.unchk{color:#ef4444;}img{max-width:300px;}@media print{button{display:none;}}</style></head><body>';
     doc += '<h2>LAPORAN JANITOR OUTDOOR</h2><p style="text-align:center;">ISO 14001 • ISO 45001 • ISO 9001</p>';
     doc += '<p style="text-align:center;">Tanggal: ' + new Date(state.date).toLocaleDateString('id-ID') + ' | Shift: ' + state.shift.toUpperCase() + '</p>';
     doc += '<p><strong>Petugas:</strong> ' + (document.getElementById('jo-petugas').value || '-') + ' | <strong>Area:</strong> ' + (document.getElementById('jo-area').value || '-') + ' | <strong>Zona:</strong> ' + (document.getElementById('jo-zona').value || '-') + '</p>';

@@ -1,26 +1,5 @@
 
 <script>
-
-  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
-  window.safeStorageSet = window.safeStorageSet || function(key, value) {
-    try { localStorage.setItem(key, value); return true; }
-    catch(e) {
-      if (e.name === 'QuotaExceededError' || e.code === 22) {
-        console.warn('[Storage] Quota exceeded, trimming old keys...');
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-        if (keys.length > 20) {
-          // Hapus 10 key tertua (berdasarkan urutan)
-          keys.slice(0, 10).forEach(k => {
-            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
-          });
-          try { localStorage.setItem(key, value); return true; } catch(_){}
-        }
-        console.error('[Storage] Still failed after trim');
-      }
-      return false;
-    }
-  };
-
 // Auto-fallback untuk fungsi global
 if (!window.goHome) window.goHome = function() { 
   if (window.parent && window.parent.goHome) window.parent.goHome();
@@ -84,7 +63,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
       modal = document.createElement('div');
       modal.id = 'dana-pin-modal';
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
-      modal.innerHTML = /* esc() protected */ '<div style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.5rem;max-width:340px;width:100%;text-align:center;">' +
+      modal.innerHTML = '<div style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.5rem;max-width:340px;width:100%;text-align:center;">' +
         '<h3 style="color:#00ff9d;margin:0 0 0.8rem;">🔐 Verifikasi PIN</h3>' +
         '<input type="password" id="dana-pin-input" placeholder="Masukkan PIN" style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:1rem;text-align:center;letter-spacing:2px;margin-bottom:0.8rem;">' +
         '<div style="display:flex;gap:0.5rem;">' +
@@ -191,12 +170,12 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         });
         html += '</div>';
       }
-      app.innerHTML = /* esc() protected */ html;
+      app.innerHTML = html;
       console.log('✅ Dana render success');
     } catch(e) {
       console.error('❌ Dana render crash:', e.message);
       var app = document.getElementById('dana-app-content');
-      if(app) app.innerHTML = /* esc() protected */ '<div style="text-align:center;padding:2rem;color:#ef4444;">⚠️ Gagal memuat Modul Dana.<br><small>'+e.message+'</small><br><button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#1e293b;color:#fff;border:none;border-radius:0.5rem;">🔄 Muat Ulang</button></div>';
+      if(app) app.innerHTML = '<div style="text-align:center;padding:2rem;color:#ef4444;">⚠️ Gagal memuat Modul Dana.<br><small>'+e.message+'</small><br><button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#1e293b;color:#fff;border:none;border-radius:0.5rem;">🔄 Muat Ulang</button></div>';
     }
   }
 
@@ -259,8 +238,46 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     
     // Hook ke goHome
     var __origGoHome = window.goHome;
-      // [DEDUP] window.goHome (kept first definition)
+    window.goHome = function() {
+        if(window.__danaCleanup) window.__danaCleanup();
+        if(__origGoHome) return __origGoHome();
+        else {
+            try {
+                if(window.parent && window.parent.goHome) window.parent.goHome();
+                else window.location.reload();
+            } catch(e){ window.location.reload(); }
+        }
+    };
 
+
+
+  // ===== PIN SETUP FUNCTION (untuk admin setup PIN pertama kali) =====
+  window.setupDanaPin = function(newPin){
+    if(!newPin || newPin.length < 4){
+      if(window.showToast) showToast('⚠️ PIN minimal 4 digit', 'error');
+      return false;
+    }
+    
+    var hashedPin;
+    if(typeof bcrypt !== 'undefined' && bcrypt.hashSync){
+      // Hash dengan bcrypt (secure)
+      try { hashedPin = bcrypt.hashSync(newPin, 10); } catch(e){}
+    }
+    
+    if(!hashedPin){
+      // Fallback: base64 (legacy, tidak secure)
+      hashedPin = btoa(newPin);
+    }
+    
+    try {
+      window.safeStorageSet('dreamos_pin', hashedPin);
+      if(window.showToast) showToast('✅ PIN berhasil diatur', 'success');
+      return true;
+    } catch(e) {
+      if(window.showToast) showToast('❌ Gagal menyimpan PIN', 'error');
+      return false;
+    }
+  };
 
 })();
 </script>

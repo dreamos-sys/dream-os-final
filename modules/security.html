@@ -82,7 +82,6 @@
       .section-title { color: #000 !important; border-bottom: 1px solid #000 !important; }
     }
   </style>
-  <script src="../js/dreamos-error-reporter.js?v=1"></script>
 </head>
 <body>
   <button class="back-btn no-print" onclick="(window.goHomeSafe||window.goHome)()">← HOME</button>
@@ -331,27 +330,6 @@
   </div>
 
 <script>
-
-  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
-  window.safeStorageSet = window.safeStorageSet || function(key, value) {
-    try { localStorage.setItem(key, value); return true; }
-    catch(e) {
-      if (e.name === 'QuotaExceededError' || e.code === 22) {
-        console.warn('[Storage] Quota exceeded, trimming old keys...');
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-        if (keys.length > 20) {
-          // Hapus 10 key tertua (berdasarkan urutan)
-          keys.slice(0, 10).forEach(k => {
-            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
-          });
-          try { localStorage.setItem(key, value); return true; } catch(_){}
-        }
-        console.error('[Storage] Still failed after trim');
-      }
-      return false;
-    }
-  };
-
 (function() {
   'use strict';
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
@@ -460,14 +438,14 @@
     var sel = document.getElementById('report-history'); if (!sel) return;
     var keys = []; for (var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); if (k && k.indexOf('dreamos_laporan_terpadu_')===0) keys.push(k.replace('dreamos_laporan_terpadu_','')); }
     keys.sort().reverse();
-    sel.innerHTML = /* esc() protected */ '<option value="">— pilih riwayat —</option>' + keys.map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
+    sel.innerHTML = '<option value="">— pilih riwayat —</option>' + keys.map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
     var ret = document.getElementById('report-retention');
     if (ret) ret.textContent = '📦 ' + keys.length + ' laporan tersimpan (auto-hapus > 90 hari).';
   }
   function renderMatrixLog(){
     var box = document.getElementById('matrix-log'); if (!box) return;
     var logs = []; try { logs = JSON.parse(localStorage.getItem('dreamos_matrix_log') || '[]'); } catch(e){}
-    box.innerHTML = /* esc() protected */ logs.length ? logs.slice(0,50).map(function(l){ return '<div style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05);"><b style="color:var(--neon);">'+esc(l.action)+'</b> · '+esc(l.detail)+'<div style="color:#64748b;font-size:.65rem;">'+new Date(l.at).toLocaleString('id-ID')+' · 👤 '+esc(l.user)+'</div></div>'; }).join('') : '<p style="color:#64748b;text-align:center;padding:.6rem;">Belum ada revisi tercatat.</p>';
+    box.innerHTML = logs.length ? logs.slice(0,50).map(function(l){ return '<div style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05);"><b style="color:var(--neon);">'+esc(l.action)+'</b> · '+esc(l.detail)+'<div style="color:#64748b;font-size:.65rem;">'+new Date(l.at).toLocaleString('id-ID')+' · 👤 '+esc(l.user)+'</div></div>'; }).join('') : '<p style="color:#64748b;text-align:center;padding:.6rem;">Belum ada revisi tercatat.</p>';
   }
   function initMatrix() { migrateOldMatrix(); pruneReports90(); }
 
@@ -494,9 +472,9 @@
       head += '<th class="' + (isWeekend ? 'weekend' : '') + '">' + dayName + '<span class="day-badge">' + i + (under ? ' ⚠️' : '') + '</span></th>';
     }
     head += '</tr>';
-    document.getElementById('matrix-head').innerHTML = /* esc() protected */ head;
+    document.getElementById('matrix-head').innerHTML = head;
     const ovr = getOverrides();
-    const b = document.getElementById('matrix-body'); b.innerHTML = /* esc() protected */ '';
+    const b = document.getElementById('matrix-body'); b.innerHTML = '';
     names.forEach((n, idx) => {
       let row = '<tr><td class="sticky-name matrix-sticky-name" style="font-weight:700;padding:0.5rem;text-align:left;">' + (idx+1) + '. ' + esc(n) + '</td>';
       for (let i = 1; i <= daysInMonth; i++) {
@@ -514,13 +492,13 @@
       b.innerHTML += row + '</tr>';
     });
     const statsEl = document.getElementById('matrix-stats');
-    if (statsEl) statsEl.innerHTML = /* esc() protected */ names.map(n => {
+    if (statsEl) statsEl.innerHTML = names.map(n => {
       const c = { P:0, M:0, L:0, CT:0 };
       for (let i = 1; i <= daysInMonth; i++) { const s = cellShift(n, y, m, i); if (c[s] !== undefined) c[s]++; }
       return '<div class="mini-stat"><div class="mini-stat-val" style="font-size:10px !important;line-height:1.3;white-space:nowrap;">' + c.P + 'P·' + c.M + 'M<br>' + c.L + 'L·' + c.CT + 'CT</div><div class="mini-stat-label">' + esc(n) + '</div></div>';
     }).join('');
     const cw = document.getElementById('coverage-warn');
-    if (cw) cw.innerHTML = /* esc() protected */ warnDays.length ? ('⚠️ Kekurangan personel (min ' + MINP + 'P/' + MINM + 'M) tanggal: ' + warnDays.join(', ')) : '✅ Coverage personel aman seluruh bulan.';
+    if (cw) cw.innerHTML = warnDays.length ? ('⚠️ Kekurangan personel (min ' + MINP + 'P/' + MINM + 'M) tanggal: ' + warnDays.join(', ')) : '✅ Coverage personel aman seluruh bulan.';
     renderMatrixLog();
   };
 
@@ -611,8 +589,8 @@
     document.getElementById('sop-1').checked = data.mutasi.s1;
     document.getElementById('sop-2').checked = data.mutasi.s2;
     document.getElementById('sop-3').checked = data.mutasi.s3;
-    document.getElementById('label-ttd-penyerah').innerHTML = /* esc() protected */ `( ${data.mutasi.penyerah} )`;
-    document.getElementById('label-ttd-penerima').innerHTML = /* esc() protected */ `( ${data.mutasi.penerima} )`;
+    document.getElementById('label-ttd-penyerah').innerHTML = `( ${data.mutasi.penyerah} )`;
+    document.getElementById('label-ttd-penerima').innerHTML = `( ${data.mutasi.penerima} )`;
     if(data.mutasi.sigPenyerah) { document.getElementById('sig-preview-penyerah').querySelector('img').src = data.mutasi.sigPenyerah; document.getElementById('sig-preview-penyerah').querySelector('img').style.display = 'block'; window.currentSignatures.penyerah = data.mutasi.sigPenyerah; }
     else { document.getElementById('sig-preview-penyerah').querySelector('img').style.display = 'none'; window.currentSignatures.penyerah = null; }
     if(data.mutasi.sigPenerima) { document.getElementById('sig-preview-penerima').querySelector('img').src = data.mutasi.sigPenerima; document.getElementById('sig-preview-penerima').querySelector('img').style.display = 'block'; window.currentSignatures.penerima = data.mutasi.sigPenerima; }
@@ -622,7 +600,7 @@
   window.renderPersonnelTable = function(rows) {
     const tbody = document.getElementById('personnel-table-body-daily');
     if (!tbody) return;
-    tbody.innerHTML = /* esc() protected */ rows.map((r, i) => `
+    tbody.innerHTML = rows.map((r, i) => `
       <tr>
         <td style="font-weight:700;">${i+1}</td>
         <td><input value="${esc(r.nama||'')}" onchange="updatePersonnel(${i},'nama',this.value)"></td>
@@ -636,7 +614,7 @@
   window.renderActivityTable = function(col, rows) {
     const tbody = document.getElementById('activity-' + col + '-body-daily');
     if (!tbody) return;
-    tbody.innerHTML = /* esc() protected */ rows.map((r, i) => `
+    tbody.innerHTML = rows.map((r, i) => `
       <tr>
         <td><input type="time" value="${esc(r.masuk||'')}" onchange="updateActivity('${col}',${i},'masuk',this.value)"></td>
         <td><input type="time" value="${esc(r.keluar||'')}" onchange="updateActivity('${col}',${i},'keluar',this.value)"></td>
@@ -728,7 +706,7 @@
     if (window.showToast) showToast('📡 NFC: ' + posName, 'info'); else if(window.showToast) showToast('📡 NFC: ' + posName,'info'); else (typeof window.showToast === 'function' ? window.showToast('📡 NFC: ' + posName, 'warning') : (typeof window.showToast === 'function' ? window.showToast('📡 NFC: ' + posName, 'warning') : alert('📡 NFC: ' + posName)));
     const nowTime = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
     const logBox = document.getElementById('patrol-log');
-    if(logBox.innerText.includes('Belum ada')) logBox.innerHTML = /* esc() protected */ '';
+    if(logBox.innerText.includes('Belum ada')) logBox.innerHTML = '';
     logBox.innerHTML += `<div style="border-left:3px solid var(--accent); padding-left:0.5rem; margin-bottom:0.5rem;">[${nowTime}] Scan NFC Berhasil di <b>${posName}</b></div>`;
   };
   window.openQRScanner = function() { document.getElementById('qr-scanner-modal').classList.add('show'); };
@@ -857,7 +835,7 @@ Auto-Sync by Dream OS ver. 13`;
     loadDailyReport();
     renderReportHistory();
     updateDashboardSlide();
-    window.__dreamosRegisterInterval(setInterval(updateDashboardSlide, 30000)); // 30 detik (hemat battery)
+    window.__dreamosRegisterInterval(setInterval(updateDashboardSlide, 30000); // 30 detik (hemat battery)
   };
 
   // ===== INSIDEN K3: tarik laporan kehilangan/kecelakaan/bahaya, klaim tindak-lanjut =====
@@ -882,7 +860,7 @@ Auto-Sync by Dream OS ver. 13`;
     if(!panel || !box || panel.style.display==='none') return;
     var k3=(function(){try{return JSON.parse(localStorage.getItem('dreamos_k3_reports')||'[]');}catch(e){return [];}})().filter(secIsIncident);
     var done=secGetDone();
-    if(!k3.length){ box.innerHTML= /* esc() protected */'<p style="text-align:center;color:#64748b;padding:1rem;">Tidak ada insiden K3 aktif. ✅</p>'; return; }
+    if(!k3.length){ box.innerHTML='<p style="text-align:center;color:#64748b;padding:1rem;">Tidak ada insiden K3 aktif. ✅</p>'; return; }
     var active=k3.filter(function(r){ return !done[secDkey(r.id,'security')]; });
     var doneHere=k3.filter(function(r){ return !!done[secDkey(r.id,'security')]; });
     function card(r, isDone){
@@ -904,7 +882,7 @@ Auto-Sync by Dream OS ver. 13`;
     if(active.length) active.forEach(function(r){ html+=card(r,false); });
     else html+='<p style="text-align:center;color:#64748b;padding:0.8rem;">Semua insiden sudah ditindaklanjuti. 🛡️</p>';
     if(doneHere.length){ html+='<details style="margin-top:0.4rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#94a3b8;">Lihat yang sudah ditindaklanjuti ('+doneHere.length+')</summary><div style="margin-top:0.4rem;opacity:0.75;">'; doneHere.forEach(function(r){ html+=card(r,true); }); html+='</div></details>'; }
-    box.innerHTML= /* esc() protected */html;
+    box.innerHTML=html;
   }
   var __secTabBtn=document.querySelector('[data-target="tab-insiden"]'); if(__secTabBtn) __secTabBtn.addEventListener('click', function(){ secPullFollowups(secRenderInsiden); });
   secPullFollowups(secRenderInsiden);
@@ -920,7 +898,7 @@ Auto-Sync by Dream OS ver. 13`;
 
   window.openRevisionModal = function() {
     if (!guardEdit()) return;
-    const select = document.getElementById('rev-personil'); select.innerHTML = /* esc() protected */ '';
+    const select = document.getElementById('rev-personil'); select.innerHTML = '';
     const names = ["SUDARSONO", "MARHUSIN", "AGUS SUTISNA", "SUNARKO", "HARIYANSAHC", "HERIYATNO", "DONIH"];
     names.forEach(n => select.innerHTML += `<option value="${n}">${n}</option>`);
     const p = document.getElementById('m-period').value;

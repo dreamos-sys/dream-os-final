@@ -47,7 +47,6 @@
     .jam-cell { font-weight:700; color:var(--neon); white-space:nowrap; }
     @media (max-width:600px) { .flex-row { flex-direction:column; } }
   </style>
-  <script src="../js/dreamos-error-reporter.js?v=1"></script>
 </head>
 <body>
   <button type="button" class="back-btn" onclick="if(typeof window.goHomeSafe==='function')window.goHomeSafe();else if(typeof window.goHome==='function')window.goHome();else{var b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=b+'index.html';}">← HOME</button>
@@ -147,27 +146,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script>
-
-  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
-  window.safeStorageSet = window.safeStorageSet || function(key, value) {
-    try { localStorage.setItem(key, value); return true; }
-    catch(e) {
-      if (e.name === 'QuotaExceededError' || e.code === 22) {
-        console.warn('[Storage] Quota exceeded, trimming old keys...');
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-        if (keys.length > 20) {
-          // Hapus 10 key tertua (berdasarkan urutan)
-          keys.slice(0, 10).forEach(k => {
-            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
-          });
-          try { localStorage.setItem(key, value); return true; } catch(_){}
-        }
-        console.error('[Storage] Still failed after trim');
-      }
-      return false;
-    }
-  };
-
 (function () {
   'use strict';
   
@@ -232,9 +210,9 @@
   function isSubmissionWindowOpen(){ var h=nowFloatLocal(); return h>=WORK_START && h<=WORK_END; }
   function renderWindowStatus(){
     var el=document.getElementById('booking-window-status'); if(!el) return;
-    if(isAdmin()){ el.innerHTML= /* esc() protected */'🕐 Jendela pengajuan: <b style="color:#10b981;">TERBUKA — Admin/Dev bebas aturan jam (override pro EMS)</b>'; el.style.borderLeftColor='#10b981'; return; }
-    if(isSubmissionWindowOpen()){ el.innerHTML= /* esc() protected */'🕐 Jendela pengajuan: <b style="color:#10b981;">TERBUKA</b> (07:30–16:00 WIB)'; el.style.borderLeftColor='#10b981'; }
-    else { el.innerHTML= /* esc() protected */'🕐 Jendela pengajuan: <b style="color:#ef4444;">TUTUP</b> — staff hanya dapat mengirim 07:30–16:00 WIB.'; el.style.borderLeftColor='#ef4444'; }
+    if(isAdmin()){ el.innerHTML='🕐 Jendela pengajuan: <b style="color:#10b981;">TERBUKA — Admin/Dev bebas aturan jam (override pro EMS)</b>'; el.style.borderLeftColor='#10b981'; return; }
+    if(isSubmissionWindowOpen()){ el.innerHTML='🕐 Jendela pengajuan: <b style="color:#10b981;">TERBUKA</b> (07:30–16:00 WIB)'; el.style.borderLeftColor='#10b981'; }
+    else { el.innerHTML='🕐 Jendela pengajuan: <b style="color:#ef4444;">TUTUP</b> — staff hanya dapat mengirim 07:30–16:00 WIB.'; el.style.borderLeftColor='#ef4444'; }
   }
   function toMinutes(t) { var p = String(t||'0:0').split(':'); return (parseInt(p[0],10)||0)*60 + (parseInt(p[1],10)||0); }
   function setSyncStatus(msg, ok) { var el = document.getElementById('sync-status'); if (!el) return; el.textContent = msg; el.style.color = ok===true ? '#10b981' : ok===false ? '#f59e0b' : '#94a3b8'; }
@@ -283,18 +261,10 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   var __ensuring = null; // debounce + dedupe
   async function ensureServerBookings(force) {
     if (!window.supabaseClient) return;
-    if (__ensuring && !force) return __ensuring;
+    if (__ensuring && !force) return __ensuring; // return promise yg sama
     __ensuring = (async function(){
       try {
-        // TIMEOUT 15 detik (anti hang di jaringan lambat)
-        var timeoutPromise = new Promise(function(_, reject) {
-          setTimeout(function() { reject(new Error('Timeout 15s')); }, 15000);
-        });
-        var fetchPromise = window.supabaseClient.from('bookings')
-          .select('id,tgl,tgl_display,ruang,nama_peminjam,no_hp,divisi,jam_mulai,jam_selesai,keperluan,sarana_alat,status,created_at,created_by,approved_by,approved_at,reject_reason')
-          .order('created_at',{ascending:false})
-          .limit(300);
-        var res = await Promise.race([fetchPromise, timeoutPromise]);
+        var res = await window.supabaseClient.from('bookings').select('id,tgl,tgl_display,ruang,nama_peminjam,no_hp,divisi,jam_mulai,jam_selesai,keperluan,sarana_alat,status,created_at,created_by,approved_by,approved_at,reject_reason').order('created_at',{ascending:false}).limit(300);
         if (res.error) throw res.error;
         saveBookings(mergeById(getBookings(), res.data||[]));
       } catch (e) { console.warn('[booking] ensureServer', e); }
@@ -303,32 +273,10 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     return __ensuring;
   }
   window.pullBookingsFromCloud = async function (showAlert) {
-    if (!window.supabaseClient) { 
-      setSyncStatus('🟡 Offline — data lokal', false); 
-      if (showAlert) {
-        if (typeof window.showToast === 'function') window.showToast('⚠️ Supabase belum siap', 'warning');
-        else alert('Supabase belum siap');
-      }
-      return; 
-    }
+    if (!window.supabaseClient) { setSyncStatus('🟡 Offline — data lokal', false); if (showAlert) { if (window.showToast) showToast('⚠️ Supabase belum siap', 'warning'); else (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : alert('Supabase belum siap'))); } return; }
     setSyncStatus('🔄 Pull server…');
-    try { 
-      await ensureServerBookings(); 
-      renderBookings(); 
-      var cnt = getBookings().length;
-      setSyncStatus('🟢 Sync OK · ' + cnt + ' booking', true); 
-      if (showAlert) { 
-        if (typeof window.showToast === 'function') window.showToast('✅ Pull: ' + cnt + ' data', 'success'); 
-        else alert('Pull selesai: ' + cnt + ' data'); 
-      } 
-    }
-    catch (e) { 
-      setSyncStatus('🟠 Pull gagal: ' + (e.message||e), false); 
-      if (showAlert) { 
-        if (typeof window.showToast === 'function') window.showToast('❌ ' + (e.message||e), 'error'); 
-        else alert('Pull gagal: ' + (e.message||e)); 
-      } 
-    }
+    try { await ensureServerBookings(); renderBookings(); setSyncStatus('🟢 Sync OK · ' + getBookings().length + ' booking', true); if (showAlert) { if (window.showToast) showToast('✅ Pull: ' + getBookings().length + ' data', 'success'); else (typeof window.showToast === 'function' ? window.showToast('Pull selesai: ' + getBookings(, 'warning') : (typeof window.showToast === 'function' ? window.showToast('Pull selesai: ' + getBookings(, 'warning') : alert('Pull selesai: ' + getBookings())).length + ' data'); } }
+    catch (e) { setSyncStatus('🟠 Pull gagal: ' + (e.message||e), false); if (showAlert) { if (window.showToast) showToast('❌ ' + (e.message||e), 'error'); else (typeof window.showToast === 'function' ? window.showToast(String(e.message||e, 'warning') : (typeof window.showToast === 'function' ? window.showToast(String(e.message||e, 'warning') : alert(String(e.message||e)))); } }
   };
 
   var rtBound = false;
@@ -409,7 +357,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     lab.className='alat-item'; 
     lab.tabIndex=0;
     lab.dataset.alat = alat;
-    lab.innerHTML = /* esc() protected */ '<div class="alat-left"><input type="checkbox" class="cb-alat" value="'+esc(alat)+'" onchange="updateAlatVisual(this)"><span class="alat-text">'+esc(alat)+'</span></div>' +
+    lab.innerHTML = '<div class="alat-left"><input type="checkbox" class="cb-alat" value="'+esc(alat)+'" onchange="updateAlatVisual(this)"><span class="alat-text">'+esc(alat)+'</span></div>' +
                     '<div class="alat-counter"><button type="button" class="counter-btn" onclick="decreaseAlat(\''+esc(alat)+'\')">−</button>' +
                     '<span class="counter-value" onclick="editAlatQuantity(\''+esc(alat)+'\')" id="qty-'+esc(alat).replace(/\s+/g, '-')+'">0</span>' +
                     '<button type="button" class="counter-btn" onclick="increaseAlat(\''+esc(alat)+'\')">+</button></div>';
@@ -438,7 +386,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   function renderBookings() {
     var bookings = getBookings();
     var el = document.getElementById('booking-list');
-    if (!bookings.length) { el.innerHTML = /* esc() protected */ '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada booking. Coba 🔄 Pull.</p>'; return; }
+    if (!bookings.length) { el.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:1rem;">Belum ada booking. Coba 🔄 Pull.</p>'; return; }
     var html = '<table><thead><tr><th>Tgl</th><th>Ruang</th><th>Peminjam</th><th>Divisi</th><th>Jam</th><th>Status ACC</th><th>Aksi</th></tr></thead><tbody>';
     bookings.forEach(function(b, i){
       var st = String(b.status||'pending').toLowerCase();
@@ -461,35 +409,16 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
         '</td></tr>';
     });
     html += '</tbody></table>';
-    el.innerHTML = /* esc() protected */ html;
+    el.innerHTML = html;
   }
   window.renderBookings = renderBookings;
 
   window.showBookingDetail = function (id) {
     var b = getBookings().find(function(x){ return x.id===id; });
-    if (!b) {
-      if (typeof window.showToast === 'function') window.showToast('Data tidak ditemukan', 'error');
-      else alert('Data tidak ditemukan');
-      return;
-    }
+    if (!b) { if(window.showToast) showToast('Data tidak ditemukan','error'); else (typeof window.showToast === 'function' ? window.showToast('Data tidak ditemukan', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Data tidak ditemukan', 'warning') : alert('Data tidak ditemukan'))); return; }
     var st = String(b.status||'pending').toLowerCase();
-    var statusText = st==='approved' ? '✅ SUDAH DI-APPROVE' : st==='rejected' ? '❌ DITOLAK' : '⏳ BELUM DI-APPROVE';
-    var msg = '📋 DETAIL BOOKING\n\n' +
-      'Status: ' + statusText + '\n' +
-      'Peminjam: ' + (b.nama_peminjam||'-') + '\n' +
-      'HP: ' + (b.no_hp||'-') + '\n' +
-      'Divisi: ' + (b.divisi||'-') + '\n' +
-      'Ruang: ' + (b.ruang||'-') + '\n' +
-      'Tanggal: ' + (b.tgl_display||b.tgl||'-') + '\n' +
-      'Jam: ' + (b.jam_mulai||'') + ' – ' + (b.jam_selesai||'') + '\n' +
-      'Alat: ' + (b.sarana_alat||'-') + '\n' +
-      'Keperluan: ' + (b.keperluan||'-') + '\n' +
-      'Dibuat: ' + (b.created_at||'-') + '\n' +
-      (b.approved_by ? 'ACC oleh: ' + b.approved_by + '\n' : '') +
-      (b.reject_reason ? 'Alasan tolak: ' + b.reject_reason + '\n' : '') +
-      'ID: ' + (b.id||'');
-    if (typeof window.showToast === 'function') window.showToast(msg, 'info');
-    else alert(msg);
+    var statusText = st==='approved' ? '✅ SUDAH DI-APPROVE' : st==='rejected' ? '❌ DITOLAK' : '⏳ BELUM DI-APPROVE (menunggu Kabag)';
+    (typeof window.showToast === 'function' ? window.showToast('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-', 'warning') : (typeof window.showToast === 'function' ? window.showToast('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-', 'warning') : alert('📋 DETAIL BOOKING\n\nStatus: '+statusText+'\nPeminjam: '+(b.nama_peminjam||'-')))+'\nHP: '+(b.no_hp||'-')+'\nDivisi: '+(b.divisi||'-')+'\nRuang: '+(b.ruang||'-')+'\nTanggal: '+(b.tgl_display||b.tgl||'-')+'\nJam: '+(b.jam_mulai||'')+' – '+(b.jam_selesai||'')+'\nAlat: '+(b.sarana_alat||'-')+'\nKeperluan: '+(b.keperluan||'-')+'\nDibuat: '+(b.created_at||'-')+'\n'+(b.approved_by?'ACC oleh: '+b.approved_by+'\n':'')+(b.reject_reason?'Alasan tolak: '+b.reject_reason+'\n':'')+'ID: '+(b.id||''));
   };
 
   function toGCalStamp(dateStr, timeStr) {
@@ -611,7 +540,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
           renderBookings();
           return showError((e.message || e) + '\n\n⛔ Pengajuan tidak disimpan di mana pun.');
         } else {
-          if (typeof window.showToast === 'function') window.showToast('Tersimpan lokal (fallback admin). Server: ' + (e.message || e), 'warning'); else alert('Tersimpan lokal (server gagal).');
+          (typeof window.showToast === 'function' ? window.showToast('Tersimpan di HP ini (fallback admin, 'warning') : (typeof window.showToast === 'function' ? window.showToast('Tersimpan di HP ini (fallback admin, 'warning') : alert('Tersimpan di HP ini (fallback admin))).\nServer: ' + (e.message || e));
         }
       }
     } else { setSyncStatus('🟡 Hanya lokal', false); }
@@ -632,53 +561,39 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   };
 
   window.approveBooking = async function (id) {
-    if (!isAdmin()) {
-      if (typeof window.showToast === 'function') window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'error');
-      else alert('⛔ Hanya admin yang dapat approve.');
-      return;
-    }
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : alert('⛔ Hanya Kabag / Koordinator / Dev.'))); return; }
     var list = getBookings(); var b = list.find(function(x){ return x.id===id; }); if (!b) return;
     b.status='approved'; b.approved_by=user.email||user.nama; b.approved_at=new Date().toISOString();
     saveBookings(list); renderBookings();
     logBookingAudit('BOOKING_APPROVE', b);
     if (window.supabaseClient) { try { await window.supabaseClient.from('bookings').update({ status:'approved', approved_by:b.approved_by, approved_at:b.approved_at }).eq('id', id); } catch(e){ console.warn(e); } }
     pushToCommandCenterNotif({ type:'success', title:'Booking approved', msg:(b.nama_peminjam||'')+' · '+(b.ruang||''), booking_id:id });
-    if (typeof window.showToast === 'function') window.showToast('✅ Booking approved', 'success');
+    if (window.showToast) showToast('✅ Booking approved', 'success');
     setTimeout(function(){ openGoogleCalendar(id); }, 800);
   };
   window.rejectBooking = async function (id) {
-    if (!isAdmin()) {
-      if (typeof window.showToast === 'function') window.showToast('⛔ Hanya admin.', 'error');
-      else alert('⛔ Hanya admin yang dapat reject.');
-      return;
-    }
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev.', 'warning') : alert('⛔ Hanya Kabag / Koordinator / Dev.'))); return; }
     var reason = prompt('Alasan penolakan:') || '';
     var list = getBookings(); var b = list.find(function(x){ return x.id===id; }); if (!b) return;
     b.status='rejected'; b.reject_reason=reason; saveBookings(list); renderBookings();
     logBookingAudit('BOOKING_REJECT', b);
     if (window.supabaseClient) { try { await window.supabaseClient.from('bookings').update({ status:'rejected', reject_reason:reason }).eq('id', id); } catch(e){ console.warn(e); } }
     pushToCommandCenterNotif({ type:'warning', title:'Booking rejected', msg:(b.nama_peminjam||'')+' · '+(b.ruang||''), booking_id:id });
-    if (typeof window.showToast === 'function') window.showToast('❌ Booking rejected', 'warning');
   };
   window.deleteBookingById = async function (id) {
-    if (!isAdmin()) {
-      if (typeof window.showToast === 'function') window.showToast('⛔ Hanya admin.', 'error');
-      else alert('⛔ Hanya admin yang dapat menghapus booking.');
-      return;
-    }
+    if (!isAdmin()) { if(window.showToast) showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.', 'warning') : alert('⛔ Hanya Kabag / Koordinator / Dev yang dapat menghapus booking.'))); return; }
     if (!confirm('Hapus booking ini?')) return;
     var db = getBookings().find(function(x){ return x.id===id; });
     saveBookings(getBookings().filter(function(x){ return x.id!==id; })); renderBookings();
     logBookingAudit('BOOKING_DELETE', db);
     if (window.supabaseClient) { try { await window.supabaseClient.from('bookings').delete().eq('id', id); } catch(e){} }
-    if (typeof window.showToast === 'function') window.showToast('🗑️ Booking dihapus', 'info');
   };
 
   window.showQRById = function (id) {
     var b = getBookings().find(function(x){ return x.id===id; }); if (!b) return;
     var txt = ['BOOKING',b.tgl,b.ruang,b.nama_peminjam,b.divisi,b.no_hp,b.jam_mulai+'-'+b.jam_selesai,b.status].join('|');
-    document.getElementById('qr-text').textContent = txt; document.getElementById('qr-code').innerHTML= /* esc() protected */'';
-    if (typeof qrcode !== 'undefined') { var qr=qrcode(0,'M'); qr.addData(txt); qr.make(); document.getElementById('qr-code').innerHTML= /* esc() protected */qr.createImgTag(5); }
+    document.getElementById('qr-text').textContent = txt; document.getElementById('qr-code').innerHTML='';
+    if (typeof qrcode !== 'undefined') { var qr=qrcode(0,'M'); qr.addData(txt); qr.make(); document.getElementById('qr-code').innerHTML=qr.createImgTag(5); }
     document.getElementById('qr-modal').style.display='flex';
   };
   window.showQR = function (index) { var b = getBookings()[index]; if (b) window.showQRById(b.id); };
@@ -694,46 +609,26 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
     URL.revokeObjectURL(a.href);
   };
   window.syncToCloud = async function () {
-    if (!window.supabaseClient) {
-      if (typeof window.showToast === 'function') window.showToast('⚠️ Supabase offline', 'error');
-      else alert('Supabase belum siap');
-      return;
-    }
+    if (!window.supabaseClient) { if (window.showToast) showToast('⚠️ Supabase offline', 'error'); else (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Supabase belum siap', 'warning') : alert('Supabase belum siap'))); return; }
     var bookings = getBookings();
-    if (!bookings.length) {
-      if (typeof window.showToast === 'function') window.showToast('ℹ️ Tidak ada booking untuk di-sync', 'info');
-      return;
+    if (!bookings.length) { if (window.showToast) showToast('ℹ️ Tidak ada booking untuk di-sync', 'info'); return; }
+    var ok=0, fail=0, total=bookings.length;
+    setSyncStatus('🔄 Sync 0/'+total+'…', false);
+    for (var i=0;i<total;i++) {
+      try {
+        var r = await window.supabaseClient.from('bookings').upsert(bookings[i], {onConflict:'id'});
+        if (r.error) throw r.error;
+        ok++;
+      } catch(e){ fail++; }
+      setSyncStatus('🔄 Sync '+(i+1)+'/'+total+'…', false);
+      // Yield ke event loop tiap 5 item (biar UI responsif)
+      if ((i+1) % 5 === 0) await new Promise(function(r){ setTimeout(r, 0); });
     }
-    
-    // BATCH UPLOAD: 10 items per batch, PARALLEL (10x FASTER!)
-    var total = bookings.length;
-    var batchSize = 10;
-    var ok = 0, fail = 0;
-    setSyncStatus('🔄 Sync 0/' + total + '…', false);
-    
-    try {
-      for (var i = 0; i < total; i += batchSize) {
-        var batch = bookings.slice(i, i + batchSize);
-        var results = await Promise.all(batch.map(function(b) {
-          return window.supabaseClient.from('bookings').upsert(b, {onConflict:'id'})
-            .then(function(r) { return { ok: !r.error, id: b.id }; })
-            .catch(function() { return { ok: false, id: b.id }; });
-        }));
-        results.forEach(function(r) { if (r.ok) ok++; else fail++; });
-        var done = Math.min(i + batchSize, total);
-        setSyncStatus('🔄 Sync ' + done + '/' + total + '…', false);
-        await new Promise(function(r){ setTimeout(r, 0); });
-      }
-    } catch(e) {
-      console.warn('[sync] batch error:', e);
-    }
-    
     await pullBookingsFromCloud(false);
-    var msg = '✅ ' + ok + '/' + total + ' tersinkron';
-    if (fail > 0) msg += ' · ⚠️ ' + fail + ' gagal';
-    setSyncStatus(fail === 0 ? '🟢 Sync OK' : '🟠 Sync partial', fail === 0);
-    if (typeof window.showToast === 'function') window.showToast(msg, fail > 0 ? 'warning' : 'success');
-    else alert(msg);
+    var msg = '✅ '+ok+'/'+total+' booking tersinkron';
+    if (fail > 0) msg += ' • ⚠️ '+fail+' gagal';
+    if (window.showToast) showToast(msg, fail > 0 ? 'warning' : 'success');
+    else (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : (typeof window.showToast === 'function' ? window.showToast(msg, 'warning') : alert(msg)));
   };
 
   // ===== Fungsi Counter Alat =====
@@ -767,11 +662,12 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
       if (!isNaN(num) && num >= 0 && num <= 999) {
         alatQuantities[alatName] = num;
         updateAlatDisplay(alatName);
+        // Update checkbox
         var checkbox = document.querySelector('.cb-alat[value="'+alatName+'"]');
         if (checkbox) checkbox.checked = (num > 0);
       } else {
-        if (typeof window.showToast === 'function') window.showToast('⚠️ Masukkan angka 0-999', 'error');
-        else alert('Masukkan angka antara 0-999!');
+        if (window.showToast) showToast('⚠️ Masukkan angka 0-999', 'error');
+        else (typeof window.showToast === 'function' ? window.showToast('Masukkan angka antara 0-999!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('Masukkan angka antara 0-999!', 'warning') : alert('Masukkan angka antara 0-999!')));
       }
     }
   };
@@ -838,7 +734,7 @@ function logBookingAudit(action, b){ try{ var logs=JSON.parse(localStorage.getIt
   renderBookings();
   renderWindowStatus();
   if (window.__bookingStatusTimer) clearInterval(window.__bookingStatusTimer);
-  window.__bookingStatusTimer = window.__dreamosRegisterInterval(setInterval(renderWindowStatus, 30000));
+  window.__bookingStatusTimer = window.__dreamosRegisterInterval(setInterval(renderWindowStatus, 30000);
   try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission(); } catch(e){}
   setSyncStatus(window.supabaseClient ? '🔄 Menarik data…' : '🟡 Mode lokal');
   setTimeout(function(){ pullBookingsFromCloud(false).then(function(){ subscribeRealtime(); }); }, 400);

@@ -48,7 +48,6 @@
   .timeline-item:last-child { border-left-color:transparent; }
 
 </style>
-  <script src="../js/dreamos-error-reporter.js?v=1"></script>
 </head>
 <body>
 <button class="back-btn" onclick="window.goHome()">← HOME</button>
@@ -189,27 +188,6 @@
 </div>
 
 <script>
-
-  // [AUTO-INJECTED] Safe storage wrapper (try-catch + quota handling)
-  window.safeStorageSet = window.safeStorageSet || function(key, value) {
-    try { localStorage.setItem(key, value); return true; }
-    catch(e) {
-      if (e.name === 'QuotaExceededError' || e.code === 22) {
-        console.warn('[Storage] Quota exceeded, trimming old keys...');
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('dreamos_'));
-        if (keys.length > 20) {
-          // Hapus 10 key tertua (berdasarkan urutan)
-          keys.slice(0, 10).forEach(k => {
-            if (k !== key) try { localStorage.removeItem(k); } catch(_){}
-          });
-          try { localStorage.setItem(key, value); return true; } catch(_){}
-        }
-        console.error('[Storage] Still failed after trim');
-      }
-      return false;
-    }
-  };
-
 (function(){
   'use strict';
   if(!window.goHome) window.goHome = function(){ if(window.parent && window.parent.goHome) window.parent.goHome(); else var _b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=_b+'index.html'; };
@@ -273,8 +251,8 @@
 
   function renderAsset(){
     var data=safeGet('dreamos_assets', []); var tb=document.getElementById('asset-list'); var edit=isAdmin();
-    if(!data.length){ tb.innerHTML= /* esc() protected */'<tr><td colspan="9" style="text-align:center;color:#64748b;padding:1.2rem;">Belum ada aset strategis.</td></tr>'; return; }
-    tb.innerHTML= /* esc() protected */data.map(function(a){
+    if(!data.length){ tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:#64748b;padding:1.2rem;">Belum ada aset strategis.</td></tr>'; return; }
+    tb.innerHTML=data.map(function(a){
       var sb=a.status==='Baik'?'<span class="badge badge-aman">Baik</span>':(a.status==='Rusak'?'<span class="badge badge-kritis">Rusak</span>':'<span class="badge badge-rusak">'+esc(a.status)+'</span>');
       var foto = a.foto ? '<img src="'+esc(a.foto)+'" class="asset-photo" loading="lazy" decoding="async" onclick="previewPhoto(\''+esc(a.foto)+'\')" onerror="this.style.display=\'none\'">' : '<span style="color:#475569;font-size:0.6rem;">📷</span>';
       var qr='<button class="btn btn-primary" onclick="showAssetQR(\''+esc(a.id)+'\',\''+esc(a.nama).replace(/'/g,"\\'")+'\',\'ASET\')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">🔖</button>';
@@ -288,7 +266,7 @@
     var need=assets.filter(function(a){ return a.status==='Rusak'||a.status==='Dalam Perbaikan'; });
     var totalRAB=0;
     var rabHtml=need.length?('<table style="font-size:0.65rem;"><tr><th>Aset</th><th>Status</th><th>Estimasi</th></tr>'+need.map(function(a){ var est=parseInt(a.nilai)||0; totalRAB+=est; return '<tr><td>'+esc(a.nama)+'</td><td>'+esc(a.status)+'</td><td>'+fmtRp(est)+'</td></tr>'; }).join('')+'</table>'):'<p style="color:#10b981;font-size:0.7rem;">✅ Semua aset dalam kondisi baik.</p>';
-    document.getElementById('rab-aset-list').innerHTML= /* esc() protected */rabHtml;
+    document.getElementById('rab-aset-list').innerHTML=rabHtml;
     var el=document.getElementById('rab-aset-total'); el.textContent=fmtRp(totalRAB); el.dataset.value=totalRAB;
     el.dataset.items=JSON.stringify(need.map(function(a){return {nama:a.nama, nilai:parseInt(a.nilai)||0, status:a.status};}));
     var cy=new Date().getFullYear(); var taxHtml=''; var totalBook=0; var totalAcq=0;
@@ -299,16 +277,16 @@
     });
     if(!taxHtml) taxHtml='<p style="color:#64748b;font-size:0.7rem;">Belum ada aset yang masuk hitungan.</p>';
     taxHtml+='<div style="text-align:right;font-weight:700;color:var(--gold);margin-top:0.5rem;">Total Perolehan: '+fmtRp(totalAcq)+'<br>Total Nilai Buku: '+fmtRp(totalBook)+'</div>';
-    document.getElementById('tax-summary').innerHTML= /* esc() protected */taxHtml;
+    document.getElementById('tax-summary').innerHTML=taxHtml;
     var gudang=safeGet('dreamos_inventory', []);
     var low=gudang.filter(function(g){ return (parseInt(g.jumlah)||0)<=(parseInt(g.minimal)||5); });
-    document.getElementById('rab-gudang-list').innerHTML= /* esc() protected */low.length?('<table style="font-size:0.65rem;"><tr><th>Barang</th><th>Stok</th><th>Min</th><th>Kurang</th></tr>'+low.map(function(g){ var q=parseInt(g.jumlah)||0; var m=parseInt(g.minimal)||5; return '<tr><td>'+esc(g.nama)+'</td><td>'+q+'</td><td>'+m+'</td><td style="color:#fca5a5;font-weight:700;">'+(m-q)+'</td></tr>'; }).join('')+'</table>'):'<p style="color:#10b981;font-size:0.7rem;">✅ Stok gudang aman.</p>';
+    document.getElementById('rab-gudang-list').innerHTML=low.length?('<table style="font-size:0.65rem;"><tr><th>Barang</th><th>Stok</th><th>Min</th><th>Kurang</th></tr>'+low.map(function(g){ var q=parseInt(g.jumlah)||0; var m=parseInt(g.minimal)||5; return '<tr><td>'+esc(g.nama)+'</td><td>'+q+'</td><td>'+m+'</td><td style="color:#fca5a5;font-weight:700;">'+(m-q)+'</td></tr>'; }).join('')+'</table>'):'<p style="color:#10b981;font-size:0.7rem;">✅ Stok gudang aman.</p>';
   }
 
   function renderLog(){
     var logs=safeGet('dreamos_asset_log', []); var box=document.getElementById('log-list');
-    if(!logs.length){ box.innerHTML= /* esc() protected */'<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada log.</p>'; return; }
-    box.innerHTML= /* esc() protected */logs.map(function(l){
+    if(!logs.length){ box.innerHTML='<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada log.</p>'; return; }
+    box.innerHTML=logs.map(function(l){
       return '<div style="padding:0.5rem 0.2rem; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.75rem;"><div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;"><b style="color:var(--neon);">'+esc(l.aksi)+'</b><span style="color:#475569;font-size:0.66rem;white-space:nowrap;">'+fullTime(l.waktu)+'</span></div><div style="color:#cbd5e1;">'+esc(l.detail)+'</div><div style="color:#64748b;font-size:0.66rem;">👤 '+esc(l.user||'-')+' · '+esc(l.role||'-')+'</div></div>';
     }).join('');
   }
@@ -425,7 +403,7 @@
   window.showAssetQR=function(id, name, type){
     if(typeof qrcode==='undefined'){ var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js'; s.onload=function(){ showAssetQR(id,name,type); }; document.head.appendChild(s); return; }
     var qr=qrcode(0,'M'); qr.addData('DREAMOS|'+type+'|'+id+'|'+name); qr.make();
-    document.getElementById('qr-code-display').innerHTML= /* esc() protected */qr.createImgTag(4,10);
+    document.getElementById('qr-code-display').innerHTML=qr.createImgTag(4,10);
     document.getElementById('qr-item-name').textContent=name;
     document.getElementById('qr-item-id').textContent='ID: '+id+' | '+type;
     document.getElementById('qr-modal').classList.add('show');
@@ -453,7 +431,7 @@
       if(a.status==='Dalam Perbaikan') dalamPerbaikan++;
     });
     var box=document.getElementById('asset-metrics'); if(!box) return;
-    box.innerHTML = /* esc() protected */
+    box.innerHTML =
       '<div class="metric-card" style="border-left-color:var(--accent);"><div class="metric-val">'+data.length+'</div><div class="metric-lbl">Total Aset</div></div>'+
       '<div class="metric-card" style="border-left-color:var(--gold);"><div class="metric-val" style="font-size:0.95rem;">'+fmtRp(totalNilai)+'</div><div class="metric-lbl">Nilai Perolehan</div></div>'+
       '<div class="metric-card" style="border-left-color:var(--neon);"><div class="metric-val" style="font-size:0.95rem;">'+fmtRp(totalBuku)+'</div><div class="metric-lbl">Nilai Buku</div></div>'+
@@ -596,7 +574,7 @@
           return '<div class="timeline-item"><div style="font-weight:700;color:var(--neon);">'+esc(t.event)+'</div><div style="color:#cbd5e1;">'+esc(t.detail)+'</div><div style="color:#64748b;font-size:0.66rem;">'+fullTime(t.time)+' · 👤 '+esc(t.user)+'</div></div>';
         }).join('')
       : '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada riwayat untuk aset ini.</p>';
-    document.getElementById('timeline-list').innerHTML = /* esc() protected */ html;
+    document.getElementById('timeline-list').innerHTML = html;
     switchTab('timeline');
   };
 
@@ -611,7 +589,7 @@
     all.sort(function(a,b){ return new Date(b.t.time) - new Date(a.t.time); });
     var box = document.getElementById('timeline-list');
     if(!all.length){
-      box.innerHTML = /* esc() protected */ '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada timeline.</p>';
+      box.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:1rem;">Belum ada timeline.</p>';
       return;
     }
     var totalPages = Math.ceil(all.length / __timelinePageSize);
@@ -628,7 +606,7 @@
       html += '<button class="btn btn-outline" onclick="timelineNav(1)" '+(start+__timelinePageSize>=all.length?'disabled style="opacity:0.4;"':'')+'>Next ▶</button>';
       html += '</div>';
     }
-    box.innerHTML = /* esc() protected */ html;
+    box.innerHTML = html;
   };
   window.timelineNav = function(delta){
     __timelinePage += delta;

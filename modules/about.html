@@ -190,7 +190,6 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   .sec{break-before:auto;}
 }
 </style>
-  <script src="../js/dreamos-error-reporter.js?v=1"></script>
 </head>
 <body>
 <button class="back-btn" onclick="window.goHome()">← DASHBOARD</button>
@@ -635,7 +634,15 @@ window.__aboutCleanup = function() {
 
 // Hook ke goHome
 var __origGoHome = window.goHome;
-  // [DEDUP] window.goHome (kept first definition)
+window.goHome = function() {
+  if (window.__aboutCleanup) window.__aboutCleanup();
+  if (__origGoHome) return __origGoHome();
+  else {
+    try {
+      if (window.parent && window.parent.goHome) window.parent.goHome();
+      else var _b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=_b+'index.html';
+    } catch(e){ var _b=window.location.pathname.indexOf('/dream-os-final/')>=0?'/dream-os-final/':'/';window.location.href=_b+'index.html'; }
+  }
 };
 </script>
 </body>
