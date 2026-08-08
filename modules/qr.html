@@ -279,6 +279,8 @@ if (typeof Html5Qrcode === 'undefined') {
   }
   
   (function(){
+    var CFG = window.DreamOSConfig || {};
+    function esc(s){ if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s); if (s===null||s===undefined||s==='') return ''; return String(s).replace(/[&<>"'`=/]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c]; }); }
     var state = {
         codes: JSON.parse(localStorage.getItem('dreamos_qr_codes')||'[]'),
         history: JSON.parse(localStorage.getItem('dreamos_qr_history')||'[]'),
@@ -641,7 +643,7 @@ if (typeof Html5Qrcode === 'undefined') {
         });
     }
 
-    renderForm(); switchTab('scanner');
+    try { renderForm(); switchTab('scanner'); } catch(initErr){ console.error('[QR] init error:', initErr); if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr); }
     
     // ===== MODULE CLEANUP: stop scanner, clear timers, disconnect observer =====
     window.__qrCleanup = function() {
