@@ -335,9 +335,6 @@
   const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || 'null');
   document.getElementById('user-display').textContent = user ? (user.nama || 'User') : '🔒';
 
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-
   // ===== RBAC JADWAL 24/7: hanya dev & komandan_regu boleh input/edit/revisi/delete =====
   function getRole(){ try { return (JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}')||{}).role || 'staff'; } catch(e){ return 'staff'; } }
   function canEditSchedule(){ var r=getRole(); return r==='dev' || r==='komandan_regu'; }
@@ -369,13 +366,7 @@
     else alert(msg);
   }
 
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
+  function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
   function getFullMatrix() { try { return JSON.parse(localStorage.getItem('dreamos_matrix') || '[]'); } catch(e) { return []; } }
   function saveMatrix(data) {
     try {
@@ -418,7 +409,7 @@
       var logs = JSON.parse(localStorage.getItem('dreamos_matrix_log') || '[]');
       var u = {}; try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}') || {}; } catch(e){}
       logs.unshift({ at: new Date().toISOString(), user: u.nama || u.email || 'system', action: action, detail: detail });
-      window.safeStorageSet('dreamos_matrix_log', JSON.stringify(logs.slice(0, (CFG.MAX_MATRIX_LOGS || 300))));
+      window.safeStorageSet('dreamos_matrix_log', JSON.stringify(logs.slice(0, 300)));
     } catch(e){}
   }
   function migrateOldMatrix(){
@@ -437,7 +428,7 @@
   }
   function pruneReports90(){
     try {
-      var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - (CFG.DATA_RETENTION_DAYS || 90));
+      var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 90);
       var cutKey = cutoff.getFullYear() + '-' + pad2(cutoff.getMonth()+1) + '-' + pad2(cutoff.getDate());
       var keys = []; for (var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
       keys.forEach(function(k){
@@ -459,7 +450,7 @@
   function renderMatrixLog(){
     var box = document.getElementById('matrix-log'); if (!box) return;
     var logs = []; try { logs = JSON.parse(localStorage.getItem('dreamos_matrix_log') || '[]'); } catch(e){}
-    box.innerHTML = logs.length ? logs.slice(0, (CFG.MATRIX_LOGS_DISPLAY || 50)).map(function(l){ return '<div style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05);"><b style="color:var(--neon);">'+esc(l.action)+'</b> · '+esc(l.detail)+'<div style="color:#64748b;font-size:.65rem;">'+new Date(l.at).toLocaleString('id-ID')+' · 👤 '+esc(l.user)+'</div></div>'; }).join('') : '<p style="color:#64748b;text-align:center;padding:.6rem;">Belum ada revisi tercatat.</p>';
+    box.innerHTML = logs.length ? logs.slice(0,50).map(function(l){ return '<div style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05);"><b style="color:var(--neon);">'+esc(l.action)+'</b> · '+esc(l.detail)+'<div style="color:#64748b;font-size:.65rem;">'+new Date(l.at).toLocaleString('id-ID')+' · 👤 '+esc(l.user)+'</div></div>'; }).join('') : '<p style="color:#64748b;text-align:center;padding:.6rem;">Belum ada revisi tercatat.</p>';
   }
   function initMatrix() { migrateOldMatrix(); pruneReports90(); }
 
@@ -472,7 +463,7 @@
     const daysInMonth = new Date(y, m, 0).getDate();
     const editable = canEditSchedule();
     const names = Object.keys(ROTATION);
-    const MINP = CFG.MIN_PERSONNEL_PAGI || 2, MINM = CFG.MIN_PERSONNEL_MALAM || 1;
+    const MINP = 2, MINM = 1;
     let warnDays = [];
     let head = '<tr class="matrix-header-row"><th class="sticky-name matrix-sticky-name">NAMA</th>';
     for (let i = 1; i <= daysInMonth; i++) {
@@ -646,7 +637,7 @@
       const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[],"mutasi":{}}');
       if (!d.personnel[i]) d.personnel[i] = {}; d.personnel[i][f] = v;
       try { window.safeStorageSet(key, JSON.stringify(d)); } catch(e) { if (window.showToast) showToast('⚠️ Storage penuh', 'error'); }
-    }, (CFG.DEBOUNCE_INPUT_MS || 500)); // Debounce dari config
+    }, 500); // Debounce 500ms
   };
   var __updateActivityTimer = null;
   window.updateActivity = function(col, i, f, v) {
@@ -656,7 +647,7 @@
       const d = JSON.parse(localStorage.getItem(key) || '{"personnel":[],"activitiesA":[],"activitiesB":[],"mutasi":{}}');
       d['activities' + col.toUpperCase()][i][f] = v;
       try { window.safeStorageSet(key, JSON.stringify(d)); } catch(e) { if (window.showToast) showToast('⚠️ Storage penuh', 'error'); }
-    }, (CFG.DEBOUNCE_INPUT_MS || 500)); // Debounce dari config
+    }, 500); // Debounce 500ms
   };
   window.addActivityRow = function(col) {
     const key = 'dreamos_laporan_terpadu_' + document.getElementById('report-date-daily').value;
@@ -849,7 +840,7 @@ Auto-Sync by Dream OS ver. 13`;
     loadDailyReport();
     renderReportHistory();
     updateDashboardSlide();
-    window.__dreamosRegisterInterval(setInterval(updateDashboardSlide, (CFG.SLIDE_INTERVAL_MS || 30000))); // 30 detik (hemat battery)
+    window.__dreamosRegisterInterval(setInterval(updateDashboardSlide, 30000)); // 30 detik (hemat battery)
   };
 
   // ===== INSIDEN K3: tarik laporan kehilangan/kecelakaan/bahaya, klaim tindak-lanjut =====
@@ -860,7 +851,7 @@ Auto-Sync by Dream OS ver. 13`;
   function secDkey(id,sc){ return id+'::'+sc; }
   function secClient(){ return window.supabaseClient || (window.parent && window.parent.supabaseClient) || null; }
   function secIsIncident(r){ return /kehilangan|kecelakaan|bahaya/i.test((r&&r.kategori)||''); }
-  function secPullFollowups(cb){ var cl=secClient(); if(!cl){ if(cb)cb(); return; } cl.from('k3_followups').select('*').limit(CFG.K3_FETCH_LIMIT || 2000).then(function(r){ if(!r.error && r.data){ var c=secGetDone(); r.data.forEach(function(x){ if(x&&x.id) c[x.id]={by:x.by,at:x.at,scope:x.scope}; }); secSetDone(c); } if(cb)cb(); }).catch(function(){ if(cb)cb(); }); }
+  function secPullFollowups(cb){ var cl=secClient(); if(!cl){ if(cb)cb(); return; } cl.from('k3_followups').select('*').limit(2000).then(function(r){ if(!r.error && r.data){ var c=secGetDone(); r.data.forEach(function(x){ if(x&&x.id) c[x.id]={by:x.by,at:x.at,scope:x.scope}; }); secSetDone(c); } if(cb)cb(); }).catch(function(){ if(cb)cb(); }); }
   window.__secMarkK3 = function(id){
     var c=secGetDone(); var u=(function(){try{return JSON.parse(localStorage.getItem('dreamos_bound_user')||'{}');}catch(e){return {};}})();
     c[secDkey(id,'security')]={by:(u.nama||u.email||'security'), at:new Date().toISOString(), scope:'security'}; secSetDone(c);
@@ -929,7 +920,7 @@ Auto-Sync by Dream OS ver. 13`;
     const cur = new Date(s + 'T00:00:00'), end = new Date(e + 'T00:00:00');
     if (cur > end) { if (window.showToast) showToast('⚠️ Tanggal tidak valid', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Tanggal tidak valid', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Tanggal tidak valid', 'warning') : alert('⚠️ Tanggal tidak valid'))); return; }
     const ovr = getOverrides(); let count = 0, guard = 0;
-    while (cur <= end && guard < (CFG.MAX_REVISION_DAYS || 400)) {
+    while (cur <= end && guard < 400) {
       const yy = cur.getFullYear(), mm = cur.getMonth() + 1, dd = cur.getDate();
       const key = name + '|' + dateKey(yy, mm, dd);
       if (stat === '') delete ovr[key]; else ovr[key] = stat;
