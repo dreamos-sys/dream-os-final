@@ -609,46 +609,64 @@
     }
   }
 
-  // ===== ASYNC FUNCTIONS (sebagai variables, bukan declaration - lebih aman dari hoisting issue) =====
-  var syncSettingsToCloud = async function() {
-    if (!window.supabaseClient) { console.warn('[Setting] Supabase not ready, skip sync'); return; }
+  // ===== INIT dengan ERROR BOUNDARY =====
+  (async function initSettings() {
+    try {
+      updateAllUI();
+      applySettings();
+      
+      // Load dari cloud dengan proper async handling
+      try {
+        await loadSettingsFromCloud();
+      } catch(cloudErr) {
+        console.warn('[Setting] cloud load failed, using local:', cloudErr.message);
+        // Retry sekali setelah delay
+        setTimeout(async function(){
+          try {
+            if(!window.__settingsLoaded) await loadSettingsFromCloud();
+          } catch(retryErr) {
+            console.warn('[Setting] retry failed:', retryErr.message);
+          }
+        }, (CFG.CLOUD_LOAD_RETRY_DELAY_MS || 1500));
+      }
+    } catch(initErr) {
+      console.error('[Setting] init error:', initErr);
+      if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
+      _toast('⚠️ Gagal init Settings: ' + (initErr.message || initErr), 'error');
+    }
+  })();
+  async function syncSettingsToCloud() {
+    if (!window.supabaseClient) {
+      console.warn('[Setting] Supabase not ready, skip sync');
+      return;
+    }
     try {
       var sess = await window.supabaseClient.auth.getSession();
-      if (!sess || !sess.data || !sess.data.session) { console.warn('[Setting] No Supabase session'); return; }
+      if (!sess || !sess.data || !sess.data.session) { console.warn('Settings sync: sesi Supabase belum ada (login online sekali untuk aktifkan).'); return; }
       var r = await window.supabaseClient.functions.invoke('save-settings', { body: { settings: state } });
-      if (r && r.error) throw new Error(r.error.message || 'Edge Function error');
-      console.log('✅ Settings synced to cloud');
-    } catch(e) { console.warn('[Setting] Cloud sync failed:', e && e.message); }
-  };
-
-  var loadSettingsFromCloud = async function() {
-    if (!window.supabaseClient) { console.warn('[Setting] Supabase not ready, skip load'); return; }
+      if (r.error) throw new Error(r.error.message || 'Edge Function error');
+      if (r.data && r.data.error) throw new Error(r.data.error);
+      console.log('✅ Settings synced via Edge Function');
+    } catch(e) { console.warn('Cloud sync failed:', e.message); }
+  }
+  async function loadSettingsFromCloud() {
+    if (!window.supabaseClient) {
+      console.warn('[Setting] Supabase not ready, skip load');
+      return;
+    }
     try {
-      var u = {};
-      try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}') || {}; } catch(e){}
-      if (!u.email) { console.warn('[Setting] No user email'); return; }
+      var u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+      if (!u.email) return;
       var res = await window.supabaseClient.from('users').select('settings').eq('email', u.email).maybeSingle();
-      if (res && res.data && res.data.settings) {
-        Object.keys(res.data.settings).forEach(function(k){ if (state.hasOwnProperty(k)) state[k] = res.data.settings[k]; });
+      if (res.data && res.data.settings) {
+        // Merge cloud settings dengan local defaults
+        Object.keys(res.data.settings).forEach(k => { if (state.hasOwnProperty(k)) state[k] = res.data.settings[k]; });
         updateAllUI(); applySettings();
+        window.__settingsLoaded = true;
         console.log('☁️ Settings loaded from cloud');
       }
-    } catch(e) { console.warn('[Setting] Cloud load failed:', e && e.message); }
-  };
-
-  // ===== PURE SYNC INIT (pasti bekerja, tanpa async/hoisting issue) =====
-  try {
-    updateAllUI();
-    applySettings();
-    console.log('✅ Setting UI rendered');
-  } catch(initErr) {
-    console.error('[Setting] Init error:', initErr);
+    } catch(e) { console.warn('Cloud load failed:', e.message); }
   }
-
-  // ===== DEFER CLOUD LOAD (async terpisah, tidak ganggu rendering) =====
-  setTimeout(function() {
-    try { loadSettingsFromCloud(); } catch(e) { console.warn('[Setting] deferred load failed:', e); }
-  }, (CFG.CLOUD_LOAD_DELAY_MS || 500));
 
 
 
