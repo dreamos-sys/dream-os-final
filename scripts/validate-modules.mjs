@@ -7,10 +7,13 @@ const files = readdirSync('modules').filter(f => f.endsWith('.html'));
 let errors = 0;
 for (const file of files) {
   const html = readFileSync(join('modules', file), 'utf-8');
+  // Tangkap seluruh blok <script ...>...</script>
   const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
   scripts.forEach((m, i) => {
     const attrs = m[1] || '';
+    // Skip JSON / importmap
     if (/type\s*=\s*["'](application\/(ld\+json|json)|importmap)/i.test(attrs)) return;
+    // Skip skrip eksternal yang menggunakan src="..."
     if (/src\s*=/i.test(attrs)) return;
     const code = m[2];
     if (!code.trim()) return;
