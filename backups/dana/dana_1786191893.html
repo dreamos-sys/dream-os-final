@@ -25,25 +25,6 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
 <script>
 (function(){
   console.log('🟢 Dana init');
-  
-  // === ENTERPRISE CONFIG (DreamOSConfig) ===
-  var CFG = window.DreamOSConfig || {};
-  
-  // === XSS SANITIZER (delegate DreamOSSecurity) ===
-  function esc(s) {
-    if (window.DreamOSSecurity && window.DreamOSSecurity.esc) return window.DreamOSSecurity.esc(s);
-    if (s === null || s === undefined || s === '') return '';
-    return String(s).replace(/[&<>"'`=/]/g, function(c) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'})[c];
-    });
-  }
-  
-  // === TOAST HELPER ===
-  function _toast(msg, type) {
-    if (typeof window.showToast === 'function') window.showToast(msg, type || 'info');
-    else alert(msg);
-  }
-  
   function safeGet(k, fb){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }catch(e){ return fb; } }
   function safeSet(k, d){
     try {
@@ -66,7 +47,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     try {
       var a=safeGet('dreamos_profile_audit',[]);
       a.unshift({action:act,detail:detail,time:new Date().toISOString(),device:'DanaMod'});
-      if(a.length > (CFG.MAX_AUDIT_LOGS || 50)) a.pop();
+      if(a.length>50) a.pop();
       safeSet('dreamos_profile_audit', a);
     } catch(e) {
       console.warn('[Dana] Audit log failed:', e);
@@ -84,8 +65,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
       modal.innerHTML = '<div style="background:#1e293b;border:1px solid #00ff9d;border-radius:16px;padding:1.5rem;max-width:340px;width:100%;text-align:center;">' +
         '<h3 style="color:#00ff9d;margin:0 0 0.8rem;">🔐 Verifikasi PIN</h3>' +
-        '<p style="color:#94a3b8;font-size:0.75rem;margin-bottom:0.8rem;">Masukkan PIN untuk approve/reject pengajuan</p>' +
-        '<input type="password" id="dana-pin-input" placeholder="Masukkan PIN (min 4 digit)" style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:1rem;text-align:center;letter-spacing:2px;margin-bottom:0.8rem;">' +
+        '<input type="password" id="dana-pin-input" placeholder="Masukkan PIN" style="width:100%;padding:0.6rem;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:1rem;text-align:center;letter-spacing:2px;margin-bottom:0.8rem;">' +
         '<div style="display:flex;gap:0.5rem;">' +
         '<button onclick="window.__verifyPinSubmit()" style="flex:1;padding:0.6rem;background:#10b981;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✅ Verifikasi</button>' +
         '<button onclick="window.__verifyPinCancel()" style="flex:1;padding:0.6rem;background:#64748b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">❌ Batal</button>' +
@@ -138,7 +118,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     if(__renderTimer) clearTimeout(__renderTimer);
     __renderTimer = setTimeout(function(){
       renderApp();
-    }, (CFG.DEBOUNCE_MS || 300));
+    }, 300);
   }
 
   var __lastDataHash = '';
@@ -161,74 +141,30 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         __cachedFiltered = filtered;
       }
       
-      // === STATISTIK (Enterprise Feature) ===
-      var stats = { pending:0, approved:0, rejected:0, totalPending:0, totalApproved:0 };
-      data.forEach(function(d){
-        stats[d.status] = (stats[d.status]||0) + 1;
-        if(d.status==='pending') stats.totalPending += parseInt(d.nominal||0);
-        if(d.status==='approved') stats.totalApproved += parseInt(d.nominal||0);
-      });
-      
-      var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;margin-bottom:0.75rem;">';
-      html += '<div style="background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3);border-radius:0.5rem;padding:0.5rem;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:#0ea5e9;">'+data.length+'</div><div style="font-size:0.6rem;color:#94a3b8;">Total</div></div>';
-      html += '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:0.5rem;padding:0.5rem;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:#f59e0b;">'+stats.pending+'</div><div style="font-size:0.6rem;color:#94a3b8;">Pending</div></div>';
-      html += '<div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:0.5rem;padding:0.5rem;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:#10b981;">'+stats.approved+'</div><div style="font-size:0.6rem;color:#94a3b8;">Disetujui</div></div>';
-      html += '<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:0.5rem;padding:0.5rem;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:#ef4444;">'+stats.rejected+'</div><div style="font-size:0.6rem;color:#94a3b8;">Ditolak</div></div>';
-      html += '</div>';
-      
-      // === BUDGET SUMMARY ===
-      html += '<div style="background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;padding:0.6rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;">';
-      html += '<div><span style="font-size:0.65rem;color:#94a3b8;">💰 Pending:</span> <strong style="color:#f59e0b;font-size:0.85rem;">'+fmtRp(stats.totalPending)+'</strong></div>';
-      html += '<div><span style="font-size:0.65rem;color:#94a3b8;">✅ Approved:</span> <strong style="color:#10b981;font-size:0.85rem;">'+fmtRp(stats.totalApproved)+'</strong></div>';
-      html += '</div>';
-      
-      // === FILTER TABS ===
-      html += '<div style="display:flex;gap:0.3rem;margin-bottom:0.75rem;overflow-x:auto;">';
+      var html = '<div style="display:flex;gap:0.3rem;margin-bottom:0.75rem;overflow-x:auto;">';
       ['all','pending','approved','rejected'].forEach(function(f){
         var lbl = f==='all'?'📋 Semua':f==='pending'?'⏳ Pending':f==='approved'?'✅ Disetujui':'❌ Ditolak';
         var act = state.filter===f ? 'background:#0ea5e9;color:#000;' : 'background:#1e293b;color:#e2e8f0;';
-        html += '<button data-act="filter" data-val="'+esc(f)+'" style="padding:0.4rem 0.6rem;border:none;border-radius:0.4rem;cursor:pointer;font-size:0.7rem;white-space:nowrap;'+act+'">'+esc(lbl)+'</button>';
+        html += '<button data-act="filter" data-val="'+f+'" style="padding:0.4rem 0.6rem;border:none;border-radius:0.4rem;cursor:pointer;font-size:0.7rem;white-space:nowrap;'+act+'">'+lbl+'</button>';
       });
-      html += '</div>';
+      html += '</div><button data-act="toggle-form" style="width:100%;padding:0.5rem;margin-bottom:0.75rem;background:#0ea5e9;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">'+(state.showForm?'❌ Batal':'+ Buat Pengajuan Dana')+'</button>';
       
-      // === ACTION BUTTONS ===
-      html += '<div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;">';
-      html += '<button data-act="toggle-form" style="flex:1;padding:0.5rem;background:#0ea5e9;color:#000;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">'+(state.showForm?'❌ Batal':'+ Buat Pengajuan')+'</button>';
-      if(data.length > 0) html += '<button data-act="export-csv" style="flex:0.6;padding:0.5rem;background:#8b5cf6;color:#fff;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">📥 CSV</button>';
-      html += '</div>';
-      
-      // === FORM ===
       if(state.showForm){
-        html += '<div class="dana-panel">';
-        html += '<input id="d-judul" class="dana-input" placeholder="Judul Pengajuan *">';
-        html += '<input id="d-nominal" type="number" class="dana-input" placeholder="Nominal (Rp) *">';
-        html += '<select id="d-kat" class="dana-select"><option>Operasional</option><option>Maintenance</option><option>K3 Safety</option><option>Kebersihan</option><option>Lainnya</option></select>';
-        html += '<input id="d-pemohon" class="dana-input" placeholder="Nama Pemohon *">';
-        html += '<textarea id="d-catatan" class="dana-input" placeholder="Catatan / Keterangan" rows="2" style="resize:none;"></textarea>';
-        html += '<button data-act="submit" style="width:100%;padding:0.5rem;background:#10b981;color:white;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">📤 Ajukan ke Papan Approval</button>';
-        html += '</div>';
+        html += '<div class="dana-panel"><input id="d-judul" class="dana-input" placeholder="Judul Pengajuan *"><input id="d-nominal" type="number" class="dana-input" placeholder="Nominal (Rp) *"><select id="d-kat" class="dana-select"><option>Operasional</option><option>Maintenance</option><option>K3 Safety</option><option>Kebersihan</option><option>Lainnya</option></select><input id="d-pemohon" class="dana-input" placeholder="Nama Pemohon *"><textarea id="d-catatan" class="dana-input" placeholder="Catatan / Keterangan" rows="2" style="resize:none;"></textarea><button data-act="submit" style="width:100%;padding:0.5rem;background:#10b981;color:white;border:none;border-radius:0.5rem;font-weight:700;cursor:pointer;">📤 Ajukan ke Papan Approval</button></div>';
       }
       
-      // === DATA LIST ===
       if(!filtered.length){
         html += '<div style="text-align:center;color:#64748b;padding:2rem;font-size:0.75rem;">'+(state.filter==='all'?'Belum ada pengajuan dana.':'Tidak ada data dengan filter ini.')+'</div>';
       } else {
         html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
         filtered.forEach(function(d){
-          var badge = d.status==='pending'?'background:#f59e0b;color:#000;':d.status==='approved'?'background:#10b981;color:#fff;':'background:#ef4444;color:#fff;';
-          var statusLbl = d.status==='pending'?'⏳ Pending':d.status==='approved'?'✅ Disetujui':'❌ Ditolak';
-          html += '<div class="dana-panel" style="border-left:4px solid '+(d.status==='pending'?'#f59e0b':d.status==='approved'?'#10b981':'#ef4444')+';">';
-          html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.3rem;">';
-          html += '<div><strong style="font-size:0.8rem;">'+esc(d.judul)+'</strong><br><span style="font-size:0.65rem;color:#94a3b8;">'+esc(d.kategori)+' | '+esc(d.pemohon)+'</span></div>';
-          html += '<span style="padding:0.15rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;font-weight:600;'+badge+'">'+esc(statusLbl)+'</span></div>';
+          var badge = d.status==='pending'?'background:#f59e0b;color:#000;':d.status==='approved'?'background:#10b981;color:#fff;':'background:#ef4444;color:#fff;';          var statusLbl = d.status==='pending'?'⏳ Pending':d.status==='approved'?'✅ Disetujui':'❌ Ditolak';
+          html += '<div class="dana-panel" style="border-left:4px solid '+(d.status==='pending'?'#f59e0b':d.status==='approved'?'#10b981':'#ef4444')+';"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.3rem;"><div><strong style="font-size:0.8rem;">'+d.judul+'</strong><br><span style="font-size:0.65rem;color:#94a3b8;">'+d.kategori+' | '+d.pemohon+'</span></div><span style="padding:0.15rem 0.4rem;border-radius:0.3rem;font-size:0.6rem;font-weight:600;'+badge+'">'+statusLbl+'</span></div>';
           html += '<div style="color:#00ff9d;font-weight:700;font-size:0.85rem;margin-bottom:0.2rem;">'+fmtRp(d.nominal)+'</div>';
-          if(d.catatan) html += '<div style="font-size:0.7rem;color:#94a3b8;margin-bottom:0.3rem;font-style:italic;">"'+esc(d.catatan)+'"</div>';
-          html += '<div style="font-size:0.6rem;color:#64748b;margin-bottom:0.4rem;">📅 '+dt(d.tanggal)+(d.approvedAt?' | ✅ '+dt(d.approvedAt)+' oleh '+esc(d.approver):'')+'</div>';
+          if(d.catatan) html += '<div style="font-size:0.7rem;color:#94a3b8;margin-bottom:0.3rem;font-style:italic;">"'+d.catatan+'"</div>';
+          html += '<div style="font-size:0.6rem;color:#64748b;margin-bottom:0.4rem;">📅 '+dt(d.tanggal)+(d.approvedAt?' | ✅ '+dt(d.approvedAt)+' oleh '+d.approver:'')+'</div>';
           if(d.status==='pending'){
-            html += '<div style="display:flex;gap:0.3rem;">';
-            html += '<button data-act="approve" data-id="'+esc(d.id)+'" style="flex:1;padding:0.3rem;background:#10b981;color:white;border:none;border-radius:0.3rem;font-size:0.65rem;cursor:pointer;">✅ Setujui</button>';
-            html += '<button data-act="reject" data-id="'+esc(d.id)+'" style="flex:1;padding:0.3rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;font-size:0.65rem;cursor:pointer;">❌ Tolak</button>';
-            html += '</div>';
+            html += '<div style="display:flex;gap:0.3rem;"><button data-act="approve" data-id="'+d.id+'" style="flex:1;padding:0.3rem;background:#10b981;color:white;border:none;border-radius:0.3rem;font-size:0.65rem;cursor:pointer;">✅ Setujui</button><button data-act="reject" data-id="'+d.id+'" style="flex:1;padding:0.3rem;background:#ef4444;color:white;border:none;border-radius:0.3rem;font-size:0.65rem;cursor:pointer;">❌ Tolak</button></div>';
           }
           html += '</div>';
         });
@@ -254,21 +190,6 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
       
       if(act==='filter'){ state.filter=val; debouncedRenderApp(); }
       else if(act==='toggle-form'){ state.showForm=!state.showForm; renderApp(); }
-      else if(act==='export-csv'){
-        var data = safeGet('dreamos_dana', []);
-        if(!data.length) return _toast('⚠️ Tidak ada data untuk diexport', 'warning');
-        var csv = 'ID,Tanggal,Judul,Kategori,Pemohon,Nominal,Status,Approver,Approved At\n';
-        data.forEach(function(d){
-          csv += [d.id, d.tanggal, '"'+String(d.judul||'').replace(/"/g,'""')+'"', d.kategori, d.pemohon, d.nominal, d.status, d.approver||'', d.approvedAt||''].join(',') + '\n';
-        });
-        var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-        var link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'dana_export_' + new Date().toISOString().slice(0,10) + '.csv';
-        link.click();
-        logAudit('Export CSV', data.length + ' records');
-        _toast('✅ Export ' + data.length + ' records ke CSV', 'success');
-      }
       else if(act==='submit'){
         var j=document.getElementById('d-judul').value.trim(), n=parseInt(document.getElementById('d-nominal').value)||0, k=document.getElementById('d-kat').value, p=document.getElementById('d-pemohon').value.trim(), c=document.getElementById('d-catatan').value.trim();
         if(!j||!p||n<=0){ _toast('⚠️ Judul, pemohon, & nominal wajib diisi (>0)', 'error'); return; }
@@ -332,7 +253,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
 
   // ===== PIN SETUP FUNCTION (untuk admin setup PIN pertama kali) =====
   window.setupDanaPin = function(newPin){
-    if(!newPin || newPin.length < (CFG.MIN_PIN_LENGTH || 4)){
+    if(!newPin || newPin.length < 4){
       if(window.showToast) showToast('⚠️ PIN minimal 4 digit', 'error');
       return false;
     }
