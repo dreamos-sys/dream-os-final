@@ -610,31 +610,17 @@
   }
 
   // ===== INIT dengan ERROR BOUNDARY =====
-  (async function initSettings() {
-    try {
-      updateAllUI();
-      applySettings();
-      
-      // Load dari cloud dengan proper async handling
-      try {
-        await loadSettingsFromCloud();
-      } catch(cloudErr) {
-        console.warn('[Setting] cloud load failed, using local:', cloudErr.message);
-        // Retry sekali setelah delay
-        setTimeout(async function(){
-          try {
-            if(!window.__settingsLoaded) await loadSettingsFromCloud();
-          } catch(retryErr) {
-            console.warn('[Setting] retry failed:', retryErr.message);
-          }
-        }, (CFG.CLOUD_LOAD_RETRY_DELAY_MS || 1500));
-      }
-    } catch(initErr) {
-      console.error('[Setting] init error:', initErr);
-      if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
-      _toast('⚠️ Gagal init Settings: ' + (initErr.message || initErr), 'error');
-    }
-  })();
+  try {
+    loadSettingsFromCloud();
+    // Retry sekali jika gagal (1500ms)
+    setTimeout(function(){ if(!window.__settingsLoaded) loadSettingsFromCloud(); }, (CFG.CLOUD_LOAD_RETRY_DELAY_MS || 1500));
+    updateAllUI();
+    applySettings();
+  } catch(initErr) {
+    console.error('[Setting] init error:', initErr);
+    if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
+    _toast('⚠️ Gagal init Settings: ' + (initErr.message || initErr), 'error');
+  }
   async function syncSettingsToCloud() {
     if (!window.supabaseClient) {
       console.warn('[Setting] Supabase not ready, skip sync');
@@ -662,7 +648,6 @@
         // Merge cloud settings dengan local defaults
         Object.keys(res.data.settings).forEach(k => { if (state.hasOwnProperty(k)) state[k] = res.data.settings[k]; });
         updateAllUI(); applySettings();
-        window.__settingsLoaded = true;
         console.log('☁️ Settings loaded from cloud');
       }
     } catch(e) { console.warn('Cloud load failed:', e.message); }
