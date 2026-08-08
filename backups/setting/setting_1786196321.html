@@ -609,30 +609,46 @@
     }
   }
 
-  // ===== ULTRA SAFE: NO ASYNC, NO CLOUD, NO PARENT ACCESS =====
-  // Cloud functions as no-op (safe fallback)
-  var syncSettingsToCloud = function() { /* disabled for safety */ };
-  var loadSettingsFromCloud = function() { /* disabled for safety */ };
-  
-  // PURE INIT - GUARANTEED TO WORK
-  try {
-    console.log('[Setting] Starting init...');
-    updateAllUI();
-    console.log('[Setting] updateAllUI done');
-    applySettings();
-    console.log('[Setting] applySettings done');
-    console.log('[Setting] ✅ Init complete');
-  } catch(initErr) {
-    console.error('[Setting] ❌ Init error:', initErr);
-    console.error('[Setting] Stack:', initErr.stack);
-    // Fallback: tampilkan error di body
+  // ===== ASYNC FUNCTIONS (sebagai variables, bukan declaration - lebih aman dari hoisting issue) =====
+  var syncSettingsToCloud = async function() {
+    if (!window.supabaseClient) { console.warn('[Setting] Supabase not ready, skip sync'); return; }
     try {
-      document.body.innerHTML = '<div style="padding:2rem;color:#ef4444;font-weight:700;">' +
-        '<h2>⚠️ Settings Load Error</h2>' +
-        '<pre style="background:#1e293b;padding:1rem;border-radius:8px;overflow:auto;">' + 
-        (initErr.message || initErr) + '</pre></div>';
-    } catch(e) {}
+      var sess = await window.supabaseClient.auth.getSession();
+      if (!sess || !sess.data || !sess.data.session) { console.warn('[Setting] No Supabase session'); return; }
+      var r = await window.supabaseClient.functions.invoke('save-settings', { body: { settings: state } });
+      if (r && r.error) throw new Error(r.error.message || 'Edge Function error');
+      console.log('✅ Settings synced to cloud');
+    } catch(e) { console.warn('[Setting] Cloud sync failed:', e && e.message); }
+  };
+
+  var loadSettingsFromCloud = async function() {
+    if (!window.supabaseClient) { console.warn('[Setting] Supabase not ready, skip load'); return; }
+    try {
+      var u = {};
+      try { u = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}') || {}; } catch(e){}
+      if (!u.email) { console.warn('[Setting] No user email'); return; }
+      var res = await window.supabaseClient.from('users').select('settings').eq('email', u.email).maybeSingle();
+      if (res && res.data && res.data.settings) {
+        Object.keys(res.data.settings).forEach(function(k){ if (state.hasOwnProperty(k)) state[k] = res.data.settings[k]; });
+        updateAllUI(); applySettings();
+        console.log('☁️ Settings loaded from cloud');
+      }
+    } catch(e) { console.warn('[Setting] Cloud load failed:', e && e.message); }
+  };
+
+  // ===== PURE SYNC INIT (pasti bekerja, tanpa async/hoisting issue) =====
+  try {
+    updateAllUI();
+    applySettings();
+    console.log('✅ Setting UI rendered');
+  } catch(initErr) {
+    console.error('[Setting] Init error:', initErr);
   }
+
+  // ===== DEFER CLOUD LOAD (async terpisah, tidak ganggu rendering) =====
+  setTimeout(function() {
+    try { loadSettingsFromCloud(); } catch(e) { console.warn('[Setting] deferred load failed:', e); }
+  }, (CFG.CLOUD_LOAD_DELAY_MS || 500));
 
 
 
