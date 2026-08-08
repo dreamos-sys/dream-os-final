@@ -343,12 +343,12 @@ if (typeof Html5Qrcode === 'undefined') {
         }
         else data = (document.getElementById('qr-data')?.value||'').trim();
         
-        if(!data || data.split(':').pop()==='') { if(window.showToast) showToast('⚠️ Masukkan data payload!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Masukkan data payload!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Masukkan data payload!', 'warning') : alert('⚠️ Masukkan data payload!'))); return; }
+        if(!data || data.split(':').pop()==='') { if(window.showToast) showToast('⚠️ Masukkan data payload!','error'); else _toast('⚠️ Masukkan data payload!', 'warning'); return; }
         
         if(encrypt || type==='encrypted') data = 'ENC:' + encryptData(data);
         if(expire || type==='expiring') {
             var expTime = document.getElementById('qr-expire-date')?.value;
-            if(!expTime) { if(window.showToast) showToast('⚠️ Waktu expired wajib diisi!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Waktu expired wajib diisi!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Waktu expired wajib diisi!', 'warning') : alert('⚠️ Waktu expired wajib diisi!'))); return; }
+            if(!expTime) { if(window.showToast) showToast('⚠️ Waktu expired wajib diisi!','error'); else _toast('⚠️ Waktu expired wajib diisi!', 'warning'); return; }
             data = 'EXP:' + new Date(expTime).getTime() + ':' + data;
         }
         if(useGeo) data = 'GEO:' + DEPOK_LAT + ',' + DEPOK_LNG + ':' + data;
@@ -376,7 +376,7 @@ if (typeof Html5Qrcode === 'undefined') {
     }
 
     function printAll(){
-        if(!state.codes.length) { if(window.showToast) showToast('⚠️ Belum ada QR tersimpan!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Belum ada QR tersimpan!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Belum ada QR tersimpan!', 'warning') : alert('⚠️ Belum ada QR tersimpan!'))); return; }
+        if(!state.codes.length) { if(window.showToast) showToast('⚠️ Belum ada QR tersimpan!','error'); else _toast('⚠️ Belum ada QR tersimpan!', 'warning'); return; }
         var w = window.open('','_blank','width=900,height=700');
         var html = `<!DOCTYPE html><html><head><title>Dream OS - Asset Tags</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');body{font-family:'Inter',sans-serif;background:#fff;margin:0;padding:15mm;}.header{text-align:center;margin-bottom:20px;border-bottom:2px solid #000;padding-bottom:10px;}.header h1{margin:0;font-size:24px;font-weight:800;letter-spacing:2px;}.grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:15px;}.sticker{border:2px dashed #999;padding:12px;text-align:center;border-radius:8px;position:relative;}.sticker img{width:140px;height:140px;margin-bottom:8px;}.label{font-weight:800;font-size:14px;text-transform:uppercase;margin-bottom:4px;color:#000;}.meta{font-size:10px;color:#444;background:#f0f0f0;padding:4px;border-radius:4px;display:inline-block;}.iso-badge{position:absolute;bottom:5px;right:8px;font-size:8px;font-weight:700;color:#000;}@media print{.no-print{display:none;}body{padding:0;}}</style></head><body><div class="no-print" style="margin-bottom:20px;text-align:center;"><button onclick="window.print()" style="padding:10px 20px;background:#000;color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;font-weight:bold;">🖨️ Cetak ke PDF</button></div><div class="header"><h1>DREAM OS ENTERPRISE</h1><p>OFFICIAL ASSET TAGS • ISO 55001 COMPLIANT</p></div><div class="grid">`;
         state.codes.forEach(q => { html += `<div class="sticker"><img src="${q.image}"><div class="label">${q.label}</div><div class="meta">Tipe: ${q.type.toUpperCase()} | ID: ${q.id.split('_')[1]}</div><div class="iso-badge">SECURE TAG</div></div>`; });
@@ -439,7 +439,7 @@ if (typeof Html5Qrcode === 'undefined') {
     function processSmartScan(rawDecodedText) {
         var payload = rawDecodedText;
         if (payload.startsWith('GEO:')) {
-            if(!navigator.geolocation) { if(window.showToast) showToast('⛔ Perangkat tidak mendukung GPS.','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Perangkat tidak mendukung GPS.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Perangkat tidak mendukung GPS.', 'warning') : alert('⛔ Perangkat tidak mendukung GPS.'))); return; }
+            if(!navigator.geolocation) { if(window.showToast) showToast('⛔ Perangkat tidak mendukung GPS.','error'); else _toast('⛔ Perangkat tidak mendukung GPS.', 'warning'); return; }
             var geoParts = payload.substring(4).split(':'); var coords = geoParts[0].split(',');
             payload = geoParts.slice(1).join(':');
             navigator.geolocation.getCurrentPosition(function(pos) {
@@ -448,7 +448,7 @@ if (typeof Html5Qrcode === 'undefined') {
                 var p = 0.017453292519943295;
                 var a = 0.5 - Math.cos((targetLat - lat) * p)/2 + Math.cos(lat * p) * Math.cos(targetLat * p) * (1 - Math.cos((targetLng - lng) * p))/2;
                 var distance = 12742 * Math.asin(Math.sqrt(a)); 
-                if (distance > 5) return (typeof window.showToast === 'function' ? window.showToast('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1, 'warning') : alert('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1))) + ' km dari Safe Core (Depok).');
+                if (distance > 5) return _toast('⛔ SECURITY ALERT!\nAnda berada ' + distance.toFixed(1, 'warning') + ' km dari Safe Core (Depok).');
                 processNextLayers(payload);
             }, function(err) { console.warn('GPS ditolak/timeout, melanjutkan scan tanpa geo-fence'); processNextLayers(payload); }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 0});
             return;
@@ -460,15 +460,15 @@ if (typeof Html5Qrcode === 'undefined') {
         if (payload.startsWith('EXP:')) {
             var expParts = payload.substring(4).split(':');
             var expTime = parseInt(expParts[0]); payload = expParts.slice(1).join(':');
-            if (Date.now() > expTime) return (typeof window.showToast === 'function' ? window.showToast('⏰ QR EXPIRED pada: ' + new Date(expTime, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⏰ QR EXPIRED pada: ' + new Date(expTime, 'warning') : alert('⏰ QR EXPIRED pada: ' + new Date(expTime))).toLocaleString('id-ID'));
+            if (Date.now() > expTime) return _toast('⏰ QR EXPIRED pada: ' + new Date(expTime, 'warning').toLocaleString('id-ID'));
         }
         if (payload.startsWith('ENC:')) {
             var pin = prompt('🔐 SECURITY CHALLENGE\nMasukkan PIN Admin/Sistem untuk Dekripsi:');
             if (pin === '123456' || pin === 'SULTAN') {
                 var decrypted = decryptData(payload.substring(4));
                 if(decrypted) payload = '<span style="color:#f59e0b;">🔓 [DECRYPTED SECURE DATA]</span><br>' + decrypted;
-                else { if(window.showToast) showToast('⛔ Kunci Dekripsi Gagal!','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Kunci Dekripsi Gagal!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Kunci Dekripsi Gagal!', 'warning') : alert('⛔ Kunci Dekripsi Gagal!'))); return; }
-            } else { if(window.showToast) showToast('⛔ Akses Ditolak!','error'); else (typeof window.showToast === 'function' ? window.showToast('⛔ Akses Ditolak!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⛔ Akses Ditolak!', 'warning') : alert('⛔ Akses Ditolak!'))); return; }
+                else { if(window.showToast) showToast('⛔ Kunci Dekripsi Gagal!','error'); else _toast('⛔ Kunci Dekripsi Gagal!', 'warning'); return; }
+            } else { if(window.showToast) showToast('⛔ Akses Ditolak!','error'); else _toast('⛔ Akses Ditolak!', 'warning'); return; }
         }
         executePayload(payload);
     }
@@ -480,7 +480,7 @@ if (typeof Html5Qrcode === 'undefined') {
         if(typeof Html5Qrcode === 'undefined') {
             retryCount = (retryCount || 0) + 1;
             if(retryCount > 40) {
-                if(window.showToast) showToast('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.','info'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan, 'warning') : alert('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan))) di bawah.');
+                if(window.showToast) showToast('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan) di bawah.','info'); else _toast('⚠️ Scanner gagal dimuat. Gunakan Input Bypass (manual scan, 'warning') di bawah.');
                 var manualDiv = document.querySelector('#manual-scan-input')?.parentElement;
                 if(manualDiv) manualDiv.style.display = 'block';
                 return;
@@ -509,12 +509,12 @@ if (typeof Html5Qrcode === 'undefined') {
                 if(sBtn) sBtn.style.display = 'none';
                 if(xBtn) xBtn.style.display = 'block';
             }).catch(function(err){ 
-                (typeof window.showToast === 'function' ? window.showToast('❌ Gagal akses kamera: ' + err, 'warning') : (typeof window.showToast === 'function' ? window.showToast('❌ Gagal akses kamera: ' + err, 'warning') : alert('❌ Gagal akses kamera: ' + err))); 
+                _toast('❌ Gagal akses kamera: ' + err, 'warning'); 
                 state.scanner = null; 
             });
         } catch(e) {
             state.scanner = null;
-            (typeof window.showToast === 'function' ? window.showToast('❌ Inisialisasi Scanner Error: ' + e.message, 'warning') : (typeof window.showToast === 'function' ? window.showToast('❌ Inisialisasi Scanner Error: ' + e.message, 'warning') : alert('❌ Inisialisasi Scanner Error: ' + e.message)));
+            _toast('❌ Inisialisasi Scanner Error: ' + e.message, 'warning');
         }
     }
     
@@ -544,7 +544,7 @@ if (typeof Html5Qrcode === 'undefined') {
         var input = prompt('Masukkan data batch (satu per baris):\n\nContoh:\nhttps://example1.com\nhttps://example2.com');
         if(!input) return;
         var lines = input.split('\n').filter(function(l){ return l.trim(); });
-        if(!lines.length) { if(window.showToast) showToast('⚠️ Tidak ada data valid!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada data valid!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Tidak ada data valid!', 'warning') : alert('⚠️ Tidak ada data valid!'))); return; }
+        if(!lines.length) { if(window.showToast) showToast('⚠️ Tidak ada data valid!','error'); else _toast('⚠️ Tidak ada data valid!', 'warning'); return; }
         var count = 0;
         lines.forEach(function(line){
             state.codes.push({
@@ -560,12 +560,12 @@ if (typeof Html5Qrcode === 'undefined') {
             count++;
         });
         saveCodes();
-        (typeof window.showToast === 'function' ? window.showToast('✅ ' + count + ' QR codes berhasil di-generate!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ ' + count + ' QR codes berhasil di-generate!', 'warning') : alert('✅ ' + count + ' QR codes berhasil di-generate!')));
+        _toast('✅ ' + count + ' QR codes berhasil di-generate!', 'warning');
         if(state.activeTab === 'codes') renderCodes();
     }
 
     function exportQr(){
-        if(!state.codes.length) { if(window.showToast) showToast('⚠️ Belum ada QR tersimpan!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Belum ada QR tersimpan!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Belum ada QR tersimpan!', 'warning') : alert('⚠️ Belum ada QR tersimpan!'))); return; }
+        if(!state.codes.length) { if(window.showToast) showToast('⚠️ Belum ada QR tersimpan!','error'); else _toast('⚠️ Belum ada QR tersimpan!', 'warning'); return; }
         var data = JSON.stringify(state.codes, null, 2);
         var blob = new Blob([data], {type: 'application/json'});
         var url = URL.createObjectURL(blob);
@@ -574,11 +574,11 @@ if (typeof Html5Qrcode === 'undefined') {
         a.download = 'qr_backup_' + new Date().toISOString().split('T')[0] + '.json';
         a.click();
         URL.revokeObjectURL(url);
-        if(window.showToast) showToast('✅ QR codes di-export!','info'); else (typeof window.showToast === 'function' ? window.showToast('✅ QR codes di-export!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ QR codes di-export!', 'warning') : alert('✅ QR codes di-export!')));
+        if(window.showToast) showToast('✅ QR codes di-export!','info'); else _toast('✅ QR codes di-export!', 'warning');
     }
 
     function downloadQr(){
-        if(!state.currentImg) { if(window.showToast) showToast('⚠️ Generate QR dulu!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Generate QR dulu!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Generate QR dulu!', 'warning') : alert('⚠️ Generate QR dulu!'))); return; }
+        if(!state.currentImg) { if(window.showToast) showToast('⚠️ Generate QR dulu!','error'); else _toast('⚠️ Generate QR dulu!', 'warning'); return; }
         var a = document.createElement('a');
         a.href = state.currentImg;
         a.download = 'qr_' + Date.now() + '.png';
@@ -587,11 +587,11 @@ if (typeof Html5Qrcode === 'undefined') {
     }
 
     function shareQr(){
-        if(!state.currentImg) { if(window.showToast) showToast('⚠️ Generate QR dulu!','error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Generate QR dulu!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Generate QR dulu!', 'warning') : alert('⚠️ Generate QR dulu!'))); return; }
+        if(!state.currentImg) { if(window.showToast) showToast('⚠️ Generate QR dulu!','error'); else _toast('⚠️ Generate QR dulu!', 'warning'); return; }
         if(navigator.share){
             navigator.share({ title: 'QR Code', text: 'Scan QR Code ini', url: state.currentImg }).catch(function(e){});
         } else {
-            navigator.clipboard.writeText(state.currentImg).then(function(){ (typeof window.showToast === 'function' ? window.showToast('✅ Link QR disalin ke clipboard!', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Link QR disalin ke clipboard!', 'warning') : alert('✅ Link QR disalin ke clipboard!'))); });
+            navigator.clipboard.writeText(state.currentImg).then(function(){ _toast('✅ Link QR disalin ke clipboard!', 'warning'); });
         }
     }
 

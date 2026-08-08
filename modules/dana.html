@@ -98,7 +98,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
     if(verified){
       if(__pinCallback) __pinCallback();
     } else {
-      if(window.showToast) showToast('❌ PIN salah', 'error'); else (typeof window.showToast === 'function' ? window.showToast('❌ PIN salah.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('❌ PIN salah.', 'warning') : alert('❌ PIN salah.')));
+      if(window.showToast) showToast('❌ PIN salah', 'error'); else _toast('❌ PIN salah.', 'warning');
     }
     __pinCallback = null;
   };
@@ -192,7 +192,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
       else if(act==='toggle-form'){ state.showForm=!state.showForm; renderApp(); }
       else if(act==='submit'){
         var j=document.getElementById('d-judul').value.trim(), n=parseInt(document.getElementById('d-nominal').value)||0, k=document.getElementById('d-kat').value, p=document.getElementById('d-pemohon').value.trim(), c=document.getElementById('d-catatan').value.trim();
-        if(!j||!p||n<=0){ if(window.showToast) showToast('⚠️ Judul, pemohon, & nominal wajib diisi', 'error'); else (typeof window.showToast === 'function' ? window.showToast('⚠️ Judul, pemohon, & nominal wajib diisi (>0, 'warning') : (typeof window.showToast === 'function' ? window.showToast('⚠️ Judul, pemohon, & nominal wajib diisi (>0, 'warning') : alert('⚠️ Judul, pemohon, & nominal wajib diisi (>0))).'); return; }
+        if(!j||!p||n<=0){ _toast('⚠️ Judul, pemohon, & nominal wajib diisi (>0)', 'error'); return; }
         var data = safeGet('dreamos_dana',[]);
         var payload = {id:'dana_'+Date.now(), judul:j, nominal:n, kategori:k, status:'pending', pemohon:p, tanggal:new Date().toISOString(), approvedAt:null, approver:null, catatan:c};
         data.unshift(payload);
@@ -200,7 +200,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
         if(typeof window.HybridSync !== 'undefined' && window.HybridSync.push) { try { window.HybridSync.push('dana', payload); } catch(e){} }
         logAudit('Pengajuan dana: '+j, fmtRp(n));
         state.showForm=false; state.filter='pending'; renderApp();
-        if(window.showToast) showToast('✅ Pengajuan dikirim', 'success'); else (typeof window.showToast === 'function' ? window.showToast('✅ Pengajuan dikirim ke Papan Approval.', 'warning') : (typeof window.showToast === 'function' ? window.showToast('✅ Pengajuan dikirim ke Papan Approval.', 'warning') : alert('✅ Pengajuan dikirim ke Papan Approval.')));
+        if(window.showToast) showToast('✅ Pengajuan dikirim', 'success'); else _toast('✅ Pengajuan dikirim ke Papan Approval.', 'warning');
       }
       else if(act==='approve' || act==='reject'){
         verifyPin(function(){
@@ -209,7 +209,7 @@ if (!window.renderDashboard && window.parent && window.parent.renderDashboard)
             if(d.id===id){ var copy=JSON.parse(JSON.stringify(d)); copy.status=act==='approve'?'approved':'rejected'; copy.approvedAt=new Date().toISOString(); copy.approver='Kabag/Koordinator'; return copy; }
             return d;
           });
-          safeSet('dreamos_dana', updated); logAudit(act==='approve'?'Dana disetujui':'Dana ditolak', id); renderApp(); if(window.showToast) showToast(act==='approve'?'✅ Pengajuan disetujui':'❌ Pengajuan ditolak', act==='approve'?'success':'error'); else (typeof window.showToast === 'function' ? window.showToast(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.', 'warning') : (typeof window.showToast === 'function' ? window.showToast(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.', 'warning') : alert(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.')));
+          safeSet('dreamos_dana', updated); logAudit(act==='approve'?'Dana disetujui':'Dana ditolak', id); renderApp(); if(window.showToast) showToast(act==='approve'?'✅ Pengajuan disetujui':'❌ Pengajuan ditolak', act==='approve'?'success':'error'); else _toast(act==='approve'?'✅ Pengajuan disetujui.':'❌ Pengajuan ditolak.', 'warning');
         });
       }    });
     console.log('✅ Modul Dana ready');
