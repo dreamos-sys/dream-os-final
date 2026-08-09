@@ -569,7 +569,6 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
-  <button onclick="forceRefresh()" style="position:fixed;top:0.5rem;right:0.5rem;z-index:9999;background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:0.4rem 0.8rem;border-radius:8px;font-size:0.7rem;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);" title="Force Refresh - Bersihkan Cache & SW">🔄 Force Refresh</button>
 
   <div id="security-overlay">
     <div style="font-size: 3rem; margin-bottom: 1rem;">⛔</div>
@@ -1427,6 +1426,13 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
               if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
               document.body.appendChild(ns);
             });
+            // 🧹 CLEAN UX: Force Refresh pindah ke Settings (tidak floating di home)
+            if (moduleId === 'setting') {
+              var resetBtn = c.querySelector('button[onclick="resetAll()"]');
+              if (resetBtn && !c.querySelector('#settings-refresh-btn')) {
+                resetBtn.insertAdjacentHTML('afterend', '<button id="settings-refresh-btn" class="btn btn-warning" onclick="forceRefresh()" style="margin-left:0.3rem;">🧹 Refresh</button>');
+              }
+            }
           } catch(err) { tryFetch(paths, idx + 1); }
         }
         tryFetch(pathsToTry, 0);
