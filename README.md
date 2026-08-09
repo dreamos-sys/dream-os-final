@@ -29,6 +29,8 @@ node scripts/validate-modules.mjs  # syntax check 14 modules
 ```
 
 ## 📖 Docs
+- [🏗️ Architecture Overview](./docs/ARCHITECTURE.md)
+- [🧩 API Reference](./docs/API.md)
 - [Policy & Compliance](./modules/about.html)
 - [Branch Protection Guide](./BRANCH_PROTECTION.md)
 
