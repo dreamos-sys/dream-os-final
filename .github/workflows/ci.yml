@@ -1,13 +1,20 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches: [ main, master, gh-pages ]
   pull_request:
     branches: [ main, master, gh-pages ]
   workflow_dispatch:
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+# CATATAN: Deploy TIDAK perlu job custom.
+# GitHub Pages sudah auto-deploy via workflow bawaan "pages build and deployment".
+# Job custom deploy dulu gagal karena push ke branch yang sama (konflik).
+
 jobs:
   test:
     name: Run Vitest Tests
@@ -28,6 +35,7 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 30
+
   syntax:
     name: Validate Module Syntax
     runs-on: ubuntu-latest
@@ -38,6 +46,7 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/validate-modules.mjs
+
   security:
     name: Security Audit
     runs-on: ubuntu-latest
@@ -48,22 +57,20 @@ jobs:
         with:
           node-version: '20'
       - run: npm audit --audit-level=high || true
-  deploy:
-    name: Deploy to GitHub Pages
+
+  summary:
+    name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [test, syntax]
-    # ANTI-LOOP: jangan deploy kalau commit dari bot (mencegah infinite loop)
-    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
-    permissions:
-      contents: write
+    needs: [test, syntax, security]
+    if: always()
     steps:
-      - uses: actions/checkout@v4
-      - uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
-          keep_files: true
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'Auto-deploy ${{ github.sha }}'
+      - name: Build summary
+        run: |
+          echo "## 🎯 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Syntax | ${{ needs.syntax.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 Deploy: ditangani otomatis oleh GitHub Pages (pages build and deployment)" >> $GITHUB_STEP_SUMMARY
