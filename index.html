@@ -525,6 +525,43 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
   <script src="js/offline-queue.js?v=1"></script>
 
   <!-- 🛰️ SENTRY GPS TRACKER (Error Monitoring) -->
+  <script>
+    window.sentryOnLoad = {
+      environment: 'production',
+      sendDefaultPii: false,
+      tracesSampleRate: 0.1,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 0,
+      ignoreErrors: [/Cannot set properties of null/i, /bundle\.replay/i, /sentry-cdn/i, /ResizeObserver/i],
+      integrations: function (integrations) {
+        // Matikan Replay/Logs/Metrics (penyebab crash di HP) — cukup Error Monitoring
+        return integrations.filter(function (i) {
+          var n = (i && i.name) || '';
+          return n.indexOf('Replay') === -1 && n.indexOf('Metrics') === -1 &&
+                 n.indexOf('Logs') === -1 && n.indexOf('BrowserTracing') === -1 &&
+                 n.indexOf('Feedback') === -1;
+        });
+      }
+    };
+    // Filter error pihak-ketiga SEBELUM error reporter menampilkan banner merah
+    window.addEventListener('error', function (e) {
+      var src = (e && e.filename) || '';
+      if (/sentry|bundle\.replay|sentry-cdn/i.test(src)) {
+        try { e.stopImmediatePropagation(); } catch (_) {}
+      }
+    }, true);
+    // Wrap window.onerror (kalau reporter pakai property onerror)
+    window.addEventListener('load', function () {
+      if (typeof window.onerror === 'function' && !window.__onerrorWrapped) {
+        var orig = window.onerror;
+        window.onerror = function (msg, src) {
+          if (typeof src === 'string' && /sentry|bundle\.replay|sentry-cdn/i.test(src)) return true;
+          return orig.apply(this, arguments);
+        };
+        window.__onerrorWrapped = true;
+      }
+    });
+  </script>
   <script src="https://js.sentry-cdn.com/22b1730336ecd4cd1d71c1d07e6f7a02.min.js" crossorigin="anonymous"></script>
 </head>
 
