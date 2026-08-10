@@ -589,7 +589,23 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
   </script>
 </head>
 
-<body oncontextmenu="return false;" ondragstart="return false;" ondrop="return false;">
+
+  // 🛡️ NULL-SAFETY: wrap textContent setter anti-TypeError
+  (function(){
+    try {
+      var orig = Object.getOwnPropertyDescriptor(Element.prototype, 'textContent');
+      if (orig && orig.set) {
+        Object.defineProperty(Element.prototype, 'textContent', {
+          get: orig.get,
+          set: function(v) {
+            try { return orig.set.call(this, v); } catch(e) { /* silent */ }
+          },
+          configurable: true
+        });
+      }
+    } catch(e) {}
+  })();
+  <body oncontextmenu="return false;" ondragstart="return false;" ondrop="return false;">
   <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
   <a href="#main-app" class="skip-link">Skip to Content</a>
   <canvas id="star-field"></canvas>
