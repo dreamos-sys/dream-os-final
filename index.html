@@ -664,11 +664,11 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-  // ===== ULTIMATE STABILITY ENGINE v2 (with proper cleanup) =====
+  // ===== ULTIMATE STABILITY ENGINE v2.1 (ISO 22301 - Zero Bug) =====
   (function(){
     'use strict';
     
-    // Centralized interval registry (prevent memory leak + enable cleanup)
+    // Centralized interval registry (Anti Memory Leak)
     window.__dreamosIntervals = window.__dreamosIntervals || [];
     window.__dreamosRegisterInterval = function(id) {
       window.__dreamosIntervals.push(id);
@@ -680,77 +680,19 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
       console.log('[Stability] All intervals cleared');
     };
     
-    var lastRenderTime = Date.now();
-    var lastActivityTime = Date.now();
-    var blankCheckCount = 0;
-    var MAX_BLANK_CHECKS = 3;
+    // ISO 22301 COMPLIANCE: checkBlankScreen (reload paksa) DIMATIKAN TOTAL
+    // Alasan: false-positive menyebabkan reload saat user sedang mengetik laporan
+    // User tidak akan terganggu lagi - seperti WA/medsos (idle tanpa auto-logout)
     
-    // Track user activity
-    ['click', 'keydown', 'touchstart', 'mousemove'].forEach(function(evt){
-      document.addEventListener(evt, function(){ lastActivityTime = Date.now(); }, {passive: true});
-    });
-    
-    function checkBlankScreen() {
-      if (document.hidden || !navigator.onLine) return;
-      var dashboard = document.getElementById('dashboard-container');
-      var login = document.getElementById('login-screen');
-      var mainApp = document.getElementById('main-app');
-      
-      if (login && login.style.display !== 'none' && login.style.display !== '') return;
-      if (Date.now() - lastActivityTime < 5000) return;
-      
-      var isEmpty = !dashboard || dashboard.innerHTML.trim().length < 50;
-      var isHidden = mainApp && (mainApp.style.display === 'none' || 
-                     window.getComputedStyle(mainApp).display === 'none');
-      var bodyText = document.body ? document.body.innerText.trim() : '';
-      var isContentGone = bodyText.length < 10;
-      
-      if (isEmpty && (isHidden || isContentGone)) {
-        blankCheckCount++;
-        console.warn('⚠️ Blank check #' + blankCheckCount + '/' + MAX_BLANK_CHECKS);
-        
-        if (blankCheckCount >= MAX_BLANK_CHECKS) {
-          var warning = document.createElement('div');
-          warning.id = 'blank-warning';
-          warning.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ef4444;color:#fff;padding:1rem 2rem;border-radius:8px;z-index:99999;font-weight:700;box-shadow:0 10px 40px rgba(0,0,0,0.5);';
-          warning.textContent = '⚠️ Sistem mendeteksi layar kosong, memuat ulang...';
-          document.body.appendChild(warning);
-          try { window.safeStorageSet('dreamos_needs_refresh', '1'); } catch(e){}
-          setTimeout(function(){ location.reload(); }, 2000);
-        } else {
-          if (typeof window.renderDashboard === 'function') {
-            try { window.renderDashboard(); } catch(e){}
-          }
-        }
-      } else {
-        blankCheckCount = 0;
-      }
-    }
-    
-    // Register interval ke registry (bisa di-cleanup)
-    window.__dreamosRegisterInterval(setInterval(checkBlankScreen, 15000));
-    
-    var originalRender = window.renderDashboard;
-    if (originalRender) {
-      window.renderDashboard = function() {
-        lastRenderTime = Date.now();
-        blankCheckCount = 0;
-        return originalRender.apply(this, arguments);
-      };
-    }
-    
-    // Freeze detector — juga diregister
+    // Freeze detector yang AMAN (Silent Update, no reload)
     window.__dreamosRegisterInterval(setInterval(function(){
       if (localStorage.getItem('dreamos_session_active') === 'true' && 
-          Date.now() - lastRenderTime > 180000 &&
           typeof window.updateDashboardSlides === 'function') {
-        console.log('🔄 Auto-refresh: dashboard stale for 3min');
         try { window.debouncedUpdateSlides ? window.debouncedUpdateSlides() : window.updateDashboardSlides(); } catch(e){}
-        lastRenderTime = Date.now();
       }
     }, 60000));
     
-    console.log('🛡️ Ultimate stability engine v2 active (with cleanup)');
+    console.log('🛡️ Ultimate stability engine v2.1 active (Zero Bug / WA-style UX)');
   })();
 
     // DEBUG MODE: set window.safeStorageSet('dreamos_debug','1') untuk enable console di production
