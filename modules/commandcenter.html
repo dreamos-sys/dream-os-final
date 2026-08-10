@@ -1322,14 +1322,16 @@ window.goHomeHandler = function() {
   };
 
   function updateMetrics() {
+    try {
+
     const tasks = collectTasks();
     const pending = tasks.filter(t => t.status === 'pending').length;
     const danaPending = safeJSON('dreamos_dana').filter(d => (d.status || '').toLowerCase() === 'pending');
     const danaSum = danaPending.reduce((s, d) => s + Number(d.nominal || 0), 0);
 
-    document.getElementById('m-pending').textContent = pending;
-    document.getElementById('m-approval').textContent = pending;
-    document.getElementById('m-dana').textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
+    (document.getElementById('m-pending')||{}).textContent = pending;
+    (document.getElementById('m-approval')||{}).textContent = pending;
+    (document.getElementById('m-dana')||{}).textContent = 'Rp ' + danaSum.toLocaleString('id-ID');
 
     const todayStr = new Date().toISOString().split('T')[0];
     const weekAgo = Date.now() - 7*86400000;
@@ -1337,12 +1339,16 @@ window.goHomeHandler = function() {
     safeJSON('dreamos_bookings', []).forEach(b => { if ((b.status||'pending').toLowerCase()==='pending' && b.tgl && b.tgl < todayStr) overdue++; });
     safeJSON('dreamos_k3_reports', []).forEach(k => { if ((k.status||'').toLowerCase()==='pending' && new Date(k.created_at||Date.now()).getTime() < weekAgo) overdue++; });
     safeJSON('dreamos_maintenance_tasks', []).forEach(m => { if ((m.status||'').toLowerCase()==='pending' && new Date(m.created_at||Date.now()).getTime() < weekAgo) overdue++; });
-    document.getElementById('m-overdue').textContent = overdue;
+    (document.getElementById('m-overdue')||{}).textContent = overdue;
 
-    document.getElementById('op-k3').textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status||'') === 'pending').length;
-    document.getElementById('op-booking').textContent = safeJSON('dreamos_bookings').filter(b => (b.status||'') === 'pending').length;
-    document.getElementById('op-maint').textContent = safeJSON('dreamos_maintenance_tasks').filter(m => (m.status||'') === 'pending').length;
-    document.getElementById('op-dana').textContent = danaPending.length;
+    (document.getElementById('op-k3')||{}).textContent = safeJSON('dreamos_k3_reports').filter(k => (k.status||'') === 'pending').length;
+    (document.getElementById('op-booking')||{}).textContent = safeJSON('dreamos_bookings').filter(b => (b.status||'') === 'pending').length;
+    (document.getElementById('op-maint')||{}).textContent = safeJSON('dreamos_maintenance_tasks').filter(m => (m.status||'') === 'pending').length;
+    (document.getElementById('op-dana')||{}).textContent = danaPending.length;
+  
+    } catch(e) {
+      console.warn('[updateMetrics]', e.message);
+    }
   }
 
   window.refreshAll = function(forceSync) {
