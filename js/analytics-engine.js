@@ -107,8 +107,8 @@
     var ucard=document.querySelector('.ana-unified-card');
     if(ucard&&!ucard.hasAttribute('data-swipe')){
       ucard.setAttribute('data-swipe','1');var sx=0;
-      ucard.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
-      ucard.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx;if(dx>60)window.shiftPeriod(-1);else if(dx<-60)window.shiftPeriod(1);},{passive:true});
+      ucard.addEventListener('touchstart',function(e){try{sx=e.touches[0].clientX;}catch(err){}},{passive:true});
+      ucard.addEventListener('touchend',function(e){try{var dx=e.changedTouches[0].clientX-sx;if(dx>60)window.shiftPeriod(-1);else if(dx<-60)window.shiftPeriod(1);}catch(err){console.warn('[swipe]',err.message);}},{passive:true});
     }
 
     var header=document.querySelector('.ana-header > div');
