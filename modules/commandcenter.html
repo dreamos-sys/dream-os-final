@@ -239,7 +239,42 @@
 
     <!-- Salt Migration Helper -->
     <script src="../js/salt-migration.js"></script>
-  </head>
+  <script>
+/* ===== POLYFILL DREAMOS COMMAND CENTER ===== */
+/* 1. safeStorageSet (dipakai saveJSON) */
+window.safeStorageSet = window.safeStorageSet || function(key, value) {
+  try { localStorage.setItem(key, value); return true; }
+  catch (e) { console.error('[safeStorageSet]', e); return false; }
+};
+
+/* 2. __dreamosRegisterInterval */
+window.__dreamosRegisterInterval = window.__dreamosRegisterInterval || function(id) {
+  window.__dreamosLastInterval = id; return id;
+};
+
+/* 3. getUserRole */
+window.getUserRole = window.getUserRole || function() {
+  try { var b = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}'); return b.role || 'staff'; }
+  catch (e) { return 'staff'; }
+};
+
+/* 4. CloudPhoto.dataURLtoBlob */
+window.CloudPhoto = window.CloudPhoto || {};
+window.CloudPhoto.dataURLtoBlob = window.CloudPhoto.dataURLtoBlob || function(dataUrl) {
+  var arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+      bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], { type: mime });
+};
+
+/* 5. Supabase client placeholder */
+if (!window.supabaseClient) {
+  window.supabaseClient = null;
+  console.warn('[DreamOS] supabaseClient belum diinisialisasi. Mode lokal aktif.');
+}
+</script>
+
+</head>
 
 <body>
   <button class="back-btn" onclick="goHomeHandler()">← HOME</button>
