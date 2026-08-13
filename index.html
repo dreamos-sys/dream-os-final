@@ -1417,8 +1417,15 @@ window.__dreamosClearAllIntervals = window.__dreamosClearAllIntervals || functio
               if (stype && stype.indexOf('javascript') === -1 && stype !== 'module') return;
               const ns = document.createElement('script');
               ns.className = 'mod-injected-script'; // FIX: Tandai script modul
-              if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
-              document.body.appendChild(ns);
+              if (s.src) { ns.src = s.src; } else {
+                var __code = s.textContent || '';
+                try { new Function(__code); } catch (__e) {
+                  console.warn('[ModLoader] SKIP inline script rusak:', __e.message);
+                  return;
+                }
+                ns.textContent = __code;
+              }
+              try { document.body.appendChild(ns); } catch (__e2) { console.warn('[ModLoader] inject gagal:', __e2); }
             });
             // 🧹 CLEAN UX: Force Refresh pindah ke Settings (tidak floating di home)
             if (moduleId === 'setting') {
