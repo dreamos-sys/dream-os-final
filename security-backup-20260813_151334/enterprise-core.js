@@ -1,3 +1,4 @@
+
 // ==========================================
 // ISO 27001: Safe Storage Wrapper (Anti-Quota Bomb)
 // ==========================================
@@ -11,6 +12,19 @@ window.safeStorageSet = function(key, val) {
         }
     }
 };
+/**
+ * DREAM OS ENTERPRISE CORE v1.0
+ * Cognitive Facility Operating System - Pro Global Standard
+ * 
+ * Modules:
+ * - Telemetry: Global error handler + bug reporter
+ * - SecureStore: AES-GCM encrypted localStorage
+ * - CloudSync: Robust 2-way sync with conflict resolution
+ * - IconSystem: SVG sprite icons (uniform across devices)
+ * 
+ * ISO 27001 • ISO 9001 • ISO 55001 Compliant
+ * Engineered by Family Dream Team
+ */
 
 (function() {
   'use strict';
@@ -23,6 +37,7 @@ window.safeStorageSet = function(key, val) {
     MAX_LOGS: 100,
     
     init: function() {
+      // Global error handler
       window.onerror = function(msg, url, line, col, error) {
         Telemetry.log('ERROR', {
           message: msg,
@@ -32,9 +47,10 @@ window.safeStorageSet = function(key, val) {
           stack: error ? error.stack : null,
           timestamp: new Date().toISOString()
         });
-        return false;
+        return false; // Don't suppress default handling
       };
       
+      // Unhandled promise rejection
       window.addEventListener('unhandledrejection', function(event) {
         Telemetry.log('PROMISE_REJECTION', {
           reason: event.reason ? event.reason.message || String(event.reason) : 'Unknown',
@@ -43,6 +59,7 @@ window.safeStorageSet = function(key, val) {
         });
       });
       
+      // Performance monitoring
       window.addEventListener('load', function() {
         setTimeout(function() {
           const perf = performance.getEntriesByType('navigation')[0];
@@ -66,18 +83,11 @@ window.safeStorageSet = function(key, val) {
         if (logs.length > this.MAX_LOGS) logs.length = this.MAX_LOGS;
         window.safeStorageSet(this.STORAGE_KEY, JSON.stringify(logs));
         
-        // IMPROVED: Sanitize data sebelum kirim
+        // Send to Supabase if available
         if (window.supabaseClient && type === 'ERROR') {
-          const sanitizedData = JSON.parse(JSON.stringify(data));
-          if (sanitizedData.stack) {
-            sanitizedData.stack = sanitizedData.stack
-              .replace(/Bearer\s+[a-zA-Z0-9\-._~+/]+=*/gi, '[REDACTED]')
-              .replace(/sk-[a-zA-Z0-9]{20,}/gi, '[REDACTED]')
-              .slice(0, 2000);
-          }
           window.supabaseClient.from('telemetry').insert({
             type: type,
-            data: sanitizedData,
+            data: data,
             user_role: window.getUserRole ? window.getUserRole() : 'unknown',
             created_at: new Date().toISOString()
           }).then(function() {}).catch(function() {});
@@ -101,29 +111,24 @@ window.safeStorageSet = function(key, val) {
   // 🔐 SECURE STORAGE MODULE
   // ==========================================
   const SecureStore = {
-    // IMPROVED: Salt dari config (bukan hardcoded)
-    _getSalt: function() {
-      return (window.__DREAMOS_CONFIG && window.__DREAMOS_CONFIG.secureStoreSalt)
-        ? window.__DREAMOS_CONFIG.secureStoreSalt
-        : 'dreamos_secure_fallback_' + Date.now();
-    },
+    SALT: 'dreamos_enterprise_2026_salt',
     
     init: function() {
       console.log('🔐 Enterprise SecureStore initialized');
     },
     
+    // Generate encryption key from password + salt
     _getKey: async function() {
       const encoder = new TextEncoder();
-      const salt = this._getSalt();
       const keyMaterial = await crypto.subtle.importKey(
         'raw',
-        encoder.encode(salt),
+        encoder.encode(this.SALT),
         { name: 'PBKDF2' },
         false,
         ['deriveKey']
       );
       return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: encoder.encode('dreamos_dynamic_' + Date.now()), iterations: 100000, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt: encoder.encode('dreamos_static'), iterations: 100000, hash: 'SHA-256' },
         keyMaterial,
         { name: 'AES-GCM', length: 256 },
         false,
@@ -131,6 +136,7 @@ window.safeStorageSet = function(key, val) {
       );
     },
     
+    // Encrypt and store
     set: async function(key, value) {
       try {
         const encoder = new TextEncoder();
@@ -149,15 +155,17 @@ window.safeStorageSet = function(key, val) {
         return true;
       } catch(e) {
         console.warn('SecureStore.set failed, falling back to plain:', e);
-        window.safeStorageSet(key, JSON.stringify(value));
+        window.safeStorageSet(key, JSON.stringify(value)); // Fallback
         return false;
       }
     },
     
+    // Decrypt and retrieve
     get: async function(key) {
       try {
         const stored = JSON.parse(localStorage.getItem('sec_' + key));
         if (!stored) {
+          // Try plain fallback
           const plain = localStorage.getItem(key);
           return plain ? JSON.parse(plain) : null;
         }
@@ -170,6 +178,7 @@ window.safeStorageSet = function(key, val) {
         return JSON.parse(new TextDecoder().decode(decrypted));
       } catch(e) {
         console.warn('SecureStore.get failed:', e);
+        // Try plain fallback
         try {
           const plain = localStorage.getItem(key);
           return plain ? JSON.parse(plain) : null;
@@ -191,10 +200,12 @@ window.safeStorageSet = function(key, val) {
     LAST_SYNC_KEY: 'dreamos_last_sync',
     
     init: function() {
-      window.__dreamosRegisterInterval(setInterval(function() {
+      // Auto-sync every 5 minutes
+      window.__dreamosRegisterInterval(setInterval(function() {))
         CloudSync.processQueue();
-      }, 300000));
+      }, 300000);
       
+      // Sync on visibility change (when app comes back)
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden) CloudSync.processQueue();
       });
@@ -202,13 +213,14 @@ window.safeStorageSet = function(key, val) {
       console.log('☁️ Enterprise CloudSync initialized');
     },
     
+    // Queue data for sync
     queue: function(table, operation, data) {
       try {
         const queue = JSON.parse(localStorage.getItem(this.QUEUE_KEY) || '[]');
         queue.push({
           id: 'sync_' + Date.now(),
           table: table,
-          operation: operation,
+          operation: operation, // 'INSERT', 'UPDATE', 'DELETE'
           data: data,
           timestamp: new Date().toISOString(),
           retries: 0
@@ -219,6 +231,7 @@ window.safeStorageSet = function(key, val) {
       }
     },
     
+    // Process sync queue
     processQueue: async function() {
       if (!window.supabaseClient) return;
       
@@ -240,7 +253,7 @@ window.safeStorageSet = function(key, val) {
             
             if (result && result.error) {
               item.retries++;
-              if (item.retries < 3) remaining.push(item);
+              if (item.retries < 3) remaining.push(item); // Retry max 3 times
             }
           } catch(e) {
             item.retries++;
@@ -259,6 +272,7 @@ window.safeStorageSet = function(key, val) {
       }
     },
     
+    // Pull latest from cloud
     pull: async function(table) {
       if (!window.supabaseClient) return null;
       try {
@@ -280,6 +294,7 @@ window.safeStorageSet = function(key, val) {
   // 🎨 SVG ICON SYSTEM
   // ==========================================
   const IconSystem = {
+    // SVG sprite definitions (uniform across all devices)
     SPRITES: {
       cmd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
       security: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
@@ -293,6 +308,7 @@ window.safeStorageSet = function(key, val) {
     },
     
     init: function() {
+      // Inject SVG sprite into DOM
       const sprite = document.createElement('div');
       sprite.id = 'svg-sprite';
       sprite.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
@@ -304,6 +320,7 @@ window.safeStorageSet = function(key, val) {
       console.log('🎨 Enterprise IconSystem initialized (' + Object.keys(this.SPRITES).length + ' icons)');
     },
     
+    // Get SVG icon HTML
     get: function(name, size) {
       size = size || 24;
       const svg = this.SPRITES[name];
@@ -311,6 +328,7 @@ window.safeStorageSet = function(key, val) {
       return svg.replace('<svg viewBox', '<svg width="' + size + '" height="' + size + '" viewBox');
     },
     
+    // Replace emoji icons in module grid with SVG
     upgradeModuleGrid: function() {
       const cards = document.querySelectorAll('.mod-card');
       const iconMap = {
@@ -345,16 +363,18 @@ window.safeStorageSet = function(key, val) {
   // 🚀 ENTERPRISE CORE INIT
   // ==========================================
   const EnterpriseCore = {
-    version: '1.1.0',
+    version: '1.0.0',
     
     init: function() {
       console.log('🚀 Dream OS Enterprise Core v' + this.version + ' initializing...');
       
+      // Initialize all modules
       Telemetry.init();
       SecureStore.init();
       CloudSync.init();
       IconSystem.init();
       
+      // Upgrade module grid icons after DOM ready
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
           setTimeout(function() { IconSystem.upgradeModuleGrid(); }, 500);
@@ -363,20 +383,24 @@ window.safeStorageSet = function(key, val) {
         setTimeout(function() { IconSystem.upgradeModuleGrid(); }, 500);
       }
       
+      // Expose to global
       window.EnterpriseTelemetry = Telemetry;
       window.EnterpriseSecureStore = SecureStore;
       window.EnterpriseCloudSync = CloudSync;
       window.EnterpriseIcons = IconSystem;
       
-      console.log('✅ Enterprise Core ready. ISO 27001 • ISO 9001 • ISO 55001 Compliant (Security Hardened).');
+      console.log('✅ Enterprise Core ready. ISO 27001 • ISO 9001 • ISO 55001 Compliant.');
     }
   };
 
+  // Auto-init when script loads
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() { EnterpriseCore.init(); });
   } else {
     EnterpriseCore.init();
   }
 
+  // Expose main object
   window.EnterpriseCore = EnterpriseCore;
+
 })();

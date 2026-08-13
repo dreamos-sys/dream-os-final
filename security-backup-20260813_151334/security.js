@@ -1,6 +1,6 @@
 /**
  * Dream OS Security Layer
- * - XSS sanitization (OWASP Top 10 A03:2021) - DOMPurify
+ * - XSS sanitization (OWASP Top 10 A03:2021)
  * - Error boundary (React-style)
  * - Safe event delegation
  */
@@ -9,21 +9,7 @@ const DreamOSSecurity = (function() {
   'use strict';
   
   // === XSS SANITIZER ===
-  // IMPROVED: Pakai DOMPurify (bukan regex)
-  function sanitizeHtml(html) {
-    if (typeof DOMPurify !== 'undefined') {
-      return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span'],
-        ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-        ALLOW_DATA_ATTRS: false
-      });
-    }
-    // Fallback: strip SEMUA HTML tags
-    console.warn('[Security] DOMPurify not loaded, using aggressive fallback');
-    return String(html || '').replace(/<[^>]*>/g, '');
-  }
-  
-  // Escape HTML untuk prevent injection (untuk text content, bukan HTML)
+  // Escape HTML untuk prevent injection
   function escHtml(s) {
     if (s === null || s === undefined) return '';
     return String(s).replace(/[&<>"'`=/]/g, function(c) {
@@ -52,6 +38,7 @@ const DreamOSSecurity = (function() {
   }
   
   // === ERROR BOUNDARY ===
+  // Wrapper untuk safe execution (catch error, log, fallback)
   async function safeExec(fn, context, fallbackFn) {
     try {
       return await fn.call(context);
@@ -65,44 +52,36 @@ const DreamOSSecurity = (function() {
     }
   }
   
-  // IMPROVED: Sanitize stack trace sebelum report
+  // Report error ke Supabase (optional, non-blocking)
   function reportError(err, context) {
     try {
-      const stack = String(err && err.stack || '');
-      
-      // Sanitize potential secrets
-      const sanitizedStack = stack
-        .replace(/Bearer\s+[a-zA-Z0-9\-._~+/]+=*/gi, 'Bearer [REDACTED]')
-        .replace(/sk-[a-zA-Z0-9]{20,}/gi, '[API_KEY_REDACTED]')
-        .replace(/eyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+/gi, '[JWT_REDACTED]')
-        .replace(/\/home\/[^\/\s]+/gi, '/home/[USER]')
-        .replace(/\/Users\/[^\/\s]+/gi, '/Users/[USER]')
-        .slice(0, 2000);
-      
       const errors = JSON.parse(localStorage.getItem('dreamos_errors') || '[]');
       errors.unshift({
         time: new Date().toISOString(),
         msg: (err && err.message) || String(err),
-        stack: sanitizedStack,
+        stack: (err && err.stack) || '',
         url: location.href,
         ua: (navigator.userAgent || '').slice(0, 120)
       });
+      // Max 50 entries
       if (errors.length > 50) errors.length = 50;
       localStorage.setItem('dreamos_errors', JSON.stringify(errors));
       
+      // Kirim ke Supabase kalau online (rate limit 1/10s)
       if (window.supabaseClient && Date.now() - (window.__lastErrorReport || 0) > 10000) {
         window.__lastErrorReport = Date.now();
         window.supabaseClient.from('client_errors').insert({
           message: String(err && err.message || err).slice(0, 500),
-          stack: sanitizedStack,
+          stack: String(err && err.stack || '').slice(0, 2000),
           url: location.href,
           user_agent: (navigator.userAgent || '').slice(0, 200)
-        }).catch(function(){});
+        }).catch(function(){}); // silent
       }
     } catch(e) {}
   }
   
   // === SAFE EVENT DELEGATION ===
+  // Bind event sekali, handle banyak tombol (anti inline onclick)
   function delegate(rootSelector, eventType, childSelector, handler) {
     const root = document.querySelector(rootSelector);
     if (!root) return;
@@ -114,6 +93,16 @@ const DreamOSSecurity = (function() {
     });
   }
   
+  // === CONTENT SECURITY POLICY HELPER ===
+  function sanitizeHtml(html) {
+    // Strip script tags, event handlers, javascript: URLs
+    return String(html || '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/javascript:/gi, '');
+  }
+  
+  // Public API
   return {
     esc: escHtml,
     escHtml: escHtml,
@@ -125,15 +114,15 @@ const DreamOSSecurity = (function() {
   };
 })();
 
+// Global helper
 window.esc = DreamOSSecurity.esc;
 window.safeExec = DreamOSSecurity.safeExec;
 window.DreamOSSecurity = DreamOSSecurity;
 
+// Global error handler
 window.addEventListener('error', function(e) {
   DreamOSSecurity.report(e.error || e.message);
 });
 window.addEventListener('unhandledrejection', function(e) {
   DreamOSSecurity.report(e.reason);
 });
-
-console.log('[Security] Layer initialized (DOMPurify required)');

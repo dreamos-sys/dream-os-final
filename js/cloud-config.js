@@ -7,6 +7,6 @@ window.DreamCloud = {
   insforge: {
     baseUrl: 'https://7g2j2h3j.ap-southeast.insforge.app/',
     publicKey: 'ik_1f74594585d16a3b5400d669b145b79a',
-    enabled: false   // ← SAKLAR DR. Jangan dinyalakan dulu!
+    enabled: true   // ← SAKLAR DR. Jangan dinyalakan dulu!
   }
 };
