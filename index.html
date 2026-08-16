@@ -1683,12 +1683,10 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
       });
       // Jaring pengaman: polling 60 detik (ikuti jam real-time untuk pergantian shift)
       window.__dreamosRegisterInterval(setInterval(function() {
-        try {
-          if (document.hidden) return;
-          if (localStorage.getItem('dreamos_session_active') !== 'true') return;
+        if (localStorage.getItem('dreamos_session_active') === 'true' && typeof window.updateDashboardSlides === 'function') {
           if (typeof window.debouncedUpdateSlides === 'function') window.debouncedUpdateSlides();
-          else if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
-        } catch (e) { console.warn('[idle-poll]', e); }
+          else window.updateDashboardSlides();
+        }
       }, 60000));
 
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
@@ -1853,20 +1851,5 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
   }
 })();
 </script>
-
-
-<script>
-/* Idle / visibility guards — kurangi error saat background */
-(function(){
-  window.__dreamosIsActive = function(){
-    try {
-      if (document.hidden) return false;
-      if (localStorage.getItem('dreamos_session_active') !== 'true') return false;
-      return true;
-    } catch(e){ return false; }
-  };
-})();
-</script>
-
 </body>
 </html>
