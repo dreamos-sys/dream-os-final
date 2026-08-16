@@ -291,6 +291,21 @@ window.goHomeHandler = window.goHomeHandler || function() {
 };
 </script>
 <body>
+
+<script>
+/* early bind — sebelum IIFE berat */
+window.switchTab = window.switchTab || function(id){
+  var pane = document.getElementById('tab-' + id);
+  if (!pane) return;
+  document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(el){ el.classList.remove('active'); });
+  pane.classList.add('active');
+  var btn = document.querySelector('.tab[data-tab="'+id+'"]');
+  if (btn) btn.classList.add('active');
+};
+window.refreshAll = window.refreshAll || function(){ console.warn('[cmd] refreshAll placeholder'); };
+</script>
+
   <button class="back-btn" onclick="goHomeHandler()">← HOME</button>
 
   <!-- TOPBAR -->
@@ -2257,6 +2272,8 @@ window.goHomeHandler = function() {
     if (window.showToast) showToast('⚠️ Gagal init: ' + (initErr.message || initErr), 'error');
   }
   
+  window.__cmdSwitchTab = window.switchTab;
+  window.__cmdRefreshAll = window.refreshAll;
   if (!window.__cmdCenterClickBound) {
     window.__cmdCenterClickBound = true;
     document.addEventListener("click", function (e) {
