@@ -1,3 +1,21 @@
+
+/* ===== ANTI-LOGOUT GUARD (Injected) ===== */
+window.DREAMOS_NEVER_LOGOUT = true;
+window.DREAMOS_DISABLE_AUTO_LOGOUT = true;
+
+// Override logout function (kalau ada)
+window.__originalLogout = window.BankSession && window.BankSession.logout;
+if (window.BankSession && window.BankSession.logout) {
+  window.BankSession.logout = function(){
+    if (window.DREAMOS_NEVER_LOGOUT) {
+      console.log('[AntiLogout] Blocked auto-logout attempt');
+      return;
+    }
+    return window.__originalLogout.apply(this, arguments);
+  };
+}
+/* ===== END ANTI-LOGOUT GUARD ===== */
+
 /* idle/session timeout can be disabled via window.DREAMOS_DISABLE_SESSION_TIMEOUT */
 /**
  * 🏦 BANK-GRADE SESSION MANAGEMENT
