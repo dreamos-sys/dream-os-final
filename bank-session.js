@@ -60,7 +60,7 @@ window.__dreamosRegisterInterval(setInterval(async () => {
     const valid = await BankSession.valid();
     if (!valid) {
       (typeof window.showToast === 'function' ? window.showToast('⏰ Sesi berakhir. Silakan login ulang.', 'warning') : alert('⏰ Sesi berakhir. Silakan login ulang.'));
-      BankSession.logout();
+      if (!window.DREAMOS_DISABLE_IDLE_LOGOUT) { BankSession.logout(); } else { console.warn('[BankSession] logout skipped'); }
     }
   }
 }, 30000));
