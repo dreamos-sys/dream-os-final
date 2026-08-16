@@ -1432,23 +1432,38 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
             const res = await fetch(paths[idx] + '?v=' + Date.now());
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const html = await res.text();
-            c.innerHTML = /* innerHTML assign — sanitize upstream */ html;
-            c.querySelectorAll('script').forEach(s => {
-              const stype = (s.getAttribute('type') || '').toLowerCase();
-              // SKIP script non-JS (JSON-LD, application/json, dll) biar tidak dieksekusi
-              if (stype && stype.indexOf('javascript') === -1 && stype !== 'module') return;
-              const ns = document.createElement('script');
-              ns.className = 'mod-injected-script'; // FIX: Tandai script modul
-              if (s.src) { ns.src = s.src; } else {
+            // Parse full module document safely (jangan innerHTML raw <html>)
+            var modDoc = new DOMParser().parseFromString(html, 'text/html');
+            var modScripts = Array.prototype.slice.call(modDoc.querySelectorAll('script'));
+            // Body only into container (tanpa mengeksekusi script via innerHTML)
+            modScripts.forEach(function(sc){ sc.parentNode && sc.parentNode.removeChild(sc); });
+            c.innerHTML = modDoc.body ? modDoc.body.innerHTML : html;
+            modScripts.forEach(function(s) {
+              var stype = (s.getAttribute('type') || '').toLowerCase();
+              if (stype && stype.indexOf('javascript') === -1 && stype !== 'module' && stype !== '') return;
+              var ns = document.createElement('script');
+              ns.className = 'mod-injected-script';
+              if (s.src) {
+                var src = s.getAttribute('src') || '';
+                // Perbaiki path relatif modul ../js/ → base app
+                if (src.indexOf('../') === 0) {
+                  var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
+                  src = base + src.replace(/^\.\.\//, '');
+                }
+                ns.src = src;
+                ns.async = false;
+              } else {
                 var __code = s.textContent || '';
                 try { new Function(__code); } catch (__e) {
                   console.error('[ModLoader] SKIP SCRIPT MODUL:', __e.message);
-                  if (window.showToast) try{ window.showToast('⚠️ Script modul error: '+__e.message, 'warning'); }catch(_e){}
+                  if (window.showToast) try { window.showToast('⚠️ Script modul: ' + __e.message, 'warning'); } catch(_e){}
                   return;
                 }
                 ns.textContent = __code;
               }
-              try { document.body.appendChild(ns); } catch (__e2) { console.warn('[ModLoader] inject gagal:', __e2); }
+              try { document.body.appendChild(ns); } catch (__e2) {
+                console.warn('[ModLoader] inject gagal:', __e2);
+              }
             });
             // 🧹 CLEAN UX: Force Refresh pindah ke Settings (tidak floating di home)
             if (moduleId === 'setting') {
