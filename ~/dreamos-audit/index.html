@@ -19,13 +19,7 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
 </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Dream OS • v1.0 Beta</title>
-<script>
-/* User request: no auto-logout / idle kick */
-window.DREAMOS_DISABLE_IDLE_LOGOUT = true;
-window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
-</script>
-
+  <title>Dream OS • Enterprise RBAC Pro</title>
   
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="X-Frame-Options" content="DENY">
@@ -1455,16 +1449,6 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
             var modScripts = Array.prototype.slice.call(modDoc.querySelectorAll('script'));
             // Body only into container (tanpa mengeksekusi script via innerHTML)
             modScripts.forEach(function(sc){ sc.parentNode && sc.parentNode.removeChild(sc); });
-            // Inject <style> dari head modul (tanpa ini = semua tab numpuk seperti koran)
-            document.querySelectorAll('style[data-mod-style]').forEach(function(el){ try{ el.remove(); }catch(e){} });
-            if (modDoc.head) {
-              modDoc.head.querySelectorAll('style').forEach(function(st){
-                var ns = document.createElement('style');
-                ns.setAttribute('data-mod-style', moduleId || 'mod');
-                ns.textContent = st.textContent || '';
-                document.head.appendChild(ns);
-              });
-            }
             c.innerHTML = modDoc.body ? modDoc.body.innerHTML : html;
             modScripts.forEach(function(s) {
               var stype = (s.getAttribute('type') || '').toLowerCase();
@@ -1506,7 +1490,6 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
           const c = document.getElementById('mod-container');
           if (c) { c.style.display = 'none'; c.innerHTML = ''; }
           document.querySelectorAll('.mod-injected-script').forEach(function(s){ try{ s.remove(); }catch(e){} });
-          document.querySelectorAll('style[data-mod-style]').forEach(function(s){ try{ s.remove(); }catch(e){} });
           var ma = document.getElementById('main-app');
           var bn = document.getElementById('bottom-nav');
           if (ma) ma.style.display = 'block';
@@ -1689,10 +1672,12 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
       });
       // Jaring pengaman: polling 60 detik (ikuti jam real-time untuk pergantian shift)
       window.__dreamosRegisterInterval(setInterval(function() {
-        if (localStorage.getItem('dreamos_session_active') === 'true' && typeof window.updateDashboardSlides === 'function') {
+        try {
+          if (document.hidden) return;
+          if (localStorage.getItem('dreamos_session_active') !== 'true') return;
           if (typeof window.debouncedUpdateSlides === 'function') window.debouncedUpdateSlides();
-          else window.updateDashboardSlides();
-        }
+          else if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
+        } catch (e) { console.warn('[idle-poll]', e); }
       }, 60000));
 
       if (localStorage.getItem('dreamos_session_active') === 'true') { 
@@ -1779,43 +1764,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
       document.addEventListener(ev, function(e){ e.preventDefault(); }, { passive: false, capture: true });
     });
   })();
-  
-<script>
-/* ===== SUPABASE AUTH PERSISTENCE (No Expiry) ===== */
-(function(){
-  // Tunggu Supabase ready
-  const checkSupabase = setInterval(function(){
-    if (window.supabaseClient) {
-      clearInterval(checkSupabase);
-      
-      // Force refresh session setiap 30 menit (prevent JWT expiry)
-      setInterval(async function(){
-        try {
-          const { data, error } = await window.supabaseClient.auth.getSession();
-          if (error || !data.session) {
-            console.warn('[AuthPersistence] Session lost, attempting restore...');
-            // Try silent refresh
-            const { error: refreshError } = await window.supabaseClient.auth.refreshSession();
-            if (refreshError) {
-              console.error('[AuthPersistence] Refresh failed:', refreshError);
-            } else {
-              console.log('[AuthPersistence] Session refreshed');
-            }
-          } else {
-            console.log('[AuthPersistence] Session active, expires:', 
-              new Date(data.session.expires_at * 1000).toLocaleString());
-          }
-        } catch(e) {
-          console.warn('[AuthPersistence] Error:', e);
-        }
-      }, 30 * 60 * 1000); // 30 menit
-      
-      console.log('🔐 Supabase Auth Persistence active — auto-refresh enabled');
-    }
-  }, 1000);
-})();
-</script>
-
+  </script>
   <script src="js/dreamos-storage-guard.js?v=1"></script>
   <!-- <script src="js/realtime-sync.js?v=1"></script> -->
   <!-- <script src="js/k3-janitor-bridge.js?v=1"></script> -->
@@ -1894,41 +1843,17 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
 })();
 </script>
 
+
 <script>
-/* ===== SESSION KEEPER v2.0 (Anti Idle Timeout) ===== */
+/* Idle / visibility guards — kurangi error saat background */
 (function(){
-  // 1. Force disable semua idle detection
-  window.DREAMOS_DISABLE_IDLE_LOGOUT = true;
-  window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
-  window.DREAMOS_NEVER_LOGOUT = true;
-  
-  // 2. Heartbeat ke Supabase setiap 5 menit (keep session alive)
-  setInterval(async function(){
+  window.__dreamosIsActive = function(){
     try {
-      if (window.supabaseClient && localStorage.getItem('dreamos_session_active') === 'true') {
-        // Touch session (prevent expiry)
-        await window.supabaseClient.from('user_presence').upsert({
-          user_id: JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}').id || 'unknown',
-          last_seen: new Date().toISOString(),
-          keep_alive: true
-        }, { onConflict: 'user_id' });
-        console.log('[SessionKeeper] Heartbeat sent');
-      }
-    } catch(e) {
-      console.warn('[SessionKeeper] Heartbeat failed:', e);
-    }
-  }, 5 * 60 * 1000); // 5 menit
-  
-  // 3. Block semua auto-logout attempt
-  window.addEventListener('beforeunload', function(e){
-    if (window.DREAMOS_NEVER_LOGOUT && !window.__userInitiatedLogout) {
-      // Prevent accidental logout
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  });
-  
-  console.log('🛡️ Session Keeper v2.0 active — idle timeout DISABLED');
+      if (document.hidden) return false;
+      if (localStorage.getItem('dreamos_session_active') !== 'true') return false;
+      return true;
+    } catch(e){ return false; }
+  };
 })();
 </script>
 
