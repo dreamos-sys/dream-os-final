@@ -1,3 +1,4 @@
+/* idle/session timeout can be disabled via window.DREAMOS_DISABLE_SESSION_TIMEOUT */
 /**
  * 🏦 BANK-GRADE SESSION MANAGEMENT
  * Auto-expire 2 jam, auto-logout, refresh token
