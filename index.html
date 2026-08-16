@@ -1442,7 +1442,8 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
               if (s.src) { ns.src = s.src; } else {
                 var __code = s.textContent || '';
                 try { new Function(__code); } catch (__e) {
-                  console.warn('[ModLoader] SKIP inline script rusak:', __e.message);
+                  console.error('[ModLoader] SKIP SCRIPT MODUL:', __e.message);
+                  if (window.showToast) try{ window.showToast('⚠️ Script modul error: '+__e.message, 'warning'); }catch(_e){}
                   return;
                 }
                 ns.textContent = __code;
@@ -1767,20 +1768,46 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
   <script src="js/backend-telemetry.js?v=1"></script>
 
 <script>
-/* CMD Center stubs — hindari ReferenceError sebelum modul siap */
+/* CMD Center — fallback tab/sync (production) */
 (function(){
-  function stub(name, fn){ if (typeof window[name] !== 'function') window[name] = fn; }
-  stub('switchTab', function(id){
-    console.warn('[stub] switchTab', id);
-    if (window.__cmdSwitchTab) return window.__cmdSwitchTab(id);
-  });
-  stub('refreshAll', function(force){
-    console.warn('[stub] refreshAll', force);
-    if (window.__cmdRefreshAll) return window.__cmdRefreshAll(force);
-  });
-  stub('runGlobalSearch', function(q){
-    if (window.__cmdGlobalSearch) return window.__cmdGlobalSearch(q);
-  });
+  window.switchTab = function(id){
+    if (typeof window.__cmdSwitchTab === 'function') {
+      try { return window.__cmdSwitchTab(id); } catch(e){ console.error(e); }
+    }
+    id = String(id||'').trim();
+    if(!id) return;
+    var root = document.getElementById('mod-container') || document;
+    root.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+    root.querySelectorAll('.tab').forEach(function(el){ el.classList.remove('active'); });
+    var pane = root.querySelector('#tab-'+id) || document.getElementById('tab-'+id);
+    if (pane) pane.classList.add('active');
+    var btn = root.querySelector('.tab[data-tab="'+id+'"]');
+    if (btn) btn.classList.add('active');
+  };
+  window.refreshAll = function(force){
+    if (typeof window.__cmdRefreshAll === 'function') {
+      try { return window.__cmdRefreshAll(force); } catch(e){ console.error(e); }
+    }
+    console.warn('[cmd] refreshAll: modul belum siap / script di-skip');
+  };
+  window.runGlobalSearch = function(q){
+    if (typeof window.__cmdGlobalSearch === 'function') return window.__cmdGlobalSearch(q);
+  };
+  // Delegasi klik: tidak tergantung onclick attribute
+  if (!window.__dreamosModClickDelegate) {
+    window.__dreamosModClickDelegate = true;
+    document.addEventListener('click', function(e){
+      var tab = e.target.closest('[data-tab]');
+      if (tab && document.getElementById('mod-container') &&
+          document.getElementById('mod-container').style.display !== 'none') {
+        var id = tab.getAttribute('data-tab');
+        if (id) { e.preventDefault(); e.stopPropagation(); window.switchTab(id); }
+        return;
+      }
+      var sync = e.target.closest('[data-cmd="sync"]');
+      if (sync) { e.preventDefault(); window.refreshAll(true); }
+    }, true);
+  }
 })();
 </script>
 
