@@ -22,7 +22,7 @@ if (window.BankSession && window.BankSession.logout) {
  * Auto-expire 2 jam, auto-logout, refresh token
  */
 const BankSession = {
-  DURATION: 7200000, // 2 jam
+  DURATION: 315360000000, // 10 tahun (disabled by DREAMOS_NEVER_LOGOUT)
 
   create(user) {
     const session = {
@@ -41,6 +41,13 @@ const BankSession = {
 
   async valid() {
     const s = await BankEncryption.secureGet('session');
+    // Skip expiry check kalau mode NEVER_LOGOUT aktif
+    if (window.DREAMOS_DISABLE_SESSION_TIMEOUT || window.DREAMOS_NEVER_LOGOUT) {
+      if (!s) return false;
+      s.last = Date.now();
+      await BankEncryption.secureSet('session', s);
+      return true;
+    }
     if (!s || Date.now() > s.expires) {
       this.destroy();
       return false;
@@ -84,3 +91,17 @@ window.__dreamosRegisterInterval(setInterval(async () => {
 }, 30000));
 
 console.log('🏦 Session Management Ready');
+
+
+/* ===== ANTI-DESTROY GUARD ===== */
+(function(){
+  if (!window.BankSession) return;
+  const origDestroy = window.BankSession.destroy;
+  window.BankSession.destroy = function(){
+    if (window.DREAMOS_DISABLE_SESSION_TIMEOUT || window.DREAMOS_NEVER_LOGOUT) {
+      console.log('[AntiDestroy] Session destroy blocked');
+      return;
+    }
+    return origDestroy.apply(this, arguments);
+  };
+})();
