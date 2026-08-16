@@ -1449,6 +1449,16 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
             var modScripts = Array.prototype.slice.call(modDoc.querySelectorAll('script'));
             // Body only into container (tanpa mengeksekusi script via innerHTML)
             modScripts.forEach(function(sc){ sc.parentNode && sc.parentNode.removeChild(sc); });
+            // Inject <style> dari head modul (tanpa ini = semua tab numpuk seperti koran)
+            document.querySelectorAll('style[data-mod-style]').forEach(function(el){ try{ el.remove(); }catch(e){} });
+            if (modDoc.head) {
+              modDoc.head.querySelectorAll('style').forEach(function(st){
+                var ns = document.createElement('style');
+                ns.setAttribute('data-mod-style', moduleId || 'mod');
+                ns.textContent = st.textContent || '';
+                document.head.appendChild(ns);
+              });
+            }
             c.innerHTML = modDoc.body ? modDoc.body.innerHTML : html;
             modScripts.forEach(function(s) {
               var stype = (s.getAttribute('type') || '').toLowerCase();
@@ -1490,6 +1500,7 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
           const c = document.getElementById('mod-container');
           if (c) { c.style.display = 'none'; c.innerHTML = ''; }
           document.querySelectorAll('.mod-injected-script').forEach(function(s){ try{ s.remove(); }catch(e){} });
+          document.querySelectorAll('style[data-mod-style]').forEach(function(s){ try{ s.remove(); }catch(e){} });
           var ma = document.getElementById('main-app');
           var bn = document.getElementById('bottom-nav');
           if (ma) ma.style.display = 'block';
