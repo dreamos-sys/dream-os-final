@@ -268,6 +268,11 @@ window.CloudPhoto.dataURLtoBlob = window.CloudPhoto.dataURLtoBlob || function(da
 };
 
 /* 5. Supabase client placeholder */
+try {
+  if (!window.supabaseClient && window.parent && window.parent !== window) {
+    window.supabaseClient = window.parent.supabaseClient || null;
+  }
+} catch (e) {}
 if (!window.supabaseClient) {
   window.supabaseClient = null;
   console.warn('[DreamOS] supabaseClient belum diinisialisasi. Mode lokal aktif.');
@@ -304,7 +309,7 @@ window.goHomeHandler = window.goHomeHandler || function() {
       <div class="search-box">
         <input type="search" id="global-search" placeholder="🔍 Cari AC, Stok Gudang, Dana, K3, PDF..." autocomplete="off" oninput="runGlobalSearch(this.value)">
       </div>
-      <button class="btn btn-outline btn-sm" onclick="refreshAll(true)" style="white-space:nowrap;">🔄 Sync</button>
+      <button class="btn btn-outline btn-sm" data-cmd="sync" onclick="refreshAll(true)" style="white-space:nowrap;">🔄 Sync</button>
     </div>
   </div>
 
@@ -2251,6 +2256,29 @@ window.goHomeHandler = function() {
     if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
     if (window.showToast) showToast('⚠️ Gagal init: ' + (initErr.message || initErr), 'error');
   }
+  
+  if (!window.__cmdCenterClickBound) {
+    window.__cmdCenterClickBound = true;
+    document.addEventListener("click", function (e) {
+      var tabEl = e.target.closest("[data-tab]");
+      if (tabEl && typeof window.switchTab === "function") {
+        e.preventDefault();
+        window.switchTab(tabEl.getAttribute("data-tab"));
+        return;
+      }
+      if (e.target.closest(".back-btn") && typeof window.goHomeHandler === "function") {
+        e.preventDefault();
+        window.goHomeHandler();
+        return;
+      }
+      var syncBtn = e.target.closest("[data-cmd=sync]");
+      if (syncBtn && typeof window.refreshAll === "function") {
+        e.preventDefault();
+        window.refreshAll(true);
+      }
+    }, true);
+  }
+
   window.__dreamosRegisterInterval(setInterval(updateMetrics, (CFG.METRICS_INTERVAL_MS || 30000)));
 })();
 </script>
