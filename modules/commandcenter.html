@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Command Center Pro • Dream OS Enterprise</title>
+  <title>Command Center • Dream OS v1.0 Beta</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
@@ -863,12 +863,13 @@ window.goHomeHandler = function() {
 
   function showToast(msg, type) {
     const c = document.getElementById('toast-container');
+    if (!c) { console.log('[toast]', msg); return; }
     const t = document.createElement('div');
     t.className = 'toast';
     t.style.borderLeftColor = type === 'danger' ? 'var(--danger)' : (type === 'warn' ? 'var(--gold)' : 'var(--success)');
     t.textContent = msg;
     c.appendChild(t);
-    setTimeout(() => t.remove(), (CFG.TOAST_DURATION_MS || 3500));
+    setTimeout(function(){ try{ t.remove(); }catch(e){} }, (CFG.TOAST_DURATION_MS || 3500));
   }
 
   function logActivity(action, detail) {
@@ -2296,7 +2297,13 @@ window.goHomeHandler = function() {
     }, true);
   }
 
-  window.__dreamosRegisterInterval(setInterval(updateMetrics, (CFG.METRICS_INTERVAL_MS || 30000)));
+  window.__dreamosRegisterInterval(setInterval(function(){
+    try {
+      if (document.hidden) return;
+      if (localStorage.getItem('dreamos_session_active') === 'false') return;
+      if (typeof updateMetrics === 'function') updateMetrics();
+    } catch (e) { console.warn('[cmd-idle]', e); }
+  }, (CFG.METRICS_INTERVAL_MS || 30000)));
 })();
 </script>
 </body>
