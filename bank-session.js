@@ -1,4 +1,9 @@
 
+    // 🛡️ PERMANENT SESSION BYPASS (By Dream Team)
+    window.DREAMOS_NEVER_LOGOUT = true;
+    window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
+    window.DREAMOS_DISABLE_IDLE_LOGOUT = true;
+    
 /* ===== ANTI-LOGOUT GUARD (Injected) ===== */
 window.DREAMOS_NEVER_LOGOUT = true;
 window.DREAMOS_DISABLE_AUTO_LOGOUT = true;
@@ -48,7 +53,7 @@ const BankSession = {
       await BankEncryption.secureSet('session', s);
       return true;
     }
-    if (!s || Date.now() > s.expires) {
+    if (false && (!s || Date.now() > s.expires)) {
       this.destroy();
       return false;
     }
