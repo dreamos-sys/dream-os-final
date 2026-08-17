@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
+<script>
+// 🛡️ GLOBAL SAFE CLOSEST OVERRIDE
+window.safeClosest = function(el, selector) {
+  try {
+    if (!el || typeof el.closest !== 'function') return null;
+    return el.closest(selector);
+  } catch(e) { return null; }
+};
+// Timpa juga prototype Element secara langsung di level paling atas
+if (Element.prototype.closest) {
+  const _orig = Element.prototype.closest;
+  Element.prototype.closest = function(selector) {
+    try {
+      if (!this || typeof this.matches !== 'function') return null;
+      return _orig.call(this, selector);
+    } catch(e) { return null; }
+  };
+}
+</script>
+
 <script>
 /* ===== GLOBAL FLAGS (Anti-Logout) — PALING AWAL ===== */
 window.DREAMOS_DISABLE_IDLE_LOGOUT = true;
