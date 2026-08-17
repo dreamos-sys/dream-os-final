@@ -1942,5 +1942,40 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
 })();
 </script>
 
+
+<!-- 🛡️ ULTIMATE IDLE KILLER -->
+<style>
+  /* Membutakan UI Counter/Modal Idle jika masih nekat muncul */
+  #idle-warning, .idle-warning, #idle-modal, .idle-modal, #timeout-counter, .timeout-modal { 
+    display: none !important; 
+    opacity: 0 !important;
+    pointer-events: none !important; 
+  }
+</style>
+<script>
+(function(){
+  'use strict';
+  // 1. Spam event palsu tiap 3 detik biar script "batu" ngira kita terus aktif
+  setInterval(function(){
+    window.idleTime = 0;
+    window.idleSeconds = 0;
+    window.lastActivity = Date.now();
+    try { localStorage.setItem('dreamos_last_activity', Date.now()); } catch(e){}
+    
+    // Tembak event touch & mouse ke seluruh sistem untuk mereset counter eksternal
+    ['touchstart', 'touchmove', 'mousemove', 'keydown', 'scroll', 'click'].forEach(function(eName){
+      try { document.dispatchEvent(new Event(eName, { bubbles: true })); } catch(e){}
+    });
+  }, 3000);
+
+  // 2. Melucuti fungsi logout otomatis (menimpa fungsi bawaan jika ada)
+  window.showIdleWarning = function(){ console.log('🛑 Modus Idle digagalkan Sentinel!'); };
+  window.autoLogout = function(){ console.log('🛑 Auto-logout digagalkan Sentinel!'); };
+  if(window.BankSession) window.BankSession.resetIdle = function(){};
+
+  console.log('🛡️ Ultimate Idle Killer Aktif! Satpam "batu" sudah dibius total.');
+})();
+</script>
 </body>
+
 </html>
