@@ -1976,6 +1976,28 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   console.log('🛡️ Ultimate Idle Killer Aktif! Satpam "batu" sudah dibius total.');
 })();
 </script>
+
+<script>
+// 🛡️ HOTFIX: Sentinel Safe Closest Patch
+(function(){
+  if (Element.prototype._originClosest) return;
+  Element.prototype._originClosest = Element.prototype.closest;
+  Element.prototype.closest = function(selector) {
+    try {
+      if (!this || typeof this.matches !== 'function') return null;
+      return this._originClosest(selector);
+    } catch(e) { return null; }
+  };
+  // Juga amankan Event target jika bukan node DOM
+  window.addEventListener('click', function(e){
+    if (e && e.target && typeof e.target.closest !== 'function') {
+      e.target.closest = function() { return null; };
+    }
+  }, true);
+  console.log('🛡️ Safe Closest Sentinel Aktif!');
+})();
+</script>
 </body>
+
 
 </html>
