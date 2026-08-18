@@ -1,0 +1,49 @@
+name: Dream OS CI
+on:
+  push:
+    branches: [gh-pages]
+  pull_request:
+
+jobs:
+  syntax-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract inline JS
+        run: |
+          mkdir -p /tmp/js
+          python3 - << 'PY'
+          from pathlib import Path
+          import re
+          files=['index.html']+[str(p) for p in sorted(Path('modules').glob('*.html'))]
+          n=0
+          for f in files:
+              t=Path(f).read_text(encoding='utf-8',errors='replace')
+              for i,m in enumerate(re.finditer(r'<script(?![^>]*src)[^>]*>(.*?)</script>', t, re.S)):
+                  Path('/tmp/js')/(f.replace('/','_')+f'_{i}.js').write_text(m.group(1),encoding='utf-8')
+                  n+=1
+          print('extracted',n,'inline scripts')
+          PY
+
+      - name: Node syntax check all inline JS
+        run: |
+          fail=0
+          for f in /tmp/js/*.js; do
+            node --check "$f" >/dev/null 2>&1 || { echo "SYNTAX FAIL: $f"; fail=1; }
+          done
+          [ $fail -eq 0 ] && echo "ALL INLINE JS SYNTAX OK" || exit 1
+
+      - name: CSS brace balance
+        run: |
+          python3 - << 'PY'
+          from pathlib import Path
+          c=Path('css/dashboard.css').read_text(encoding='utf-8')
+          o,cl=c.count('{'),c.count('}')
+          print('braces:',o,cl)
+          assert o==cl, 'CSS braces unbalanced'
+          print('CSS BALANCED')
+          PY
