@@ -79,7 +79,7 @@
   </style>
 
   <!-- 🛰️ SENTRY GPS TRACKER (Error Monitoring) -->
-  <script src="https://js.sentry-cdn.com/22b1730336ecd4cd1d71c1d07e6f7a02.min.js" crossorigin="anonymous"></script>
+  </script>
 
     <!-- Security Config (DO NOT COMMIT) -->
     <script src="../js/config.js"></script>
@@ -91,9 +91,9 @@
 
   
     <!-- Security Config (DO NOT COMMIT) -->
-    <script src="../js/config.js"></script>
+    </script>
     <!-- DOMPurify for XSS protection -->
-    <script src="../js/load-dompurify.js"></script>
+    </script>
   </head>
 
 <body>
@@ -249,6 +249,13 @@
   </div>
 
 <script>
+// ===== SETTINGS P0 POLYFILL (same-window safe) =====
+window.safeStorageSet = window.safeStorageSet || function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ console.warn('[Settings] storage full'); } };
+window.showToast = window.showToast || function(msg,type){ console.log('[Settings]',msg); };
+if(!window.supabaseClient){ try{ if(window.parent && window.parent!==window && window.parent.supabaseClient){ window.supabaseClient=window.parent.supabaseClient; } }catch(e){} }
+window.CFG = window.CFG || {};
+// ===== END POLYFILL =====
+
 (function() {
   'use strict';
   
@@ -287,6 +294,7 @@
   } catch(e) { state = JSON.parse(JSON.stringify(DEFAULTS)); }
 
   function saveState(key) {
+  try{ window.dispatchEvent(new CustomEvent('dreamos-settings-changed',{detail:state})); }catch(e){}
     try {
       window.safeStorageSet('dreamos_settings', JSON.stringify(state));
       window.safeStorageSet('dreamos_theme', state.theme);
