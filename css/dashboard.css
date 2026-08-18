@@ -1070,3 +1070,64 @@ a:focus-visible { outline: 2px solid var(--color-accent-primary); outline-offset
     grid-row: span 4;
   }
 }
+
+/* =========================================================================
+   39. TOUCH STABILITY — Anti "lari-lari" + Prevent Unwanted Zoom
+   ========================================================================= */
+
+/* Prevent iOS bounce/overscroll yang bikin layout shift */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable text selection di non-input elements (biar gak ke-select saat scroll) */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable selection di input/text elements */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Universal touch-action: prevent double-tap zoom, allow pan + pinch */
+* {
+  touch-action: manipulation;
+}
+
+/* Remove transform scale yang bisa trigger visual shift */
+.mod-card:active,
+.btn:active,
+.kpi-chip:active {
+  transform: translateY(1px) !important; /* subtle press, no scale */
+}
+
+/* Prevent layout shift dari emoji rendering */
+.mod-icon, .nav-icon {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  line-height: 1.5em;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Fix bottom nav shift saat keyboard muncul */
+html.kb-open #bottom-nav {
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+/* Prevent zoom di iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important; /* Force 16px di iOS */
+  }
+}
