@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Command Center • Dream OS v1.0 Beta</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -282,6 +282,28 @@ if (!window.supabaseClient) {
 }
 </script>
 
+
+<style id="stability-fixes">
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+* {
+  touch-action: manipulation;
+}
+input, textarea, select {
+  font-size: 16px !important;
+}
+@media (max-width: 640px) {
+  .metric:hover { transform: none !important; }
+  .tab-content.active { animation: none !important; }
+}
+html.kb-open #bottom-nav {
+  display: none !important;
+}
+</style>
 </head>
 
 <script>
@@ -2049,7 +2071,33 @@ window.goHomeHandler = function() {
     var map={};per.forEach(function(b){var d=b.divisi||'Lain';map[d]=(map[d]||0)+1});
     html+='<h2>Booking per Divisi</h2><table><tr><th>Divisi</th><th>Jumlah</th></tr>'+Object.keys(map).map(function(k){return '<tr><td>'+escU(k)+'</td><td>'+map[k]+'</td></tr>'}).join('')+'</table>';
     html+='<h2>Detail Booking</h2><table><tr><th>Tanggal</th><th>Ruang</th><th>Peminjam</th><th>Divisi</th><th>Status</th></tr>'+per.slice(0,50).map(function(b){return '<tr><td>'+(b.tgl||'-')+'</td><td>'+escU(b.ruang||'-')+'</td><td>'+escU(b.nama_peminjam||'-')+'</td><td>'+escU(b.divisi||'-')+'</td><td>'+escU(b.status||'-')+'</td></tr>'}).join('')+'</table>';
-    html+='<p class="m" style="margin-top:2rem">Dokumen terkendali — Command Center Dream OS • The Power Soul Of Shalawat</p></body></html>';
+    html+='<p class="m" style="margin-top:2rem">Dokumen terkendali — Command Center Dream OS • The Power Soul Of Shalawat</p>
+<script id="stability-script">
+(function(){
+  var lastTouch = 0;
+  document.addEventListener('touchend', function(e){
+    var now = Date.now();
+    if (now - lastTouch <= 300 && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+      e.preventDefault();
+    }
+    lastTouch = now;
+  }, {passive: false});
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function(){
+      var diff = window.innerHeight - window.visualViewport.height;
+      if (diff > 150) {
+        document.documentElement.classList.add('kb-open');
+      } else {
+        document.documentElement.classList.remove('kb-open');
+      }
+    });
+  }
+
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, {passive: false});
+})();
+</script>
+</body></html>';
     w.document.write(html);w.document.close();setTimeout(function(){w.print()},500);
     logActivity('Export Laporan','Laporan bulanan analytics (confidential)');
   };
