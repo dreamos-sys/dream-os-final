@@ -1,5 +1,5 @@
 // Dream OS SW v4-20260816 — self-cleaning, bounded cache
-const CACHE_VERSION = 'v9-css-touch-1787033073';
+const CACHE_VERSION = 'v10-css-safe';
 const CACHE_NAME = 'dreamos-' + CACHE_VERSION;
 const CORE = ['./', './index.html', './manifest.json'];
 

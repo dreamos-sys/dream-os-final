@@ -1066,10 +1066,7 @@ input, textarea, [contenteditable] {
   user-select: text;
 }
 
-/* Universal touch-action: prevent double-tap zoom, allow pan + pinch */
-* {
-  touch-action: manipulation;
-}
+/* touch-action: hanya di kontrol — lihat v10 di bawah */
 
 /* Remove transform scale yang bisa trigger visual shift */
 .mod-card:active,
@@ -1100,125 +1097,24 @@ html.kb-open #bottom-nav {
   }
 }
 
-/* =========================================================================
-   40. COMMANDCENTER LOCKDOWN — Anti "lari-lari" Aggressive
-   ========================================================================= */
 
-/* Target semua element di dalam commandcenter */
-#mod-container[data-module="cmd"] * {
-  transition: none !important;
-  animation: none !important;
-  transform: none !important;
-}
-
-/* Re-enable transform HANYA untuk button press (tapi minimal) */
-#mod-container[data-module="cmd"] button:active,
-#mod-container[data-module="cmd"] .btn:active {
-  transform: translateY(1px) !important;
-  transition: transform 0.05s ease !important;
-}
-
-/* Prevent layout shift dari tab switching */
-#mod-container[data-module="cmd"] .tab-content {
-  will-change: auto !important;
-  contain: layout style paint !important;
-}
-
-/* Disable hover effects yang bikin shift */
-#mod-container[data-module="cmd"] *:hover {
-  transform: none !important;
-  transition: none !important;
-}
-
-/* Force stable grid layout */
-#mod-container[data-module="cmd"] .module-grid {
-  contain: layout style paint !important;
-  transform: translateZ(0); /* Force GPU layer */
-}
-
-/* Prevent card shift saat touch */
-#mod-container[data-module="cmd"] .mod-card {
-  will-change: auto !important;
-  transform: translateZ(0) !important;
-  backface-visibility: hidden !important;
-  -webkit-backface-visibility: hidden !important;
-}
-
-/* Disable scale di mod-card active state */
-#mod-container[data-module="cmd"] .mod-card:active {
-  transform: translateZ(0) translateY(1px) !important;
-}
-
-/* Stabilize search input */
-#mod-container[data-module="cmd"] input[type="search"],
-#mod-container[data-module="cmd"] input[type="text"] {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-/* Prevent KPI strip dari wrap/shift */
-#mod-container[data-module="cmd"] #kpi-strip {
-  contain: layout style paint !important;
-  transform: translateZ(0);
-}
-
-#mod-container[data-module="cmd"] .kpi-chip {
-  will-change: auto !important;
-  transform: translateZ(0) !important;
-}
-
-#mod-container[data-module="cmd"] .kpi-chip:active {
-  transform: translateZ(0) translateY(1px) !important;
-}
-
-/* Table stability */
-#mod-container[data-module="cmd"] table {
-  table-layout: fixed !important;
-  contain: layout style paint !important;
-}
-
-/* Modal stability */
-#mod-container[data-module="cmd"] .modal-overlay {
-  will-change: auto !important;
-  transform: translateZ(0) !important;
-}
-
-@media (max-width: 640px) {
-  input:focus, textarea:focus, select:focus {
-    scroll-margin-top: 20px;
-  }
-}
+/* 40. COMMANDCENTER LOCKDOWN — REMOVED (caused module bugs) */
 
 
-/* ===== DREAMOS TOUCH STABILITY FIX (v9) ===== */
-/* Reset global touch-action (too aggressive) */
-* { touch-action: auto; }
-
-/* Apply manipulation only to interactive elements */
-button, a, .mod-card, .nav-item, .btn, .kpi-chip, .tab,
-.ana-tab, .ana-period-btn, [role="button"], [onclick] {
-  touch-action: manipulation;
-}
-
-/* Input elements: 16px prevents iOS auto-zoom */
+/* ===== DREAMOS TOUCH STABILITY FIX (v10 minimal) ===== */
+/* Jangan sentuh transform/animation global modul */
 input, textarea, select, .pin-input, .cmd-input {
   font-size: 16px !important;
+}
+button, a, .mod-card, .nav-item, .btn, .kpi-chip, .tab,
+[role="button"] {
   touch-action: manipulation;
 }
-
-/* Mobile/touch: disable hover transforms (cause layout shift) */
 @media (hover: none) and (pointer: coarse) {
-  .btn:hover, .mod-card:hover, .metric:hover, .kpi-chip:hover {
+  .btn:hover, .mod-card:hover, .metric:hover, .kpi-chip:hover, .mini-stat:hover {
     transform: none !important;
+    box-shadow: none !important;
   }
-  /* Keep active feedback (subtle press) */
-  .btn:active, .mod-card:active, .kpi-chip:active, .metric:active {
-    transform: translateY(1px) !important;
-  }
-}
-
-/* CMD: prevent aggressive transform:none on all children */
-#mod-container[data-module="cmd"] .metric:hover {
-  transform: none !important;
 }
 /* ===== END TOUCH STABILITY FIX ===== */
+
