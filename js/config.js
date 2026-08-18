@@ -1,3 +1,3 @@
 const SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaWdqZGhpZmlzcGF0cnJza2doIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTE3NjU5MiwiZXhwIjoyMDk2NzUyNTkyfQ.Zpq4kdt0fDTOoJtT1nvzinHOYOpYVP9-Ku1HfGSVn4o';
+const SUPABASE_ANON_KEY = 'sb_publishable_rgSsdppHSeZ8a0I_NWtqZA_jBz2wWwW';
 window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
