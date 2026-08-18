@@ -760,5 +760,43 @@ window.CFG = window.CFG || {};
 })();
 </script>
 
+
+<script>
+// ===== SETTINGS P1: A11Y TOGGLE SEMANTIK (v14) =====
+(function(){
+  function enhance(){
+    document.querySelectorAll('.toggle,.switch,[class*="toggle"],[class*="switch"],[data-toggle]')
+      .forEach(function(el){
+        if(el.tagName==='INPUT'||el.getAttribute('role')==='switch') return;
+        el.setAttribute('role','switch');
+        if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+        var on=el.classList.contains('on')||el.classList.contains('active')||el.classList.contains('checked');
+        el.setAttribute('aria-checked',on?'true':'false');
+        el.addEventListener('keydown',function(e){
+          if(e.key===' '||e.key==='Enter'){ e.preventDefault(); el.click(); }
+        });
+        el.addEventListener('click',function(){
+          setTimeout(function(){
+            var n=el.classList.contains('on')||el.classList.contains('active')||el.classList.contains('checked');
+            el.setAttribute('aria-checked',n?'true':'false');
+          },0);
+        });
+      });
+    // Range slider: aria-valuenow + label
+    document.querySelectorAll('input[type="range"]').forEach(function(r){
+      var sync=function(){ r.setAttribute('aria-valuenow',r.value); };
+      r.addEventListener('input',sync); sync();
+      if(!r.getAttribute('aria-label')){
+        var box=r.closest('div'), lab=box&&box.parentElement?box.parentElement.querySelector('h3,h4,strong,.title'):null;
+        if(lab) r.setAttribute('aria-label',lab.textContent.trim());
+      }
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',enhance);
+  else enhance();
+  try{ new MutationObserver(function(){ enhance(); }).observe(document.body,{childList:true,subtree:true}); }catch(e){}
+})();
+</script>
+
 </body>
 </html>
