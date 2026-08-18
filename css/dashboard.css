@@ -185,7 +185,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -268,7 +268,7 @@ pre { padding: var(--space-3); overflow-x: auto; }
   box-shadow: var(--card-shadow) !important;
   color: var(--color-text-primary) !important;
   border-radius: var(--radius-xl);
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .glass:hover {
@@ -337,7 +337,7 @@ pre { padding: var(--space-3); overflow-x: auto; }
   min-height: 105px !important;
   position: relative !important;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .mod-card:hover {
@@ -383,7 +383,7 @@ pre { padding: var(--space-3); overflow-x: auto; }
 .nav-item {
   background: transparent !important;
   border: none !important;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .nav-item:hover { background: var(--nav-item-active-bg) !important; }
@@ -395,7 +395,7 @@ pre { padding: var(--space-3); overflow-x: auto; }
 }
 
 .nav-icon-wrapper { transition: transform var(--transition-fast); }
-.nav-item.active .nav-icon-wrapper { transform: scale(1.05); }
+.nav-item.active .nav-icon-wrapper { transform: none; }
 
 .nav-label {
   font-size: var(--font-size-xs) !important;
@@ -429,7 +429,7 @@ textarea {
   padding: var(--space-3) !important;
   font-family: var(--font-family);
   font-size: var(--font-size-base);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   width: 100%;
 }
 
@@ -477,13 +477,12 @@ select {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
 }
 
 .btn:hover {
-  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
@@ -777,11 +776,11 @@ canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100v
 .slide-item strong { color: var(--neon); }
 .slide-indicators { display: flex; justify-content: center; gap: 5px; margin-top: 0.3rem; }
 .slide-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(128,128,128,0.4); transition: 0.3s; cursor: pointer; }
-.slide-dot.active { background: var(--neon); transform: scale(1.3); }
+.slide-dot.active { background: var(--neon); transform: none; }
 
 #kpi-strip { display: flex; gap: 0.5rem; margin: 0 1rem 0.8rem; flex-wrap: wrap; }
 .kpi-chip { flex: 1; min-width: 130px; background: var(--panel); border: 1px solid var(--card-border); border-radius: 12px; padding: 0.6rem 0.8rem; text-align: center; cursor: pointer; transition: all 0.25s; }
-.kpi-chip:active { transform: scale(0.96); }
+.kpi-chip:active { transform: none; }
 .kpi-chip strong { display: block; font-size: 1.05rem; color: var(--neon); }
 .kpi-chip span { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -1026,7 +1025,7 @@ input[type="month"], input[type="week"] {
    37. LINK STATES — Full Lifecycle Styling
    ========================================================================= */
 a:visited { color: var(--color-accent-tertiary); }
-a:active { color: var(--color-accent-primary); transform: scale(0.98); }
+a:active { color: var(--color-accent-primary); }
 a:focus-visible { outline: 2px solid var(--color-accent-primary); outline-offset: 2px; }
 
 /* =========================================================================
@@ -1068,12 +1067,7 @@ input, textarea, [contenteditable] {
 
 /* touch-action: hanya di kontrol — lihat v10 di bawah */
 
-/* Remove transform scale yang bisa trigger visual shift */
-.mod-card:active,
-.btn:active,
-.kpi-chip:active {
-  transform: translateY(1px) !important; /* subtle press, no scale */
-}
+/* active translate removed — v11 handles mobile */
 
 /* Prevent layout shift dari emoji rendering */
 .mod-icon, .nav-icon {
@@ -1126,3 +1120,19 @@ button, a, .mod-card, .nav-item, .btn, .kpi-chip, .tab,
 }
 /* ===== END TOUCH STABILITY FIX ===== */
 
+
+
+/* v11-extra: zero transform feedback di touch device */
+@media (hover: none), (pointer: coarse) {
+  .btn, .mod-card, .kpi-chip, .mini-stat, .nav-item, .metric, .glass, .tab {
+    transition: border-color 0.15s ease, background-color 0.15s ease !important;
+  }
+  .btn:hover, .btn:active,
+  .mod-card:hover, .mod-card:active,
+  .kpi-chip:hover, .kpi-chip:active,
+  .mini-stat:hover, .mini-stat:active,
+  .nav-item:hover, .nav-item:active,
+  .metric:hover, .slide-dot.active {
+    transform: none !important;
+  }
+}
