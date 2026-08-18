@@ -798,5 +798,36 @@ window.CFG = window.CFG || {};
 })();
 </script>
 
+
+<script>
+// ===== SETTINGS P2: IMPORT VALIDATION (v17) =====
+(function(){
+  window.__sanitizeSettings = function(s){
+    try{
+      if(typeof s!=='object'||!s||Array.isArray(s)) return {};
+      var out={};
+      for(var k in s){
+        if(!Object.prototype.hasOwnProperty.call(s,k)) continue;
+        if(k==='__proto__'||k==='constructor'||k==='prototype') continue;
+        var v=s[k];
+        if(typeof v==='function') continue;
+        if(typeof v==='object' && v!==null) continue;
+        if(k==='theme' && ['dark','light'].indexOf(v)===-1) v='dark';
+        if(k==='fontSize'||k==='fontScale'){ v=Math.min(140,Math.max(80,Math.round(+v||100))); }
+        if(k==='glass'||k==='glassAlpha'){ v=Math.min(100,Math.max(30,Math.round(+v||70))); }
+        if(k==='lang'||k==='language'){ if(['id','en','ar','zh'].indexOf(v)===-1) v='id'; }
+        out[k]=v;
+      }
+      return out;
+    }catch(e){ return {}; }
+  };
+  if(typeof window.applySettings==='function' && !window.__applyWrapped){
+    var __oa=window.applySettings; window.__applyWrapped=true;
+    window.applySettings=function(s){ return __oa(window.__sanitizeSettings(s||{})); };
+    console.log('[Settings] import validation active');
+  }
+})();
+</script>
+
 </body>
 </html>
