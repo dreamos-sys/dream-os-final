@@ -1315,27 +1315,39 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
               });
             }
             c.innerHTML = modDoc.body ? modDoc.body.innerHTML : html;
-            modScripts.forEach(function(s) {
+            modScripts.forEach(function(s, __idx) {
               var stype = (s.getAttribute('type') || '').toLowerCase();
               if (stype && stype.indexOf('javascript') === -1 && stype !== 'module' && stype !== '') return;
-              var ns = document.createElement('script');
-              ns.className = 'mod-injected-script';
-              if (s.src) {
-                var src = s.getAttribute('src') || '';
-                // Perbaiki path relatif modul ../js/ → base app
-                if (src.indexOf('../') === 0) {
-                  var base = window.location.pathname.indexOf('/dream-os-final/') >= 0 ? '/dream-os-final/' : '/';
-                  src = base + src.replace(/^\.\.\//, '');
-                }
-                ns.src = src;
-                ns.async = false;
-              } else {
-                var __code = s.textContent || '';
-                /* CSP: jangan new Function — butuh unsafe-eval; inline script OK dengan unsafe-inline */
-                ns.textContent = __code;
+              var srcAttr = s.getAttribute('src') || '';
+              // Skip CDN / Sentry yang sudah di shell index (hindari double + token noise)
+              if (srcAttr && /cdn\.jsdelivr\.net|chart\.umd|bcrypt|jspdf|html2canvas|qrcode|sentry-cdn|sentry\.io/i.test(srcAttr)) {
+                console.log('[ModLoader] skip shell-CDN', srcAttr.slice(0, 60));
+                return;
               }
-              try { document.body.appendChild(ns); } catch (__e2) {
-                console.warn('[ModLoader] inject gagal:', __e2);
+              try {
+                var ns = document.createElement('script');
+                ns.className = 'mod-injected-script';
+                ns.setAttribute('data-mod-script', (moduleId || 'mod') + '-' + __idx);
+                if (srcAttr) {
+                  var src = srcAttr;
+                  if (src.indexOf('http') !== 0 && src.charAt(0) !== '/') {
+                    var base = (window.location.pathname.indexOf('/dream-os-final/') >= 0) ? '/dream-os-final/' : '/';
+                    if (src.indexOf('../') === 0) src = base + src.replace(/^\.\.\//, '');
+                    else if (src.indexOf('./') === 0) src = base + 'modules/' + src.slice(2);
+                    else src = base + src.replace(/^\//, '');
+                  }
+                  ns.src = src;
+                  ns.async = false;
+                  ns.onerror = function(){ console.warn('[ModLoader] src fail', src); };
+                  document.body.appendChild(ns);
+                } else {
+                  var __code = (s.textContent || '').replace(/^\uFEFF/, '');
+                  if (!__code.trim()) return;
+                  ns.text = __code;
+                  document.body.appendChild(ns);
+                }
+              } catch (__e2) {
+                console.warn('[ModLoader] inject skip', moduleId, __idx, __e2 && __e2.message);
               }
             });
             // 🧹 CLEAN UX: Force Refresh pindah ke Settings (tidak floating di home)
