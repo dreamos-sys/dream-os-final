@@ -337,7 +337,7 @@
           <h1 class="vtitle" id="vh-title">Maintenance <b>Cockpit</b></h1>
           <p class="vsub" id="vh-sub"></p>
         </div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)reconcileK3(false); Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="if(!window.__cloudPushThrottle || Date.now()-window.__cloudPushThrottle>2000){window.__cloudPushThrottle=Date.now();Cloud.push();}else{if(window.showToast)showToast('⏳ Tunggu 2 detik','warning');else (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu 2 detik', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu 2 detik', 'warning') : alert('⏳ Tunggu 2 detik')));}">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="Cloud.pull().then(function(){ if(window.reconcileK3)if(window.reconcileK3)try{reconcileK3(false);}catch(e){console.warn('[Maintenance] auto-reconcile failed:',e);} Cloud.pushDebounced(); if(window.renderRail)renderRail(); if(window.renderView)renderView(); })">⬇️ Tarik Cloud</button><button class="btn btn-primary btn-sm" onclick="if(!window.__cloudPushThrottle || Date.now()-window.__cloudPushThrottle>2000){window.__cloudPushThrottle=Date.now();Cloud.push();}else{if(window.showToast)showToast('⏳ Tunggu 2 detik','warning');else (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu 2 detik', 'warning') : (typeof window.showToast === 'function' ? window.showToast('⏳ Tunggu 2 detik', 'warning') : alert('⏳ Tunggu 2 detik')));}">☁️ Kirim Cloud</button><span class="live-pill"><span class="dot"></span> <span id="amb-sync">—</span></span></div>
       </div>
       <div id="view-root"></div>
       <details class="debug"><summary>🔍 Debug · Intip Data LocalStorage</summary><pre id="debug-data">—</pre></details>
@@ -583,9 +583,11 @@
     // Hash berdasarkan view + badges (prevent rebuild jika sama)
     var railHash = view + '|' + JSON.stringify(b);
     if(__lastRailHash === railHash) return;
+    var railEl = $('rail');
+    if(!railEl) { console.warn('[Maintenance] renderRail: #rail element not found, skip'); return; }
     __lastRailHash = railHash;
     
-    $('rail').innerHTML='<div class="brand"><svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>CMMS</div>'+
+    railEl.innerHTML='<div class="brand"><svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>CMMS</div>'+
     NAV.map(function(n){var bdg=n.id==='wo'?(b.wo||''):n.id==='pm'?(b.pm||''):n.id==='inspect'?b.insp:'';return '<div class="nav'+(view===n.id?' active':'')+'" onclick="setView(\''+n.id+'\')"><span class="ic">'+n.ic+'</span><span>'+n.t+'</span>'+(bdg!==''?'<span class="bdg">'+bdg+'</span>':'')+'</div>';}).join('')+
     '<div class="iso"><b>Praktik:</b> loop tertutup Inspeksi ➜ Temuan  Work Order ➜ Tutup ➜ Skor Aset. Selaras ISO 55001 §8, ISO 9001 §7.1.3/§10.2, ISO 45001 §8.1.2.</div>';
   }
@@ -710,7 +712,7 @@
   window.doneWO=function(id){var wos=safeGet(K.wo,[]);var w=wos.find(function(x){return x.id===id;});if(!w)return;w.status='selesai';w.completed_at=iso();safeSet(K.wo,wos);audit('WO_DONE',w.judul||w.id);renderRail();renderView();Cloud.pushDebounced();toast('Work order diselesaikan');};
   window.delWO=function(id){if(!confirm('Hapus work order ini?'))return;var wos=safeGet(K.wo,[]).filter(function(x){return x.id!==id;});safeSet(K.wo,wos);Cloud.remove('maintenance_tasks',id);audit('WO_DELETE',id);renderRail();renderView();Cloud.pushDebounced();toast('Work order dihapus','err');};
   window.clearDoneWO=function(){var wos=safeGet(K.wo,[]),n=wos.filter(isDone).length;if(!n){toast('Tidak ada yang selesai','warn');return;}if(!confirm('Hapus '+n+' work order selesai?'))return;var _ids=wos.filter(isDone).map(function(w){return w.id;});Cloud.removeMany('maintenance_tasks',_ids);safeSet(K.wo,wos.filter(function(w){return !isDone(w);}));renderRail();renderView();Cloud.pushDebounced();toast(n+' work order selesai dibersihkan');};
-  window.reconcileK3=function(verbose){var k3=safeGet(K.k3,[]),wos=safeGet(K.wo,[]),linked={};wos.forEach(function(w){if(w.k3_report_id)linked[w.k3_report_id]=1;});var n=0;k3.forEach(function(r){if(!/kerusakan/i.test(r.kategori||'')||linked[r.id])return;wos.unshift({id:uid('maint'),judul:'Perbaiki '+(r.lokasi||'sarana'),deskripsi:(r.deskripsi||'')+' · (otomatis dari K3)',lokasi:r.lokasi||'-',priority:(r.priority||'medium'),status:'pending',kategori:'repair',created_at:r.created_at||iso(),created_by:r.nama_pelapor||r.pelapor_nama||'sistem',k3_report_id:r.id,source:'k3'});n++;});if(n){safeSet(K.wo,wos);audit('WO_FROM_K3',n+' tugas');Cloud.pushDebounced();renderRail();renderView();if(verbose)toast(n+' work order ditarik dari K3');}else if(verbose){toast('Tidak ada K3 “Kerusakan Sarana” baru','warn');}return n;};
+  window.reconcileK3=function(verbose){try{var k3=safeGet(K.k3,[]),wos=safeGet(K.wo,[]),linked={};wos.forEach(function(w){if(w.k3_report_id)linked[w.k3_report_id]=1;});var n=0;k3.forEach(function(r){if(!/kerusakan/i.test(r.kategori||'')||linked[r.id])return;wos.unshift({id:uid('maint'),judul:'Perbaiki '+(r.lokasi||'sarana'),deskripsi:(r.deskripsi||'')+' · (otomatis dari K3)',lokasi:r.lokasi||'-',priority:(r.priority||'medium'),status:'pending',kategori:'repair',created_at:r.created_at||iso(),created_by:r.nama_pelapor||r.pelapor_nama||'sistem',k3_report_id:r.id,source:'k3'});n++;});if(n){safeSet(K.wo,wos);audit('WO_FROM_K3',n+' tugas');Cloud.pushDebounced();renderRail();renderView();if(verbose)toast(n+' work order ditarik dari K3');}else if(verbose){toast('Tidak ada K3 “Kerusakan Sarana” baru','warn');}return n;};
 
   function vAssets(){
     var strat=safeGet(K_ASSET,[]), maint=safeGet(K.assets,[]);
@@ -935,7 +937,7 @@
   // Debounced initial cloud pull (prevent overlap)
   var __initPullTimeout = setTimeout(function(){
     Cloud.pull().then(function(){ 
-      reconcileK3(false); 
+      if(window.reconcileK3)try{reconcileK3(false);}catch(e){console.warn('[Maintenance] auto-reconcile failed:',e);} 
       Cloud.pushDebounced(); 
       renderRail(); 
       renderView(); 
