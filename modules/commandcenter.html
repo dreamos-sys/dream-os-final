@@ -1096,10 +1096,10 @@ window.goHomeHandler = function() {
     const email = document.getElementById('new-user-email').value.trim();
     const role = document.getElementById('new-user-role').value;
     const pass = document.getElementById('new-user-pass').value;
-    if (!nama || !email || !pass) return showToast('Lengkapi semua input user!', 'warn');
-    if (pass.length < (CFG.MIN_PASSWORD_LENGTH || 8)) return showToast('⛔ Password minimal 8 karakter!', 'warn');
+    if (!nama || !email || !pass) return showToast('Lengkapi semua input user!', 'error');
+    if (pass.length < (CFG.MIN_PASSWORD_LENGTH || 8)) return showToast('⛔ Password minimal 8 karakter!', 'error');
     const users = safeJSON('dreamos_users_db', []);
-    if (users.find(u => (u.email||'').toLowerCase() === email.toLowerCase())) return showToast('Email sudah terdaftar!', 'danger');
+    if (users.find(u => (u.email||'').toLowerCase() === email.toLowerCase())) return showToast('Email sudah terdaftar!', 'error');
     let createdId = 'usr_' + Date.now(); let cloudOk = false;
     try {
       const res = await callAdminUsers('create', { email: email, password: pass, nama: nama, role: role });
@@ -1408,22 +1408,30 @@ window.goHomeHandler = function() {
     document.getElementById('edit-user-modal').classList.remove('show');
   };
 
-    window.saveEditUser = async function() { /* seu_v2 */
+    window.saveEditUser = async function() { /* seu_v3 */
     if (!isAdmin) { showToast('⛔ Hanya admin yang dapat mengubah user.', 'error'); return; }
-    const idx = parseInt(document.getElementById('edit-user-index').value);
-    const users = safeJSON('dreamos_users_db', []);
+    var idx = parseInt(document.getElementById('edit-user-index').value, 10);
+    var users = safeJSON('dreamos_users_db', []);
     if (!users[idx]) return;
-    const nama = document.getElementById('edit-user-nama').value;
-    const email = document.getElementById('edit-user-email').value;
-    const role = document.getElementById('edit-user-role').value;
-    const status = document.getElementById('edit-user-status').value;
-    const id = users[idx].id; let cloudOk = false;
-    try { await callAdminUsers('update', { id: id, nama: nama, role: role, status: status }); cloudOk = true; } catch(e){ console.warn('admin-users update gagal:', e&&e.message); }
-    users[idx].nama = nama; users[idx].email = email; users[idx].role = role; users[idx].status = status;
+    var nama = (document.getElementById('edit-user-nama').value || '').trim();
+    var email = (document.getElementById('edit-user-email').value || '').trim();
+    var role = document.getElementById('edit-user-role').value;
+    var status = document.getElementById('edit-user-status').value;
+    if (!nama || !email) { showToast('Nama & email wajib diisi', 'error'); return; }
+    var id = users[idx].id;
+    var cloudOk = false;
+    try {
+      await callAdminUsers('update', { id: id, nama: nama, email: email, role: role, status: status });
+      cloudOk = true;
+    } catch (e) {
+      console.warn('admin-users update gagal:', e && e.message);
+    }
+    users[idx] = Object.assign({}, users[idx], { nama: nama, email: email, role: role, status: status });
     saveJSON('dreamos_users_db', users);
     if (window.BankAudit) { try { BankAudit.log('USER_UPDATE', { id: id, role: role, cloud: cloudOk }); } catch(_){} }
-    renderUsers(); closeEditModal();
-    showToast(cloudOk ? '✅ User diperbarui & tersinkron cloud' : '⚠️ Diperbarui lokal (cloud gagal / Edge Function belum aktif).', cloudOk ? 'success' : 'warning');
+    renderUsers();
+    closeEditModal();
+    showToast(cloudOk ? '✅ User diupdate (cloud)' : '⚠️ User diupdate lokal saja', cloudOk ? 'success' : 'warning');
   };
 
   window.renderChart = function() {
