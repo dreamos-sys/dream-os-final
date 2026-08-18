@@ -859,36 +859,6 @@ html[data-theme="light"] .cmd-input { color: var(--text); }
    ========================================================================= */
 
 /* =========================================================================
-   24. UX POLISH — Nav besar + icon berwarna (anti-pucat) [17 Agustus]
-   ========================================================================= */
-
-/* Kembalikan warna emoji (hapus grayscale pucat) */
-.mod-icon, .nav-icon { filter: none !important; }
-
-/* Bottom nav lebih besar & lega */
-#bottom-nav { padding: 12px 10px calc(12px + env(safe-area-inset-bottom)); }
-.nav-container { gap: 8px; }
-.nav-item { min-height: 60px; padding: 10px 4px; border-radius: 14px; min-width: 0; }
-.nav-icon-wrapper { width: 36px; height: 36px; }
-.nav-icon { font-size: 1.4rem; }
-.nav-label { font-size: 0.62rem; letter-spacing: 0.2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Kontras lebih kuat (anti-pucat) */
-.mod-title { color: #ffffff !important; }
-.glass, .mod-card, .mini-stat { border-color: rgba(255,255,255,0.22) !important; }
-.mod-card:hover { border-color: #ffffff !important; }
-
-/* Active nav lebih jelas */
-.nav-item.active { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.5) !important; }
-.nav-item.active .nav-label { color: #ffffff !important; }
-
-/* Light theme adjust */
-[data-theme="light"] .mod-title { color: #000000 !important; }
-[data-theme="light"] .glass, [data-theme="light"] .mod-card, [data-theme="light"] .mini-stat { border-color: rgba(0,0,0,0.25) !important; }
-[data-theme="light"] .nav-item.active { background: rgba(0,0,0,0.08) !important; }
-[data-theme="light"] .nav-item.active .nav-label { color: #000000 !important; }
-
-/* =========================================================================
    25. NAV CALIBRATION — ISO 9241-171 / WCAG 2.5.5 / Material 3
    Touch target >= 48px | 5 kolom uniform | icon 1.55rem | label 0.68rem
    ========================================================================= */
@@ -1013,8 +983,8 @@ textarea {
    32. :has() SELECTOR — Parent Styling Magic
    ========================================================================= */
 .input-wrapper:has(input:focus) {
-  transform: scale(1.02);
-  transition: transform 0.2s ease;
+  /* non-active scale untuk hindari layout shift */
+  transition: box-shadow 0.2s ease;
 }
 .mod-card:has(.mod-status) {
   border-color: rgba(74, 222, 128, 0.3);
@@ -1023,9 +993,9 @@ textarea {
 /* =========================================================================
    33. VIEW TRANSITIONS — Smooth Page Navigation (Chrome 111+)
    ========================================================================= */
-@view-transition { navigation: auto; }
-::view-transition-old(root) { animation: fade-out 0.3s ease; }
-::view-transition-new(root) { animation: fade-in 0.3s ease; }
+/* @view-transition { navigation: auto; } */ /* disabled for stability */
+/* ::view-transition-old(root) { animation: fade-out 0.3s ease; } */
+/* ::view-transition-new(root) { animation: fade-in 0.3s ease; } */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 
@@ -1120,8 +1090,7 @@ input, textarea, [contenteditable] {
 
 /* Fix bottom nav shift saat keyboard muncul */
 html.kb-open #bottom-nav {
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
+  display: none !important;
 }
 
 /* Prevent zoom di iOS Safari */
