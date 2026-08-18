@@ -236,12 +236,8 @@
   <script src="https://js.sentry-cdn.com/22b1730336ecd4cd1d71c1d07e6f7a02.min.js" crossorigin="anonymous"></script>
 
     <!-- Security Config (DO NOT COMMIT) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-window.SUPABASE_URL = 'https://gbigjdhifispatrrskgh.supabase.co';
-window.SUPABASE_ANON_KEY = 'sb_publishable_rgSsdppHSeZ8a0I_NWtqZA_jBz2wWwW';
-window.supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-</script>
+    
+
     
     <!-- DOMPurify for XSS protection -->
     <script src="../js/load-dompurify.js"></script>
@@ -277,15 +273,29 @@ window.CloudPhoto.dataURLtoBlob = window.CloudPhoto.dataURLtoBlob || function(da
 };
 
 /* 5. Supabase client placeholder */
-try {
-  if (!window.supabaseClient && window.parent && window.parent !== window) {
-    window.supabaseClient = window.parent.supabaseClient || null;
+
+// Gunakan supabaseClient dari parent (index.html) jika tersedia
+(function(){
+  function attachParentClient(){
+    try {
+      if (window.parent && window.parent !== window && window.parent.supabaseClient) {
+        window.supabaseClient = window.parent.supabaseClient;
+        return true;
+      }
+    } catch(e) {}
+    return false;
   }
-} catch (e) {}
-if (!window.supabaseClient) {
-  window.supabaseClient = null;
-  console.warn('[DreamOS] supabaseClient belum diinisialisasi. Mode lokal aktif.');
-}
+  if (!attachParentClient()) {
+    // Jika belum siap, tunggu sebentar lalu coba lagi
+    setTimeout(function(){
+      if (!attachParentClient()) {
+        window.supabaseClient = null;
+        console.warn('[DreamOS] supabaseClient tidak tersedia. Mode lokal aktif.');
+      }
+    }, 1500);
+  }
+})();
+
 </script>
 
 
@@ -1001,8 +1011,10 @@ window.goHomeHandler = function() {
 
   const bound = safeJSON('dreamos_bound_user', null);
   const currentUser = bound || { nama: 'Guest', role: 'staff', email: 'guest' };
-  document.getElementById('user-name').textContent = currentUser.nama || currentUser.email || 'User';
-  document.getElementById('role-badge').textContent = (currentUser.role || '').toUpperCase();
+  const userNameEl = document.getElementById('user-name');
+  const roleBadgeEl = document.getElementById('role-badge');
+  if (userNameEl) userNameEl.textContent = currentUser.nama || currentUser.email || 'User';
+  if (roleBadgeEl) roleBadgeEl.textContent = (currentUser.role || '').toUpperCase();
 
   const adminRoles = ['kabag', 'koord', 'dev', 'admin', 'kabag_umum', 'koordinator_umum'];
   const isAdmin = adminRoles.includes((currentUser.role || '').toLowerCase());
