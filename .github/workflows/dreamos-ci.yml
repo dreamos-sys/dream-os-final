@@ -13,20 +13,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Extract inline JS
+      - name: Extract inline JS (skip ld+json/template)
         run: |
           mkdir -p /tmp/js
           python3 - << 'PY'
           import re
           from pathlib import Path
+          JS_TYPES = ('', 'text/javascript', 'application/javascript', 'module')
           files=['index.html']+[str(p) for p in sorted(Path('modules').glob('*.html'))]
           n=0
           for f in files:
               t=Path(f).read_text(encoding='utf-8',errors='replace')
-              for i,m in enumerate(re.finditer(r'<script(?![^>]*src)[^>]*>(.*?)</script>', t, re.S)):
-                  (Path('/tmp/js') / (f.replace('/','_')+('_%d.js'%i))).write_text(m.group(1), encoding='utf-8')
+              for i,m in enumerate(re.finditer(r'<script([^>]*)>(.*?)</script>', t, re.S)):
+                  attrs, body = m.group(1), m.group(2)
+                  if 'src=' in attrs: continue
+                  tm = re.search(r'type=["\']?([^"\'\s>]+)', attrs)
+                  if tm and tm.group(1) not in JS_TYPES: continue
+                  (Path('/tmp/js') / (f.replace('/','_')+('_%d.js'%i))).write_text(body, encoding='utf-8')
                   n+=1
-          print('extracted',n,'inline scripts')
+          print('extracted',n,'inline JS (non-JS skipped)')
           PY
 
       - name: Node syntax check all inline JS
