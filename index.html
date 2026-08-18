@@ -51,7 +51,7 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
 <script>
 (async function(){ if (localStorage.getItem("dreamos_sw_cleared_17agust")) return; try { if ("serviceWorker" in navigator) { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } if ("caches" in window) { for (const k of await caches.keys()) await caches.delete(k); } localStorage.setItem("dreamos_sw_cleared_17agust","1"); location.reload(); } catch(e){} })();
 </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Dream OS • v1.0 Beta</title>
 
   <meta name="description" content="Dream OS Enterprise - Smart Agent Platform untuk ISO 9001/27001/9241-171 Compliance">
@@ -1867,6 +1867,32 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   vv.addEventListener('resize', onKb);
   vv.addEventListener('scroll', onKb);
   onKb();
+})();
+</script>
+
+<script>
+(function(){
+  // Cegah double-tap zoom pada elemen non-input
+  var lastTouch = 0;
+  document.addEventListener('touchend', function(e){
+    var now = Date.now();
+    if (now - lastTouch <= 300 && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+    lastTouch = now;
+  }, {passive: false});
+
+  // Deteksi keyboard: tambah class kb-open saat keyboard muncul
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function(){
+      var diff = window.innerHeight - window.visualViewport.height;
+      if (diff > 150) {
+        document.documentElement.classList.add('kb-open');
+      } else {
+        document.documentElement.classList.remove('kb-open');
+      }
+    });
+  }
 })();
 </script>
 </body>
