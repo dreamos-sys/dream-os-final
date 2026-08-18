@@ -274,27 +274,21 @@ window.CloudPhoto.dataURLtoBlob = window.CloudPhoto.dataURLtoBlob || function(da
 
 /* 5. Supabase client placeholder */
 
-// Gunakan supabaseClient dari parent (index.html) jika tersedia
+// Same-window inject: jangan null-kan client index
 (function(){
-  function attachParentClient(){
-    try {
-      if (window.parent && window.parent !== window && window.parent.supabaseClient) {
-        window.supabaseClient = window.parent.supabaseClient;
-        return true;
-      }
-    } catch(e) {}
-    return false;
-  }
-  if (!attachParentClient()) {
-    // Jika belum siap, tunggu sebentar lalu coba lagi
-    setTimeout(function(){
-      if (!attachParentClient()) {
-        window.supabaseClient = null;
-        console.warn('[DreamOS] supabaseClient tidak tersedia. Mode lokal aktif.');
-      }
-    }, 1500);
+  if (window.supabaseClient) return; // sudah ada — jangan sentuh
+  try {
+    if (window.parent && window.parent !== window && window.parent.supabaseClient) {
+      window.supabaseClient = window.parent.supabaseClient;
+      return;
+    }
+  } catch (e) {}
+  if (!window.supabaseClient) {
+    console.warn('[DreamOS] supabaseClient belum ada — mode lokal');
   }
 })();
+window.CFG = window.CFG || {};
+
 
 </script>
 
@@ -345,6 +339,15 @@ window.switchTab = window.switchTab || function(id){
   if (btn) btn.classList.add('active');
 };
 window.refreshAll = window.refreshAll || function(){ console.warn('[cmd] refreshAll placeholder'); };
+(function(){
+  try {
+    var b = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+    var n = document.getElementById('user-name');
+    var r = document.getElementById('role-badge');
+    if (n) n.textContent = b.nama || b.email || b.name || 'User';
+    if (r) r.textContent = String(b.role || '-').toUpperCase();
+  } catch (e) {}
+})();
 </script>
 
   <button class="back-btn" onclick="goHomeHandler()">← HOME</button>
@@ -2354,7 +2357,7 @@ window.goHomeHandler = function() {
       if (localStorage.getItem('dreamos_session_active') === 'false') return;
       if (typeof updateMetrics === 'function') updateMetrics();
     } catch (e) { console.warn('[cmd-idle]', e); }
-  }, (CFG.METRICS_INTERVAL_MS || 30000)));
+  }, ((window.CFG && CFG.METRICS_INTERVAL_MS) || 30000)));
 })();
 </script>
 
