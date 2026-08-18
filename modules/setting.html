@@ -699,5 +699,66 @@ window.CFG = window.CFG || {};
 
 })();
 </script>
+
+<script>
+// ===== SETTINGS P1: CLOUD SYNC (v14) =====
+(function(){
+  var KEY='dreamos_settings';
+  function getUid(cb){
+    try{
+      if(!window.supabaseClient) return cb(null);
+      window.supabaseClient.auth.getUser().then(function(r){
+        cb(r && r.data && r.data.user ? r.data.user.id : null);
+      }).catch(function(){ cb(null); });
+    }catch(e){ cb(null); }
+  }
+  window.syncSettingsToCloud=function(silent){
+    getUid(function(uid){
+      if(!uid) return;
+      try{
+        var s=JSON.parse(localStorage.getItem(KEY)||'{}');
+        s.__updated_at=s.__updated_at||new Date().toISOString();
+        window.supabaseClient.from('user_settings').upsert({
+          user_id:uid, settings:s, updated_at:s.__updated_at
+        }).then(function(res){
+          if(res.error) console.warn('[Settings] sync err:',res.error.message);
+          else if(!silent && window.showToast) showToast('☁️ Settings tersync ke cloud','success');
+        });
+      }catch(e){}
+    });
+  };
+  window.loadSettingsFromCloud=function(){
+    getUid(function(uid){
+      if(!uid) return;
+      window.supabaseClient.from('user_settings').select('settings,updated_at')
+        .eq('user_id',uid).maybeSingle().then(function(r){
+        if(r.data&&r.data.settings){
+          var local=JSON.parse(localStorage.getItem(KEY)||'null');
+          var lt=local&&local.__updated_at?local.__updated_at:null;
+          if(!lt||r.data.updated_at>lt){
+            var merged=Object.assign({},(typeof DEFAULTS!=='undefined'?DEFAULTS:{}),r.data.settings);
+            localStorage.setItem(KEY,JSON.stringify(merged));
+            if(typeof applySettings==='function') applySettings(merged);
+            if(window.showToast) showToast('☁️ Settings dipulihkan dari cloud','success');
+          }
+        }
+      });
+    });
+  };
+  // Event bus P0: setiap save → stamp timestamp + debounce sync
+  var t=null;
+  window.addEventListener('dreamos-settings-changed',function(){
+    try{
+      var s=JSON.parse(localStorage.getItem(KEY)||'{}');
+      s.__updated_at=new Date().toISOString();
+      localStorage.setItem(KEY,JSON.stringify(s));
+    }catch(e){}
+    clearTimeout(t); t=setTimeout(function(){ window.syncSettingsToCloud(true); },1500);
+  });
+  // Boot: pull dari cloud (multi-device restore)
+  setTimeout(function(){ window.loadSettingsFromCloud(); },2500);
+})();
+</script>
+
 </body>
 </html>
