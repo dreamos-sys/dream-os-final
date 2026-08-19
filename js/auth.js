@@ -93,7 +93,7 @@ const Auth = {
   requestPasswordReset: async function(email) {
     try {
       const { data, error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password.html'
+        redirectTo: window.location.origin + '/dream-os-final/reset-password.html'
       });
 
       if (error) throw error;
