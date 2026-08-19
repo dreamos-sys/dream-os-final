@@ -1,5 +1,5 @@
 // Dream OS SW v4-20260816 — self-cleaning, bounded cache
-const CACHE_VERSION = 'v27-reset-ux';
+const CACHE_VERSION = 'v28-unified-auth';
 const CACHE_NAME = 'dreamos-' + CACHE_VERSION;
 const CORE = ['./', './index.html', './manifest.json'];
 

@@ -542,13 +542,112 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   </div>
   <script>
   async function dreamosForgot(){
-    var el = document.querySelector('#login-email') || document.querySelector('#email') || document.querySelector('input[type="email"]');
-    var em = (el && el.value) ? el.value : prompt('Email akun kamu:');
+    var el = document.getElementById('email-input');
+    var em = (el && el.value) ? el.value.trim() : prompt('Email akun kamu:');
     if(!em) return;
-    if(!window.Auth){ alert('❌ Auth module belum siap — cek koneksi.'); return; }
+    
+    if(!window.Auth){ 
+      alert('❌ Auth module belum siap — cek koneksi.'); 
+      return; 
+    }
+    
+    // Step 1: Coba Supabase password reset
     var r = await Auth.requestPasswordReset(em);
-    if(r.success){ alert('✅ Email reset dikirim ke '+em+'\nCek inbox / spam!'); }
-    else { alert('❌ '+r.error+'\n\nKalau ini akun LAMA (lokal), minta admin reset manual.'); }
+    if(r.success){ 
+      alert('✅ Email reset dikirim ke '+em+'
+Cek inbox / spam!'); 
+      return;
+    }
+    
+    // Step 2: Cek apakah user ada di lokal (akun lama)
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    var user = users.find(u => u.email.toLowerCase() === em.toLowerCase());
+    
+    if(user){
+      // Step 3: Tampilkan modal upgrade
+      showModalUpgrade(user);
+    } else {
+      alert('❌ Email tidak terdaftar.
+Pastikan email yang dimasukkan benar.');
+    }
+  }
+
+  function showModalUpgrade(user){
+    var modal = document.createElement('div');
+    modal.id = 'upgrade-modal';
+    modal.innerHTML = `
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:1rem;">
+        <div style="background:rgba(15,23,42,.95);backdrop-filter:blur(10px);border:2px solid #00ff9d;border-radius:16px;padding:2rem;max-width:450px;width:100%;">
+          <h2 style="color:#00ff9d;margin:0 0 1rem 0;font-size:1.3rem;">🔄 Upgrade Akun ke Cloud</h2>
+          <p style="color:#94a3b8;font-size:.9rem;margin-bottom:1rem;line-height:1.5;">
+            Akun <b style="color:#00ff9d;">${user.email}</b> terdaftar sebagai user lokal.<br>
+            Buat password baru untuk upgrade ke sistem cloud (semua data aman):
+          </p>
+          <input type="password" id="upgrade-pw" placeholder="Password baru (min 8 karakter)" 
+                 style="width:100%;padding:.75rem;border:1px solid #334155;border-radius:8px;background:rgba(15,23,42,.5);color:#e2e8f0;margin-bottom:.5rem;box-sizing:border-box;">
+          <input type="password" id="upgrade-pw-confirm" placeholder="Konfirmasi password" 
+                 style="width:100%;padding:.75rem;border:1px solid #334155;border-radius:8px;background:rgba(15,23,42,.5);color:#e2e8f0;margin-bottom:1rem;box-sizing:border-box;">
+          <button onclick="doUpgrade('${user.email}')" 
+                  style="width:100%;padding:.75rem;border:none;border-radius:8px;background:#00ff9d;color:#0d1428;font-weight:700;cursor:pointer;font-size:1rem;margin-bottom:.5rem;">
+            🔑 Upgrade & Login
+          </button>
+          <button onclick="document.getElementById('upgrade-modal').remove()" 
+                  style="width:100%;padding:.5rem;border:none;border-radius:8px;background:none;color:#94a3b8;cursor:pointer;">
+            Batal
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  async function doUpgrade(email){
+    var pw = document.getElementById('upgrade-pw').value;
+    var pwConfirm = document.getElementById('upgrade-pw-confirm').value;
+    
+    if(pw.length < 8){ 
+      alert('❌ Password minimal 8 karakter!'); 
+      return; 
+    }
+    if(pw !== pwConfirm){
+      alert('❌ Password tidak cocok!');
+      return;
+    }
+    
+    // 1. SignUp ke Supabase
+    var r = await Auth.signUp(email, pw, { nama: email.split('@')[0], role: 'user' });
+    if(!r.success){ 
+      alert('❌ '+r.error); 
+      return; 
+    }
+    
+    // 2. Auto-login
+    var login = await Auth.login(email, pw);
+    if(!login.success){ 
+      alert('❌ '+login.error); 
+      return; 
+    }
+    
+    // 3. Simpan session
+    window.safeStorageSet('dreamos_bound_user', JSON.stringify({
+      id: login.user.id,
+      email: login.user.email,
+      nama: login.user.user_metadata?.nama || email.split('@')[0],
+      role: login.user.user_metadata?.role || 'user'
+    }));
+    window.safeStorageSet('dreamos_session_active', 'true');
+    
+    // 4. Hapus dari dreamos_users_db (lokal)
+    var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+    users = users.filter(u => u.email.toLowerCase() !== email.toLowerCase());
+    window.safeStorageSet('dreamos_users_db', JSON.stringify(users));
+    
+    // 5. Close modal + reload
+    document.getElementById('upgrade-modal').remove();
+    alert('✅ Akun di-upgrade ke cloud!
+Semua data aman.
+Kamu sudah login.');
+    location.reload();
   }
   </script>
       <div class="error-msg" id="error-msg" role="alert" data-i18n="login_error"></div>
