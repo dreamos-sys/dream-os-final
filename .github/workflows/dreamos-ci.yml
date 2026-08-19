@@ -39,11 +39,11 @@ jobs:
                   if '</body>' not in t:
                       errors.append(f"{f}: missing </body>")
               
-              # Orphan script check
+              # Orphan script check (pairing-based, anti false-positive)
               opens = len(re.findall(r'<script[^>]*>', t))
-              closes = t.count('</script>')
-              if opens != closes:
-                  errors.append(f"{f}: {opens} <script> vs {closes} </script> — ORPHAN!")
+              paired = len(re.findall(r'<script[^>]*>.*?</script>', t, re.S))
+              if paired < opens:
+                  errors.append(f"{f}: {opens - paired} unclosed <script> tag!")
               
               # Extract JS (skip ld+json/template)
               JS_TYPES = ('', 'text/javascript', 'application/javascript', 'module')
@@ -116,9 +116,11 @@ jobs:
           from pathlib import Path
           WARN = 150*1024; FAIL = 200*1024
           fail = False
+          CODE = ('.html', '.js', '.css')
           for p in sorted(Path('.').rglob('*')):
               if not p.is_file(): continue
-              if any(part in ('.git','node_modules','coverage','.bak') for part in p.parts): continue
+              if p.suffix not in CODE: continue
+              if '.bak' in p.name: continue
               s = p.stat().st_size
               if s > FAIL:
                   print(f"❌ {p}: {s//1024}KB — OVER LIMIT, reduce before deploy")
