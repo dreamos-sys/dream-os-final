@@ -743,7 +743,6 @@ window.refreshAll = window.refreshAll || function(){ console.warn('[cmd] refresh
       <div style="font-weight:800;color:var(--success);margin-bottom:.8rem;">📝 Ringkasan Eksekutif Otomatis</div>
       <div id="adv-summary" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
     </div>
-    </div>
     <div class="glass">
       <div style="font-weight:800;color:var(--neon);margin-bottom:.8rem;">🧠 Insight Cerdas (8 Modul)</div>
       <div id="adv-insight" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
@@ -2124,13 +2123,28 @@ window.goHomeHandler = function() {
     logActivity('Export Laporan','Laporan bulanan analytics (confidential)');
   };
   function advRenderAll(){
-    var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[])  advRenderInsight();};
+    var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[]) };
     var labels=Object.keys(M), counts=labels.map(function(k){return M[k].length;});
     if(typeof Chart==='undefined')return;
     var ex=Chart.getChart('advAllChart');if(ex)ex.destroy();
     new Chart(document.getElementById('advAllChart'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:['#0072B2','#D55E00','#E69F00','#56B4E9','#CC79A7','#009E73','#999999','#F0E442','#8b5cf6','#10b981'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0},grid:{color:'rgba(255,255,255,0.06)'}},x:{ticks:{color:'#f1f5f9',maxRotation:35},grid:{display:false}}}}});
   }
   
+  
+  // ===== INSIGHT HOOK (safe wrapper, no regex body patch) =====
+  (function(){
+    if (typeof advRenderAll === 'function' && !window.__insightHooked) {
+      window.__insightHooked = true;
+      var __orig = advRenderAll;
+      advRenderAll = function(){
+        var r = __orig.apply(this, arguments);
+        try { if (typeof advRenderInsight === 'function') advRenderInsight(); } catch(e) { console.warn('[insight]', e); }
+        return r;
+      };
+    }
+  })();
+  // ===== END INSIGHT HOOK =====
+
   function advRenderInsight(){
     var insights=[];
     // Baca 8 modul
