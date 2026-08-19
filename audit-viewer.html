@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📜 Audit Trail — Dream OS</title>
+<style>
+  :root{--bg:#0d1428;--panel:rgba(15,23,42,.85);--neon:#00ff9d;--text:#e2e8f0;--muted:#94a3b8;--danger:#ef4444}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);padding:1rem}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+  h1{color:var(--neon);font-size:1.2rem}
+  header span{color:var(--muted);font-size:.75rem}
+  .filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem}
+  input,select,button{padding:.6rem .8rem;border:1px solid #334155;border-radius:8px;background:rgba(15,23,42,.6);color:var(--text);font-size:.85rem}
+  input{flex:1;min-width:150px}
+  button{background:var(--neon);color:#0d1428;font-weight:700;cursor:pointer;border:none}
+  #stats{color:var(--muted);font-size:.8rem;margin-bottom:.6rem}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;background:var(--panel);border-radius:12px;overflow:hidden}
+  th{background:rgba(0,255,157,.08);color:var(--neon);text-align:left;padding:.6rem}
+  td{padding:.55rem .6rem;border-top:1px solid rgba(51,65,85,.4);vertical-align:top}
+  tr:hover td{background:rgba(0,255,157,.04)}
+  .badge{display:inline-block;padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700}
+  .b-login{background:rgba(0,255,157,.15);color:var(--neon)}
+  .b-fail{background:rgba(239,68,68,.15);color:var(--danger)}
+  .b-act{background:rgba(59,130,246,.15);color:#60a5fa}
+</style>
+</head>
+<body>
+<header><h1>📜 AUDIT TRAIL VIEWER</h1><span>Ghost Architect Edition · data lokal perangkat ini</span></header>
+<div class="filters">
+  <input id="q" placeholder="🔍 cari user / aksi / detail...">
+  <select id="src"><option value="">📚 Semua sumber</option></select>
+  <select id="range">
+    <option value="1">⏱ 24 jam</option>
+    <option value="7" selected>📅 7 hari</option>
+    <option value="30">🗓 30 hari</option>
+    <option value="0">♾ Semua</option>
+  </select>
+  <button id="ref">🔄</button>
+  <button id="exp">⬇️ CSV</button>
+</div>
+<div id="stats"></div>
+<table>
+<thead><tr><th>Waktu</th><th>User</th><th>Aksi</th><th>Detail</th><th>Sumber</th></tr></thead>
+<tbody id="tb"></tbody>
+</table>
+<script>
+var ROWS=[];
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tOf(it){return it.waktu||it.time||it.timestamp||it.created_at||it.at||it.login_at||it.ts||null;}
+function scan(){
+  ROWS=[];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||k.indexOf('dreamos_')!==0)continue;
+    var v;try{v=JSON.parse(localStorage.getItem(k));}catch(e){continue;}
+    if(!Array.isArray(v))continue;
+    for(var j=0;j<v.length;j++){
+      var it=v[j];
+      if(!it||typeof it!=='object')continue;
+      var t=tOf(it);if(!t)continue;
+      ROWS.push({
+        t:new Date(t).getTime(),
+        user:it.user||it.email||it.petugas||it.nama||it.by||it.actor||'-',
+        aksi:it.aksi||it.action||it.type||it.status||it.event||'-',
+        detail:it.detail||it.message||it.reason||it.barang||it.item||it.stack||'',
+        src:k
+      });
+    }
+  }
+  ROWS.sort(function(a,b){return b.t-a.t;});
+}
+function badge(a){
+  a=String(a).toLowerCase();
+  if(a.indexOf('fail')>=0||a.indexOf('error')>=0)return 'b-fail';
+  if(a.indexOf('login')>=0||a.indexOf('success')>=0)return 'b-login';
+  return 'b-act';
+}
+function render(){
+  var q=document.getElementById('q').value.toLowerCase();
+  var src=document.getElementById('src').value;
+  var days=Number(document.getElementById('range').value);
+  var min=days?Date.now()-days*86400000:0;
+  var out=ROWS.filter(function(r){
+    if(min&&r.t<min)return false;
+    if(src&&r.src!==src)return false;
+    if(q&&(r.user+' '+r.aksi+' '+r.detail).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  var tb=document.getElementById('tb');
+  tb.innerHTML=out.slice(0,500).map(function(r){
+    return '<tr><td>'+esc(new Date(r.t).toLocaleString('id-ID'))+'</td><td>'+esc(r.user)+'</td><td><span class="badge '+badge(r.aksi)+'">'+esc(r.aksi)+'</span></td><td>'+esc(r.detail)+'</td><td style="color:var(--muted)">'+esc(r.src.replace('dreamos_',''))+'</td></tr>';
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">Tidak ada log cocok.</td></tr>';
+  document.getElementById('stats').textContent='📊 '+out.length+' entri ditampilkan (total '+ROWS.length+' log lokal)';
+}
+function fillSrc(){
+  var sel=document.getElementById('src');var seen={};
+  ROWS.forEach(function(r){seen[r.src]=1;});
+  Object.keys(seen).sort().forEach(function(k){
+    var o=document.createElement('option');o.value=k;o.textContent=k.replace('dreamos_','');sel.appendChild(o);
+  });
+}
+document.getElementById('q').addEventListener('input',render);
+document.getElementById('src').addEventListener('change',render);
+document.getElementById('range').addEventListener('change',render);
+document.getElementById('ref').addEventListener('click',function(){scan();render();});
+document.getElementById('exp').addEventListener('click',function(){
+  var csv='waktu,user,aksi,detail,sumber\n'+ROWS.map(function(r){
+    return [new Date(r.t).toISOString(),r.user,r.aksi,String(r.detail).replace(/\n/g,' '),r.src].map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(',');
+  }).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='dreamos-audit-trail.csv';a.click();
+});
+scan();fillSrc();render();
+</script>
+</body>
+</html>
