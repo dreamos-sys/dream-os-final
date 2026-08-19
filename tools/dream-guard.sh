@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
 WATCH_DIR="${1:-./modules}"
-BASE=/tmp/dream_security.hash
+# Fix Termux: pakai $HOME/.dreamos/ bukan /tmp/
+mkdir -p "$HOME/.dreamos"
+BASE="$HOME/.dreamos/security.hash"
 [ -d "$WATCH_DIR" ] || { echo "❌ $WATCH_DIR tidak ada"; exit 1; }
 find "$WATCH_DIR" -type f -exec md5sum {} + | md5sum > "$BASE"
 echo "🛡️ Sentinel aktif di $WATCH_DIR (baseline: $(cat $BASE))"
