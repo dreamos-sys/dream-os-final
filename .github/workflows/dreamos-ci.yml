@@ -9,46 +9,160 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Extract inline JS (skip ld+json/template)
+      # --- 1. HTML structure + inline JS extract ---
+      - name: Validate HTML structure + extract inline JS
         run: |
-          mkdir -p /tmp/js
           python3 - << 'PY'
-          import re
+          import re, sys
           from pathlib import Path
-          JS_TYPES = ('', 'text/javascript', 'application/javascript', 'module')
-          files=['index.html']+[str(p) for p in sorted(Path('modules').glob('*.html'))]
-          n=0
+          
+          files = ['index.html'] + [str(p) for p in sorted(Path('modules').glob('*.html'))]
+          errors = []
+          js_dir = Path('/tmp/js'); js_dir.mkdir(exist_ok=True)
+          n_js = 0
+          
           for f in files:
-              t=Path(f).read_text(encoding='utf-8',errors='replace')
-              for i,m in enumerate(re.finditer(r'<script([^>]*)>(.*?)</script>', t, re.S)):
+              t = Path(f).read_text(encoding='utf-8', errors='replace')
+              
+              # HTML structure checks
+              if f == 'index.html':
+                  for tag in ['<html', '<head', '<body', '</html>', '</head>', '</body>']:
+                      if tag not in t:
+                          errors.append(f"{f}: missing {tag}")
+              else:
+                  if '</body>' not in t:
+                      errors.append(f"{f}: missing </body>")
+              
+              # Orphan script check
+              opens = len(re.findall(r'<script[^>]*>', t))
+              closes = t.count('</script>')
+              if opens != closes:
+                  errors.append(f"{f}: {opens} <script> vs {closes} </script> — ORPHAN!")
+              
+              # Extract JS (skip ld+json/template)
+              JS_TYPES = ('', 'text/javascript', 'application/javascript', 'module')
+              for i, m in enumerate(re.finditer(r'<script([^>]*)>(.*?)</script>', t, re.S)):
                   attrs, body = m.group(1), m.group(2)
                   if 'src=' in attrs: continue
                   tm = re.search(r'type=["\']?([^"\'\s>]+)', attrs)
                   if tm and tm.group(1) not in JS_TYPES: continue
-                  (Path('/tmp/js') / (f.replace('/','_')+('_%d.js'%i))).write_text(body, encoding='utf-8')
-                  n+=1
-          print('extracted',n,'inline JS (non-JS skipped)')
+                  (js_dir / (f.replace('/','_')+('_%d.js'%i))).write_text(body, encoding='utf-8')
+                  n_js += 1
+          
+          print(f"extracted {n_js} inline JS, checked {len(files)} HTML files")
+          if errors:
+              print("❌ HTML STRUCTURE ERRORS:")
+              for e in errors: print(f"  - {e}")
+              sys.exit(1)
+          print("✅ HTML structure OK")
           PY
 
+      # --- 2. Node syntax check ---
       - name: Node syntax check all inline JS
         run: |
           fail=0
           for f in /tmp/js/*.js; do
             node --check "$f" >/dev/null 2>&1 || { echo "SYNTAX FAIL: $f"; fail=1; }
           done
-          [ $fail -eq 0 ] && echo "ALL INLINE JS SYNTAX OK" || exit 1
+          [ $fail -eq 0 ] && echo "✅ ALL INLINE JS SYNTAX OK" || exit 1
 
+      # --- 3. CSS brace balance ---
       - name: CSS brace balance
         run: |
           python3 - << 'PY'
           from pathlib import Path
-          c=Path('css/dashboard.css').read_text(encoding='utf-8')
-          o,cl=c.count('{'),c.count('}')
-          print('braces:',o,cl)
-          assert o==cl, 'CSS braces unbalanced'
-          print('CSS BALANCED')
+          c = Path('css/dashboard.css').read_text(encoding='utf-8')
+          o, cl = c.count('{'), c.count('}')
+          print(f"braces: {o} open, {cl} close")
+          assert o == cl, 'CSS braces unbalanced'
+          print("✅ CSS BALANCED")
+          PY
+
+      # --- 4. Duplicate script detector ---
+      - name: Detect duplicate script imports
+        run: |
+          python3 - << 'PY'
+          import re
+          from pathlib import Path
+          from collections import Counter
+          
+          files = ['index.html'] + [str(p) for p in sorted(Path('modules').glob('*.html'))]
+          bad = False
+          
+          for f in files:
+              t = Path(f).read_text(encoding='utf-8', errors='replace')
+              srcs = re.findall(r'<script[^>]*src="([^"]+)"', t)
+              dups = [s for s, c in Counter(srcs).items() if c > 1]
+              if dups:
+                  bad = True
+                  for d in dups:
+                      print(f"❌ {f}: '{d}' imported {srcs.count(d)}x — dedupe needed!")
+          
+          if bad:
+              exit(1)
+          print("✅ no duplicate script imports")
+          PY
+
+      # --- 5. File size guard ---
+      - name: File size guard (>150KB warn, >200KB fail)
+        run: |
+          python3 - << 'PY'
+          from pathlib import Path
+          WARN = 150*1024; FAIL = 200*1024
+          fail = False
+          for p in sorted(Path('.').rglob('*')):
+              if not p.is_file(): continue
+              if any(part in ('.git','node_modules','coverage','.bak') for part in p.parts): continue
+              s = p.stat().st_size
+              if s > FAIL:
+                  print(f"❌ {p}: {s//1024}KB — OVER LIMIT, reduce before deploy")
+                  fail = True
+              elif s > WARN:
+                  print(f"⚠️  {p}: {s//1024}KB — consider splitting")
+          if fail: exit(1)
+          print("✅ all files within size limits")
+          PY
+
+      # --- 6. SW version audit ---
+      - name: SW cache version audit
+        run: |
+          python3 - << 'PY'
+          import subprocess, re
+          sw = open('sw.js').read()
+          m = re.search(r"CACHE_VERSION\s*=\s*['\"]([^'\"]+)['\"]", sw)
+          if not m:
+              print("❌ CACHE_VERSION not found in sw.js"); exit(1)
+          cur = m.group(1)
+          
+          # Compare with previous commit
+          try:
+              prev = subprocess.check_output(
+                  ['git','show','HEAD~1:sw.js'], stderr=subprocess.DEVNULL).decode()
+              pm = re.search(r"CCACHE_VERSION\s*=\s*['\"]([^'\"]+)['\"]", prev)
+              if not pm: pm = re.search(r"CACHE_VERSION\s*=\s*['\"]([^'\"]+)['\"]", prev)
+              if pm and pm.group(1) == cur:
+                  # Only fail if HTML/JS/CSS changed
+                  changed = subprocess.check_output(
+                      ['git','diff','--name-only','HEAD~1','HEAD'],
+                      stderr=subprocess.DEVNULL).decode()
+                  code_changed = any(
+                      c.endswith(('.html','.js','.css')) and 'sw.js' not in c
+                      for c in changed.split()
+                  )
+                  if code_changed:
+                      print(f"❌ CACHE_VERSION '{cur}' NOT bumped but code changed!")
+                      print("   Bump CACHE_VERSION in sw.js to avoid stale cache")
+                      exit(1)
+                  else:
+                      print(f"ℹ️  CACHE_VERSION unchanged (docs-only commit) — OK")
+              else:
+                  print(f"✅ CACHE_VERSION '{cur}' bumped")
+          except subprocess.CalledProcessError:
+              print(f"ℹ️  first commit or no parent — skip audit")
           PY
