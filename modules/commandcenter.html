@@ -743,6 +743,11 @@ window.refreshAll = window.refreshAll || function(){ console.warn('[cmd] refresh
       <div style="font-weight:800;color:var(--success);margin-bottom:.8rem;">📝 Ringkasan Eksekutif Otomatis</div>
       <div id="adv-summary" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
     </div>
+    </div>
+    <div class="glass">
+      <div style="font-weight:800;color:var(--neon);margin-bottom:.8rem;">🧠 Insight Cerdas (8 Modul)</div>
+      <div id="adv-insight" style="font-size:.8rem;line-height:1.6;color:var(--text);"></div>
+    </div>
     <div class="glass">
       <div style="font-weight:800;color:var(--gold);margin-bottom:.8rem;">📊 Mode Perbandingan — Bulan Ini vs Bulan Lalu</div>
       <div class="chart-container"><canvas id="advCompareChart"></canvas></div>
@@ -2119,12 +2124,57 @@ window.goHomeHandler = function() {
     logActivity('Export Laporan','Laporan bulanan analytics (confidential)');
   };
   function advRenderAll(){
-    var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[]) };
+    var M={ 'Booking':safeJSON('dreamos_bookings',[]), 'K3':safeJSON('dreamos_k3_reports',[]), 'Maintenance':safeJSON('dreamos_maintenance_tasks',[]), 'Dana':safeJSON('dreamos_dana',[]), 'Security':safeJSON('dreamos_security_logs',[]), 'Jan In':safeJSON('dreamos_janitor_indoor',[]), 'Jan Out':safeJSON('dreamos_janitor_outdoor',[]), 'Aset':safeJSON('dreamos_maint_assets',[]).concat(safeJSON('dreamos_assets',[])), 'Stok':safeJSON('dreamos_stok_gudang',[]), 'Arsip':safeJSON('dreamos_file_archive',[])  advRenderInsight();};
     var labels=Object.keys(M), counts=labels.map(function(k){return M[k].length;});
     if(typeof Chart==='undefined')return;
     var ex=Chart.getChart('advAllChart');if(ex)ex.destroy();
     new Chart(document.getElementById('advAllChart'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:['#0072B2','#D55E00','#E69F00','#56B4E9','#CC79A7','#009E73','#999999','#F0E442','#8b5cf6','#10b981'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#94a3b8',precision:0},grid:{color:'rgba(255,255,255,0.06)'}},x:{ticks:{color:'#f1f5f9',maxRotation:35},grid:{display:false}}}}});
   }
+  
+  function advRenderInsight(){
+    var insights=[];
+    // Baca 8 modul
+    var k3=safeJSON('dreamos_k3_reports',[]), wo=safeJSON('dreamos_maintenance_tasks',[]),
+        assets=safeJSON('dreamos_maint_assets',[]), pm=safeJSON('dreamos_maint_pm',[]),
+        bookings=safeJSON('dreamos_bookings',[]), stok=safeJSON('dreamos_inventory',[]),
+        janIn=safeJSON('dreamos_janitor_indoor',[]), janOut=safeJSON('dreamos_janitor_outdoor',[]);
+    
+    // Rule 1: WO backlog
+    var woOpen=0; for(var i=0;i<wo.length;i++){var s=(wo[i].status||'').toLowerCase(); if(s!=='selesai'&&s!=='done')woOpen++;}
+    if(woOpen>5) insights.push({icon:'🛠️',sev:'warn',txt:'Backlog '+woOpen+' work order — fokus tim maintenance.'});
+    else if(woOpen>0) insights.push({icon:'🛠️',sev:'info',txt:woOpen+' work order terbuka.'});
+    
+    // Rule 2: K3 pending
+    var k3Pend=0; for(var i=0;i<k3.length;i++){if((k3[i].status||'').toLowerCase()==='pending')k3Pend++;}
+    if(k3Pend>0) insights.push({icon:'🦺',sev:'warn',txt:k3Pend+' laporan K3 pending perlu triage segera.'});
+    else insights.push({icon:'🦺',sev:'ok',txt:'Tidak ada K3 pending.'});
+    
+    // Rule 3: Aset risiko tinggi
+    var highRisk=0; for(var i=0;i<assets.length;i++){if(assets[i].status==='maintenance'||(assets[i].criticality||0)>=5)highRisk++;}
+    if(highRisk>3) insights.push({icon:'⚠️',sev:'warn',txt:highRisk+' aset kritis perlu perhatian.'});
+    else if(highRisk>0) insights.push({icon:'⚠️',sev:'info',txt:highRisk+' aset dalam renovasi/kritis.'});
+    
+    // Rule 4: Stok low
+    var lowStock=0; for(var i=0;i<stok.length;i++){if((parseInt(stok[i].jumlah)||0)<10)lowStock++;}
+    if(lowStock>0) insights.push({icon:'📦',sev:'warn',txt:lowStock+' item stok < 10, segera reorder.'});
+    
+    // Rule 5: Booking approval rate
+    var bookThis=0, bookApp=0; var now=new Date(); var thisMonth=now.getMonth(); var thisYear=now.getFullYear();
+    for(var i=0;i<bookings.length;i++){var d=new Date(bookings[i].tgl||bookings[i].created_at||0); if(d.getMonth()===thisMonth&&d.getFullYear()===thisYear){bookThis++; if((bookings[i].status||'').toLowerCase()==='approved')bookApp++;}}
+    if(bookThis>0){var rate=Math.round(bookApp/bookThis*100); if(rate<50) insights.push({icon:'📅',sev:'warn',txt:'Approval rate booking rendah ('+rate+'%).'}); else insights.push({icon:'📅',sev:'ok',txt:'Approval rate booking '+rate+'%.'});}
+    
+    // Rule 6: Shift info
+    var h=now.getHours(); var sh=h<11?'Pagi':h<15?'Siang':'Malam';
+    insights.push({icon:'🕐',sev:'info',txt:'Sekarang: Sif '+sh+' ('+now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+').'});
+    
+    // Render
+    var el=document.getElementById('adv-insight'); if(!el) return;
+    el.innerHTML=insights.map(function(i){
+      var c=i.sev==='warn'?'var(--danger)':i.sev==='ok'?'var(--success)':'var(--muted)';
+      return '<div style="padding:.5rem;border-left:3px solid '+c+';background:rgba(0,0,0,.2);border-radius:6px;margin-bottom:.4rem;font-size:.78rem;">'+i.icon+' '+i.txt+'</div>';
+    }).join('');
+  }
+
   function advRenderSummary(){
     var n=new Date();
     var per=ADV.bookings.filter(function(b){return advIn(advDate(b),ADV.period)});
