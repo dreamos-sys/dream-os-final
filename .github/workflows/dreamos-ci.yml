@@ -50,7 +50,10 @@ jobs:
               for i, m in enumerate(re.finditer(r'<script([^>]*)>(.*?)</script>', t, re.S)):
                   attrs, body = m.group(1), m.group(2)
                   if 'src=' in attrs: continue
-                  tm = re.search(r'type=["\']?([^"\'\s>]+)', attrs)
+                  # Skip JSON-LD (Schema.org SEO metadata)
+                  if 'application/ld+json' in attrs or 'application/json' in attrs: continue
+                  if body.strip().startswith('{') and '"@' in body: continue  # safety net
+                  tm = re.search(r'type=["']?([^"'\s>]+)', attrs)
                   if tm and tm.group(1) not in JS_TYPES: continue
                   (js_dir / (f.replace('/','_')+('_%d.js'%i))).write_text(body, encoding='utf-8')
                   n_js += 1
