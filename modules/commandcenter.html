@@ -1383,13 +1383,36 @@ window.goHomeHandler = function() {
     ).join('');
   };
 
-      window.renderUsers = function() { /* ru_v3 */
-    const users = safeJSON('dreamos_users_db', []);
+      window.renderUsers = async function() { /* ru_v4_cloud */
     const tbody = document.getElementById('users-body');
     if (!tbody) return;
-    if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>'; return; }
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:1rem; color:var(--muted);">⏳ Loading dari cloud...</td></tr>';
+
+    let users = [];
+    let cloudOk = false;
+    try {
+      const data = await callAdminUsers('list', {});
+      if (data && Array.isArray(data.users)) {
+        users = data.users;
+        cloudOk = true;
+      }
+    } catch (e) {
+      console.warn('[renderUsers] cloud gagal:', e && e.message); window.__usersErr = (e && e.message) || 'unknown';
+    }
+
+    // Fallback lokal kalau cloud gagal
+    if (!cloudOk) {
+      users = safeJSON('dreamos_users_db', []);
+      showToast('⚠️ Mode offline [' + (window.__usersErr||'?') + '] — data lokal', 'warning');
+    }
+
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>';
+      return;
+    }
+
     tbody.innerHTML = users.map((u, i) => {
-      const tr = String(u.role||'staff');
+      const tr = String(u.role || 'staff');
       const canEdit = isAdmin && canManage(tr);
       const canDel = isDev();
       return `<tr><td>${escU(u.nama||'-')}</td><td>${escU(u.email||'-')}</td><td><span class="badge badge-pending">${escU(tr)}</span></td><td><span class="badge badge-approved">${escU(u.status||'active')}</span></td><td style="white-space:nowrap;">`
@@ -1397,6 +1420,11 @@ window.goHomeHandler = function() {
         + (canDel ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${escU(u.id)}')">🗑️</button>` : '')
         + `</td></tr>`;
     }).join('');
+
+    // Sinkron localStorage buat fallback offline
+    if (cloudOk) {
+      try { saveJSON('dreamos_users_db', users); } catch(_) {}
+    }
   };
 
 
@@ -1944,7 +1972,13 @@ window.goHomeHandler = function() {
 
   /* ===== STOK ANALYTICS ENGINE (fix: sebelumnya tidak ada!) ===== */
   var __stokState = { period:'bulanan', actionFilter:'all', userFilter:'all' };
-  function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON('dreamos_stok_log', [])); }
+  
+// ==========================================
+// ADMIN: USER MANAGEMENT
+// ==========================================
+
+
+function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON('dreamos_stok_log', [])); }
   function auditNorm(a){ return { waktu: a.waktu||a.created_at||a.time||'', user: a.petugas||a.user||a.nama||a.by||'-', aksi: String(a.aksi||a.action||'').toUpperCase(), barang: a.barang||a.nama||a.item||'-', qty: Number(a.qty||a.jumlah||0), lokasi: a.lokasi||'-' }; }
   function periodStart(){ var n=new Date();
     if (__stokState.period==='harian') return new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime();
