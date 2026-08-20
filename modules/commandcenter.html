@@ -305,7 +305,7 @@ window.CFG = window.CFG || {};
 
 
 </script>
-
+  <script src="../js/cmd-users.js"></script>
 
 <style id="stability-fixes">
 html, body {
@@ -1063,7 +1063,7 @@ window.goHomeHandler = function() {
     if (id === 'activity') renderActivity();
     if (id === 'calendar') renderCalendar();
     if (id === 'archive') renderArchive();
-    if (id === 'users') { syncUsersFromSupabase(); renderUsers(); }
+    if (id === 'users') { if (window.CmdUsers) { CmdUsers.mount(); } else { try { syncUsersFromSupabase(); } catch(e) {} if (typeof renderUsers==='function') renderUsers(); } }
 
     if (id === 'stok') renderStokAnalytics();
     if (id === 'dana') renderDanaTab();
@@ -2443,6 +2443,18 @@ function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON(
     if (window.showToast) showToast('⚠️ Gagal init: ' + (initErr.message || initErr), 'error');
   }
   
+  
+  /* ===== CMD USERS DELEGATE TO MODULE ===== */
+  if (window.CmdUsers) {
+    window.createNewUser = CmdUsers.createNewUser;
+    window.saveEditUser = CmdUsers.saveEditUser;
+    window.renderUsers = CmdUsers.renderUsers;
+    window.openEditModal = CmdUsers.openEditModal;
+    window.closeEditModal = CmdUsers.closeEditModal;
+    window.deleteUser = CmdUsers.deleteUser;
+    window.resetUserPassword = CmdUsers.resetUserPassword;
+  }
+
   window.__cmdSwitchTab = window.switchTab;
   window.__cmdRefreshAll = window.refreshAll;
   if (!window.__cmdCenterClickBound) {
