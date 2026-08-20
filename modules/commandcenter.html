@@ -1383,13 +1383,36 @@ window.goHomeHandler = function() {
     ).join('');
   };
 
-      window.renderUsers = function() { /* ru_v3 */
-    const users = safeJSON('dreamos_users_db', []);
+      window.renderUsers = async function() { /* ru_v4_cloud */
     const tbody = document.getElementById('users-body');
     if (!tbody) return;
-    if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>'; return; }
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:1rem; color:var(--muted);">⏳ Loading dari cloud...</td></tr>';
+
+    let users = [];
+    let cloudOk = false;
+    try {
+      const data = await callAdminUsers('list', {});
+      if (data && Array.isArray(data.users)) {
+        users = data.users;
+        cloudOk = true;
+      }
+    } catch (e) {
+      console.warn('[renderUsers] cloud gagal:', e && e.message);
+    }
+
+    // Fallback lokal kalau cloud gagal
+    if (!cloudOk) {
+      users = safeJSON('dreamos_users_db', []);
+      showToast('⚠️ Mode offline — data dari localStorage', 'warning');
+    }
+
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Belum ada user</td></tr>';
+      return;
+    }
+
     tbody.innerHTML = users.map((u, i) => {
-      const tr = String(u.role||'staff');
+      const tr = String(u.role || 'staff');
       const canEdit = isAdmin && canManage(tr);
       const canDel = isDev();
       return `<tr><td>${escU(u.nama||'-')}</td><td>${escU(u.email||'-')}</td><td><span class="badge badge-pending">${escU(tr)}</span></td><td><span class="badge badge-approved">${escU(u.status||'active')}</span></td><td style="white-space:nowrap;">`
@@ -1397,6 +1420,11 @@ window.goHomeHandler = function() {
         + (canDel ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${escU(u.id)}')">🗑️</button>` : '')
         + `</td></tr>`;
     }).join('');
+
+    // Sinkron localStorage buat fallback offline
+    if (cloudOk) {
+      try { saveJSON('dreamos_users_db', users); } catch(_) {}
+    }
   };
 
 
