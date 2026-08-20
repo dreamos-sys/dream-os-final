@@ -658,32 +658,6 @@ window.refreshAll = window.refreshAll || function(){ console.warn('[cmd] refresh
   <a href="audit-viewer.html" target="_blank" style="color:var(--neon);font-weight:700;text-decoration:none;">📜 Buka Audit Trail Viewer →</a>
   <p style="color:var(--muted);font-size:.75rem;margin-top:.3rem;">Lihat semua log lokal: login, aksi admin, error, dll</p>
 </div>
-<!-- TAB 10: USER MANAGEMENT -->
-  <div id="tab-users" class="tab-panel" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <h2 style="color:var(--neon);margin:0;">👥 User Management</h2>
-      <button onclick="fetchUsers()" style="padding:.5rem 1rem;background:var(--neon);color:#0d1428;border:none;border-radius:6px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
-    </div>
-    <div id="users-stats" style="color:var(--muted);margin-bottom:1rem;font-size:.9rem;"></div>
-    <div style="overflow-x:auto;background:var(--panel);border-radius:12px;padding:1rem;">
-      <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
-        <thead>
-          <tr style="border-bottom:2px solid var(--neon);">
-            <th style="text-align:left;padding:.5rem;">Email</th>
-            <th style="text-align:left;padding:.5rem;">Nama</th>
-            <th style="text-align:left;padding:.5rem;">Role</th>
-            <th style="text-align:left;padding:.5rem;">Last Login</th>
-            <th style="text-align:left;padding:.5rem;">Status</th>
-            <th style="text-align:left;padding:.5rem;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body">
-          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Klik "🔄 Refresh" untuk load data</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
 <!-- TAB 9: ANALITIK STOK (audit · pengambilan · prediksi) -->
   <div id="tab-stok" class="tab-content">
     <div class="glass">
@@ -1974,96 +1948,7 @@ window.goHomeHandler = function() {
 // ==========================================
 // ADMIN: USER MANAGEMENT
 // ==========================================
-async function fetchUsers(){
-  const tb = document.getElementById('users-table-body');
-  const stats = document.getElementById('users-stats');
-  tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">⏳ Loading...</td></tr>';
-  
-  try {
-    const session = await window.supabase.auth.getSession();
-    if(!session.data.session){
-      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">❌ Not authenticated</td></tr>';
-      return;
-    }
-    
-    const token = session.data.session.access_token;
-    const res = await fetch(SUPABASE_URL + '/functions/v1/admin-users', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-      },
-      body: '{}'
-    });
-    
-    const data = await res.json();
-    if(data.error){
-      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">❌ ' + data.error + '</td></tr>';
-      return;
-    }
-    
-    stats.textContent = '📊 Total: ' + data.total + ' users';
-    
-    if(!data.users || data.users.length === 0){
-      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Tidak ada user</td></tr>';
-      return;
-    }
-    
-    tb.innerHTML = data.users.map(function(u){
-      const roleBadge = u.role === 'dev' ? '<span style="background:rgba(239,68,68,.15);color:#ef4444;padding:.2rem .5rem;border-radius:99px;font-size:.75rem;">DEV</span>' :
-                        u.role === 'admin' ? '<span style="background:rgba(59,130,246,.15);color:#60a5fa;padding:.2rem .5rem;border-radius:99px;font-size:.75rem;">ADMIN</span>' :
-                        '<span style="background:rgba(148,163,184,.15);color:#94a3b8;padding:.2rem .5rem;border-radius:99px;font-size:.75rem;">USER</span>';
-      const statusBadge = u.banned ? '<span style="background:rgba(239,68,68,.15);color:#ef4444;padding:.2rem .5rem;border-radius:99px;font-size:.75rem;">BANNED</span>' :
-                          u.confirmed ? '<span style="background:rgba(0,255,157,.15);color:var(--neon);padding:.2rem .5rem;border-radius:99px;font-size:.75rem;">ACTIVE</span>' :
-                          '<span style="background:rgba(251,191,36,.15);color:#fbbf24;padding:.2rem .5rem;border-radius:99px;font-size:.75rem;">PENDING</span>';
-      const lastLogin = u.last_sign_in ? new Date(u.last_sign_in).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '-';
-      const resetBtn = '<button onclick="resetPasswordAdmin(\'' + u.email + '\')" style="padding:.3rem .6rem;background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid #60a5fa;border-radius:6px;font-size:.75rem;cursor:pointer;">🔑 Reset</button>';
-      
-      return '<tr style="border-bottom:1px solid rgba(51,65,85,.3);">' +
-        '<td style="padding:.5rem;">' + esc(u.email) + '</td>' +
-        '<td style="padding:.5rem;">' + esc(u.nama) + '</td>' +
-        '<td style="padding:.5rem;">' + roleBadge + '</td>' +
-        '<td style="padding:.5rem;font-size:.8rem;color:var(--muted);">' + lastLogin + '</td>' +
-        '<td style="padding:.5rem;">' + statusBadge + '</td>' +
-        '<td style="padding:.5rem;">' + resetBtn + '</td>' +
-      '</tr>';
-    }).join('');
-    
-  } catch(e){
-    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">❌ Error: ' + e.message + '</td></tr>';
-  }
-}
 
-async function resetPasswordAdmin(email){
-  if(!confirm('Kirim email reset password ke ' + email + '?')) return;
-  
-  try {
-    const session = await window.supabase.auth.getSession();
-    if(!session.data.session){
-      alert('❌ Not authenticated');
-      return;
-    }
-    
-    const token = session.data.session.access_token;
-    const res = await fetch(SUPABASE_URL + '/functions/v1/reset-password-admin', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email: email })
-    });
-    
-    const data = await res.json();
-    if(data.error){
-      alert('❌ ' + data.error);
-    } else {
-      alert('✅ Email reset dikirim ke ' + email + '\nCek inbox/spam!');
-    }
-  } catch(e){
-    alert('❌ Error: ' + e.message);
-  }
-}
 
 function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON('dreamos_stok_log', [])); }
   function auditNorm(a){ return { waktu: a.waktu||a.created_at||a.time||'', user: a.petugas||a.user||a.nama||a.by||'-', aksi: String(a.aksi||a.action||'').toUpperCase(), barang: a.barang||a.nama||a.item||'-', qty: Number(a.qty||a.jumlah||0), lokasi: a.lokasi||'-' }; }
