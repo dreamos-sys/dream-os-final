@@ -176,7 +176,7 @@
         nama: nama,
         role: role
       });
-      if (res && res.id) createdId = res.id;
+      if (res && (res.id || (res.user && res.user.id))) createdId = res.id || res.user.id;
       cloudOk = true;
     } catch (e) {
       console.warn('admin-users create gagal, fallback lokal:', e && e.message);
