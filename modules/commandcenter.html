@@ -308,6 +308,39 @@ window.CFG = window.CFG || {};
 
 </script>
   <script src="js/cmd-users.js"></script>
+  <script id="cmd-charts-loader">
+window.CmdCharts = window.CmdCharts || (function(){
+  var loading = null;
+  function loadScript(src){
+    return new Promise(function(resolve, reject){
+      if (typeof Chart !== 'undefined') { resolve(); return; }
+      if (document.querySelector('script[data-cmd-chart="1"]')) {
+        var t = setInterval(function(){ if (typeof Chart !== 'undefined'){ clearInterval(t); resolve(); } }, 50);
+        setTimeout(function(){ clearInterval(t); resolve(); }, 8000);
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.setAttribute('data-cmd-chart','1');
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('Chart load fail')); };
+      document.head.appendChild(s);
+    });
+  }
+  function ensureChart(){
+    if (typeof Chart !== 'undefined') return Promise.resolve();
+    if (loading) return loading;
+    loading = loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
+      .finally(function(){ loading = null; });
+    return loading;
+  }
+  return {
+    ensureChart: ensureChart,
+    withChart: function(fn){ return ensureChart().then(function(){ return fn(); }); }
+  };
+})();
+</script>
 
 <style id="stability-fixes">
 html, body {
@@ -2507,39 +2540,7 @@ function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON(
 </script>
 
 
-<script id="cmd-charts-loader">
-window.CmdCharts = window.CmdCharts || (function(){
-  var loading = null;
-  function loadScript(src){
-    return new Promise(function(resolve, reject){
-      if (typeof Chart !== 'undefined') { resolve(); return; }
-      if (document.querySelector('script[data-cmd-chart="1"]')) {
-        var t = setInterval(function(){ if (typeof Chart !== 'undefined'){ clearInterval(t); resolve(); } }, 50);
-        setTimeout(function(){ clearInterval(t); resolve(); }, 8000);
-        return;
-      }
-      var s = document.createElement('script');
-      s.src = src;
-      s.async = true;
-      s.setAttribute('data-cmd-chart','1');
-      s.onload = function(){ resolve(); };
-      s.onerror = function(){ reject(new Error('Chart load fail')); };
-      document.head.appendChild(s);
-    });
-  }
-  function ensureChart(){
-    if (typeof Chart !== 'undefined') return Promise.resolve();
-    if (loading) return loading;
-    loading = loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
-      .finally(function(){ loading = null; });
-    return loading;
-  }
-  return {
-    ensureChart: ensureChart,
-    withChart: function(fn){ return ensureChart().then(function(){ return fn(); }); }
-  };
-})();
-</script>
+
 
 <script id="stability-script">
 (function(){
