@@ -2437,8 +2437,15 @@ function stokAudit(){ return safeJSON('dreamos_stok_audit', []).concat(safeJSON(
     document.getElementById('sync-status').textContent = window.supabaseClient ? 'Online' : 'Local Active';
     initCalSelectors();
     updateMetrics();
-    renderChart();
-    renderSmartAnalytics();
+    if (window.CmdCharts) {
+      CmdCharts.ensureChart().then(function () {
+        try { if (typeof renderChart === 'function') renderChart(); } catch (e1) { console.warn('[cmd] renderChart', e1); }
+        try { if (typeof renderSmartAnalytics === 'function') renderSmartAnalytics(); } catch (e2) { console.warn('[cmd] smart', e2); }
+      }).catch(function (e) { console.warn('[cmd] Chart load', e); });
+    } else {
+      try { renderChart(); } catch (e1) {}
+      try { renderSmartAnalytics(); } catch (e2) {}
+    }
   } catch(initErr) {
     console.error('[CmdCenter] init error:', initErr);
     if (window.DreamOSSecurity) window.DreamOSSecurity.report(initErr);
