@@ -1227,23 +1227,168 @@ window.goHomeHandler = function() {
   }
 
 
-  /* ===== SAFE TAB RENDER STUBS (missing after refactor) ===== */
-  window.renderApprovals = window.renderApprovals || function(){
-    var el = document.getElementById('approvals-body') || document.querySelector('#tab-approvals .table-container tbody');
-    if (el) el.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1rem;">Belum ada antrian approval (stub)</td></tr>';
-    console.warn('[cmd] renderApprovals stub');
-  };
-  window.renderActivity = window.renderActivity || function(){
-    console.warn('[cmd] renderActivity stub');
-  };
-  window.renderCalendar = window.renderCalendar || function(){
-    console.warn('[cmd] renderCalendar stub');
-  };
-  window.renderArchive = window.renderArchive || function(){
-    console.warn('[cmd] renderArchive stub');
+  
+
+
+  /* ===== RENDER APPROVALS (full queue) ===== */
+  window.renderApprovals = function() {
+    try {
+      var host = document.getElementById('approvals-body')
+        || document.querySelector('#tab-approvals tbody')
+        || document.querySelector('#tab-approvals .table-container tbody');
+      var emptyBox = document.getElementById('approvals-empty');
+      if (!host) {
+        var tab = document.getElementById('tab-approvals');
+        if (tab && !tab.querySelector('[data-approvals-root]')) {
+          var wrap = document.createElement('div');
+          wrap.setAttribute('data-approvals-root', '1');
+          wrap.className = 'glass';
+          wrap.innerHTML = '<div style="font-weight:800;color:var(--gold);margin-bottom:0.75rem;">✅ Antrian Approval</div>'
+            + '<div class="table-container"><table><thead><tr>'
+            + '<th>Tipe</th><th>Judul</th><th>Pemohon</th><th>Nominal/Info</th><th>Status</th><th>Aksi</th>'
+            + '</tr></thead><tbody id="approvals-body"></tbody></table></div>';
+          tab.appendChild(wrap);
+          host = document.getElementById('approvals-body');
+        }
+      }
+      if (!host) { console.warn('[cmd] approvals host missing'); return; }
+
+      function sj(k, d) {
+        try {
+          if (typeof safeJSON === 'function') return safeJSON(k, d);
+          return JSON.parse(localStorage.getItem(k) || 'null') || d;
+        } catch (e) { return d; }
+      }
+      function esc(s) {
+        if (typeof escU === 'function') return escU(s);
+        return String(s == null ? '' : s)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;');
+      }
+      function rp(v) {
+        return 'Rp ' + (parseInt(v, 10) || 0).toLocaleString('id-ID');
+      }
+
+      var rows = [];
+      // Dana pending
+      (sj('dreamos_dana', []) || []).forEach(function(d) {
+        if (String(d.status || '').toLowerCase() !== 'pending') return;
+        rows.push({
+          tipe: 'Dana', tipCls: 'badge-pending',
+          judul: d.judul || d.title || '-',
+          pemohon: d.pemohon || d.user || '-',
+          info: rp(d.nominal),
+          id: d.id, kind: 'dana',
+          raw: d
+        });
+      });
+      // Booking menunggu approve
+      (sj('dreamos_bookings', []) || []).forEach(function(b) {
+        var st = String(b.status || '').toLowerCase();
+        if (st !== 'pending' && st !== 'menunggu' && st !== 'waiting') return;
+        rows.push({
+          tipe: 'Booking', tipCls: 'badge-medium',
+          judul: (b.ruangan || b.room || 'Ruang') + ' ' + (b.tanggal || b.date || ''),
+          pemohon: b.nama || b.pemohon || b.user || '-',
+          info: (b.jam_mulai || b.start || '') + '–' + (b.jam_selesai || b.end || ''),
+          id: b.id, kind: 'booking',
+          raw: b
+        });
+      });
+      // K3 pending
+      (sj('dreamos_k3_reports', []) || []).forEach(function(k) {
+        var st = String(k.status || '').toLowerCase();
+        if (st && st !== 'pending' && st !== 'open' && st !== 'baru') return;
+        if (st === 'closed' || st === 'done' || st === 'approved') return;
+        rows.push({
+          tipe: 'K3', tipCls: 'badge-high',
+          judul: k.judul || k.lokasi || k.title || 'Laporan K3',
+          pemohon: k.pelapor || k.user || '-',
+          info: k.tingkat || k.severity || '-',
+          id: k.id, kind: 'k3',
+          raw: k
+        });
+      });
+
+      if (!rows.length) {
+        host.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.25rem;">✅ Tidak ada item menunggu approval</td></tr>';
+        return;
+      }
+
+      host.innerHTML = rows.map(function(r, idx) {
+        return '<tr data-appr-kind="' + esc(r.kind) + '" data-appr-id="' + esc(r.id) + '">'
+          + '<td><span class="badge ' + esc(r.tipCls) + '">' + esc(r.tipe) + '</span></td>'
+          + '<td><b>' + esc(r.judul) + '</b></td>'
+          + '<td>' + esc(r.pemohon) + '</td>'
+          + '<td>' + esc(r.info) + '</td>'
+          + '<td><span class="badge badge-pending">Pending</span></td>'
+          + '<td style="white-space:nowrap;">'
+          + '<button type="button" class="btn btn-success btn-sm" data-appr-act="ok" data-kind="' + esc(r.kind) + '" data-id="' + esc(r.id) + '">✅</button> '
+          + '<button type="button" class="btn btn-danger btn-sm" data-appr-act="no" data-kind="' + esc(r.kind) + '" data-id="' + esc(r.id) + '">❌</button>'
+          + '</td></tr>';
+      }).join('');
+    } catch (e) {
+      console.error('[cmd] renderApprovals', e);
+    }
   };
 
-  window.refreshAll = function(forceSync) {
+  // Delegasi klik approval (sekali)
+  if (!window.__apprClickBound) {
+    window.__apprClickBound = true;
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest && e.target.closest('[data-appr-act]');
+      if (!btn) return;
+      var act = btn.getAttribute('data-appr-act');
+      var kind = btn.getAttribute('data-kind');
+      var id = btn.getAttribute('data-id');
+      if (!kind || !id) return;
+      e.preventDefault();
+      try {
+        function sj(k, d) {
+          try {
+            if (typeof safeJSON === 'function') return safeJSON(k, d);
+            return JSON.parse(localStorage.getItem(k) || 'null') || d;
+          } catch (err) { return d; }
+        }
+        function sv(k, v) {
+          if (typeof saveJSON === 'function') saveJSON(k, v);
+          else localStorage.setItem(k, JSON.stringify(v));
+        }
+        var key = kind === 'dana' ? 'dreamos_dana'
+          : kind === 'booking' ? 'dreamos_bookings'
+          : kind === 'k3' ? 'dreamos_k3_reports' : null;
+        if (!key) return;
+        var list = sj(key, []);
+        var next = list.map(function(x) {
+          if (String(x.id) !== String(id)) return x;
+          var cpy = JSON.parse(JSON.stringify(x));
+          cpy.status = act === 'ok' ? 'approved' : 'rejected';
+          cpy.approvedAt = new Date().toISOString();
+          cpy.approver = (function(){
+            try {
+              var b = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
+              return b.nama || b.email || 'admin';
+            } catch (e2) { return 'admin'; }
+          })();
+          return cpy;
+        });
+        sv(key, next);
+        if (typeof logActivity === 'function') {
+          logActivity((act === 'ok' ? 'Approve ' : 'Reject ') + kind, id);
+        }
+        if (typeof showToast === 'function') {
+          showToast(act === 'ok' ? '✅ Disetujui' : '❌ Ditolak', act === 'ok' ? 'success' : 'error');
+        }
+        window.renderApprovals();
+        if (typeof updateMetrics === 'function') updateMetrics();
+        if (kind === 'dana' && typeof renderDanaTab === 'function') renderDanaTab();
+      } catch (err) {
+        console.error('[cmd] approval act', err);
+      }
+    }, true);
+  }
+
+    window.refreshAll = function(forceSync) {
     if (forceSync) showToast('🔄 Syncing Cloud Data & Local Storage...');
     updateMetrics();
     (typeof renderInbox==='function' && renderInbox());

@@ -488,6 +488,19 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
     
     <link rel="preload" href="js/cmd-users.js" as="script">
   <script src="js/cmd-users.js" defer></script>
+
+<style id="touch-stability-shell">
+html, body { overscroll-behavior: none; }
+* { touch-action: manipulation; }
+@media (hover: none), (pointer: coarse) {
+  .metric:hover, .tab:hover, .btn:hover, .glass:hover, .mod-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+input, textarea, select { font-size: 16px !important; }
+</style>
+
 </head>
 
 
@@ -1837,17 +1850,8 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
 (function(){
   'use strict';
   // 1. Spam event palsu tiap 3 detik biar script "batu" ngira kita terus aktif
-  setInterval(function(){
-    window.idleTime = 0;
-    window.idleSeconds = 0;
-    window.lastActivity = Date.now();
-    try { localStorage.setItem('dreamos_last_activity', Date.now()); } catch(e){}
-    
-    // Tembak event touch & mouse ke seluruh sistem untuk mereset counter eksternal
-    ['touchstart', 'touchmove', 'mousemove', 'keydown', 'scroll', 'click'].forEach(function(eName){
-      try { document.dispatchEvent(new Event(eName, { bubbles: true })); } catch(e){}
-    });
-  }, 3000);
+  /* IDLE SPAM DISABLED for touch stability */
+  setInterval(function(){ window.idleTime=0; window.lastActivity=Date.now(); }, 60000);
 
   // 2. Melucuti fungsi logout otomatis (menimpa fungsi bawaan jika ada)
   window.showIdleWarning = function(){ console.log('🛑 Modus Idle digagalkan Sentinel!'); };
