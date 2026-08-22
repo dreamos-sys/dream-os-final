@@ -1289,3 +1289,135 @@ html {
     transform: none !important;
   }
 }
+
+/* =========================================================================
+   50. PRO TOUCH SYSTEM — Global Enterprise Mobile UX
+   Targets: iOS Safari, Android Chrome, PWA standalone
+   Standards: WCAG 2.5.5 (24px+), Material 3, Apple HIG
+   ========================================================================= */
+
+/* --- Foundation --- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+body {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+button, a, [role="button"], .mod-card, .nav-item, .btn, .tab, .mini-stat, [data-mod] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Input: anti auto-zoom + tetap bisa select teks */
+input, textarea, select, [contenteditable="true"] {
+  font-size: 16px !important;
+  touch-action: manipulation;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* --- Touch targets minimum 48px (WCAG / M3) --- */
+.mod-card {
+  min-height: 112px !important;
+  min-width: 0;
+}
+#bottom-nav .nav-item {
+  min-height: 64px !important;
+}
+.btn, .btn-sm {
+  min-height: 44px;
+}
+.btn-sm { min-height: 40px; }
+
+/* --- No layout jump on press (all pointers) --- */
+.mod-card:active,
+.mini-stat:active,
+.btn:active,
+.nav-item:active,
+.tab:active,
+.metric:active {
+  transform: none !important;
+  scale: 1 !important;
+}
+
+/* --- Coarse pointer: zero hover theater --- */
+@media (hover: none), (pointer: coarse) {
+  .module-grid .mod-card,
+  .module-grid .mod-card:hover,
+  .module-grid .mod-card:active,
+  .module-grid .mod-card:focus {
+    transform: none !important;
+    scale: none !important;
+    translate: none !important;
+    filter: none !important;
+    /* feedback visual tanpa geser layout: border saja */
+    transition: border-color 0.12s ease, background-color 0.12s ease !important;
+    box-shadow: none !important;
+  }
+  .module-grid .mod-card:active {
+    background: var(--nav-item-active-bg) !important;
+    opacity: 0.92;
+  }
+
+  .glass:hover, .mini-stat:hover, .btn:hover,
+  .nav-item:hover, a:hover, .tab:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  #bottom-nav .nav-item {
+    transition: background-color 0.12s ease, border-color 0.12s ease !important;
+  }
+  #bottom-nav .nav-item:hover,
+  #bottom-nav .nav-item:active,
+  #bottom-nav .nav-icon-wrapper {
+    transform: none !important;
+  }
+
+  .btn, .mod-card, .mini-stat, .nav-item, .metric, .glass, .tab {
+    transition: border-color 0.12s ease, background-color 0.12s ease, opacity 0.12s ease !important;
+  }
+}
+
+/* --- Fine pointer (desktop): hover halus, tanpa scale --- */
+@media (hover: hover) and (pointer: fine) {
+  .module-grid .mod-card:hover {
+    border-color: var(--color-accent-primary) !important;
+    box-shadow: var(--shadow-md) !important;
+    transform: none !important;
+  }
+  .btn:hover { opacity: 0.92; transform: none !important; }
+}
+
+/* --- Module open: stabilkan shell --- */
+body.mod-open {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+body.mod-open #bottom-nav {
+  /* opsional: tetap terlihat; ganti display:none jika mau fokus penuh */
+  pointer-events: auto;
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* --- PWA standalone safe areas --- */
+@supports (padding: env(safe-area-inset-bottom)) {
+  #bottom-nav {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+  body {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+}
