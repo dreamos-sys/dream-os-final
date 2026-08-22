@@ -51,7 +51,7 @@ window.isDreamProd=function(){try{var h=location.hostname||'';if(!h||h==='localh
 <script>
 (async function(){ if (localStorage.getItem("dreamos_sw_cleared_17agust")) return; try { if ("serviceWorker" in navigator) { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } if ("caches" in window) { for (const k of await caches.keys()) await caches.delete(k); } localStorage.setItem("dreamos_sw_cleared_17agust","1"); location.reload(); } catch(e){} })();
 </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <script>
 // ===== BOOT SETTINGS (anti-flicker, v17) =====
 (function(){
@@ -488,6 +488,39 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
     
     <link rel="preload" href="js/cmd-users.js" as="script">
   <script src="js/cmd-users.js" defer></script>
+
+<style id="no-autozoom-stability">
+html, body {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+* { -webkit-tap-highlight-color: transparent; }
+/* kunci ukuran font input (anti iOS zoom) tanpa animasi layout */
+input, textarea, select, button {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+/* matikan transform/scale saat tap modul */
+.mod-card, .metric, .tab, .btn, [data-mod], .glass {
+  touch-action: manipulation;
+}
+@media (hover: none), (pointer: coarse) {
+  .mod-card:hover, .metric:hover, .tab:hover, .btn:hover, .glass:hover,
+  .mod-card:active, .metric:active, .tab:active, .btn:active {
+    transform: none !important;
+    scale: none !important;
+    box-shadow: none !important;
+  }
+}
+/* cegah animasi slide yang terasa loncat di mobile */
+.tab-content.active { animation: none !important; }
+#mod-container, #mod-container * {
+  touch-action: manipulation;
+}
+</style>
+
 </head>
 
 
@@ -1620,46 +1653,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
       }
     });
   </script>
-  <script>
-  // ===== ZOOM PREVENTION ENGINE (production) =====
-  (function(){
-    'use strict';
-    function isFormField(el){
-      if(!el || !el.tagName) return false;
-      var t = el.tagName.toUpperCase();
-      return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || el.isContentEditable;
-    }
-    // Pinch / multi-touch
-    document.addEventListener('touchstart', function(e){
-      if (e.touches && e.touches.length > 1) e.preventDefault();
-    }, { passive: false, capture: true });
-    document.addEventListener('touchmove', function(e){
-      if (e.scale && e.scale !== 1) e.preventDefault();
-      if (e.touches && e.touches.length > 1) e.preventDefault();
-    }, { passive: false, capture: true });
-    // Double-tap zoom (jangan blok double-tap di input)
-    var lastTouchEnd = 0;
-    document.addEventListener('touchend', function(e){
-      if (isFormField(e.target)) { lastTouchEnd = Date.now(); return; }
-      var now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false, capture: true });
-    // Keyboard zoom
-    document.addEventListener('keydown', function(e){
-      if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
-        e.preventDefault();
-      }
-    }, true);
-    document.addEventListener('wheel', function(e){
-      if (e.ctrlKey) e.preventDefault();
-    }, { passive: false, capture: true });
-    // Gesture events (Safari)
-    ['gesturestart','gesturechange','gestureend'].forEach(function(ev){
-      document.addEventListener(ev, function(e){ e.preventDefault(); }, { passive: false, capture: true });
-    });
-  })();
-</script>
+  <!-- ZOOM PREVENTION ENGINE removed (touch jank) -->
 
 <script>
 /* ===== SUPABASE AUTH PERSISTENCE (No Expiry) ===== */
@@ -1838,17 +1832,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
 (function(){
   'use strict';
   // 1. Spam event palsu tiap 3 detik biar script "batu" ngira kita terus aktif
-  setInterval(function(){
-    window.idleTime = 0;
-    window.idleSeconds = 0;
-    window.lastActivity = Date.now();
-    try { localStorage.setItem('dreamos_last_activity', Date.now()); } catch(e){}
-    
-    // Tembak event touch & mouse ke seluruh sistem untuk mereset counter eksternal
-    ['touchstart', 'touchmove', 'mousemove', 'keydown', 'scroll', 'click'].forEach(function(eName){
-      try { document.dispatchEvent(new Event(eName, { bubbles: true })); } catch(e){}
-    });
-  }, 3000);
+  /* idle fake-events DISABLED */ setInterval(function(){ window.idleTime=0; window.lastActivity=Date.now(); }, 120000);
 
   // 2. Melucuti fungsi logout otomatis (menimpa fungsi bawaan jika ada)
   window.showIdleWarning = function(){ console.log('🛑 Modus Idle digagalkan Sentinel!'); };
@@ -1916,13 +1900,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
 (function(){
   // Cegah double-tap zoom pada elemen non-input
   var lastTouch = 0;
-  document.addEventListener('touchend', function(e){
-    var now = Date.now();
-    if (now - lastTouch <= 300 && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-      e.preventDefault();
-    }
-    lastTouch = now;
-  }, {passive: false});
+  /* double-tap block removed for module click stability */
 
   // Deteksi keyboard: tambah class kb-open saat keyboard muncul
   if (window.visualViewport) {
