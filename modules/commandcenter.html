@@ -1094,10 +1094,10 @@ window.goHomeHandler = function() {
     if (id === 'user-health') { if(!isDev()){ showToast(' Khusus Dev.','error'); return; } renderUserHealth(); }
     if (id === 'dashboard') renderSmartAnalytics();
     if (id === 'inbox') (typeof renderInbox==='function' && renderInbox());
-    if (id === 'approvals') renderApprovals();
-    if (id === 'activity') renderActivity();
-    if (id === 'calendar') renderCalendar();
-    if (id === 'archive') renderArchive();
+    if (id === 'approvals') (typeof renderApprovals==='function' && renderApprovals());
+    if (id === 'activity') (typeof renderActivity==='function' && renderActivity());
+    if (id === 'calendar') (typeof renderCalendar==='function' && renderCalendar());
+    if (id === 'archive') (typeof renderArchive==='function' && renderArchive());
     if (id === 'users') { if (window.CmdUsers) { CmdUsers.mount(); } else { try { syncUsersFromSupabase(); } catch(e) {} if (typeof renderUsers==='function') renderUsers(); } }
 
     if (id === 'stok') renderStokAnalytics();
@@ -1226,14 +1226,31 @@ window.goHomeHandler = function() {
     }
   }
 
+
+  /* ===== SAFE TAB RENDER STUBS (missing after refactor) ===== */
+  window.renderApprovals = window.renderApprovals || function(){
+    var el = document.getElementById('approvals-body') || document.querySelector('#tab-approvals .table-container tbody');
+    if (el) el.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1rem;">Belum ada antrian approval (stub)</td></tr>';
+    console.warn('[cmd] renderApprovals stub');
+  };
+  window.renderActivity = window.renderActivity || function(){
+    console.warn('[cmd] renderActivity stub');
+  };
+  window.renderCalendar = window.renderCalendar || function(){
+    console.warn('[cmd] renderCalendar stub');
+  };
+  window.renderArchive = window.renderArchive || function(){
+    console.warn('[cmd] renderArchive stub');
+  };
+
   window.refreshAll = function(forceSync) {
     if (forceSync) showToast('🔄 Syncing Cloud Data & Local Storage...');
     updateMetrics();
     (typeof renderInbox==='function' && renderInbox());
-    renderApprovals();
-    renderActivity();
-    renderCalendar();
-    renderArchive();
+    (typeof renderApprovals==='function' && renderApprovals());
+    (typeof renderActivity==='function' && renderActivity());
+    (typeof renderCalendar==='function' && renderCalendar());
+    (typeof renderArchive==='function' && renderArchive());
     renderChart();
     renderSmartAnalytics();
     if (isAdmin) renderUsers();
