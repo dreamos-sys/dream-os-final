@@ -6,7 +6,7 @@
   
   
 <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no, date=no, email=no, address=no">
 <script>
 // 🛡️ GLOBAL SAFE CLOSEST OVERRIDE
@@ -2020,16 +2020,43 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
 <!-- body-shift-guard disabled for test -->
 
 
-<script id="v87-zoom-guard">
-// v87: blok gesture zoom tanpa ganggu input/textarea
-document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
-document.addEventListener('gesturechange', function(e){ e.preventDefault(); });
-document.addEventListener('dblclick', function(e){
-  var t = e.target;
-  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-  e.preventDefault();
-}, { passive: false });
+
+
+<script id="v93-kill-zoom">
+(function(){
+  // 1. Blok semua gesture zoom (iOS)
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+  document.addEventListener('gesturechange', function(e){ e.preventDefault(); });
+  document.addEventListener('gestureend', function(e){ e.preventDefault(); });
+
+  // 2. Blok double-tap zoom (Android/Chrome)
+  document.addEventListener('dblclick', function(e){
+    var t = e.target;
+    // Izinkan input/textarea untuk double-tap (bisa select text)
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault();
+  }, { passive: false });
+
+  // 3. Blok focus zoom dengan font-size (sudah 16px di CSS) + prevent touchmove saat multi-touch
+  document.addEventListener('touchmove', function(e){
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // 4. Pastikan tidak ada transform scale pada elemen aktif
+  document.addEventListener('touchstart', function(e){
+    var target = e.target;
+    if (target && target.style) {
+      target.style.webkitTransform = 'none';
+      target.style.transform = 'none';
+    }
+  }, { passive: true });
+
+  console.log('[v93] Kill-all-zoom activated');
+})();
 </script>
+
 </body>
     
 
