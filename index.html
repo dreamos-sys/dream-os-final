@@ -34,7 +34,7 @@ window.DREAMOS_DISABLE_IDLE_LOGOUT = true;
 window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
 window.DREAMOS_NEVER_LOGOUT = true;
 window.DREAMOS_DISABLE_AUTO_LOGOUT = true;
-console.log('🛡️ Anti-logout flags set');
+
 </script>
 
 
@@ -155,7 +155,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
         for (const reg of oldRegs) {
           if (reg.scope.includes('dream-os-final')) {
             await reg.unregister();
-            console.log('[PWA] Unregistered old SW');
+            
           }
         }
         
@@ -163,14 +163,14 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
         const registration = await navigator.serviceWorker.register('./sw.js?v=3.0.1', {
           scope: './'
         });
-        console.log('[PWA] SW registered:', registration.scope);
+        
         
         // Listen for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[PWA] New SW available');
+              
               if (window.showToast) {
                 showToast('🔄 Update tersedia! Refresh untuk apply.', 'info');
               }
@@ -181,7 +181,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
         // Listen for messages dari SW
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data && event.data.type === 'SYNC_BOOKINGS') {
-            console.log('[PWA] Syncing offline bookings...');
+            
             if (window.syncCloudData) window.syncCloudData();
           }
         });
@@ -197,7 +197,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    console.log('[PWA] Install prompt captured');
+    
     
     // Tampilkan banner setelah 30 detik (jika belum install)
     if (!localStorage.getItem('dreamos_pwa_installed')) {
@@ -217,7 +217,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
     }
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log('[PWA] Install outcome:', outcome);
+    
     if (outcome === 'accepted') {
       window.safeStorageSet('dreamos_pwa_installed', 'true');
       if (window.showToast) showToast('✅ Dream OS terinstall!', 'success');
@@ -257,7 +257,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
-      console.log('[Push] Subscribed:', subscription);
+      
       const user = JSON.parse(localStorage.getItem('dreamos_bound_user') || '{}');
       if (window.supabaseClient) {
         const p256dhKey = subscription.getKey('p256dh');
@@ -318,7 +318,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   }
 
   window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App installed');
+    
     window.safeStorageSet('dreamos_pwa_installed', 'true');
     if (window.showToast) showToast('🎉 Dream OS siap digunakan offline!', 'success');
   });
@@ -329,13 +329,13 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
       // Background sync: flush offline queue saat online
       if ('sync' in reg) {
         reg.sync.register('dreamos-bg-sync')
-          .then(() => console.log('[PWA] Background sync registered'))
+          .then(() => )
           .catch(() => {});
       }
       // Periodic sync: refresh data tiap 6 jam (background)
       if ('periodicSync' in reg) {
         reg.periodicSync.register('dreamos-periodic', { minInterval: 6 * 60 * 60 * 1000 })
-          .then(() => console.log('[PWA] Periodic sync registered (6h)'))
+          .then(() => '))
           .catch(() => {});
       }
     }).catch(() => {});
@@ -343,7 +343,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
 
   // Flush offline queue saat online kembali
   window.addEventListener('online', () => {
-    console.log('[PWA] Back online — flushing offline queue');
+    
     if (window.syncCloudData) window.syncCloudData();
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
@@ -367,7 +367,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
           setTimeout(() => {
             if (window.showToast) showToast('📥 Diterima via share: ' + label, 'success');
           }, 1500);
-          console.log('[PWA] Shared content received:', data);
+          
         }
       }
     } catch (e) {
@@ -383,7 +383,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
       setTimeout(() => {
         if (window.openMod) {
           window.openMod(map[h]);
-          console.log('[PWA] Shortcut deep-link:', h);
+          
         }
       }, 1000);
     }
@@ -404,7 +404,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
       const regs = await navigator.serviceWorker.getRegistrations();
       for (const reg of regs) {
         await reg.unregister();
-        console.log('[Force Refresh] SW unregistered');
+        
       }
       
       // 3. Clear browser cache
@@ -774,7 +774,7 @@ html, body {
     window.__dreamosClearAllIntervals = function() {
       window.__dreamosIntervals.forEach(function(id){ try { clearInterval(id); } catch(e){} });
       window.__dreamosIntervals = [];
-      console.log('[Stability] All intervals cleared');
+      
     };
     
     // ISO 22301 COMPLIANCE: checkBlankScreen (reload paksa) DIMATIKAN TOTAL
@@ -789,7 +789,7 @@ html, body {
       }
     }, 60000));
     
-    console.log('🛡️ Ultimate stability engine v2.1 active (Zero Bug / WA-style UX)');
+    ');
   })();
 
     // DEBUG MODE: set window.safeStorageSet('dreamos_debug','1') untuk enable console di production
@@ -885,7 +885,7 @@ html, body {
     if(window.__presenceTimer) {
       clearInterval(window.__presenceTimer);
       window.__presenceTimer = null;
-      console.log('[Presence] Heartbeat stopped');
+      
     }
   };
 
@@ -1511,7 +1511,7 @@ html, body {
               var srcAttr = s.getAttribute('src') || '';
               // Skip CDN / Sentry yang sudah di shell index (hindari double + token noise)
               if (srcAttr && /cdn\.jsdelivr\.net|chart\.umd|bcrypt|jspdf|html2canvas|qrcode|sentry-cdn|sentry\.io/i.test(srcAttr)) {
-                console.log('[ModLoader] skip shell-CDN', srcAttr.slice(0, 60));
+                );
                 return;
               }
               try {
@@ -1677,7 +1677,7 @@ html, body {
             await navigator.share(shareData);
             window.showToast('✅ Link berhasil dibagikan!', 'success');
           } catch(err) {
-            console.log('Share dibatalkan');
+            
           }
         } else {
           navigator.clipboard.writeText(window.location.href);
@@ -1824,18 +1824,17 @@ html, body {
             if (refreshError) {
               console.error('[AuthPersistence] Refresh failed:', refreshError);
             } else {
-              console.log('[AuthPersistence] Session refreshed');
+              
             }
           } else {
-            console.log('[AuthPersistence] Session active, expires:', 
-              new Date(data.session.expires_at * 1000).toLocaleString());
+            .toLocaleString());
           }
         } catch(e) {
           console.warn('[AuthPersistence] Error:', e);
         }
       }, 30 * 60 * 1000); // 30 menit
       
-      console.log('🔐 Supabase Auth Persistence active — auto-refresh enabled');
+      
     }
   }, 1000);
 })();
@@ -1853,10 +1852,10 @@ html, body {
       if(navigator.storage && navigator.storage.estimate){
         const est = await navigator.storage.estimate();
         const usedMB = (est.usage||0)/1048576;
-        console.log('[StorageDoctor] pemakaian: '+usedMB.toFixed(1)+' MB');
+        +' MB');
         if(usedMB > 50){
           if('caches' in window){ const ks = await caches.keys(); for(const k of ks) await caches.delete(k); }
-          console.log('[StorageDoctor] >50MB → semua CacheStorage dibersihkan');
+          
         }
       }
       // pangkas localStorage: buang entry dreamos_file_archive yg berisi data: URL besar
@@ -1865,7 +1864,7 @@ html, body {
         if(fa && fa.length > 1024*1024){
           const arr = JSON.parse(fa).filter(x => !(x.file_url||'').startsWith('data:'));
           localStorage.setItem('dreamos_file_archive', JSON.stringify(arr));
-          console.log('[StorageDoctor] dreamos_file_archive dipangkas (buang base64)');
+          ');
         }
       }catch(e){}
     }catch(e){}
@@ -1945,7 +1944,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
           last_seen: new Date().toISOString(),
           keep_alive: true
         }, { onConflict: 'user_id' });
-        console.log('[SessionKeeper] Heartbeat sent');
+        
       }
     } catch(e) {
       console.warn('[SessionKeeper] Heartbeat failed:', e);
@@ -1954,7 +1953,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
   
   // 3. Block semua auto-logout attempt
   
-  console.log('🛡️ Session Keeper v2.0 active — idle timeout DISABLED');
+  
 })();
 </script>
 
@@ -1975,11 +1974,11 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
   /* idle fake-events DISABLED */ setInterval(function(){ window.idleTime=0; window.lastActivity=Date.now(); }, 120000);
 
   // 2. Melucuti fungsi logout otomatis (menimpa fungsi bawaan jika ada)
-  window.showIdleWarning = function(){ console.log('🛑 Modus Idle digagalkan Sentinel!'); };
-  window.autoLogout = function(){ console.log('🛑 Auto-logout digagalkan Sentinel!'); };
+  window.showIdleWarning = function(){  };
+  window.autoLogout = function(){  };
   if(window.BankSession) window.BankSession.resetIdle = function(){};
 
-  console.log('🛡️ Ultimate Idle Killer Aktif! Satpam "batu" sudah dibius total.');
+  
 })();
 </script>
 
@@ -2000,7 +1999,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
       e.target.closest = function() { return null; };
     }
   }, true);
-  console.log('🛡️ Safe Closest Sentinel Aktif!');
+  
 })();
 </script>
 
@@ -2032,7 +2031,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
   }
   if(document.body){ start(); } else { document.addEventListener('DOMContentLoaded', start); }
   setInterval(clear, 120);
-  console.log('[v78] Body-shift guard active');
+  
 })();
 </script>
 
