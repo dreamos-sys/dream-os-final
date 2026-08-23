@@ -636,3 +636,30 @@
   }
 })();
 </script>
+
+<script>
+(function(){
+  // v85: binding eksplisit (backup kalau inline onclick mati)
+  function bind(id, fn){ var el = document.getElementById(id); if(el && !el.__v85){ el.__v85 = true; el.addEventListener('click', fn); } }
+
+  // Modal riwayat: klik backdrop (luar box) = tutup
+  var hm = document.getElementById('history-modal');
+  if (hm && !hm.__v85bg) {
+    hm.__v85bg = true;
+    hm.addEventListener('click', function(e){ if (e.target === hm && typeof window.closeHistory === 'function') window.closeHistory(); });
+  }
+  // Tombol TUTUP: binding ganda (inline + listener)
+  if (hm) {
+    var tb = hm.querySelector('button.btn-danger');
+    if (tb && !tb.__v85) { tb.__v85 = true; tb.addEventListener('click', function(){ if (typeof window.closeHistory === 'function') window.closeHistory(); }); }
+  }
+  // Shift buttons: binding ganda (idempotent, aman)
+  ['pagi','siang','sore'].forEach(function(s){
+    bind('btn-' + s, function(){ if (typeof window.setShift === 'function') window.setShift(s); });
+  });
+  // Reset + aksi utama
+  var rb = document.querySelector('[onclick*="resetShift"]');
+  if (rb && !rb.__v85) { rb.__v85 = true; rb.addEventListener('click', function(){ if (typeof window.resetShift === 'function') window.resetShift(); }); }
+  console.log('[v85] explicit bindings ready');
+})();
+</script>

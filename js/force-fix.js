@@ -13,7 +13,7 @@
       left: '1rem',
       top: 'auto',
       right: 'auto',
-      zIndex: '99999',
+      zIndex: '9000',
       transform: 'none',
       pointerEvents: 'auto'
     },
