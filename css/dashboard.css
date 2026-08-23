@@ -771,7 +771,7 @@ canvas#star-field { position: fixed; top: 0; left: 0; width: 100vw; height: 100v
 .notif-panel { position: fixed; top: 55px; right: 10px; width: 300px; max-height: 380px; overflow-y: auto; background: var(--panel); border: 1px solid var(--neon); border-radius: 14px; z-index: 10001; display: none; padding: 0.5rem; }
 
 #dash-slider { position: relative; overflow: hidden; margin: 0 1rem 0.8rem; min-height: 85px; border-radius: 16px; touch-action: pan-y; }
-.slide-track { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); will-change: auto; contain: layout; }
+.slide-track { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); will-change: auto; }
 .slide-item { min-width: 100%; padding: 0.9rem 1rem; text-align: center; font-size: 0.8rem; line-height: 1.4; color: var(--text); }
 .slide-item strong { color: var(--neon); }
 .slide-indicators { display: flex; justify-content: center; gap: 5px; margin-top: 0.3rem; }
@@ -1394,10 +1394,7 @@ input, textarea, select, [contenteditable="true"] {
   .btn:hover { opacity: 0.92; transform: none !important; }
 }
 
-/* --- Layout isolation untuk prevent reflow cascade --- */
-.mod-card, .mini-stat, .glass, .nav-item, .btn {
-  contain: layout style paint;
-}
+/* contain DIHAPUS — bikin ancestor jadi containing block, tombol fixed ikut scroll */
 
 /* --- Module open: stabilkan shell --- */
 body.mod-open {
@@ -1559,20 +1556,7 @@ body.mod-open #bottom-nav {
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Prevent iOS rubber-band bounce */
-  body {
-    position: fixed;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
-  }
-  
-  #main-app,
-  .mod-container {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    height: 100vh;
-  }
+  /* body position:fixed DIHAPUS — bikin layout jump + tombol fixed melayang di Android Chrome */
   
   /* Force 16px font di semua input (anti auto-zoom) */
   input, textarea, select {
@@ -1720,3 +1704,16 @@ body.mod-open #bottom-nav {
 /* =========================================================================
    END KILL ALL ANIMATIONS
    ========================================================================= */
+
+/* =========================================================================
+   105. BACK-BTN ANCHOR — tombol HOME wajib menempel di viewport
+   (jangkar global biar semua modul konsisten, gak ikut scroll)
+   ========================================================================= */
+.back-btn {
+  position: fixed !important;
+  bottom: calc(2rem + env(safe-area-inset-bottom)) !important;
+  left: 1rem !important;
+  z-index: 1000 !important;
+  transform: none !important;
+  touch-action: manipulation;
+}
