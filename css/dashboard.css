@@ -1421,3 +1421,186 @@ body.mod-open #bottom-nav {
     padding-bottom: calc(90px + env(safe-area-inset-bottom));
   }
 }
+
+/* =========================================================================
+   99. NUCLEAR TOUCH STABILITY — ZERO JUMP GUARANTEE
+   Override SEMUA transform/scale/translate di touch device
+   ========================================================================= */
+@media (hover: none), (pointer: coarse), (max-width: 768px) {
+  /* Kill ALL transforms globally */
+  *,
+  *::before,
+  *::after {
+    transform: none !important;
+    scale: 1 !important;
+    translate: none !important;
+    -webkit-transform: none !important;
+    -ms-transform: none !important;
+  }
+  
+  /* Kill ALL hover/active animations */
+  *:hover,
+  *:active,
+  *:focus,
+  *:focus-within {
+    transform: none !important;
+    scale: 1 !important;
+    translate: none !important;
+    box-shadow: inherit !important;
+    transition: none !important;
+  }
+  
+  /* Specific kill-list untuk elemen yang sering lompat */
+  .btn,
+  .mod-card,
+  .mini-stat,
+  .nav-item,
+  .glass,
+  .kpi-chip,
+  .tab,
+  .metric,
+  .check-label,
+  .shift-btn,
+  .slide-dot,
+  .ana-tab,
+  .ana-period-btn,
+  [role="button"],
+  [onclick],
+  button,
+  a {
+    transform: none !important;
+    scale: 1 !important;
+    translate: none !important;
+    transition: none !important;
+    -webkit-transform: none !important;
+    -ms-transform: none !important;
+    will-change: auto !important;
+  }
+  
+  .btn:hover,
+  .btn:active,
+  .btn:focus,
+  .mod-card:hover,
+  .mod-card:active,
+  .mod-card:focus,
+  .mini-stat:hover,
+  .mini-stat:active,
+  .nav-item:hover,
+  .nav-item:active,
+  .glass:hover,
+  .glass:active,
+  .kpi-chip:hover,
+  .kpi-chip:active,
+  .tab:hover,
+  .tab:active,
+  .check-label:hover,
+  .check-label:active,
+  .shift-btn:hover,
+  .shift-btn:active,
+  button:hover,
+  button:active,
+  a:hover,
+  a:active {
+    transform: none !important;
+    scale: 1 !important;
+    translate: none !important;
+    box-shadow: inherit !important;
+    transition: none !important;
+  }
+  
+  /* Kill will-change (GPU optimization yang bikin flicker) */
+  * {
+    will-change: auto !important;
+  }
+  
+  /* Force hardware acceleration OFF untuk touch device */
+  .mod-card,
+  .mini-stat,
+  .btn,
+  .nav-item,
+  .glass {
+    -webkit-backface-visibility: visible !important;
+    backface-visibility: visible !important;
+    -webkit-perspective: none !important;
+    perspective: none !important;
+  }
+  
+  /* Prevent layout shift dari border change */
+  .btn,
+  .mod-card,
+  .mini-stat,
+  .nav-item,
+  .glass,
+  .kpi-chip {
+    border-width: 1px !important;
+    border-style: solid !important;
+  }
+  
+  /* Prevent padding/margin shift */
+  .btn:active,
+  .mod-card:active,
+  .nav-item:active {
+    padding: inherit !important;
+    margin: inherit !important;
+  }
+}
+
+/* =========================================================================
+   100. iOS SAFARI SPECIFIC — Anti Bounce + Anti Zoom
+   ========================================================================= */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    overscroll-behavior: none !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent iOS rubber-band bounce */
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  #main-app,
+  .mod-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    height: 100vh;
+  }
+  
+  /* Force 16px font di semua input (anti auto-zoom) */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* =========================================================================
+   101. ANDROID CHROME SPECIFIC — Anti Highlight + Anti Jump
+   ========================================================================= */
+@supports not (-webkit-touch-callout: none) {
+  /* Android: kill tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+  }
+  
+  /* Prevent focus ring yang bikin layout shift */
+  *:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Input focus: border saja, no shadow */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--color-accent-primary) !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+}
+
+/* =========================================================================
+   END NUCLEAR TOUCH STABILITY
+   ========================================================================= */
