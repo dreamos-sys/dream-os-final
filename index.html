@@ -481,6 +481,32 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
     <script src="js/config.js" defer></script>
     <!-- DOMPurify for XSS protection -->
     <script src="js/load-dompurify.js"></script>
+<script>
+// ===== SAFE INNERHTML WRAPPER (XSS Protection) =====
+(function(){
+  // Fallback sanitizer if DOMPurify not loaded
+  window.safeHTML = function(html) {
+    if (window.DOMPurify) {
+      return window.DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'img'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style', 'onclick', 'onchange', 'type', 'value', 'checked', 'disabled', 'readonly', 'placeholder', 'data-*']
+      });
+    }
+    // Fallback: escape HTML entities
+    return String(html || '').replace(/[&<>"']/g, function(c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}).hasOwnProperty(c) ? {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] : c;
+    });
+  };
+  
+  // Safe innerHTML setter
+  Element.prototype.safeInnerHTML = function(html) {
+    this.innerHTML = window.safeHTML(html);
+  };
+  
+  console.log('🛡️ Safe HTML wrapper active (DOMPurify fallback)');
+})();
+</script>
+
 
     <!-- Salt Migration Helper -->
     <script src="js/salt-migration.js" defer></script>
