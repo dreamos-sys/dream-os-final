@@ -1429,7 +1429,7 @@ html, body {
       window.openMod = function(moduleId) {
       window.__lastScrollY = window.scrollY || 0;
       document.body.classList.add('mod-open');
-      document.body.style.top = '-' + window.__lastScrollY + 'px';
+      void(0);//top-lock-disabled:document.void(0);//top-lock-disabled:body.style.top = '-' + window.__lastScrollY + 'px';
       document.body.style.overflow = 'hidden';
 
         moduleId = String(moduleId || '').trim();
@@ -1546,7 +1546,7 @@ html, body {
 
       window.goHome = function() {
       document.body.classList.remove('mod-open');
-      document.body.style.top = '';
+      void(0);//top-lock-disabled:document.void(0);//top-lock-disabled:body.style.top = '';
       document.body.style.overflow = '';
 
       requestAnimationFrame(() => {
@@ -2006,34 +2006,27 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
 
 
   <script src="js/auth.js?v=1" defer></script>
-<script id="force-css-injector">
-
-  // FORCE GLOBAL CSS INJECTOR — dipanggil setelah modul load
-  window.__forceCSSContent = '\n/* =========================================================================\n   FORCE GLOBAL CSS — Highest Specificity (Override Module CSS)\n   ========================================================================= */\n\n/* Force back-btn NEMPEL di viewport (gak ikut scroll) */\n.back-btn,\nbutton.back-btn,\n[class*="back-btn"],\n[id*="back-btn"] {\n  position: fixed !important;\n  bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;\n  left: 1rem !important;\n  top: auto !important;\n  right: auto !important;\n  z-index: 99999 !important;\n  transform: none !important;\n  scale: none !important;\n  translate: none !important;\n  will-change: auto !important;\n  contain: layout !important;\n  isolation: isolate !important;\n  pointer-events: auto !important;\n}\n\n/* Force button active: NO JUMP */\n.btn:active,\nbutton:active,\n[role="button"]:active,\n.mod-card:active,\n.nav-item:active,\ninput[type="button"]:active,\ninput[type="submit"]:active,\na:active {\n  transform: none !important;\n  scale: none !important;\n  translate: none !important;\n  transition: none !important;\n}\n\n/* Force checkbox/label: NO SHIFT */\n.check-label,\nlabel.check-label,\ninput[type="checkbox"],\n.check-label:active,\n.check-label input:active {\n  transform: none !important;\n  scale: none !important;\n  translate: none !important;\n}\n\n/* Force toast: CENTERED */\n.toast-container,\n#toast-container,\n[class*="toast-container"] {\n  position: fixed !important;\n  bottom: 4.5rem !important;\n  left: 0 !important;\n  right: 0 !important;\n  top: auto !important;\n  display: flex !important;\n  flex-direction: column !important;\n  align-items: center !important;\n  z-index: 999999 !important;\n  transform: none !important;\n  pointer-events: none !important;\n}\n\n/* Force modal: CENTERED (no drift) */\n.qr-modal.show,\n.photo-preview.show,\n.brq-ov,\n[id*="modal"].show,\n[class*="modal"].show {\n  position: fixed !important;\n  inset: 0 !important;\n  display: flex !important;\n  align-items: center !important;\n  justify-content: center !important;\n  z-index: 99998 !important;\n  transform: none !important;\n}\n\n/* Force bottom nav: NEMPEL di bawah */\n#bottom-nav,\n.bottom-nav,\n[class*="bottom-nav"] {\n  position: fixed !important;\n  bottom: 0 !important;\n  left: 0 !important;\n  right: 0 !important;\n  top: auto !important;\n  z-index: 999 !important;\n  transform: none !important;\n}\n\n/* Force input focus: NO ZOOM */\ninput,\ntextarea,\nselect,\n[contenteditable="true"] {\n  font-size: 16px !important;\n  transform: none !important;\n}\n\n/* Prevent iOS bounce */\nhtml, body {\n  overscroll-behavior: none !important;\n}\n\n/* Kill all GPU hacks (contain block makers) */\n* {\n  will-change: auto !important;\n}\n';
-  window.__injectForceCSS = function() {
-    if (document.getElementById('force-global-css')) return;
-    var style = document.createElement('style');
-    style.id = 'force-global-css';
-    style.textContent = window.__forceCSSContent;
-    document.head.appendChild(style);
-  };
-  
-  // Patch openMod untuk auto-inject
-  if (window.openMod && !window.__openModForcePatched) {
-    var _orig = window.openMod;
-    window.openMod = function(moduleId) {
-      var result = _orig.call(this, moduleId);
-      setTimeout(function() { window.__injectForceCSS(); }, 150);
-      return result;
-    };
-    window.__openModForcePatched = true;
-  }
-  
-  // Auto-inject sekarang juga
-  window.__injectForceCSS();
-
-</script>
+<!-- injector removed v78 -->
   <script src="js/force-fix.js?v=v77" defer></script>
+<script id="body-shift-guard">
+(function(){
+  function clear(){
+    var b=document.body; if(!b) return;
+    if(b.style.top){ b.style.top=''; }
+    if(b.style.position==='fixed'){ b.style.position=''; }
+  }
+  function start(){
+    clear();
+    try{
+      var mo=new MutationObserver(clear);
+      mo.observe(document.body,{attributes:true,attributeFilter:['style']});
+    }catch(e){}
+  }
+  if(document.body){ start(); } else { document.addEventListener('DOMContentLoaded', start); }
+  setInterval(clear, 120);
+  console.log('[v78] Body-shift guard active');
+})();
+</script>
 </body>
     
 
