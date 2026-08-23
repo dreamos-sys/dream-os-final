@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnostic Force v77</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { 
+    font-family: monospace; 
+    background: #0a0e27; 
+    color: #0f0; 
+    padding: 16px; 
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  h1 { color: #00ff9d; margin-bottom: 16px; font-size: 1.2rem; }
+  .item { 
+    padding: 12px; 
+    margin: 8px 0; 
+    background: rgba(15,23,42,0.8); 
+    border-left: 4px solid #666;
+    border-radius: 8px;
+  }
+  .ok { border-left-color: #10b981; color: #10b981; }
+  .fail { border-left-color: #ef4444; color: #ef4444; font-weight: bold; }
+  .detail { color: #94a3b8; font-size: 12px; margin-top: 4px; }
+  .btn-test {
+    background: #00ff9d;
+    color: #000;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    margin: 8px 0;
+    width: 100%;
+  }
+  #back-test {
+    position: fixed;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    left: 1rem;
+    background: #00ff9d;
+    color: #000;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    z-index: 99999;
+  }
+  .action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1e293b;
+    padding: 16px;
+    z-index: 999;
+    display: flex;
+    gap: 8px;
+  }
+  .action-bar a {
+    flex: 1;
+    background: #00ff9d;
+    color: #000;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<h1>🔬 Diagnostic Force v77</h1>
+<div id="output"></div>
+
+<button class="btn-test" id="back-test">← BACK-BTN TEST</button>
+
+<div class="action-bar">
+  <a href="index.html">🏠 Home</a>
+  <a href="javascript:location.reload(true)">🔄 Reload</a>
+</div>
+
+<script>
+(function() {
+  var out = document.getElementById('output');
+  var results = [];
+
+  function check(name, condition, detail) {
+    results.push({ name: name, condition: condition, detail: detail });
+  }
+
+  // 1. Force JS active?
+  setTimeout(function() {
+    check('Force JS Active',
+      !!window.__JS_FORCE_ACTIVE,
+      window.__JS_FORCE_ACTIVE ? '✅ Ya' : '❌ Tidak');
+
+    // 2. Force CSS di <head>
+    check('Force CSS di <head>',
+      !!document.getElementById('force-global-css'),
+      document.getElementById('force-global-css') ? '✅ Ada' : '❌ TIDAK ADA');
+
+    // 3. Cek computed style .back-btn (element di page ini)
+    var backBtn = document.getElementById('back-test');
+    if (backBtn) {
+      var cs = getComputedStyle(backBtn);
+      check('Back-btn computed position',
+        cs.position === 'fixed',
+        'actual=' + cs.position + ' (harusnya fixed)');
+      check('Back-btn computed z-index',
+        parseInt(cs.zIndex) >= 99999,
+        'zIndex=' + cs.zIndex);
+    }
+
+    // 4. Dashboard CSS URL (cek versi)
+    var links = document.querySelectorAll('link[rel="stylesheet"]');
+    var cssHref = '';
+    links.forEach(function(l) {
+      if (l.href.indexOf('dashboard.css') > -1) cssHref = l.href;
+    });
+    check('Dashboard CSS Version',
+      cssHref.indexOf('v77') > -1 || cssHref.indexOf('v76') > -1,
+      cssHref.split('?').pop() || 'not found');
+
+    // 5. Cek cache buster
+    var swVersion = 'unknown';
+    try {
+      var sws = navigator.serviceWorker;
+      if (sws) {
+        sws.getRegistrations().then(function(regs) {
+          if (regs.length > 0) {
+            swVersion = 'SW registered (' + regs.length + ')';
+            check('Service Worker', true, swVersion);
+          } else {
+            check('Service Worker', false, 'No SW registered');
+          }
+          render();
+        });
+      } else {
+        check('Service Worker', false, 'Not supported');
+        render();
+      }
+    } catch(e) {
+      check('Service Worker', false, 'Error: ' + e.message);
+      render();
+    }
+
+    // 6. Check localStorage keys
+    var swKeys = Object.keys(localStorage).filter(function(k) {
+      return k.indexOf('dreamos') > -1 || k.indexOf('cache') > -1;
+    });
+    check('DreamOS Storage Keys', true, swKeys.length + ' keys');
+
+    render();
+  }, 500);
+
+  function render() {
+    var html = '<h2 style="color:#cbd5e1;margin:16px 0 8px;font-size:1rem;">Hasil Diagnostic:</h2>';
+    results.forEach(function(r) {
+      var cls = r.condition ? 'ok' : 'fail';
+      var icon = r.condition ? '✅' : '❌';
+      html += '<div class="item ' + cls + '">';
+      html += '<div>' + icon + ' <strong>' + r.name + '</strong></div>';
+      html += '<div class="detail">' + r.detail + '</div>';
+      html += '</div>';
+    });
+    out.innerHTML = html;
+    
+    // Log ke console (kalau buka DevTools)
+    console.log('=== DIAGNOSTIC v77 ===');
+    results.forEach(function(r) {
+      console.log((r.condition ? '✅' : '❌') + ' ' + r.name + ': ' + r.detail);
+    });
+  }
+})();
+</script>
+</body>
+</html>
