@@ -194,10 +194,10 @@
   window.setAnaTab=function(tab,btn){
     if(tab!=='overview' && VISIBLE.indexOf(tab)<0) return; // guard privasi
     state.tab=tab;
-    document.querySelectorAll('.ana-tab').forEach(function(b){ b.classList.toggle('active',b===btn); });
+    document.querySelectorAll('.ana-tab').forEach(function(b){ b.requestAnimationFrame(function(){ classList.toggle('active' });,b===btn); });
     window.renderAnalytics(); };
   window.setChartType=function(tp,btn){ state.chartType=tp;
-    document.querySelectorAll('.ana-tool-btn').forEach(function(b){ b.classList.toggle('active',b===btn); });
+    document.querySelectorAll('.ana-tool-btn').forEach(function(b){ b.requestAnimationFrame(function(){ classList.toggle('active' });,b===btn); });
     window.renderAnalytics(); };
 
   // CSV hanya data publik (Excel-ready: BOM + ';')
