@@ -1310,6 +1310,7 @@ input, textarea, select, button {
       }
       window.__lastScrollY = window.scrollY || 0;
       window.openMod = function(moduleId) {
+      window.__lastScrollY = window.scrollY || 0; // simpan posisi scroll
       try { document.body.classList.add('mod-open'); document.body.style.overflow='hidden'; } catch(e){}
 
         moduleId = String(moduleId || '').trim();
@@ -1374,7 +1375,7 @@ input, textarea, select, button {
         try {
           var mc = document.getElementById('mod-container');
           if (mc) { mc.scrollTop = 0; }
-          window.scrollTo(0, 0);
+          /* window.scrollTo(0,0) dihapus — anti-jump */
         } catch (eScroll) {}
 
             modScripts.forEach(function(s, __idx) {
@@ -1426,6 +1427,9 @@ input, textarea, select, button {
 
       window.goHome = function() {
       document.body.classList.remove('mod-open');
+      if (window.__lastScrollY !== undefined) { window.scrollTo(0, window.__lastScrollY); }
+      
+      document.body.classList.remove('mod-open');
       if (window.__lastScrollY) { window.scrollTo(0, window.__lastScrollY); }
       
       try { document.body.classList.remove('mod-open'); document.body.style.overflow='';
@@ -1442,7 +1446,7 @@ input, textarea, select, button {
           if (bn) bn.style.display = 'block';
           if (typeof window.debouncedUpdateSlides === 'function') window.debouncedUpdateSlides();
           else if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
-          window.scrollTo(0, 0);
+          /* window.scrollTo(0,0) dihapus — anti-jump */
         } catch (e) { console.error('[goHome]', e); }
       };
 
