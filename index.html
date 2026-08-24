@@ -2186,6 +2186,90 @@ window.__dreamosModFocusLock = function (root) {
 })();
 </script>
 
+
+<script id="force-home">
+(function(){
+  // Fungsi utama untuk kembali ke dashboard
+  function __forceHome() {
+    try {
+      // 1. Tutup modul dengan paksa
+      document.body.classList.remove('mod-open');
+      document.body.style.overflow = '';
+      var c = document.getElementById('mod-container');
+      if (c) {
+        c.style.display = 'none';
+        c.innerHTML = '';
+      }
+      // 2. Tampilkan main-app & bottom-nav
+      var ma = document.getElementById('main-app');
+      var bn = document.getElementById('bottom-nav');
+      if (ma) ma.style.display = 'block';
+      if (bn) {
+        bn.style.display = 'block';
+        bn.style.visibility = '';
+        bn.style.pointerEvents = '';
+      }
+      // 3. Hapus script/style sisa modul
+      document.querySelectorAll('.mod-injected-script').forEach(function(s){ try{ s.remove(); }catch(e){} });
+      document.querySelectorAll('style[data-mod-style]').forEach(function(s){ try{ s.remove(); }catch(e){} });
+      // 4. Scroll ke atas
+      try { window.scrollTo(0, window.__lastScrollY || 0); } catch(e) { window.scrollTo(0, 0); }
+      // 5. Refresh slides & greeting jika ada
+      if (typeof window.debouncedUpdateSlides === 'function') window.debouncedUpdateSlides();
+      else if (typeof window.updateDashboardSlides === 'function') window.updateDashboardSlides();
+      if (typeof window.renderDashboard === 'function') {
+        try { window.renderDashboard(true); } catch(e) {}
+      }
+      console.log('[force-home] berhasil kembali ke dashboard');
+      return true;
+    } catch(err) {
+      console.error('[force-home] error:', err);
+      // Fallback terakhir: reload halaman
+      if (window.location.pathname.indexOf('index.html') > -1) {
+        window.location.reload();
+      } else {
+        window.location.href = './index.html';
+      }
+      return false;
+    }
+  }
+
+  // Pastikan goHome selalu ada, bahkan jika script utama belum selesai
+  window.__forceHome = __forceHome;
+  if (typeof window.goHome !== 'function') {
+    window.goHome = __forceHome;
+  } else {
+    // Jika goHome sudah ada, bungkus dengan force
+    var orig = window.goHome;
+    window.goHome = function() {
+      try {
+        var r = orig.apply(this, arguments);
+        if (r !== false) return r;
+      } catch(e) {}
+      return __forceHome();
+    };
+  }
+
+  // Delegasi klik untuk tombol home & back-btn
+  document.addEventListener('click', function(e) {
+    var homeNav = e.target.closest('.nav-item[data-nav="home"]');
+    if (homeNav) {
+      e.preventDefault();
+      __forceHome();
+      return;
+    }
+    var backBtn = e.target.closest('.back-btn');
+    if (backBtn) {
+      e.preventDefault();
+      __forceHome();
+      return;
+    }
+  }, true);
+
+  console.log('[force-home] terpasang');
+})();
+</script>
+
 </body>
     
 
