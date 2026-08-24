@@ -293,13 +293,24 @@ window.CloudPhoto.dataURLtoBlob = window.CloudPhoto.dataURLtoBlob || function(da
 // Same-window inject: jangan null-kan client index
 (function(){
   if (window.supabaseClient) return; // sudah ada — jangan sentuh
+  // Coba inisialisasi global dari parent/global scope
   try {
-    if (window.parent && window.parent !== window && window.parent.supabaseClient) {
-      window.supabaseClient = window.parent.supabaseClient;
-      return;
+    if (window.parent && window.parent !== window) {
+      if (window.parent.initSupabase && !window.parent.supabaseClient) window.parent.initSupabase();
+      if (window.parent.supabaseClient) {
+        window.supabaseClient = window.parent.supabaseClient;
+        return;
+      }
     }
   } catch (e) {}
-  if (!window.supabaseClient) {
+  try {
+    if (typeof window.initSupabase === 'function' && !window.supabaseClient) {
+      window.initSupabase();
+    }
+  } catch (e) {}
+  if (window.supabaseClient) {
+    console.log('[DreamOS] supabaseClient siap');
+  } else {
     console.warn('[DreamOS] supabaseClient belum ada — mode lokal');
   }
 })();
