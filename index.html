@@ -104,7 +104,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json?v=2">
-  <link rel="stylesheet" href="css/dashboard.css?v=v80">
+  <link rel="stylesheet" href="css/dashboard.css?v=v81">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -1499,6 +1499,14 @@ html, body {
               });
             }
             c.innerHTML = modDoc.body ? modDoc.body.innerHTML : html;
+            try {
+              if (window.__dreamosModFocusLock) window.__dreamosModFocusLock(c);
+              var prefer = c.querySelector('[data-autofocus]');
+              if (prefer && window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                setTimeout(function(){ try { prefer.focus({ preventScroll: true }); } catch(e){} }, 200);
+              }
+            } catch (__focusErr) { console.warn(__focusErr); }
+
 
         try {
           var mc = document.getElementById('mod-container');
@@ -2108,6 +2116,27 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
       }
     });
   </script>
+
+<script>
+/* DREAMOS v81: openMod focus/scroll stabiliser */
+window.__dreamosModFocusLock = function (root) {
+  try {
+    if (!root) return;
+    var ae = document.activeElement;
+    if (ae && ae !== document.body && !root.contains(ae)) {
+      try { ae.blur(); } catch (e) {}
+    }
+    var risky = root.querySelectorAll('input, textarea, select');
+    for (var i = 0; i < risky.length; i++) {
+      if (risky[i].hasAttribute('autofocus')) risky[i].removeAttribute('autofocus');
+    }
+    root.scrollTop = 0;
+    root.scrollLeft = 0;
+    try { window.scrollTo(0, 0); } catch (e2) {}
+  } catch (err) { console.warn('[modFocusLock]', err); }
+};
+</script>
+
 </body>
     
 
