@@ -1,5 +1,5 @@
 // Dream OS SW v4-20260816 — self-cleaning, bounded cache
-const CACHE_VERSION = 'v109-idle-annihilator';
+const CACHE_VERSION = 'v110-data-saver';
 const CACHE_NAME = 'dreamos-' + CACHE_VERSION;
 const CORE = ['./', './index.html', './manifest.json'];
 
@@ -21,10 +21,16 @@ self.addEventListener('fetch', e => {
   if (url.search.includes('v=')) return; // biar network yang urus, JANGAN cache
 
   if (e.request.destination === 'document') {
-    // network-first untuk dokumen (selalu fresh, fallback cache saat offline)
+    // stale-while-revalidate: tampilkan cache dulu, update di belakang (hemat data)
     e.respondWith(
-      fetch(e.request).then(r => { const c = r.clone(); caches.open(CACHE_NAME).then(cc => cc.put(e.request, c)); return r; })
-        .catch(() => caches.match(e.request))
+      caches.match(e.request).then(cached => {
+        const fetchPromise = fetch(e.request).then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          return response;
+        }).catch(() => cached);
+        return cached || fetchPromise;
+      })
     );
     return;
   }

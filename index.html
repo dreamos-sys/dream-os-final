@@ -111,7 +111,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+  <!-- Chart.js lazy-loaded -->
   <script>
     // 📊 CHART POLISH (pro global standard): batang ramping & elegan di mobile
     if (window.Chart) {
@@ -903,7 +903,13 @@ html, body {
     window.initSupabase = initSupabase;
 
     // 📡 FITUR ONLINE-FIRST SYNC: Tarik data Cloud dulu sebelum ngerender lokal
-    window.syncCloudData = async function() {
+    window.__lastCloudSync = 0;
+  window.syncCloudData = async function(force) {
+    var __now = Date.now();
+    if (!force && (__now - window.__lastCloudSync) < 30000) {
+      return false; // TTL 30 detik: skip fetch, hemat data
+    }
+    window.__lastCloudSync = __now;
       if (!window.supabaseClient) return false;
       try {
         // Parallel fetch dengan LIMIT (prevent fetch ribuan row sekaligus)
@@ -2065,6 +2071,24 @@ window.__dreamosModFocusLock = function (root) {
   cleanExpiredElements();
 
   console.log('🛡️ Idle Annihilator aktif — notifikasi sesi berakhir tidak akan muncul');
+})();
+</script>
+
+
+<script>
+(function(){
+  var chartLoaded = false;
+  window.loadChartJS = function(cb) {
+    if (window.Chart) { if(cb) cb(); return; }
+    if (chartLoaded) { return; }
+    chartLoaded = true;
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.integrity = 'sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g';
+    s.crossOrigin = 'anonymous';
+    s.onload = function(){ if(cb) cb(); };
+    document.head.appendChild(s);
+  };
 })();
 </script>
 
