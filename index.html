@@ -1775,12 +1775,12 @@ html, body {
 /* ===== SUPABASE AUTH PERSISTENCE (No Expiry) ===== */
 (function(){
   // Tunggu Supabase ready
-  const checkSupabase = setInterval(function(){
+  const checkSupabase = window.__dreamosRegisterInterval(setInterval(function(){
     if (window.supabaseClient) {
       clearInterval(checkSupabase);
       
       // Force refresh session setiap 30 menit (prevent JWT expiry)
-      setInterval(async function(){
+      window.__dreamosRegisterInterval(setInterval(async function(){
         try {
           const { data, error } = await window.supabaseClient.auth.getSession();
           if (error || !data.session) {
@@ -1902,7 +1902,7 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
   window.DREAMOS_NEVER_LOGOUT = true;
   
   // 2. Heartbeat ke Supabase setiap 5 menit (keep session alive)
-  setInterval(async function(){
+  window.__dreamosRegisterInterval(setInterval(async function(){
     try {
       if (window.supabaseClient && localStorage.getItem('dreamos_session_active') === 'true') {
         // Touch session (prevent expiry)

@@ -151,6 +151,6 @@
   };
 
   setTimeout(run, 5000);
-  setInterval(run, 30*60*1000);
+  window.__dreamosRegisterInterval(setInterval(run, 30*60*1000));
   console.log('[StorageGuard] aktif — menjaga storage tetap sehat (dengan archive)');
 })();
