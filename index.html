@@ -2140,6 +2140,52 @@ window.__dreamosModFocusLock = function (root) {
 })();
 </script>
 
+
+<script id="home-fallback">
+(function(){
+  function safeGoHome() {
+    if (typeof window.goHome === 'function') {
+      try { window.goHome(); return; } catch(e) { console.warn('[home-fallback] goHome error', e); }
+    }
+    // Fallback: bersihkan mod-open & tampilkan main-app
+    try {
+      document.body.classList.remove('mod-open');
+      document.body.style.overflow = '';
+      var c = document.getElementById('mod-container');
+      if (c) { c.style.display = 'none'; c.innerHTML = ''; }
+      var ma = document.getElementById('main-app');
+      if (ma) ma.style.display = 'block';
+      var bn = document.getElementById('bottom-nav');
+      if (bn) { bn.style.display = 'block'; bn.style.visibility = ''; bn.style.pointerEvents = ''; }
+      window.scrollTo(0, 0);
+      if (typeof window.renderDashboard === 'function') window.renderDashboard(true);
+    } catch(e2) {
+      console.error('[home-fallback] manual reset error', e2);
+    }
+  }
+
+  // Delegasi klik untuk tombol home di bottom-nav
+  document.addEventListener('click', function(e){
+    var homeBtn = e.target.closest('.nav-item[data-nav="home"]');
+    if (homeBtn) {
+      e.preventDefault();
+      safeGoHome();
+      return;
+    }
+    var backBtn = e.target.closest('.back-btn');
+    if (backBtn) {
+      e.preventDefault();
+      safeGoHome();
+      return;
+    }
+  }, true);
+
+  // Expose fallback agar bisa dipakai inline
+  window.__homeFallback = safeGoHome;
+  console.log('[home-fallback] terpasang');
+})();
+</script>
+
 </body>
     
 
