@@ -482,6 +482,52 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
     <!-- DOMPurify for XSS protection -->
     <script src="js/load-dompurify.js"></script>
 
+<script id="innerhtml-sanitizer">
+(function(){
+  // Tunggu DOMPurify siap, lalu pasang patch setter innerHTML
+  function patch() {
+    if (!window.DOMPurify) return; // DOMPurify belum ada — coba lagi nanti
+    try {
+      var proto = Element.prototype;
+      var desc = Object.getOwnPropertyDescriptor(proto, 'innerHTML');
+      if (desc && desc.set) {
+        var originalSetter = desc.set;
+        Object.defineProperty(proto, 'innerHTML', {
+          get: desc.get,
+          set: function(value) {
+            try {
+              // Sanitasi semua HTML sebelum disisipkan
+              var safe = window.DOMPurify.sanitize(String(value));
+              originalSetter.call(this, safe);
+            } catch(e) {
+              // Fallback: pasang raw jika sanitasi gagal
+              originalSetter.call(this, value);
+            }
+          },
+          configurable: true
+        });
+        console.log('[innerHTML Sanitizer] aktif — semua innerHTML disaring DOMPurify');
+      }
+    } catch(e) {
+      console.warn('[innerHTML Sanitizer] gagal patch:', e);
+    }
+  }
+  // Coba patch sekarang, atau polling sampai DOMPurify ada
+  if (window.DOMPurify) {
+    patch();
+  } else {
+    var tries = 0;
+    var timer = setInterval(function(){
+      if (window.DOMPurify || ++tries > 20) {
+        clearInterval(timer);
+        if (window.DOMPurify) patch();
+      }
+    }, 100);
+  }
+})();
+</script>
+
+
     <!-- Salt Migration Helper -->
     <script src="js/salt-migration.js" defer></script>
 
