@@ -1920,28 +1920,8 @@ window.renderCalendar = window.renderCalendar || function(){ console.warn("[shel
 
 
 <!-- 🛡️ ULTIMATE IDLE KILLER -->
-<style>
-  /* Membutakan UI Counter/Modal Idle jika masih nekat muncul */
-  #idle-warning, .idle-warning, #idle-modal, .idle-modal, #timeout-counter, .timeout-modal { 
-    display: none !important; 
-    opacity: 0 !important;
-    pointer-events: none !important; 
-  }
-</style>
-<script>
-(function(){
-  'use strict';
-  // 1. Spam event palsu tiap 3 detik biar script "batu" ngira kita terus aktif
-  /* idle fake-events DISABLED */ setInterval(function(){ window.idleTime=0; window.lastActivity=Date.now(); }, 120000);
 
-  // 2. Melucuti fungsi logout otomatis (menimpa fungsi bawaan jika ada)
-  window.showIdleWarning = function(){ console.log('🛑 Modus Idle digagalkan Sentinel!'); };
-  window.autoLogout = function(){ console.log('🛑 Auto-logout digagalkan Sentinel!'); };
-  if(window.BankSession) window.BankSession.resetIdle = function(){};
 
-  console.log('🛡️ Ultimate Idle Killer Aktif! Satpam "batu" sudah dibius total.');
-})();
-</script>
 
 <script>
 // 🛡️ HOTFIX: Sentinel Safe Closest Patch
@@ -2028,6 +2008,63 @@ window.__dreamosModFocusLock = function (root) {
     };
     if (handlers[action]) handlers[action]();
   });
+})();
+</script>
+
+
+<script id="idle-annihilator">
+(function(){
+  'use strict';
+  // 1. Matikan semua fungsi idle/logout otomatis
+  var killFunctions = ['autoLogout','forceLogout','logoutUser','showIdleWarning','sessionExpired','idleLogout','idleLogoutUser','logout'];
+  killFunctions.forEach(function(fn){
+    if (typeof window[fn] === 'function') {
+      try { window[fn] = function(){ console.log('[IdleAnnihilator] ' + fn + ' diblokir'); }; } catch(e) {}
+    }
+  });
+
+  // 2. Saring showToast dari pesan sesi berakhir
+  if (typeof window.showToast === 'function') {
+    var _origToast = window.showToast;
+    window.showToast = function(msg, type){
+      if (typeof msg === 'string' && /sesi berakhir|silakan login ulang|login ulang|expired|timeout/i.test(msg)) {
+        console.log('[IdleAnnihilator] Toast diblokir:', msg);
+        return;
+      }
+      return _origToast.apply(this, arguments);
+    };
+  }
+
+  // 3. Saring alert dari pesan sesi berakhir
+  if (typeof window.alert === 'function') {
+    var _origAlert = window.alert;
+    window.alert = function(msg){
+      if (typeof msg === 'string' && /sesi berakhir|silakan login ulang|login ulang|expired|timeout/i.test(msg)) {
+        console.log('[IdleAnnihilator] Alert diblokir:', msg);
+        return;
+      }
+      return _origAlert.call(window, msg);
+    };
+  }
+
+  // 4. Bersihkan DOM dari elemen yang menampilkan pesan sesi berakhir
+  function cleanExpiredElements() {
+    try {
+      var all = document.querySelectorAll('body *');
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        if (el.children.length === 0 && el.textContent && /sesi berakhir|silakan login ulang|login ulang/i.test(el.textContent)) {
+          el.remove();
+          console.log('[IdleAnnihilator] Elemen dihapus:', el.textContent);
+        }
+      }
+    } catch(e) {}
+  }
+  var mo = new MutationObserver(cleanExpiredElements);
+  mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+  cleanExpiredElements();
+
+  console.log('🛡️ Idle Annihilator aktif — notifikasi sesi berakhir tidak akan muncul');
 })();
 </script>
 
