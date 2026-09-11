@@ -478,7 +478,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   </script>
 
     <!-- Security Config (DO NOT COMMIT) -->
-    <script src="js/config.js" defer></script>
+    <script src="js/config.js?v=102" defer></script>
     <!-- DOMPurify for XSS protection -->
     <script src="js/load-dompurify.js"></script>
 
@@ -946,8 +946,16 @@ html, body {
 
     function initSupabase() {
       if (window.supabaseClient) return true;
-      try { if (typeof window.supabase !== 'undefined') { window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); return true; } } catch(e) {}
-      return false;
+      try {
+        if (typeof window.supabase === 'undefined') return false;
+        // Guard dari v102-shim: kalau supabase tidak tersedia, jangan coba createClient
+        if (window.supabase.__unavailable) {
+          console.warn('[initSupabase] Supabase CDN unavailable — offline mode');
+          return false;
+        }
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        return true;
+      } catch(e) { console.warn('[initSupabase]', e.message); return false; }
     }
     // Expose biar modul bisa self-heal kalau supabaseClient null
     window.initSupabase = initSupabase;
@@ -1262,7 +1270,8 @@ html, body {
         // 📡 MEKANISME ASYNC: Tahan render Grafik & Slider sampai cloud disinkronisasi
         (async () => {
           const healthEl = document.getElementById('health-bar');
-          if (navigator.onLine) {
+          const __supabaseDown = window.__DREAMOS_OFFLINE || !window.supabaseClient;
+          if (navigator.onLine && !__supabaseDown) {
             if (healthEl) healthEl.innerHTML = /* innerHTML assign — sanitize upstream */ `<span class="health-badge" style="color:#0ea5e9; border-color:rgba(14,165,233,0.3);">🔄 Syncing Cloud...</span>`;
             
             // Eksekusi tarikan data ke Supabase
@@ -1270,7 +1279,7 @@ html, body {
             
             if (healthEl) healthEl.innerHTML = /* innerHTML assign — sanitize upstream */ `<span class="health-badge health-ok">🟢 Online & Synced</span>`;
           } else {
-            if (healthEl) healthEl.innerHTML = /* innerHTML assign — sanitize upstream */ `<span class="health-badge health-err">🔴 Offline Mode</span>`;
+            if (healthEl) healthEl.innerHTML = /* innerHTML assign — sanitize upstream */ `<span class="health-badge health-err">🔴 Offline Mode — Server Cloud Down</span>`;
           }
 
           // 📊 ANALYTICS ENGINE v2 (Laporan Bulanan style)
