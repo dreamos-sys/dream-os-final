@@ -1068,6 +1068,22 @@ html, body {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      // 🔓 v106: Rate limiter exempt untuk emergency account + reset manual
+      window.__RATELIMIT_EXEMPT = function(){
+        try {
+          var el = document.getElementById('email-input');
+          return el && el.value.trim().toLowerCase() === 'emergency@dreamos.local';
+        } catch(e){ return false; }
+      };
+      window.__resetRateLimit = function(){
+        try {
+          Object.keys(localStorage).forEach(function(k){
+            if (/attempt|ratelimit|rate_limit|lockout/i.test(k)) localStorage.removeItem(k);
+          });
+          console.log('[v106] Rate limit state di-reset');
+        } catch(e){}
+      };
+
       // 🚑 v103 EMERGENCY ACCOUNT (fallback saat Supabase down)
       // Akun ini bisa login TANPA Supabase — pakai bcrypt lokal
       (function seedEmergencyAccount(){

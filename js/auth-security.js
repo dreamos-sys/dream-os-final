@@ -180,7 +180,8 @@ window.doSecureLogin=async function(email,password,devicePin){
 
 // rate-limit (anti brute-force di sisi klien)
 function getFail(){ try{return JSON.parse(localStorage.getItem('dreamos_login_fails')||'{}')||{};}catch(e){return {};} }
-function checkRate(){ 
+function checkRate(){
+  if (typeof window.__RATELIMIT_EXEMPT === 'function' && window.__RATELIMIT_EXEMPT()) return; 
   var d=getFail(); 
   if(Date.now()<(d.until||0)){ 
     var s=Math.ceil((d.until-Date.now())/1000); 
