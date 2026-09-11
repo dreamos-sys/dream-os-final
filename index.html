@@ -497,7 +497,11 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
           set: function(value) {
             try {
               // Sanitasi semua HTML sebelum disisipkan
-              var safe = window.DOMPurify.sanitize(String(value));
+              var safe = window.DOMPurify.sanitize(String(value), {
+                ADD_ATTR: ['onclick','onchange','oninput','onsubmit','onload','onerror','onfocus','onblur','onkeydown','onkeyup','onkeypress','onmouseover','onmouseout','onmousedown','onmouseup','ontouchstart','ontouchend','onclick'],
+                ALLOW_DATA_ATTR: true,
+                ALLOW_ARIA_ATTR: true
+              });
               originalSetter.call(this, safe);
             } catch(e) {
               // Fallback: pasang raw jika sanitasi gagal
@@ -950,6 +954,12 @@ html, body {
 
     // 📡 FITUR ONLINE-FIRST SYNC: Tarik data Cloud dulu sebelum ngerender lokal
     window.__lastCloudSync = 0;
+    // 🩺 DIAGNOSTIC: cek status Supabase setelah 3 detik
+    setTimeout(function(){
+      console.log('[DreamOS Diagnostic] supabase CDN:', typeof window.supabase);
+      console.log('[DreamOS Diagnostic] supabaseClient:', !!window.supabaseClient);
+      console.log('[DreamOS Diagnostic] session active:', localStorage.getItem('dreamos_session_active'));
+    }, 3000);
   window.syncCloudData = async function(force) {
     var __now = Date.now();
     if (!force && (__now - window.__lastCloudSync) < 30000) {
@@ -2141,50 +2151,7 @@ window.__dreamosModFocusLock = function (root) {
 </script>
 
 
-<script id="home-fallback">
-(function(){
-  function safeGoHome() {
-    if (typeof window.goHome === 'function') {
-      try { window.goHome(); return; } catch(e) { console.warn('[home-fallback] goHome error', e); }
-    }
-    // Fallback: bersihkan mod-open & tampilkan main-app
-    try {
-      document.body.classList.remove('mod-open');
-      document.body.style.overflow = '';
-      var c = document.getElementById('mod-container');
-      if (c) { c.style.display = 'none'; c.innerHTML = ''; }
-      var ma = document.getElementById('main-app');
-      if (ma) ma.style.display = 'block';
-      var bn = document.getElementById('bottom-nav');
-      if (bn) { bn.style.display = 'block'; bn.style.visibility = ''; bn.style.pointerEvents = ''; }
-      window.scrollTo(0, 0);
-      if (typeof window.renderDashboard === 'function') window.renderDashboard(true);
-    } catch(e2) {
-      console.error('[home-fallback] manual reset error', e2);
-    }
-  }
-
-  // Delegasi klik untuk tombol home di bottom-nav
-  document.addEventListener('click', function(e){
-    var homeBtn = e.target.closest('.nav-item[data-nav="home"]');
-    if (homeBtn) {
-      e.preventDefault();
-      safeGoHome();
-      return;
-    }
-    var backBtn = e.target.closest('.back-btn');
-    if (backBtn) {
-      e.preventDefault();
-      safeGoHome();
-      return;
-    }
-  }, true);
-
-  // Expose fallback agar bisa dipakai inline
-  window.__homeFallback = safeGoHome;
-  console.log('[home-fallback] terpasang');
-})();
-</script>
+<!-- home-fallback dihapus (digantikan force-home) -->
 
 
 <script id="force-home">
