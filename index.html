@@ -1058,6 +1058,27 @@ html, body {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      // 🚑 v103 EMERGENCY ACCOUNT (fallback saat Supabase down)
+      // Akun ini bisa login TANPA Supabase — pakai bcrypt lokal
+      (function seedEmergencyAccount(){
+        try {
+          var users = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+          var exists = users.some(function(u){ return u.email === 'emergency@dreamos.local'; });
+          if (!exists) {
+            users.push({
+              id: 'emergency_local',
+              email: 'emergency@dreamos.local',
+              nama: 'Emergency Admin',
+              role: 'dev',
+              password_hash: '$2a$10$rZ5KqJ8Q9Y7X6Z4W3V2U1O0N9M8L7K6J5H4G3F2D1S0A',
+              source: 'emergency'
+            });
+            localStorage.setItem('dreamos_users_db', JSON.stringify(users));
+            console.log('[v103] Emergency account seeded');
+          }
+        } catch(e){}
+      })();
+
       const ROLE_PERMISSIONS = {
         dev: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
         kabag_umum: ['cmd','security','security_edit_jadwal','k3','janitor-indoor','janitor-outdoor','booking','asset','stok','maintenance','dana','users','audit','profile','qr','about','setting'],
