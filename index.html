@@ -104,7 +104,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json?v=2">
-  <link rel="stylesheet" href="css/dashboard.css?v=v82">
+  <link rel="stylesheet" href="css/dashboard.css?v=v107">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -478,7 +478,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   </script>
 
     <!-- Security Config (DO NOT COMMIT) -->
-    <script src="js/config.js?v=102" defer></script>
+    <script src="js/config.js?v=107" defer></script>
     <!-- DOMPurify for XSS protection -->
     <script src="js/load-dompurify.js"></script>
 
@@ -1207,6 +1207,62 @@ html, body {
 
         // 📡 Offline-first: coba init Supabase, tapi JANGAN batalkan login lokal saat offline
         if (!window.supabaseClient) { try { initSupabase(); } catch(e){} }
+
+        // 🔑 v107 EMERGENCY DIRECT BYPASS
+        // Jalan khusus saat Supabase/rate-limiter bermasalah.
+        // HANYA untuk emergency@dreamos.local dan password yang benar.
+        if (email.toLowerCase() === 'emergency@dreamos.local' && password === 'DreamOS2026!') {
+          try {
+            if (window.__resetRateLimit) window.__resetRateLimit();
+
+            const userData = {
+              id: 'emergency_local',
+              email: 'emergency@dreamos.local',
+              nama: 'Emergency Admin',
+              role: 'dev',
+              source: 'emergency-direct'
+            };
+
+            window.safeStorageSet('dreamos_bound_user', JSON.stringify(userData));
+            window.safeStorageSet('dreamos_session_active', 'true');
+
+            try {
+              var usersDb = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+              var idx = usersDb.findIndex(function(u){
+                return (u.email || '').toLowerCase() === 'emergency@dreamos.local';
+              });
+              var emergencyUser = {
+                id: 'emergency_local',
+                email: 'emergency@dreamos.local',
+                nama: 'Emergency Admin',
+                role: 'dev',
+                password_hash: '$2a$10$op.Ff9X7.roQq8Jsp5t.yubl.VZX5M7TPP7LLtswg5GEv.gxWZ0k6',
+                source: 'emergency'
+              };
+              if (idx >= 0) usersDb[idx] = Object.assign(usersDb[idx], emergencyUser);
+              else usersDb.push(emergencyUser);
+              window.safeStorageSet('dreamos_users_db', JSON.stringify(usersDb));
+            } catch(seedErr) {}
+
+            if (window.BankSession) {
+              try { BankSession.create(userData); } catch(e) {}
+            }
+            if (window.BankAudit) {
+              try { BankAudit.log('LOGIN_SUCCESS', { email: userData.email, source: 'emergency-direct', role: userData.role }); } catch(e) {}
+            }
+
+            loginBtn.textContent = '✅ Emergency Access!';
+            loginBtn.disabled = true;
+
+            setTimeout(function(){
+              showDashboard();
+            }, 300);
+
+            return;
+          } catch(emErr) {
+            console.error('[v107 emergency direct]', emErr);
+          }
+        }
 
         try {
           const result = await window.doSecureLogin(email, password, '');
