@@ -104,7 +104,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json?v=2">
-  <link rel="stylesheet" href="css/dashboard.css?v=v107">
+  <link rel="stylesheet" href="css/dashboard.css?v=v108">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#00ff9d">
@@ -478,7 +478,7 @@ window.DREAMOS_DISABLE_SESSION_TIMEOUT = true;
   </script>
 
     <!-- Security Config (DO NOT COMMIT) -->
-    <script src="js/config.js?v=107" defer></script>
+    <script src="js/config.js?v=108" defer></script>
     <!-- DOMPurify for XSS protection -->
     <script src="js/load-dompurify.js"></script>
 
@@ -2388,6 +2388,88 @@ window.__dreamosModFocusLock = function (root) {
 
   console.log('[force-home] terpasang');
 })();
+</script>
+
+
+<script id="v108-emergency-console">
+// 🚪 v108: Emergency console shortcut - panggil dari console kapan saja
+// Usage: ketik `__emergency()` di console browser lalu Enter
+window.__emergency = function() {
+  try {
+    console.log('[v108] Emergency login dipanggil dari console...');
+    
+    // 1. Bersihkan SEMUA rate limiter
+    Object.keys(localStorage).forEach(function(k){
+      if (/attempt|ratelimit|rate_limit|lockout|cooldown|failed/i.test(k)) {
+        localStorage.removeItem(k);
+      }
+    });
+    
+    // 2. Auto-check cookie consent
+    localStorage.setItem('dreamos_cookie_consent', 'true');
+    localStorage.setItem('dreamos_cookie_consent_time', new Date().toISOString());
+    
+    // 3. Set emergency user langsung
+    var userData = {
+      id: 'emergency_local',
+      email: 'emergency@dreamos.local',
+      nama: 'Emergency Admin',
+      role: 'dev',
+      source: 'emergency-console-v108'
+    };
+    localStorage.setItem('dreamos_bound_user', JSON.stringify(userData));
+    localStorage.setItem('dreamos_session_active', 'true');
+    
+    // 4. Seed emergency account ke dreamos_users_db
+    try {
+      var usersDb = JSON.parse(localStorage.getItem('dreamos_users_db') || '[]');
+      var idx = usersDb.findIndex(function(u){
+        return (u.email || '').toLowerCase() === 'emergency@dreamos.local';
+      });
+      var emergencyUser = {
+        id: 'emergency_local',
+        email: 'emergency@dreamos.local',
+        nama: 'Emergency Admin',
+        role: 'dev',
+        password_hash: '$2a$10$op.Ff9X7.roQq8Jsp5t.yubl.VZX5M7TPP7LLtswg5GEv.gxWZ0k6',
+        source: 'emergency'
+      };
+      if (idx >= 0) usersDb[idx] = emergencyUser;
+      else usersDb.push(emergencyUser);
+      localStorage.setItem('dreamos_users_db', JSON.stringify(usersDb));
+    } catch(e){}
+    
+    // 5. Hide login, show dashboard
+    var ls = document.getElementById('login-screen');
+    var ma = document.getElementById('main-app');
+    var bn = document.getElementById('bottom-nav');
+    if (ls) ls.style.display = 'none';
+    if (ma) ma.style.display = 'block';
+    if (bn) bn.style.display = 'block';
+    
+    // 6. Render dashboard
+    if (typeof window.renderDashboard === 'function') {
+      setTimeout(function(){ window.renderDashboard(true); }, 200);
+    }
+    
+    console.log('%c✅ EMERGENCY LOGIN BERHASIL', 'background:#00ff9d;color:#000;font-weight:bold;font-size:14px;padding:6px;');
+    console.log('[v108] Selamat datang Emergency Admin!');
+    return '✅ Success';
+  } catch(err) {
+    console.error('[v108] Emergency login failed:', err);
+    return '❌ ' + err.message;
+  }
+};
+
+// Auto-run kalau URL punya param ?emergency=1
+if (window.location.search.indexOf('emergency=1') > -1) {
+  window.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){ window.__emergency(); }, 500);
+  });
+}
+
+console.log('%c🚪 Emergency shortcut siap: ketik `__emergency()` di console', 'color:#00ff9d;font-weight:bold;');
+console.log('%c   Atau buka URL dengan ?emergency=1', 'color:#00ff9d;');
 </script>
 
 </body>
