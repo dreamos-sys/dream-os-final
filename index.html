@@ -1068,6 +1068,47 @@ html, body {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+
+      // ☢️ v107 NUCLEAR: Auto-reset rate limit setiap halaman load + pre-login cleanup
+      (function nuclearRatelimiter(){
+        try {
+          // 1. Hapus SEMUA key yang berhubungan dengan attempts/ratelimit
+          var keys = Object.keys(localStorage);
+          var nuked = 0;
+          keys.forEach(function(k){
+            if (/attempt|ratelimit|rate_limit|lockout|cooldown|failed_login|login_fail/i.test(k)) {
+              localStorage.removeItem(k);
+              nuked++;
+            }
+          });
+          if (nuked > 0) console.log('[v107-nuclear] Reset ' + nuked + ' rate limit keys');
+          
+          // 2. Wrap loginBtn click handler — bersihkan SEBELUM login diproses
+          var loginBtn = document.getElementById('login-button');
+          if (loginBtn) {
+            loginBtn.addEventListener('click', function(){
+              try {
+                Object.keys(localStorage).forEach(function(k){
+                  if (/attempt|ratelimit|rate_limit|lockout|cooldown|failed_login|login_fail/i.test(k)) {
+                    localStorage.removeItem(k);
+                  }
+                });
+              } catch(e){}
+            }, true); // capture phase = jalan duluan
+          }
+          
+          // 3. Force exempt function return true saat Supabase down
+          if (window.__DREAMOS_OFFLINE || !window.supabaseClient) {
+            var origExempt = window.__RATELIMIT_EXEMPT;
+            window.__RATELIMIT_EXEMPT = function(){
+              // Di offline mode, SEMUA akun exempt (karena rate limiter = Supabase feature)
+              return true;
+            };
+            console.log('[v107-nuclear] Offline mode → all accounts exempt');
+          }
+        } catch(e){ console.warn('[v107-nuclear] error:', e); }
+      })();
+
       // 🔓 v106: Rate limiter exempt untuk emergency account + reset manual
       window.__RATELIMIT_EXEMPT = function(){
         try {

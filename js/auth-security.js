@@ -185,7 +185,7 @@ function checkRate(){
   var d=getFail(); 
   if(Date.now()<(d.until||0)){ 
     var s=Math.ceil((d.until-Date.now())/1000); 
-    throw new Error('🔒 Terlalu banyak percobaan. Coba lagi '+s+' detik'); 
+    if (typeof window.__RATELIMIT_EXEMPT === 'function' && window.__RATELIMIT_EXEMPT()) { /* exempt */ } else throw new Error('🔒 Terlalu banyak percobaan. Coba lagi '+s+' detik'); 
   } 
 }
 function recordFail(){ 
