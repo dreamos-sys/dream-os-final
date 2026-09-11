@@ -1047,11 +1047,21 @@ html, body {
           return {source:'local', user:{id:local.id||('local_'+email), email:local.email, nama:local.nama||email.split('@')[0], role:local.role||'staff'}};
         }
         
-        if(window.supabaseClient && window.supabaseClient.auth){
-          var r = await window.supabaseClient.auth.signInWithPassword({email:email, password:password});
-          if(r.error) throw new Error(r.error.message||'Login gagal');
-          var md = r.data.user.user_metadata||{};
-          return {source:'supabase', user:{id:r.data.user.id, email:r.data.user.email, nama:md.nama||email.split('@')[0], role:md.role||'staff'}};
+        if(window.supabaseClient && window.supabaseClient.auth && !window.__DREAMOS_OFFLINE){
+          try {
+            // Timeout 8 detik — kalau Supabase lambat, fallback ke lokal
+            var r = await Promise.race([
+              window.supabaseClient.auth.signInWithPassword({email:email, password:password}),
+              new Promise((_, rej) => setTimeout(() => rej(new Error('Auth timeout (8s)')), 8000))
+            ]);
+            if(r.error) throw new Error(r.error.message||'Login gagal');
+            var md = r.data.user.user_metadata||{};
+            return {source:'supabase', user:{id:r.data.user.id, email:r.data.user.email, nama:md.nama||email.split('@')[0], role:md.role||'staff'}};
+          } catch(supaErr) {
+            console.warn('[Auth] Supabase gagal, fallback ke local:', supaErr.message);
+            // Fallback ke bcrypt lokal kalau Supabase error
+            // (akan continue ke throw di bawah kalau lokal juga tidak ketemu)
+          }
         }
         throw new Error('User tidak ditemukan');
       };
